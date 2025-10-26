@@ -1,0 +1,30 @@
+'////////////////////////////////////////////////////////////////////////
+'>> TNTHED
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+	typefields% = -1
+
+	'$INCLUDE: '\tpmanuf\src\tnthed.INC'
+	'$INCLUDE: '\tpmanuf\src\forhed.INC'
+
+CALL setup("Z E R O   T N T H E D")
+
+last% = LOF(64) / LEN(tnthed)
+rec% = 1
+
+GET #64, rec%, tnthed
+DO WHILE rec% < last% + 1
+
+	LOCATE 10, 40: PRINT "Record..."; tnthed.tnt%
+	tnthed.alccost! = 0
+	PUT #64, rec%, tnthed
+
+	rec% = rec% + 1
+
+	GET #64, rec%, tnthed
+LOOP
+
+END
+
+

@@ -1,0 +1,3 @@
+SHELL "COPY \TPMANUF\msmisc.msf LPT4"
+                                             
+

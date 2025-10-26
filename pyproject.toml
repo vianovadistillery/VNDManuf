@@ -1,0 +1,20 @@
+
+[project]
+name = "tpmanuf-modern"
+version = "0.1.0"
+description = "Modernisation of TPManuf (QuickBASIC) to Python FastAPI + Dash"
+readme = "brief.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "sqlalchemy",
+  "alembic",
+  "pydantic",
+  "jinja2",
+  "dash",
+  "python-dotenv",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

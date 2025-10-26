@@ -1,0 +1,23 @@
+	'$INCLUDE: '\tpmanuf\src\forhed.INC'
+	'$INCLUDE: '\tpmanuf\src\tnthed.INC'
+	rec% = 1
+	GET #64, rec%, tnthed
+	DO WHILE NOT EOF(64)
+		bad% = 0
+		FOR i% = 1 TO 30
+			IF MID$(tnthed.desc$, i%, 1) = CHR$(0) THEN MID$(tnthed.desc$, i%, 1) = " ": bad% = -1
+			NEXT
+		IF bad% THEN
+			PRINT tnthed.desc$
+			PUT #64, rec%, tnthed
+			END IF
+
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #64, , tnthed: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END
+

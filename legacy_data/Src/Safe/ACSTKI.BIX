@@ -1,0 +1,86 @@
+	'$INCLUDE: '.\SRC\acstk.INC'
+	CALL setup("Inspect ACSTK.ACF")
+	rec% = 1
+	GET #3, rec%, acstk
+	DO WHILE NOT EOF(3)
+
+	acstkx.no% = acstk.no%
+	acstkx.search$ = acstk.search$
+	acstkx.ean13 = acstk.ean13
+	acstkx.desc1$ = acstk.desc1$
+	acstkx.desc2$ = acstk.desc2$
+	acstkx.suplr$ = acstk.suplr$
+	acstkx.size$ = acstk.size$
+	acstkx.unit$ = acstk.unit$
+	acstkx.pack% = acstk.pack%
+	acstkx.dgflag$ = acstk.dgflag$
+	acstkx.active$ = acstk.active$
+	acstkx.form$ = SPACE$(4)
+
+	'Finalcial Description
+	acstkx.taxinc$ = acstk.taxinc$
+	acstkx.salestaxcde$ = acstk.salestaxcde$
+	acstkx.purcost = acstk.purcost
+	acstkx.purtax = acstk.purtax
+	acstkx.wholesalecost = acstk.wholesalecost
+	acstkx.disccdeone$ = acstk.disccdeone$
+	acstkx.disccdetwo$ = acstk.disccdetwo$
+	
+	acstkx.wholesalecde$ = acstk.wholesalecde$
+	acstkx.retailcde$ = acstk.retailcde$
+	acstkx.countercde$ = acstk.countercde$
+	acstkx.tradecde$ = acstk.tradecde$
+	acstkx.contractcde$ = acstk.contractcde$
+	acstkx.industrialcde$ = acstk.industrialcde$
+	acstkx.distributorcde$ = acstk.distributorcde$
+			 
+	acstkx.retail = acstk.retail
+	acstkx.counter = acstk.counter
+	acstkx.trade = acstk.trade
+	acstkx.contract = acstk.contract
+	acstkx.industrial = acstk.industrial
+	acstkx.distributor = acstk.distributor
+												 
+	acstkx.suplr4stdcost$ = acstk.suplr4stdcost$
+	acstkx.search4stdcost$ = acstk.search4stdcost$
+
+	'Stock holding
+	acstkx.cogs = 0
+	acstkx.gpc = 0
+	acstkx.rmc = 0
+	acstkx.gpr = 0
+	acstkx.soh% = acstk.soh%
+	acstkx.sohv = 0
+	acstkx.sip% = 0
+	acstkx.soo% = acstk.soo%
+	acstkx.sold% = 0
+	acstkx.date$ = acstk.date$
+	acstkx.bulk = 0
+	acstkx.pkge% = 0
+	acstkx.label% = 0
+	acstkx.manu% = 0
+
+	'Filler
+	acstkx.filler$ = SPACE$(75)
+
+
+
+	PUT #4, rec%, acstkx
+passed:
+	IF rec% = 3303 THEN EXIT DO
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #3, , acstk: rec% = rec% + 1
+	LOOP
+
+	
+ENDPGM:
+CLOSE
+
+	SHELL "copy acstk.acf acstk.old"
+	SHELL "copy acstkx.acf acstk.acf"
+	SHELL "del acstkx.acf"
+	CALL sndmsg("Complete")
+	
+
+END
+

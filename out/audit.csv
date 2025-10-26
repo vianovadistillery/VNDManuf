@@ -1,0 +1,11 @@
+table,action,key,id,timestamp
+products,created,PAINT-001,42d54baf-eb0e-4526-9b84-f910cefbf60b,2025-10-26T00:49:57.831586
+products,created,PAINT-002,bfbe8faa-fbdb-42bf-8ea3-8f816872d81a,2025-10-26T00:49:57.832586
+products,created,SOLVENT-001,21e7640e-a7eb-4fef-b6d9-6f0da2f845e9,2025-10-26T00:49:57.832586
+customers,created,CUST-001,7d85435b-a033-429b-b806-73956fea1178,2025-10-26T00:49:57.834586
+customers,created,CUST-002,a6a41f7f-405b-4b9a-a8c0-0bf30e3f4fb6,2025-10-26T00:49:57.834586
+suppliers,created,SUPP-001,4ea43636-e35a-43eb-86d0-1f2ff531df56,2025-10-26T00:49:57.835585
+pack_units,created,CAN,422e3742-687a-4f66-9798-2206e8c5395c,2025-10-26T00:49:57.836585
+pack_units,created,4PK,13e29baf-a60d-4c45-a079-4751f826229e,2025-10-26T00:49:57.837584
+pack_units,created,CTN,ed38548f-08bd-4eb0-b0c4-b0a54ccd88d7,2025-10-26T00:49:57.837584
+inventory_lots,created,LOT-001,0df8f047-ea41-486c-8edf-99370b76e3d0,2025-10-26T00:49:57.840584

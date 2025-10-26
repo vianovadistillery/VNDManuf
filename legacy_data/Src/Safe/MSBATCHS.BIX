@@ -1,0 +1,20 @@
+	'$INCLUDE: '.\SRC\msbatch.INC'
+	CALL setup("Set values in MSBATCH.MSF")
+	rec% = 1
+	GET #57, rec%, batch
+	DO WHILE NOT EOF(57)
+	IF batch.fltnt$ = "P" THEN
+		batch.priority = rec%
+		PUT #57, rec%, batch
+	END IF
+	
+
+	IF rec% MOD 10 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #57, , batch: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END
+

@@ -1,0 +1,49 @@
+Balance Sheet/Profit(Loss) Summary          Updated: 11:56:43 AM
+-----------------------------------------------------------------
+1-0000, 1, ASSETS                                     $63,092.26
+  1-1100, 2, CASH ON HAND                             $26,038.73
+    1-1110, 3, NAB Fordex                             $24,147.59
+    1-1130, 3, Petty Cash                              $4,647.30
+    1-1160, 3, Undeposited Funds                     ($2,756.16)
+    1-1190, 3, Electronic Clearing Account                 $0.00
+  1-2000, 2, Trade Debtors                            $36,900.83
+  1-5100, 2, Prepaid Expenses                            $152.70
+4-0000, 1, Income                                     $83,378.60
+  4-1000, 2, PAINT SALES                              $48,898.62
+    4-1100, 3, Sales - Distributors (Retail)          $31,672.06
+    4-1200, 3, Sales - Distributor (Indust)            $5,295.56
+    4-1300, 3, Sales - Industrial Paint & Acc          $3,129.48
+    4-1400, 3, Sales - Direct User Sales                 $840.03
+    4-1500, 3, Sales - Factory Store                   $7,961.49
+  4-2000, 2, TOLL SALES (INC RM)                      $29,094.09
+    4-2100, 3, Sales - Toll Inc RM                    $29,094.09
+  4-3000, 2, TOLL SALES (LABOUR ONLY)                  $5,399.60
+    4-3200, 3, Bostik (Labour Only)                    $5,399.60
+  4-4000, 2, Discounts Allowed                          ($13.72)
+  4-5000, 2, Late Payment Fee                              $0.01
+5-0000, 1, Cost Of Sales                            ($39,483.04)
+  5-1000, 2, PAINT COST OF SALES                    ($29,103.48)
+    5-1100, 3, Paint - Raw Materials                 ($8,687.38)
+    5-1200, 3, Paint - Packaging & Labels            ($1,014.48)
+    5-1300, 3, Paint - Manufacturing Labour         ($15,747.60)
+    5-1301, 3, Paint - Manufacturing Super           ($1,363.10)
+    5-1305, 3, Paint - Manufact Labour Other         ($2,290.92)
+  5-3000, 2, TOLL LABOUR ONLY COST OF SALES          ($3,136.93)
+    5-3100, 3, Toll Lab Only - Man Labour            ($2,910.49)
+    5-3101, 3, Toll Lab Only - Super                   ($226.44)
+  5-5100, 2, Mauf/machinery maintenance                ($129.48)
+  5-7590, 2, Sales Rep - Wages                       ($6,155.20)
+  5-7591, 2, Sales Rep - Super                         ($553.97)
+  5-8200, 2, Truck                                     ($403.98)
+    5-8215, 3, Truck - Fuel                            ($403.98)
+6-0000, 1, Expenses                                 ($13,138.67)
+9-0000, 1, Other Expenses                              ($367.83)
+X, 0, Net Profit/(Loss)                               $30,389.06
+
+Forward Orders Summary
+-----------------------------------------------------------------
+Total                                                 $65,648.45
+Today                                                      $0.00
+=================================================================
+Sales Today                                                $0.00
+----------------------------------------------------------------- 

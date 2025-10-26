@@ -1,0 +1,86 @@
+file_name: products.dat
+file_path: legacy_data\products.dat
+file_number: unknown
+source_bas: unknown.bas
+record_length: 128
+fields:
+- name: field_1
+  offset: 0
+  length: 8
+  type: STRING
+  description: Auto-detected field 1
+- name: field_2
+  offset: 8
+  length: 8
+  type: STRING
+  description: Auto-detected field 2
+- name: field_3
+  offset: 16
+  length: 8
+  type: STRING
+  description: Auto-detected field 3
+- name: field_4
+  offset: 24
+  length: 8
+  type: STRING
+  description: Auto-detected field 4
+- name: field_5
+  offset: 32
+  length: 8
+  type: STRING
+  description: Auto-detected field 5
+- name: field_6
+  offset: 40
+  length: 8
+  type: STRING
+  description: Auto-detected field 6
+- name: field_7
+  offset: 48
+  length: 8
+  type: STRING
+  description: Auto-detected field 7
+- name: field_8
+  offset: 56
+  length: 8
+  type: STRING
+  description: Auto-detected field 8
+- name: field_9
+  offset: 64
+  length: 8
+  type: STRING
+  description: Auto-detected field 9
+- name: field_10
+  offset: 72
+  length: 8
+  type: STRING
+  description: Auto-detected field 10
+- name: field_11
+  offset: 80
+  length: 8
+  type: STRING
+  description: Auto-detected field 11
+- name: field_12
+  offset: 88
+  length: 8
+  type: STRING
+  description: Auto-detected field 12
+- name: field_13
+  offset: 96
+  length: 8
+  type: STRING
+  description: Auto-detected field 13
+- name: field_14
+  offset: 104
+  length: 8
+  type: STRING
+  description: Auto-detected field 14
+- name: field_15
+  offset: 112
+  length: 8
+  type: STRING
+  description: Auto-detected field 15
+- name: field_16
+  offset: 120
+  length: 8
+  type: STRING
+  description: Auto-detected field 16

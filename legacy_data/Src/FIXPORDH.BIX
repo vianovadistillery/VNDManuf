@@ -1,0 +1,50 @@
+	'$INCLUDE: '\tpmanuf\src\pordhed.INC'
+	CLS
+	rec% = 1
+	GET #48, rec%, ordhed
+	DO WHILE NOT EOF(48)
+	LOCATE 10, 40
+	COLOR 15, 2
+	PRINT rec%; "..."; ordhed.hsup$
+	FOR i% = 1 TO 5
+	LOCATE 15 + i%, 45
+	PRINT ASC(MID$(ordhed.hsup$, i%, 1))
+	NEXT
+	IF ordhed.hsup$ = STRING$(5, CHR$(32)) THEN
+		'-Delete the HEADER file
+		
+		LSET ordhed.hord$ = MKI$(0)
+		LSET ordhed.hrrn$ = MKI$(0)
+		LSET ordhed.hfiller$ = SPACE$(2)
+		LSET ordhed.hdate$ = SPACE$(8)
+		LSET ordhed.hordq$ = MKS$(0)
+		LSET ordhed.hdollar$ = MKS$(0)
+		LSET ordhed.hinvq$ = MKS$(0)
+		LSET ordhed.hitems$ = MKI$(0)
+		LSET ordhed.horgq$ = MKS$(0)
+		LSET ordhed.htaxe$ = SPACE$(8)
+		LSET ordhed.hstatus$ = SPACE$(1)
+		LSET ordhed.hreford$ = SPACE$(15)
+		LSET ordhed.linvnum$ = SPACE$(12)
+		LSET ordhed.ldisc$ = MKI$(0)
+		LSET ordhed.hsup$ = SPACE$(5)
+		LSET ordhed.hnote1$ = SPACE$(99)
+		LSET ordhed.hnote2$ = SPACE$(99)
+		LSET ordhed.hinitials$ = SPACE$(3)
+		LSET ordhed.hdocket$ = SPACE$(10)
+		LSET ordhed.hdddate$ = SPACE$(8)
+		LSET ordhed.hinvdate$ = SPACE$(8)
+		LSET ordhed.hfiller$ = SPACE$(66)
+		PUT #48, rec%, ordhed
+		'hord% = 0
+	END IF
+
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #48, , ordhed: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END
+

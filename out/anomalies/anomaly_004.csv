@@ -1,0 +1,2 @@
+table,error,timestamp
+invoices,'tax_amount' is an invalid keyword argument for Invoice,2025-10-26T00:49:57.842586

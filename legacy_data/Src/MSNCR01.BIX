@@ -1,0 +1,320 @@
+DECLARE SUB browse73 (firstonscreen%)
+DECLARE SUB dodelete (rec%, auto$, updwn%)
+DECLARE SUB change (rec%, updwn%)
+DECLARE SUB dsply (rec%, updwn%)
+DECLARE SUB load.unpaid (cust$, startrec%, docnum$, VALUE!, updwn%)
+DECLARE SUB browse.idx (first.on.screen%, ch1%, ch2%)
+DECLARE SUB upd.who (ch.audit%, ch.sup%, upd%)
+'/////////////////////////////////////////////////////////////////////////////
+'>>> MSNcr01- Non Conformance form
+'/////////////////////////////////////////////////////////////////////////////
+	'$INCLUDE: '\tpmanuf\src\pgmhead.INC'
+	RESET
+	apgm$ = "MSMENU"
+	''$INCLUDE: '\tpmanuf\src\pgmerr.INC'
+
+	typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\cus.INC'
+	'$INCLUDE: '\tpmanuf\src\cusX.INC'
+	'$INCLUDE: '\tpmanuf\src\supX.INC'
+	'$INCLUDE: '\tpmanuf\src\msmisc.INC'
+	'$INCLUDE: '\tpmanuf\src\noncon.INC'
+	DIM SHARED maxcus%
+
+	GET #36, 1, msmisc
+	maxcus% = CVI(msmisc.max7$)
+	acls% = -1
+start:
+	IF acls% = -1 THEN
+	CALL setup("NON CONFORMANCE FORMS")
+	btm$ = " F1-Exit  F6-Browse                                         F10-Change"
+	COLOR 0, 3: LOCATE 25, 1: PRINT btm$; : COLOR 2, 0
+	END IF
+	acls% = 0
+
+	IF NOT pass% THEN
+		COLOR 2, 0
+		LOCATE 3, 20: PRINT "Enter incident number...> "
+		LOCATE 3, 45: in$ = ""
+		CALL inpnew(in$, 4!, updwn%, "13,59,64,66-68" + ALT$): GOSUB ALT
+		END IF
+		pass% = 0
+	SELECT CASE updwn%
+	CASE 59: CLOSE : CALL exitpgm(apgm$): CHAIN apgm$
+	CASE 64:
+			CALL browse73(s%)
+			in$ = STR$(s%): updwn% = 13: pass% = -1: acls% = -1
+	CASE 68: CALL change(rec%, updwn%)
+	CASE 13
+			IF LEN(in$) > 0 THEN
+				rec% = VAL(in$)
+			END IF
+			alast% = LOF(73) / LEN(complnt)
+			IF LEN(in$) = 0 AND rec% < alast% THEN rec% = rec% + 1
+
+	CASE ELSE
+	END SELECT
+
+	CALL dsply(rec%, updwn%)
+	GOTO start
+
+SUB browse.idx (firstonscreen%, ch1%, ch2%)
+'$INCLUDE: '\tpmanuf\src\browse01.bi'
+END SUB
+
+SUB browse73 (firstonscreen%) STATIC
+	max% = LOF(73) / LEN(complnt)
+	maxbpage% = 19
+	bbtm$ = "F1-Return."
+'//////////////////////////////////////////////////////
+'>>>>> B R O W S E   T H E   F I L E
+'//////////////////////////////////////////////////////
+	CALL setup("BROWSE")
+	COLOR 0, 3: LOCATE 25, 1: PRINT bbtm$; : COLOR 2, 0
+	skip% = -1
+tag73:
+	IF NOT skip% THEN
+		LOCATE 2, 21: COLOR 7, 0: PRINT "ÍÍµ"; : LOCATE , 49: PRINT "ÆÍÍ": COLOR 2, 0
+		COLOR 2, 0
+		LOCATE 2, 24: PRINT "From number........>";
+		LOCATE 2, 44
+		CALL inpnew(arrival$, 205!, updwn%, "13,59-60,63,72-73,80-81")
+		arrival$ = UCASE$(arrival$)
+		END IF
+	skip% = 0
+	SELECT CASE updwn%
+	CASE 59: GOTO bret1
+	CASE 13: rec73% = VAL(arrival$)
+	CASE 72: rec73% = firstonscreen% - 1
+	CASE 80: rec73% = firstonscreen% + 1
+	CASE 81: rec73% = firstonscreen% + maxbpage% 'Next Page
+	CASE 73: rec73% = firstonscreen% - maxbpage% 'Prev page
+	CASE ELSE
+	END SELECT
+	GOSUB bdsply73
+GOTO tag73
+'/////////////////////////////////////////////////////////////////////////////
+'>>>      L I S T   A   P A G E
+'/////////////////////////////////////////////////////////////////////////////
+bdsply73:
+	IF rec73% < 1 OR rec73% > max% THEN rec73% = 1
+	COLOR 6, 0: LOCATE 3, 2
+	PRINT "dffgdgdfgdfgdsfgdgsd"
+	COLOR 2, 0
+
+	GET #73, rec73%, complnt
+	lin% = 0
+	LOCATE 4, 2
+	DO WHILE NOT EOF(73)
+
+		ok% = -1
+		IF ok% THEN
+			IF firstonscreen% = 0 THEN firstonscreen% = rec73%
+			LOCATE , 2
+			PRINT USING "### & & "; complnt.no%; complnt.Name$; complnt.opened$
+			lin% = lin% + 1
+			END IF
+
+	GET #73, , complnt: rec73% = rec73% + 1
+	LOOP
+
+	'Clear out to the end of screen
+	FOR i% = lin% + 1 TO maxbpage%
+		LOCATE , 2: PRINT SPACE$(78)
+		NEXT
+RETURN
+bret1:
+
+END SUB
+
+SUB change (rec%, updwn%) STATIC
+	alast% = LOF(73) / LEN(complnt)
+	IF rec% < 1 THEN GOTO x.change
+	IF rec% > alast% THEN GOTO x.change
+	GOTO cf1
+cf0:
+	LOCATE 5, 39
+        CALL inpnew(keyin$, 105!, updwn%, "13,59-60,64")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf0
+	IF updwn% = 64 THEN
+			CALL browse.idx(s%, 23, 43)
+			in$ = STR$(s%): updwn% = 13
+			IF s% < 1 OR s% > maxcus% THEN s% = 1
+			GET #43, s%, cus
+			keyin$ = cus.search$ + cus.stype$
+			CALL setup("COMPLAINT FORMS")
+			btm$ = " F1-Exit  F6-Browse                                         F10-Change"
+			COLOR 0, 3: LOCATE 25, 1: PRINT btm$; : COLOR 2, 0
+			END IF
+
+	chi% = 23
+	CALL searchindex(keyin$, chi%, found%)
+	IF found% THEN
+		rec43% = CVI(supx.wrrn$)
+		IF rec43% >= 1 AND rec43% <= maxcus% THEN
+			GET #43, rec43%, cus
+			complnt.Name$ = cus.sname$
+			complnt.Addr1$ = cus.saddr$
+			complnt.Addr2$ = SPACE$(99)
+			complnt.sub$ = cus.suburb$
+			complnt.pcode$ = cus.spcode$
+			PUT #73, rec%, complnt
+			CALL dsply(rec%, updwn%)
+			END IF
+		END IF
+
+cf1:
+	LOCATE 6, 39
+        CALL inpnew(complnt.Name$, 130!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf0
+cf2:
+	LOCATE 7, 39
+        CALL inpnew(complnt.Addr1$, 125!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf1
+cf3:
+	LOCATE 8, 39
+        CALL inpnew(complnt.Addr2$, 125!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf2
+cf4:
+	LOCATE 9, 39
+        CALL inpnew(complnt.sub$, 120!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf3
+cf5:
+	LOCATE 9, 60
+        CALL inpnew(complnt.pcode$, 104!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf4
+cf6:
+	LOCATE 11, 39
+        CALL inpnew(complnt.opened$, 100!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf5
+cf7:
+	LOCATE 12, 39
+        CALL inpnew(complnt.closed$, 100!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf6
+cf8:
+	LOCATE 14, 2
+        CALL inpnew(complnt.atext1$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf7
+cf9:
+	LOCATE 15, 2
+        CALL inpnew(complnt.atext2$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf8
+cf10:
+	LOCATE 16, 2
+        CALL inpnew(complnt.atext3$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf9
+cf11:
+	LOCATE 17, 2
+        CALL inpnew(complnt.atext4$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf10
+cf12:
+	LOCATE 19, 2
+        CALL inpnew(complnt.btext1$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf11
+cf13:
+	LOCATE 20, 2
+        CALL inpnew(complnt.btext2$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf12
+cf14:
+	LOCATE 21, 2
+        CALL inpnew(complnt.btext3$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf13
+cf15:
+	LOCATE 22, 2
+        CALL inpnew(complnt.btext4$, 178!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.change
+	IF updwn% = 60 THEN GOTO cf14
+
+
+x.change:
+	IF rec% >= 1 AND rec% <= alast% THEN
+	PUT #73, rec%, complnt
+	END IF
+
+END SUB
+
+SUB dodelete (rec%, auto$, updwn%) STATIC
+   IF auto$ <> "Y" THEN
+        CALL inpnew(a$, 101!, updwn%, "59,68")
+	GOTO x.delete
+	END IF
+
+   complnt.Name$ = SPACE$(99)
+   complnt.Addr1$ = SPACE$(99)
+   complnt.Addr2$ = SPACE$(99)
+   complnt.sub$ = SPACE$(99)
+   complnt.pcode$ = SPACE$(99)
+   complnt.opened$ = SPACE$(99)
+   complnt.closed$ = SPACE$(99)
+   complnt.atext1$ = SPACE$(99)
+   complnt.atext2$ = SPACE$(99)
+   complnt.atext3$ = SPACE$(99)
+   complnt.atext4$ = SPACE$(99)
+   complnt.btext1$ = SPACE$(99)
+   complnt.btext2$ = SPACE$(99)
+   complnt.btext3$ = SPACE$(99)
+   complnt.btext4$ = SPACE$(99)
+   PUT #73, rec%, complnt
+
+x.delete:
+END SUB
+
+SUB dsply (rec%, updwn%) STATIC
+	alast% = LOF(73) / LEN(complnt)
+	IF rec% < 1 THEN rec% = 1
+	IF rec% > alast% + 1 THEN rec% = adlast%
+	IF rec% = alast% + 1 THEN
+		auto$ = "Y"
+		CALL dodelete(rec%, auto$, updwn%)
+		complnt.no% = rec%
+		complnt.Name$ = "..."
+		PUT #73, rec%, complnt
+
+		END IF
+	GET #73, rec%, complnt
+
+	LOCATE 4, 20: PRINT USING "Incident number...:####"; complnt.no%
+	LOCATE 5, 20: PRINT USING "Customer search...>&"; "     "
+	LOCATE 6, 20: PRINT USING "Name..............>&"; complnt.Name$
+	LOCATE 7, 20: PRINT USING "Address...........>&"; complnt.Addr1$
+	LOCATE 8, 20: PRINT USING "       ...........>&"; complnt.Addr2$
+	LOCATE 9, 20: PRINT USING "Suburb/Pcode......>& &"; complnt.sub$; complnt.pcode$
+	LOCATE 11, 20: PRINT USING "Opened............>&"; complnt.opened$
+	LOCATE 12, 20: PRINT USING "Closed............>&"; complnt.closed$
+	COLOR 6, 0
+	LOCATE 13, 2: PRINT USING "Cause..............&"; STRING$(59, ".")
+	COLOR 2, 0
+	LOCATE 14, 2: PRINT USING "&"; complnt.atext1$
+	LOCATE 15, 2: PRINT USING "&"; complnt.atext2$
+	LOCATE 16, 2: PRINT USING "&"; complnt.atext3$
+	LOCATE 17, 2: PRINT USING "&"; complnt.atext4$
+	COLOR 6, 0
+	LOCATE 18, 2: PRINT USING "Action Taken.......&"; STRING$(59, ".")
+	COLOR 2, 0
+	LOCATE 19, 2: PRINT USING "&"; complnt.btext1$
+	LOCATE 20, 2: PRINT USING "&"; complnt.btext2$
+	LOCATE 21, 2: PRINT USING "&"; complnt.btext3$
+	LOCATE 22, 2: PRINT USING "&"; complnt.btext4$
+
+
+END SUB
+
+SUB searchindex (keyin$, chi%, found%) STATIC
+'$INCLUDE: '\tpmanuf\src\searchx.bi'
+END SUB
+

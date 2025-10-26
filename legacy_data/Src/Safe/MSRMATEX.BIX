@@ -1,0 +1,26 @@
+'////////////////////////////////////////////////////////////////////////
+'>> MSRMAT01
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+	typefields% = -1
+
+	'$INCLUDE: '\tpmanuf\src\msrmat.INC'
+
+
+
+last% = LOF(38) / LEN(msrmat)
+rec% = 1
+OPEN "msrmat.txt" FOR OUTPUT AS #99
+GET #38, rec%, msrmat
+DO WHILE rec% < last% + 1
+WRITE #99, msrmat.no%, msrmat.desc1$, msrmat.desc2$
+LOCATE 10, 40: PRINT "Record..."; msrmat.no%
+rec% = rec% + 1
+
+GET #38, rec%, msrmat
+LOOP
+
+END
+
+

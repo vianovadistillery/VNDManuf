@@ -1,0 +1,1303 @@
+type,field,qbasic_type,source_file
+RcdFmtacmgn,mcode,STRING * 1,ACMGN.inc
+RcdFmtacmgn,margin,STRING * 4,ACMGN.inc
+RcdFmtacmgn,mcode,STRING * 1,ACMGN01.inc
+RcdFmtacmgn,margin,STRING * 4,ACMGN01.inc
+RcdFmtacstk,no,INTEGER,ACSTK.INC
+RcdFmtacstk,search,STRING * 10,ACSTK.INC
+RcdFmtacstk,ean13,CURRENCY,ACSTK.INC
+RcdFmtacstk,desc1,STRING * 25,ACSTK.INC
+RcdFmtacstk,desc2,STRING * 10,ACSTK.INC
+RcdFmtacstk,suplr,STRING * 5,ACSTK.INC
+RcdFmtacstk,size,STRING * 3,ACSTK.INC
+RcdFmtacstk,unit,STRING * 2,ACSTK.INC
+RcdFmtacstk,pack,INTEGER,ACSTK.INC
+RcdFmtacstk,dgflag,STRING * 1,ACSTK.INC
+RcdFmtacstk,form,STRING * 4,ACSTK.INC
+RcdFmtacstk,pkge,INTEGER,ACSTK.INC
+RcdFmtacstk,label,INTEGER,ACSTK.INC
+RcdFmtacstk,manu,INTEGER,ACSTK.INC
+RcdFmtacstk,active,STRING * 1,ACSTK.INC
+RcdFmtacstk,taxinc,STRING * 1,ACSTK.INC
+RcdFmtacstk,salestaxcde,STRING * 1,ACSTK.INC
+RcdFmtacstk,purcost,SINGLE,ACSTK.INC
+RcdFmtacstk,purtax,SINGLE,ACSTK.INC
+RcdFmtacstk,wholesalecost,SINGLE,ACSTK.INC
+RcdFmtacstk,disccdeone,STRING * 1,ACSTK.INC
+RcdFmtacstk,disccdetwo,STRING * 1,ACSTK.INC
+RcdFmtacstk,wholesalecde,STRING * 1,ACSTK.INC
+RcdFmtacstk,retailcde,STRING * 1,ACSTK.INC
+RcdFmtacstk,countercde,STRING * 1,ACSTK.INC
+RcdFmtacstk,tradecde,STRING * 1,ACSTK.INC
+RcdFmtacstk,contractcde,STRING * 1,ACSTK.INC
+RcdFmtacstk,industrialcde,STRING * 1,ACSTK.INC
+RcdFmtacstk,distributorcde,STRING * 1,ACSTK.INC
+RcdFmtacstk,retail,SINGLE,ACSTK.INC
+RcdFmtacstk,counter,SINGLE,ACSTK.INC
+RcdFmtacstk,trade,SINGLE,ACSTK.INC
+RcdFmtacstk,contract,SINGLE,ACSTK.INC
+RcdFmtacstk,industrial,SINGLE,ACSTK.INC
+RcdFmtacstk,distributor,SINGLE,ACSTK.INC
+RcdFmtacstk,suplr4stdcost,STRING * 5,ACSTK.INC
+RcdFmtacstk,search4stdcost,STRING * 10,ACSTK.INC
+RcdFmtacstk,cogs,SINGLE,ACSTK.INC
+RcdFmtacstk,gpc,SINGLE,ACSTK.INC
+RcdFmtacstk,rmc,SINGLE,ACSTK.INC
+RcdFmtacstk,gpr,SINGLE,ACSTK.INC
+RcdFmtacstk,soh,INTEGER,ACSTK.INC
+RcdFmtacstk,sohv,SINGLE,ACSTK.INC
+RcdFmtacstk,sip,INTEGER,ACSTK.INC
+RcdFmtacstk,soo,INTEGER,ACSTK.INC
+RcdFmtacstk,sold,INTEGER,ACSTK.INC
+RcdFmtacstk,date,STRING * 8,ACSTK.INC
+RcdFmtacstk,bulk,SINGLE,ACSTK.INC
+RcdFmtacstk,lid,INTEGER,ACSTK.INC
+RcdFmtacstk,pbox,INTEGER,ACSTK.INC
+RcdFmtacstk,boxlbl,INTEGER,ACSTK.INC
+RcdFmtacstk,filler,STRING * 69,ACSTK.INC
+RcdFmtacstk,no,INTEGER,ACSTKX.INC
+RcdFmtacstk,search,STRING * 10,ACSTKX.INC
+RcdFmtacstk,desc1,STRING * 25,ACSTKX.INC
+RcdFmtacstk,desc2,STRING * 10,ACSTKX.INC
+RcdFmtacstk,suplr,STRING * 5,ACSTKX.INC
+RcdFmtacstk,size,STRING * 3,ACSTKX.INC
+RcdFmtacstk,unit,STRING * 2,ACSTKX.INC
+RcdFmtacstk,pack,INTEGER,ACSTKX.INC
+RcdFmtacstk,dgflag,STRING * 1,ACSTKX.INC
+RcdFmtacstk,taxinc,STRING * 1,ACSTKX.INC
+RcdFmtacstk,salestaxcde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,purcost,SINGLE,ACSTKX.INC
+RcdFmtacstk,purtax,SINGLE,ACSTKX.INC
+RcdFmtacstk,disccdeone,STRING * 1,ACSTKX.INC
+RcdFmtacstk,disccdetwo,STRING * 1,ACSTKX.INC
+RcdFmtacstk,wholesalecost,SINGLE,ACSTKX.INC
+RcdFmtacstk,filler4,STRING * 4,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,retailcde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,countercde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,tradecde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,contractcde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,industrialcde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,distributorcde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,retail,SINGLE,ACSTKX.INC
+RcdFmtacstk,counter,SINGLE,ACSTKX.INC
+RcdFmtacstk,trade,SINGLE,ACSTKX.INC
+RcdFmtacstk,contract,SINGLE,ACSTKX.INC
+RcdFmtacstk,industrial,SINGLE,ACSTKX.INC
+RcdFmtacstk,distributor,SINGLE,ACSTKX.INC
+RcdFmtacstk,suplr4stdcost,STRING * 5,ACSTKX.INC
+RcdFmtacstk,search4stdcost,STRING * 10,ACSTKX.INC
+RcdFmtacstk,filler9,STRING * 7,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,tax,SINGLE,ACSTKX.INC
+RcdFmtacstk,soo,INTEGER,ACSTKX.INC
+RcdFmtacstk,soh,INTEGER,ACSTKX.INC
+RcdFmtacstk,active,STRING * 1,ACSTKX.INC
+RcdFmtacstk,sold,INTEGER,ACSTKX.INC
+RcdFmtacstk,date,STRING * 8,ACSTKX.INC
+RcdFmtacstk,wholesalecde,STRING * 1,ACSTKX.INC
+RcdFmtacstk,ean13,CURRENCY,ACSTKX.INC
+RcdFmtacstk,filler,STRING * 4,ACSTKX.INC
+RcdFmtacstkx,no,INTEGER,ACSTKX.INC
+RcdFmtacstkx,search,STRING * 10,ACSTKX.INC
+RcdFmtacstkx,ean13,CURRENCY,ACSTKX.INC
+RcdFmtacstkx,desc1,STRING * 25,ACSTKX.INC
+RcdFmtacstkx,desc2,STRING * 10,ACSTKX.INC
+RcdFmtacstkx,suplr,STRING * 5,ACSTKX.INC
+RcdFmtacstkx,size,STRING * 3,ACSTKX.INC
+RcdFmtacstkx,unit,STRING * 2,ACSTKX.INC
+RcdFmtacstkx,pack,INTEGER,ACSTKX.INC
+RcdFmtacstkx,dgflag,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,form,STRING * 4,ACSTKX.INC
+RcdFmtacstkx,pkge,INTEGER,ACSTKX.INC
+RcdFmtacstkx,label,INTEGER,ACSTKX.INC
+RcdFmtacstkx,manu,INTEGER,ACSTKX.INC
+RcdFmtacstkx,active,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,taxinc,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,salestaxcde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,purcost,SINGLE,ACSTKX.INC
+RcdFmtacstkx,purtax,SINGLE,ACSTKX.INC
+RcdFmtacstkx,wholesalecost,SINGLE,ACSTKX.INC
+RcdFmtacstkx,disccdeone,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,disccdetwo,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,wholesalecde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,retailcde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,countercde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,tradecde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,contractcde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,industrialcde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,distributorcde,STRING * 1,ACSTKX.INC
+RcdFmtacstkx,retail,SINGLE,ACSTKX.INC
+RcdFmtacstkx,counter,SINGLE,ACSTKX.INC
+RcdFmtacstkx,trade,SINGLE,ACSTKX.INC
+RcdFmtacstkx,contract,SINGLE,ACSTKX.INC
+RcdFmtacstkx,industrial,SINGLE,ACSTKX.INC
+RcdFmtacstkx,distributor,SINGLE,ACSTKX.INC
+RcdFmtacstkx,suplr4stdcost,STRING * 5,ACSTKX.INC
+RcdFmtacstkx,search4stdcost,STRING * 10,ACSTKX.INC
+RcdFmtacstkx,cogs,SINGLE,ACSTKX.INC
+RcdFmtacstkx,gpc,SINGLE,ACSTKX.INC
+RcdFmtacstkx,rmc,SINGLE,ACSTKX.INC
+RcdFmtacstkx,gpr,SINGLE,ACSTKX.INC
+RcdFmtacstkx,soh,INTEGER,ACSTKX.INC
+RcdFmtacstkx,sohv,SINGLE,ACSTKX.INC
+RcdFmtacstkx,sip,INTEGER,ACSTKX.INC
+RcdFmtacstkx,soo,INTEGER,ACSTKX.INC
+RcdFmtacstkx,sold,INTEGER,ACSTKX.INC
+RcdFmtacstkx,date,STRING * 8,ACSTKX.INC
+RcdFmtacstkx,bulk,SINGLE,ACSTKX.INC
+RcdFmtacstkx,filler,STRING * 75,ACSTKX.INC
+RcdFmttypes,dftype,STRING * 1,ACTYP01.inc
+RcdFmttypes,dfdesc,STRING * 25,ACTYP01.inc
+RcdFmttypes,x1,STRING * 1,ACTYP01.inc
+RcdFmttypes,x2,STRING * 1,ACTYP01.inc
+RcdFmttypes,x3,STRING * 1,ACTYP01.inc
+RcdFmttypes,x4,STRING * 1,ACTYP01.inc
+RcdFmttypes,x5,STRING * 1,ACTYP01.inc
+RcdFmttypes,x6,STRING * 1,ACTYP01.inc
+RcdFmttypes,x7,STRING * 1,ACTYP01.inc
+RcdFmttypes,x8,STRING * 1,ACTYP01.inc
+RcdFmttypes,x9,STRING * 1,ACTYP01.inc
+RcdFmttypes,x10,STRING * 1,ACTYP01.inc
+RcdFmttypes,x11,STRING * 1,ACTYP01.inc
+RcdFmttypes,x12,STRING * 1,ACTYP01.inc
+RcdFmttypes,x13,STRING * 1,ACTYP01.inc
+RcdFmttypes,x14,STRING * 1,ACTYP01.inc
+RcdFmttypes,x15,STRING * 1,ACTYP01.inc
+RcdFmttypes,x16,STRING * 1,ACTYP01.inc
+RcdFmttypes,x17,STRING * 1,ACTYP01.inc
+RcdFmttypes,x18,STRING * 1,ACTYP01.inc
+RcdFmttypes,x19,STRING * 1,ACTYP01.inc
+RcdFmttypes,x20,STRING * 1,ACTYP01.inc
+RcdFmtasarcit,adrec,STRING * 2,ASARCIT.inc
+RcdFmtasarcit,addate,STRING * 8,ASARCIT.inc
+RcdFmtasarcit,adtype,STRING * 2,ASARCIT.inc
+RcdFmtasarcit,adsname,STRING * 30,ASARCIT.inc
+RcdFmtasarcit,adcust,STRING * 5,ASARCIT.inc
+RcdFmtasarcit,addocnum,STRING * 8,ASARCIT.inc
+RcdFmtasarcit,adfiller,STRING * 8,ASARCIT.inc
+RcdFmtasarcit,advalue,STRING * 4,ASARCIT.inc
+RcdFmtasarcit,adglacc,STRING * 4,ASARCIT.inc
+RcdFmtasarcit,adtext,STRING * 17,ASARCIT.inc
+RcdFmtAudit,adrec,INTEGER,ASAUDIT.INC
+RcdFmtAudit,addate,STRING * 8,ASAUDIT.INC
+RcdFmtAudit,adtype,STRING * 2,ASAUDIT.INC
+RcdFmtAudit,adsname,STRING * 30,ASAUDIT.INC
+RcdFmtAudit,adcust,STRING * 5,ASAUDIT.INC
+RcdFmtAudit,addocnum,STRING * 8,ASAUDIT.INC
+RcdFmtAudit,advalue,CURRENCY,ASAUDIT.INC
+RcdFmtAudit,adglacc,SINGLE,ASAUDIT.INC
+RcdFmtAudit,adtext,STRING * 16,ASAUDIT.INC
+RcdFmtAudit,adpaid,STRING * 1,ASAUDIT.INC
+RcdFmtAudit,adtax,SINGLE,ASAUDIT.INC
+RcdFmtAudit,adactive,STRING * 1,ASAUDIT.INC
+RcdFmtAudit,adfiller,STRING * 3,ASAUDIT.INC
+RcdFmtclobal,rec,INTEGER,ASCLOBAL.inc
+RcdFmtclobal,mth,STRING * 4,ASCLOBAL.inc
+RcdFmtclobal,cust,STRING * 5,ASCLOBAL.inc
+RcdFmtclobal,ocur,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,o30,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,o60,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,o90,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,cur,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,c30,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,c60,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,c90,SINGLE,ASCLOBAL.inc
+RcdFmtclobal,filler,STRING * 5,ASCLOBAL.inc
+RcdFmtcurbal,rec,INTEGER,ASCURBAL.inc
+RcdFmtcurbal,mth,STRING * 4,ASCURBAL.inc
+RcdFmtcurbal,cust,STRING * 5,ASCURBAL.inc
+RcdFmtcurbal,ocur,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,o30,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,o60,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,o90,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,cur,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,c30,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,c60,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,c90,SINGLE,ASCURBAL.inc
+RcdFmtcurbal,filler,STRING * 5,ASCURBAL.inc
+RcdFmtopnbal,rec,INTEGER,ASOPNBAL.inc
+RcdFmtopnbal,mth,STRING * 4,ASOPNBAL.inc
+RcdFmtopnbal,cust,STRING * 5,ASOPNBAL.inc
+RcdFmtopnbal,ocur,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,o30,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,o60,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,o90,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,cur,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,c30,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,c60,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,c90,SINGLE,ASOPNBAL.inc
+RcdFmtopnbal,filler,STRING * 5,ASOPNBAL.inc
+RcdFmtassets,no,INTEGER,ASSETS.inc
+RcdFmtassets,key,STRING * 4,ASSETS.inc
+RcdFmtassets,name,STRING * 35,ASSETS.inc
+RcdFmtassets,desc,STRING * 35,ASSETS.inc
+RcdFmtassets,suplr,STRING * 35,ASSETS.inc
+RcdFmtassets,purdate,STRING * 8,ASSETS.inc
+RcdFmtassets,purcost,SINGLE,ASSETS.inc
+RcdFmtassets,finance,STRING * 35,ASSETS.inc
+RcdFmtassets,depreciation,SINGLE,ASSETS.inc
+RcdFmtassets,calibreq,STRING * 1,ASSETS.inc
+RcdFmtassets,disposaldate,STRING * 8,ASSETS.inc
+RcdFmtassets,date,STRING * 8,ASSETS.inc
+RcdFmtcashsal,cno,STRING * 2,CASHSAL.inc
+RcdFmtcashsal,cupdrec,STRING * 2,CASHSAL.inc
+RcdFmtcashsal,csize,STRING * 3,CASHSAL.inc
+RcdFmtcashsal,csearch,STRING * 10,CASHSAL.inc
+RcdFmtcashsal,cqtysold,STRING * 2,CASHSAL.inc
+RcdFmtcolbase,bscode,STRING * 1,COLBASE.inc
+RcdFmtcolbase,bdesc,STRING * 12,COLBASE.inc
+RcdFmtcolbase,bperc,STRING * 2,COLBASE.inc
+RcdFmtcolcard,ccdesc,STRING * 22,COLCARD.inc
+RcdFmtcolcard,sno,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard,sname,STRING * 30,COLCHTX1.inc
+RcdFmtcolcard,saddr,STRING * 20,COLCHTX1.inc
+RcdFmtcolcard,spcode,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard,sacode,STRING * 3,COLCHTX1.inc
+RcdFmtcolcard,sphone,STRING * 7,COLCHTX1.inc
+RcdFmtcolcard,sdate,STRING * 8,COLCHTX1.inc
+RcdFmtcolcard,scont,STRING * 20,COLCHTX1.inc
+RcdFmtcolcard,suburb,STRING * 20,COLCHTX1.inc
+RcdFmtcolcard,spbox,STRING * 6,COLCHTX1.inc
+RcdFmtcolcard,sdist,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard,sret,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard2,places,STRING * 122,COLCHTX1.inc
+RcdFmtcolcard2,spaddr,STRING * 20,COLCHTX1.inc
+RcdFmtcolcard2,spsub,STRING * 20,COLCHTX1.inc
+RcdFmtcolcard2,scur,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard2,s30,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard2,s60,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard2,s90,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard2,stype,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard2,sdays,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard2,sterms,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard2,search,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,places,STRING * 189,COLCHTX1.inc
+RcdFmtcolcard3,daysmax,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,sacode1,STRING * 3,COLCHTX1.inc
+RcdFmtcolcard3,sphone1,STRING * 7,COLCHTX1.inc
+RcdFmtcolcard3,opn,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,opn30,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,opn60,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,opn90,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,agent,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,account,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,finvn,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,fpayn,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,climit,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,taxe,STRING * 10,COLCHTX1.inc
+RcdFmtcolcard3,fcrnn,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,spname,STRING * 30,COLCHTX1.inc
+RcdFmtcolcard3,scont1,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard3,scont2,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard3,sunpoz,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard3,smlpoz,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard3,filler,STRING * 12,COLCHTX1.inc
+RcdFmtcolcard4,wcde,STRING * 4,COLCHTX1.inc
+RcdFmtcolcard4,wtyp,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard4,wrrn,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard5,bscode,STRING * 1,COLCHTX1.inc
+RcdFmtcolcard5,bdesc,STRING * 12,COLCHTX1.inc
+RcdFmtcolcard5,bperc,STRING * 2,COLCHTX1.inc
+RcdFmtcolcard6,ccdesc,STRING * 22,COLCHTX1.inc
+RcdFmtcompany,cono,STRING * 2,COMPANY.inc
+RcdFmtcompany,codesc,STRING * 40,COMPANY.inc
+RcdFmtcomplnt,no,INTEGER,COMPLNT.inc
+RcdFmtcomplnt,Name,STRING * 30,COMPLNT.inc
+RcdFmtcomplnt,Addr,STRING * 25,COMPLNT.inc
+RcdFmtcomplnt,sub,STRING * 20,COMPLNT.inc
+RcdFmtcomplnt,pcode,STRING * 4,COMPLNT.inc
+RcdFmtcomplnt,phone,STRING * 12,COMPLNT.inc
+RcdFmtcomplnt,fax,STRING * 12,COMPLNT.inc
+RcdFmtcomplnt,cName,STRING * 30,COMPLNT.inc
+RcdFmtcomplnt,cAddr,STRING * 25,COMPLNT.inc
+RcdFmtcomplnt,csub,STRING * 20,COMPLNT.inc
+RcdFmtcomplnt,cpcode,STRING * 4,COMPLNT.inc
+RcdFmtcomplnt,cphone,STRING * 12,COMPLNT.inc
+RcdFmtcomplnt,cfax,STRING * 12,COMPLNT.inc
+RcdFmtcomplnt,opened,STRING * 8,COMPLNT.inc
+RcdFmtcomplnt,closed,STRING * 8,COMPLNT.inc
+RcdFmtcomplnt,type,STRING * 10,COMPLNT.inc
+RcdFmtcomplnt,product,STRING * 10,COMPLNT.inc
+RcdFmtcomplnt,colour,STRING * 10,COMPLNT.inc
+RcdFmtcomplnt,batch,STRING * 10,COMPLNT.inc
+RcdFmtcomplnt,report,STRING * 10,COMPLNT.inc
+RcdFmtcomplnt,text(1 TO 12),STRING * 78,COMPLNT.inc
+RcdFmtcomplnt,filler,STRING * 150,COMPLNT.inc
+RcdFmtcsorder,no,STRING * 5,CSORDER.inc
+RcdFmtcsorder,bar,STRING * 1,CSORDER.inc
+RcdFmtcsorder,text,STRING * 80,CSORDER.inc
+RcdFmtcsorder,cr,STRING * 1,CSORDER.inc
+RcdFmtCUSX,wcde,STRING * 5,CUSX.inc
+RcdFmtCUSX,wrrn,STRING * 2,CUSX.inc
+RcdFmtdevelop,no,INTEGER,DEVELOP.inc
+RcdFmtdevelop,Name,STRING * 30,DEVELOP.inc
+RcdFmtdevelop,Addr,STRING * 25,DEVELOP.inc
+RcdFmtdevelop,sub,STRING * 20,DEVELOP.inc
+RcdFmtdevelop,pcode,STRING * 4,DEVELOP.inc
+RcdFmtdevelop,phone,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,fax,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,opened,STRING * 8,DEVELOP.inc
+RcdFmtdevelop,closed,STRING * 8,DEVELOP.inc
+RcdFmtdevelop,type,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,product,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,colour,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,batch,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,report,STRING * 10,DEVELOP.inc
+RcdFmtdevelop,text(1 TO 14),STRING * 78,DEVELOP.inc
+RcdFmtExposure,no,INTEGER,EXPOSURE.inc
+RcdFmtExposure,rack,STRING * 1,EXPOSURE.inc
+RcdFmtExposure,row,STRING * 1,EXPOSURE.inc
+RcdFmtExposure,col,STRING * 1,EXPOSURE.inc
+RcdFmtExposure,desc1,STRING * 25,EXPOSURE.inc
+RcdFmtExposure,desc2,STRING * 10,EXPOSURE.inc
+RcdFmtExposure,Supplier,STRING * 5,EXPOSURE.inc
+RcdFmtExposure,tnta,STRING * 4,EXPOSURE.inc
+RcdFmtExposure,exposed,STRING * 8 'Date,EXPOSURE.inc
+RcdFmtExposure,year(1 TO 7),STRING * 2,EXPOSURE.inc
+RcdFmtExposure,"test(1 TO 7, 1 TO 10)",SINGLE,EXPOSURE.inc
+RcdFmtExposure,Date,STRING * 8,EXPOSURE.inc
+RcdFmtExposure,filler,STRING * 665,EXPOSURE.inc
+RcdFmtfmhisth1,form,INTEGER,FMHIST.inc
+RcdFmtfmhisth1,cost,STRING * 1,FMHIST.inc
+RcdFmtfmhisth1,rev,INTEGER,FMHIST.inc
+RcdFmtfmhisth1,seq,INTEGER,FMHIST.inc
+RcdFmtfmhisth1,rel,INTEGER,FMHIST.inc
+RcdFmtfmhisth1,desc,STRING * 25,FMHIST.inc
+RcdFmtfmhisth1,type,STRING * 1,FMHIST.inc
+RcdFmtfmhisth1,class,INTEGER,FMHIST.inc
+RcdFmtfmhisth1,yld,SINGLE,FMHIST.inc
+RcdFmtfmhisth1,visl,SINGLE,FMHIST.inc
+RcdFmtfmhisth1,vish,SINGLE,FMHIST.inc
+RcdFmtfmhisth1,hdate,STRING * 8,FMHIST.inc
+RcdFmtfmhisth2,form,INTEGER,FMHIST.inc
+RcdFmtfmhisth2,cost,STRING * 1,FMHIST.inc
+RcdFmtfmhisth2,rev,INTEGER,FMHIST.inc
+RcdFmtfmhisth2,seq,INTEGER,FMHIST.inc
+RcdFmtfmhisth3,form,INTEGER,FMHIST.inc
+RcdFmtfmhisth3,cost,STRING * 1,FMHIST.inc
+RcdFmtfmhisth3,rev,INTEGER,FMHIST.inc
+RcdFmtfmhisth3,seq,INTEGER,FMHIST.inc
+RcdFmtfmhisth3,text,STRING * 55,FMHIST.inc
+RcdFmtfmhistd1,form,INTEGER,FMHIST.inc
+RcdFmtfmhistd1,cost,STRING * 1,FMHIST.inc
+RcdFmtfmhistd1,rev,INTEGER,FMHIST.inc
+RcdFmtfmhistd1,seq,INTEGER,FMHIST.inc
+RcdFmtfmhistd1,desc,STRING * 25,FMHIST.inc
+RcdFmtfmhistd1,qty,SINGLE,FMHIST.inc
+RcdFmtfmhistd1,unit,STRING * 2,FMHIST.inc
+RcdFmtfmhistd1,cmtqty,INTEGER,FMHIST.inc
+RcdFmtfmhistd1,cmt,STRING * 22,FMHIST.inc
+RcdFmtorddet,dord,INTEGER,IGADET.INC
+RcdFmtorddet,dseq,INTEGER,IGADET.INC
+RcdFmtorddet,drrn,INTEGER,IGADET.INC
+RcdFmtorddet,ditem,STRING * 2,IGADET.INC
+RcdFmtorddet,dprice,STRING * 4,IGADET.INC
+RcdFmtorddet,dordq,STRING * 2,IGADET.INC
+RcdFmtorddet,dinvq,STRING * 2,IGADET.INC
+RcdFmtorddet,dtax,STRING * 4,IGADET.INC
+RcdFmtorddet,dlinvq,STRING * 2,IGADET.INC
+RcdFmtorddet,dBo,STRING * 1 ',IGADET.INC
+RcdFmtorddet,dcogs,STRING * 4,IGADET.INC
+RcdFmtorddet,dfiller,STRING * 5,IGADET.INC
+RcdFmtordhed,hord,STRING * 2,IGAHED.INC
+RcdFmtordhed,hrrn,STRING * 2,IGAHED.INC
+RcdFmtordhed,hfiller,STRING * 2,IGAHED.INC
+RcdFmtordhed,hdate,STRING * 8,IGAHED.INC
+RcdFmtordhed,hordq,STRING * 4,IGAHED.INC
+RcdFmtordhed,hdollar,STRING * 4,IGAHED.INC
+RcdFmtordhed,hinvq,STRING * 4,IGAHED.INC
+RcdFmtordhed,hitems,STRING * 2,IGAHED.INC
+RcdFmtordhed,horgq,STRING * 4,IGAHED.INC
+RcdFmtordhed,htaxe,STRING * 8,IGAHED.INC
+RcdFmtordhed,fillera,STRING * 1,IGAHED.INC
+RcdFmtordhed,hreford,STRING * 15,IGAHED.INC
+RcdFmtordhed,linvnum,STRING * 12,IGAHED.INC
+RcdFmtordhed,ldisc,STRING * 4,IGAHED.INC
+RcdFmtordhed,hsup,STRING * 5,IGAHED.INC
+RcdFmtordhed,hnote1,STRING * 42,IGAHED.INC
+RcdFmtordhed,hnote2,STRING * 42,IGAHED.INC
+RcdFmtordhed,hinitials,STRING * 3,IGAHED.INC
+RcdFmtordhed,hpname1,STRING * 30,IGAHED.INC
+RcdFmtordhed,hpname2,STRING * 30,IGAHED.INC
+RcdFmtordhed,hpname3,STRING * 30,IGAHED.INC
+RcdFmtordhed,hpname4,STRING * 25,IGAHED.INC
+RcdFmtordhed,hdeposit,STRING * 4  ' total amount on deposit,IGAHED.INC
+RcdFmtordhed,ldepnum,STRING * 12,IGAHED.INC
+RcdFmtordhed,hdepnew,STRING * 4  ' new amount,IGAHED.INC
+RcdFmtordhed,filler,STRING * 21,IGAHED.INC
+RcdFmtIprice,no,INTEGER,IPRICE.INC
+RcdFmtIprice,item,INTEGER,IPRICE.INC
+RcdFmtIprice,search,STRING * 5,IPRICE.INC
+RcdFmtIprice,iprice,SINGLE,IPRICE.INC
+RcdFmtIprice,date,STRING * 8,IPRICE.INC
+RcdFmtIprice,notes,STRING * 50,IPRICE.INC
+RcdFmtIprice,filler,STRING * 57,IPRICE.INC
+ArrayFmtIprice,no,INTEGER,IPRICE.INC
+ArrayFmtIprice,item,INTEGER,IPRICE.INC
+ArrayFmtIprice,price,SINGLE,IPRICE.INC
+RcdFmtmsmisc,qtyf,STRING * 2,MISC01.inc
+RcdFmtmsmisc,bchno,STRING * 2,MISC01.inc
+RcdFmtmsmisc,bchoff,STRING * 2,MISC01.inc
+RcdFmtmsmisc,cc,STRING * 40,MISC01.inc
+RcdFmtmsmisc,ccde,STRING * 6,MISC01.inc
+RcdFmtmsmisc,max1,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max2,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max3,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max4,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max5,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max6,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max7,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max8,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max9,STRING * 2,MISC01.inc
+RcdFmtmsmisc,max10,STRING * 2,MISC01.inc
+RcdFmtmsmisc,oldate,STRING * 10,MISC01.inc
+RcdFmtmsmisc,version,STRING * 2,MISC01.inc
+RcdFmtmsmisc,special,STRING * 1,MISC01.inc
+RcdFmtmsmisc,inside,STRING * 1,MISC01.inc
+RcdFmtmsmisc,bchist,STRING * 2,MISC01.inc
+RcdFmtmsmisc,trdisc,STRING * 1,MISC01.inc
+RcdFmtmsmisc,sysunt,STRING * 2,MISC01.inc
+RcdFmtmsmisc,sysnum,STRING * 2,MISC01.inc
+RcdFmtmsmisc,prthi,STRING * 1,MISC01.inc
+RcdFmtmsmisc,prtdb,STRING * 1,MISC01.inc
+RcdFmtmsmisc,prtsub,STRING * 1,MISC01.inc
+RcdFmtmsmisc,prtsup,STRING * 1,MISC01.inc
+RcdFmtmsmisc,prthi1,STRING * 1,MISC01.inc
+RcdFmtmsmisc,filler,STRING * 20,MISC01.inc
+RcdFmtbatch,bno,INTEGER,MSBATCH.INC
+RcdFmtbatch,year,STRING * 2,MSBATCH.INC
+RcdFmtbatch,form,STRING * 4,MSBATCH.INC
+RcdFmtbatch,revision,INTEGER,MSBATCH.INC
+RcdFmtbatch,SorW,STRING * 1,MSBATCH.INC
+RcdFmtbatch,class,INTEGER,MSBATCH.INC
+RcdFmtbatch,yld,SINGLE,MSBATCH.INC
+RcdFmtbatch,ayld,SINGLE,MSBATCH.INC
+RcdFmtbatch,date,STRING * 8,MSBATCH.INC
+RcdFmtbatch,name,STRING * 30,MSBATCH.INC
+RcdFmtbatch,Resinvar,SINGLE ' actual kg,MSBATCH.INC
+RcdFmtbatch,Solventvar,SINGLE ' filled volume,MSBATCH.INC
+RcdFmtbatch,Thickenervar,SINGLE ' filled cost,MSBATCH.INC
+RcdFmtbatch,Rheomodifier,SINGLE 'actual SG,MSBATCH.INC
+RcdFmtbatch,Stainer1var,SINGLE ' waste volume,MSBATCH.INC
+RcdFmtbatch,Stainer2var,"SINGLE ' YIELD"" %",MSBATCH.INC
+RcdFmtbatch,Stainer3var,SINGLE ' waste $,MSBATCH.INC
+RcdFmtbatch,hord,INTEGER,MSBATCH.INC
+RcdFmtbatch,thisbatch,STRING * 8,MSBATCH.INC
+RcdFmtbatch,perltr,SINGLE ' actual cost,MSBATCH.INC
+RcdFmtbatch,datereq,STRING * 8,MSBATCH.INC
+RcdFmtbatch,dateman,STRING * 8,MSBATCH.INC
+RcdFmtbatch,manby,STRING * 3,MSBATCH.INC
+RcdFmtbatch,fltnt,STRING * 1,MSBATCH.INC
+RcdFmtbatch,flstk,STRING * 1,MSBATCH.INC
+RcdFmtbatch,flqc,STRING * 1,MSBATCH.INC
+RcdFmtbatch,yield,SINGLE,MSBATCH.INC
+RcdFmtbatch,ltr,SINGLE,MSBATCH.INC
+RcdFmtbatch,kg,SINGLE,MSBATCH.INC
+RcdFmtbatch,visc1h,SINGLE,MSBATCH.INC
+RcdFmtbatch,visc1l,SINGLE,MSBATCH.INC
+RcdFmtbatch,visc2h,SINGLE,MSBATCH.INC
+RcdFmtbatch,visc2l,SINGLE,MSBATCH.INC
+RcdFmtbatch,alccost,SINGLE ' actual cost,MSBATCH.INC
+RcdFmtbatch,rawcost,SINGLE,MSBATCH.INC
+RcdFmtbatch,filter,INTEGER,MSBATCH.INC
+RcdFmtbatch,grind,SINGLE,MSBATCH.INC
+RcdFmtbatch,ph,SINGLE,MSBATCH.INC
+RcdFmtbatch,sg,SINGLE,MSBATCH.INC
+RcdFmtbatch,Vsol,SINGLE,MSBATCH.INC
+RcdFmtbatch,Wsol,SINGLE,MSBATCH.INC
+RcdFmtbatch,pvc,SINGLE,MSBATCH.INC
+RcdFmtbatch,pbr,SINGLE,MSBATCH.INC
+RcdFmtbatch,gloss,SINGLE,MSBATCH.INC
+RcdFmtbatch,Hazard,STRING * 1,MSBATCH.INC
+RcdFmtbatch,asRmat,INTEGER,MSBATCH.INC
+RcdFmtbatch,CostPer,STRING * 2,MSBATCH.INC
+RcdFmtbatch,qcnote1,STRING * 25,MSBATCH.INC
+RcdFmtbatch,qcnote2,STRING * 25,MSBATCH.INC
+RcdFmtbatch,qcnote3,STRING * 25,MSBATCH.INC
+RcdFmtbatch,qcnote4,STRING * 25,MSBATCH.INC
+RcdFmtbatch,qcvsol,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcwsol,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcpvc,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcpbr,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcvisc1,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcvisc2,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcph,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcgloss,SINGLE,MSBATCH.INC
+RcdFmtbatch,qcsg,SINGLE,MSBATCH.INC
+RcdFmtbatch,priority,INTEGER,MSBATCH.INC
+RcdFmtbatch,tnt,INTEGER,MSBATCH.INC
+RcdFmtbatch,dateform,STRING * 8,MSBATCH.INC
+RcdFmtbatch,Filler,STRING * 166,MSBATCH.INC
+RcdFmtbatch,bno,INTEGER,MSBATCHx.INC
+RcdFmtbatch,year,STRING * 2,MSBATCHx.INC
+RcdFmtbatch,form,STRING * 4,MSBATCHx.INC
+RcdFmtbatch,revision,INTEGER,MSBATCHx.INC
+RcdFmtbatch,SorW,STRING * 1,MSBATCHx.INC
+RcdFmtbatch,class,INTEGER,MSBATCHx.INC
+RcdFmtbatch,yld,SINGLE,MSBATCHx.INC
+RcdFmtbatch,ayld,SINGLE,MSBATCHx.INC
+RcdFmtbatch,date,STRING * 8,MSBATCHx.INC
+RcdFmtbatch,name,STRING * 30,MSBATCHx.INC
+RcdFmtbatch,Resinvar,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Solventvar,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Thickenervar,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Rheomodifier,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Stainer1var,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Stainer2var,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Stainer3var,SINGLE,MSBATCHx.INC
+RcdFmtbatch,hord,INTEGER,MSBATCHx.INC
+RcdFmtbatch,thisbatch,STRING * 8,MSBATCHx.INC
+RcdFmtbatch,perltr,SINGLE,MSBATCHx.INC
+RcdFmtbatch,Filler,STRING * 27,MSBATCHx.INC
+RcdFmtbatchx,bno,INTEGER,MSBATCHx.INC
+RcdFmtbatchx,year,STRING * 2,MSBATCHx.INC
+RcdFmtbatchx,form,STRING * 4,MSBATCHx.INC
+RcdFmtbatchx,revision,INTEGER,MSBATCHx.INC
+RcdFmtbatchx,SorW,STRING * 1,MSBATCHx.INC
+RcdFmtbatchx,class,INTEGER,MSBATCHx.INC
+RcdFmtbatchx,yld,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,ayld,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,date,STRING * 8,MSBATCHx.INC
+RcdFmtbatchx,name,STRING * 30,MSBATCHx.INC
+RcdFmtbatchx,Resinvar,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Solventvar,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Thickenervar,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Rheomodifier,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Stainer1var,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Stainer2var,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Stainer3var,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,hord,INTEGER,MSBATCHx.INC
+RcdFmtbatchx,thisbatch,STRING * 8,MSBATCHx.INC
+RcdFmtbatchx,perltr,SINGLE,MSBATCHx.INC
+RcdFmtbatchx,Filler,STRING * 411,MSBATCHx.INC
+RcdFmtMSbchBK,bno,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,bfno,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,bccost,STRING * 1,MSBCHBK.inc
+RcdFmtMSbchBK,brev,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,btype,STRING * 1,MSBCHBK.inc
+RcdFmtMSbchBK,bclass,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,byld,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,bayld,STRING * 2,MSBCHBK.inc
+RcdFmtMSbchBK,bdate,STRING * 8,MSBCHBK.inc
+RcdFmtMSbchBK,bdesc,STRING * 25,MSBCHBK.inc
+RcdFmtMSbchBK,bvisl,STRING * 4,MSBCHBK.inc
+RcdFmtMSbchBK,bvish,STRING * 4,MSBCHBK.inc
+RcdFmtMSbchBK,bavis,STRING * 4,MSBCHBK.inc
+RcdFmtmsbchhd,bchlow,STRING * 2,MSBCHHD.inc
+RcdFmtmsbchhd,bchhi,STRING * 2,MSBCHHD.inc
+RcdFmtmsclass,cldesc,STRING * 25,MSCLASS.inc
+RcdFmtmsclass,clya,STRING * 8,MSCLASS.inc
+RcdFmtmsclass,clyt,STRING * 8,MSCLASS.inc
+RcdFmtmsclass,clyay,STRING * 8,MSCLASS.inc
+RcdFmtmsclass,clyty,STRING * 8,MSCLASS.inc
+RcdFmtmscomt,spk,STRING * 22,MSCOMT.inc
+RcdFmtmscomt2,spkno,STRING * 2,MSCOMT.inc
+RcdFmtmshist,hdesc1,STRING * 15,MSHIST.inc
+RcdFmtmshist,hq,STRING * 4,MSHIST.inc
+RcdFmtmshist,hunit,STRING * 4,MSHIST.inc
+RcdFmtmshist,hd,STRING * 2,MSHIST.inc
+RcdFmtmshist,hc,STRING * 22,MSHIST.inc
+RcdFmtmshisth,hform,STRING * 2,MSHISTH.inc
+RcdFmtmshisth,hcost,STRING * 1,MSHISTH.inc
+RcdFmtmshisth,hrev,STRING * 2,MSHISTH.inc
+RcdFmtmshisth,hrel,STRING * 2,MSHISTH.inc
+RcdFmtmshisth,hdesc,STRING * 25,MSHISTH.inc
+RcdFmtmshisth,htype,STRING * 1,MSHISTH.inc
+RcdFmtmshisth,hclass,STRING * 2,MSHISTH.inc
+RcdFmtmshisth,hyld,STRING * 4,MSHISTH.inc
+RcdFmtmshisth,hvisl,STRING * 4,MSHISTH.inc
+RcdFmtmshisth,hvish,STRING * 4,MSHISTH.inc
+RcdFmtmshisth,hfirstdet,INTEGER,MSHISTH.inc
+RcdFmtmshisth,hlastdet,INTEGER,MSHISTH.inc
+RcdFmtmsmisc,qtyf,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,bchno,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,bchoff,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,cc,STRING * 40,MSMISC.INC
+RcdFmtmsmisc,ccde,STRING * 6,MSMISC.INC
+RcdFmtmsmisc,max1,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max2,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max3,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max4,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max5,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max6,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max7,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max8,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max9,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,max10,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,oldate,STRING * 10,MSMISC.INC
+RcdFmtmsmisc,version,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,special,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,inside,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,bchist,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,trdisc,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,sysunt,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,sysnum,STRING * 2,MSMISC.INC
+RcdFmtmsmisc,prthi,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,prtdb,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,prtsub,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,prtsup,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,prthi1,STRING * 1,MSMISC.INC
+RcdFmtmsmisc,DBmonth,STRING * 4,MSMISC.INC
+RcdFmtmsmisc,CRmonth,STRING * 4,MSMISC.INC
+RcdFmtmsmisc,cansidx,INTEGER,MSMISC.INC
+RcdFmtmsmisc,labelidx,INTEGER,MSMISC.INC
+RcdFmtmsmisc,labouridx,INTEGER,MSMISC.INC
+RcdFmtmsmisc,filler,STRING * 16,MSMISC.INC
+RcdFmtmsmkp,mk,STRING * 4,MSMKP.inc
+RcdFmtmsmkp,mm,STRING * 30,MSMKP.inc
+RcdFmtmsmkp,mkon,STRING * 2,MSMKP.inc
+RcdFmtmsrmat,no,INTEGER,MSRMAT.INC
+RcdFmtmsrmat,Desc1,STRING * 25,MSRMAT.INC
+RcdFmtmsrmat,Desc2,STRING * 25,MSRMAT.INC
+RcdFmtmsrmat,purqty,INTEGER  'New rmat# for the crossover,MSRMAT.INC
+RcdFmtmsrmat,Search,STRING * 5,MSRMAT.INC
+RcdFmtmsrmat,Sg,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,PurCost,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,PurUnit,STRING * 2,MSRMAT.INC
+RcdFmtmsrmat,UseCost,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,UseUnit,STRING * 2,MSRMAT.INC
+RcdFmtmsrmat,Dealcost,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,SupUnit,STRING * 2,MSRMAT.INC
+RcdFmtmsrmat,Group,INTEGER,MSRMAT.INC
+RcdFmtmsrmat,Active,STRING * 1,MSRMAT.INC
+RcdFmtmsrmat,Volsolid,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,Solidsg,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,Wtsolid,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,Notes,STRING * 25,MSRMAT.INC
+RcdFmtmsrmat,soh,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,Osoh,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,Date,STRING * 8,MSRMAT.INC
+RcdFmtmsrmat,hazard,STRING * 1,MSRMAT.INC
+RcdFmtmsrmat,cond,STRING * 1,MSRMAT.INC
+RcdFmtmsrmat,altno(1 TO 5),INTEGER,MSRMAT.INC
+RcdFmtmsrmat,msdsflag,STRING * 1,MSRMAT.INC
+RcdFmtmsrmat,searchs,STRING * 8,MSRMAT.INC
+RcdFmtmsrmat,soo,INTEGER,MSRMAT.INC
+RcdFmtmsrmat,sip,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,sohv,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,restock,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,used,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,ean13,CURRENCY,MSRMAT.INC
+RcdFmtmsrmat,lastpur,STRING * 8,MSRMAT.INC
+RcdFmtmsrmat,supqty,SINGLE,MSRMAT.INC
+RcdFmtmsrmat,no,INTEGER,MSRMATX.INC
+RcdFmtmsrmat,Desc1,STRING * 25,MSRMATX.INC
+RcdFmtmsrmat,Desc2,STRING * 25,MSRMATX.INC
+RcdFmtmsrmat,purqty,INTEGER  'New rmat# for the crossover,MSRMATX.INC
+RcdFmtmsrmat,Search,STRING * 5,MSRMATX.INC
+RcdFmtmsrmat,Sg,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,PurCost,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,PurUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmat,UseCost,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,UseUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmat,DealCost,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,SupUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmat,Group,INTEGER,MSRMATX.INC
+RcdFmtmsrmat,Active,STRING * 1,MSRMATX.INC
+RcdFmtmsrmat,Volsolid,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,Solidsg,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,Wtsolid,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,Notes,STRING * 25,MSRMATX.INC
+RcdFmtmsrmat,soh,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,Osoh,SINGLE,MSRMATX.INC
+RcdFmtmsrmat,Date,STRING * 8,MSRMATX.INC
+RcdFmtmsrmat,hazard,STRING * 1,MSRMATX.INC
+RcdFmtmsrmat,cond,STRING * 1,MSRMATX.INC
+RcdFmtmsrmat,altno(1 TO 5),INTEGER,MSRMATX.INC
+RcdFmtmsrmat,msdsflag,STRING * 1,MSRMATX.INC
+RcdFmtmsrmat,searchs,STRING * 8,MSRMATX.INC
+RcdFmtmsrmat,soo,INTEGER,MSRMATX.INC
+RcdFmtmsrmatx,no,INTEGER,MSRMATX.INC
+RcdFmtmsrmatx,Desc1,STRING * 25,MSRMATX.INC
+RcdFmtmsrmatx,Desc2,STRING * 25,MSRMATX.INC
+RcdFmtmsrmatx,purqty,INTEGER  'New rmat# for the crossover,MSRMATX.INC
+RcdFmtmsrmatx,Search,STRING * 5,MSRMATX.INC
+RcdFmtmsrmatx,Sg,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,PurCost,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,PurUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmatx,UseCost,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,UseUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmatx,Dealcost,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,SupUnit,STRING * 2,MSRMATX.INC
+RcdFmtmsrmatx,Group,INTEGER,MSRMATX.INC
+RcdFmtmsrmatx,Active,STRING * 1,MSRMATX.INC
+RcdFmtmsrmatx,Volsolid,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,Solidsg,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,Wtsolid,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,Notes,STRING * 25,MSRMATX.INC
+RcdFmtmsrmatx,soh,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,Osoh,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,Date,STRING * 8,MSRMATX.INC
+RcdFmtmsrmatx,hazard,STRING * 1,MSRMATX.INC
+RcdFmtmsrmatx,cond,STRING * 1,MSRMATX.INC
+RcdFmtmsrmatx,altno(1 TO 5),INTEGER,MSRMATX.INC
+RcdFmtmsrmatx,msdsflag,STRING * 1,MSRMATX.INC
+RcdFmtmsrmatx,searchs,STRING * 8,MSRMATX.INC
+RcdFmtmsrmatx,soo,INTEGER,MSRMATX.INC
+RcdFmtmsrmatx,sip,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,sohv,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,restock,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,used,SINGLE,MSRMATX.INC
+RcdFmtmsrmatx,ean13,CURRENCY,MSRMATX.INC
+RcdFmtmsrmgp,id,STRING * 5  '1.1.1',MSRMGP.inc
+RcdFmtmsrmgp,rmgroup,STRING * 22,MSRMGP.inc
+RcdFmtmsrmgp,filler,STRING * 37,MSRMGP.inc
+FILE,SHARED,#56 LEN = 80,MTYPES.inc
+FILE,dftype,STRING * 1,MTYPES.inc
+FILE,dfdesc,STRING * 25,MTYPES.inc
+FILE,x1,STRING * 1,MTYPES.inc
+FILE,x2,STRING * 1,MTYPES.inc
+FILE,x3,STRING * 1,MTYPES.inc
+FILE,x4,STRING * 1,MTYPES.inc
+FILE,x5,STRING * 1,MTYPES.inc
+FILE,x6,STRING * 1,MTYPES.inc
+FILE,x7,STRING * 1,MTYPES.inc
+FILE,x8,STRING * 1,MTYPES.inc
+FILE,x9,STRING * 1,MTYPES.inc
+FILE,x10,STRING * 1,MTYPES.inc
+FILE,x11,STRING * 1,MTYPES.inc
+FILE,x12,STRING * 1,MTYPES.inc
+FILE,x13,STRING * 1,MTYPES.inc
+FILE,x14,STRING * 1,MTYPES.inc
+FILE,x15,STRING * 1,MTYPES.inc
+FILE,x16,STRING * 1,MTYPES.inc
+FILE,x17,STRING * 1,MTYPES.inc
+FILE,x18,STRING * 1,MTYPES.inc
+FILE,x19,STRING * 1,MTYPES.inc
+FILE,x20,STRING * 1,MTYPES.inc
+RcdFmtnoncon,no,INTEGER,NONCON.inc
+RcdFmtnoncon,Name,STRING * 30,NONCON.inc
+RcdFmtnoncon,Addr1,STRING * 25,NONCON.inc
+RcdFmtnoncon,Addr2,STRING * 25,NONCON.inc
+RcdFmtnoncon,sub,STRING * 20,NONCON.inc
+RcdFmtnoncon,pcode,STRING * 4,NONCON.inc
+RcdFmtnoncon,opened,STRING * 8,NONCON.inc
+RcdFmtnoncon,closed,STRING * 8,NONCON.inc
+RcdFmtnoncon,atext1,STRING * 78,NONCON.inc
+RcdFmtnoncon,atext2,STRING * 78,NONCON.inc
+RcdFmtnoncon,atext3,STRING * 78,NONCON.inc
+RcdFmtnoncon,atext4,STRING * 78,NONCON.inc
+RcdFmtnoncon,btext1,STRING * 78,NONCON.inc
+RcdFmtnoncon,btext2,STRING * 78,NONCON.inc
+RcdFmtnoncon,btext3,STRING * 78,NONCON.inc
+RcdFmtnoncon,btext4,STRING * 78,NONCON.inc
+RcdFmtNotes,text,STRING * 78,NOTES.inc
+RcdFmtNotes,cr,STRING * 1,NOTES.inc
+RcdFmtNotes,lf,STRING * 1,NOTES.inc
+RcdFmtorddet,dord,INTEGER,ORDDET.INC
+RcdFmtorddet,dseq,INTEGER,ORDDET.INC
+RcdFmtorddet,drrn,INTEGER,ORDDET.INC
+RcdFmtorddet,ditem,STRING * 2,ORDDET.INC
+RcdFmtorddet,dprice,STRING * 4,ORDDET.INC
+RcdFmtorddet,dordq,STRING * 2,ORDDET.INC
+RcdFmtorddet,dinvq,STRING * 2,ORDDET.INC
+RcdFmtorddet,dtax,STRING * 4,ORDDET.INC
+RcdFmtorddet,dlinvq,STRING * 2,ORDDET.INC
+RcdFmtorddet,dBo,STRING * 1 ',ORDDET.INC
+RcdFmtorddet,dotprice,STRING * 1,ORDDET.INC
+RcdFmtorddet,dpicked,INTEGER,ORDDET.INC
+RcdFmtorddet,dfiller,STRING * 6,ORDDET.INC
+RcdFmtordhed,hord,STRING * 2,ORDHED.INC
+RcdFmtordhed,hrrn,STRING * 2,ORDHED.INC
+RcdFmtordhed,hfiller,STRING * 2,ORDHED.INC
+RcdFmtordhed,hdate,STRING * 8,ORDHED.INC
+RcdFmtordhed,hordq,STRING * 4,ORDHED.INC
+RcdFmtordhed,hdollar,STRING * 4,ORDHED.INC
+RcdFmtordhed,hinvq,STRING * 4,ORDHED.INC
+RcdFmtordhed,hitems,STRING * 2,ORDHED.INC
+RcdFmtordhed,horgq,STRING * 4,ORDHED.INC
+RcdFmtordhed,htaxe,STRING * 12,ORDHED.INC
+RcdFmtordhed,hreford,STRING * 12,ORDHED.INC
+RcdFmtordhed,linvnum,STRING * 12,ORDHED.INC
+RcdFmtordhed,ldisc,STRING * 4,ORDHED.INC
+RcdFmtordhed,hsup,STRING * 5,ORDHED.INC
+RcdFmtordhed,hnote1,STRING * 42,ORDHED.INC
+RcdFmtordhed,hnote2,STRING * 42,ORDHED.INC
+RcdFmtordhed,hinitials,STRING * 3,ORDHED.INC
+RcdFmtordhed,hscheduled,STRING * 8,ORDHED.INC
+RcdFmtordhed,hstatus,STRING * 2,ORDHED.INC
+RcdFmtordhed,hupdated,STRING * 8,ORDHED.INC
+RcdFmtordhed,hgp,STRING * 4,ORDHED.INC
+RcdFmtordhed,filler,STRING * 70,ORDHED.INC
+RcdFmtordprt,hord,INTEGER,ORDPRT.INC
+RcdFmtordprt,hopt,INTEGER,ORDPRT.INC
+RcdFmtordprt,hcash,INTEGER,ORDPRT.INC
+RcdFmtordprt,hchginv,DOUBLE,ORDPRT.INC
+RcdFmtordprt,hchginvrrn,INTEGER,ORDPRT.INC
+RcdFmtordprt,hinvnum,DOUBLE,ORDPRT.INC
+RcdFmtordprt,hinvnumrec,INTEGER,ORDPRT.INC
+RcdFmtordprt,hthissup,STRING * 5,ORDPRT.INC
+RcdFmtordprt,hnorders,INTEGER,ORDPRT.INC
+RcdFmtordprt,hMode,STRING * 3,ORDPRT.INC
+RcdFmtordprt,hTaxRate,DOUBLE   '10 = 10%,ORDPRT.INC
+RcdFmtordprt,hDiscRate,DOUBLE   '0.20  = 20c in the dollar,ORDPRT.INC
+RcdFmtordprt,hnote1,STRING * 42,ORDPRT.INC
+RcdFmtordprt,hnote2,STRING * 42,ORDPRT.INC
+RcdFmtordprt,hNameOvertyped,STRING * 35,ORDPRT.INC
+RcdFmtordprt,hAddrOvertyped,STRING * 20,ORDPRT.INC
+RcdFmtordprt,hSuburbOvertyped,STRING * 20,ORDPRT.INC
+RcdFmtordprt,gsno,INTEGER,ORDPRT.INC
+RcdFmtordprt,gtaxin,STRING * 1,ORDPRT.INC
+RcdFmtordprt,gtender,STRING * 1,ORDPRT.INC
+RcdFmtordprt,gdoctype,STRING * 11    'TAX INVOICE',ORDPRT.INC
+RcdFmtordprt,gformtype,STRING * 14  ',ORDPRT.INC
+RcdFmtordprt,gexdisc,DOUBLE,ORDPRT.INC
+RcdFmtordprt,gvdisc,DOUBLE,ORDPRT.INC
+RcdFmtordprt,gadvalue,CURRENCY,ORDPRT.INC
+RcdFmtordprt,gadtax,CURRENCY,ORDPRT.INC
+RcdFmtordprt,gOSCurrency,STRING * 3,ORDPRT.INC
+RcdFmtordprt,hfiller,STRING * 156,ORDPRT.INC
+RcdFmtSearch,key,STRING * 5,PHONEX.inc
+RcdFmtSearch,type,STRING * 2,PHONEX.inc
+RcdFmtSearch,company,STRING * 30,PHONEX.inc
+RcdFmtSearch,compnum,STRING * 5,PHONEX.inc
+RcdFmtSearch,name,STRING * 20,PHONEX.inc
+RcdFmtSearch,sPhone,STRING * 20,PHONEX.inc
+RcdFmtSearch,sPhone1,STRING * 20,PHONEX.inc
+RcdFmtSearch,pstncc,STRING * 3,PHONEX.inc
+RcdFmtSearch,email,STRING * 40,PHONEX.inc
+RcdFmtSearch,www,STRING * 40,PHONEX.inc
+RcdFmtSearch,ContactFirstName(6),STRING * 16,PHONEX.inc
+RcdFmtSearch,ContactSurName(6),STRING * 20,PHONEX.inc
+RcdFmtSearch,ContactTitle(6),STRING * 20,PHONEX.inc
+RcdFmtSearch,ContactPhone(6),STRING * 18 '+61 xxx3 9xxx xxxx,PHONEX.inc
+RcdFmtSearch,contactmobile(6),STRING * 18'+61 x419 x338 x450,PHONEX.inc
+RcdFmtSearch,ContactFax(6),STRING * 18   '+61 x419 x338 x450,PHONEX.inc
+RcdFmtSearch,Contactemail(6),STRING * 40,PHONEX.inc
+RcdFmtSearch,crlf,STRING * 1,PHONEX.inc
+RcdFmtPICKUP,pno,STRING * 2,PICKUP.inc
+RcdFmtPICKUP,pname1,STRING * 30,PICKUP.inc
+RcdFmtPICKUP,pname2,STRING * 30,PICKUP.inc
+RcdFmtPICKUP,pname3,STRING * 30,PICKUP.inc
+RcdFmtPICKUP,pname4,STRING * 25,PICKUP.inc
+RcdFmtPICKUP,pactive,STRING * 1,PICKUP.inc
+RcdFmtPICKUP,pphone1,STRING * 13,PICKUP.inc
+RcdFmtPICKUP,pphone2,STRING * 13,PICKUP.inc
+RcdFmtPICKUPX,pxcde,STRING * 14,PICKUPX.inc
+RcdFmtPICKUPX,pxrrn,STRING * 2,PICKUPX.inc
+RcdFmtorddet,dord,INTEGER,PORDDET.INC
+RcdFmtorddet,dseq,INTEGER,PORDDET.INC
+RcdFmtorddet,drrn,INTEGER,PORDDET.INC
+RcdFmtorddet,ditem,STRING * 2,PORDDET.INC
+RcdFmtorddet,dprice,STRING * 4,PORDDET.INC
+RcdFmtorddet,dordq,STRING * 2,PORDDET.INC
+RcdFmtorddet,dinvq,STRING * 2,PORDDET.INC
+RcdFmtorddet,dtax,STRING * 4,PORDDET.INC
+RcdFmtorddet,dlinvq,STRING * 2,PORDDET.INC
+RcdFmtorddet,dBo,STRING * 1 ',PORDDET.INC
+RcdFmtorddet,dotprice,STRING * 1,PORDDET.INC
+RcdFmtorddet,dpicked,INTEGER,PORDDET.INC
+RcdFmtorddet,dfiller,STRING * 6,PORDDET.INC
+RcdFmtordhed,hord,STRING * 2,PORDHED.INC
+RcdFmtordhed,hrrn,STRING * 2,PORDHED.INC
+RcdFmtordhed,hfiller,STRING * 2,PORDHED.INC
+RcdFmtordhed,hdate,STRING * 8,PORDHED.INC
+RcdFmtordhed,hordq,STRING * 4,PORDHED.INC
+RcdFmtordhed,hdollar,STRING * 4,PORDHED.INC
+RcdFmtordhed,hinvq,STRING * 4,PORDHED.INC
+RcdFmtordhed,hitems,STRING * 2,PORDHED.INC
+RcdFmtordhed,horgq,STRING * 4,PORDHED.INC
+RcdFmtordhed,htaxe,STRING * 8,PORDHED.INC
+RcdFmtordhed,hstatus,STRING * 1,PORDHED.INC
+RcdFmtordhed,hreford,STRING * 15,PORDHED.INC
+RcdFmtordhed,linvnum,STRING * 12,PORDHED.INC
+RcdFmtordhed,ldisc,STRING * 4,PORDHED.INC
+RcdFmtordhed,hsup,STRING * 5,PORDHED.INC
+RcdFmtordhed,hnote1,STRING * 42,PORDHED.INC
+RcdFmtordhed,hnote2,STRING * 42,PORDHED.INC
+RcdFmtordhed,hinitials,STRING * 3,PORDHED.INC
+RcdFmtordhed,hdocket,STRING * 10,PORDHED.INC
+RcdFmtordhed,hdddate,STRING * 8,PORDHED.INC
+RcdFmtordhed,hinvdate,STRING * 8,PORDHED.INC
+RcdFmtordhed,hdolrecd,STRING * 4,PORDHED.INC
+RcdFmtordhed,filler,STRING * 62,PORDHED.INC
+RcdFmtordprt,hord,INTEGER,PORDPRT.INC
+RcdFmtordprt,hopt,INTEGER,PORDPRT.INC
+RcdFmtordprt,hcash,INTEGER,PORDPRT.INC
+RcdFmtordprt,hchginv,DOUBLE,PORDPRT.INC
+RcdFmtordprt,hchginvrrn,INTEGER,PORDPRT.INC
+RcdFmtordprt,hinvnum,DOUBLE,PORDPRT.INC
+RcdFmtordprt,hinvnumrec,INTEGER,PORDPRT.INC
+RcdFmtordprt,hthissup,STRING * 5,PORDPRT.INC
+RcdFmtordprt,hnorders,INTEGER,PORDPRT.INC
+RcdFmtordprt,hMode,STRING * 3,PORDPRT.INC
+RcdFmtordprt,hTaxRate,DOUBLE   '10 = 10%,PORDPRT.INC
+RcdFmtordprt,hDiscRate,DOUBLE   '0.20  = 20c in the dollar,PORDPRT.INC
+RcdFmtordprt,hnote1,STRING * 42,PORDPRT.INC
+RcdFmtordprt,hnote2,STRING * 42,PORDPRT.INC
+RcdFmtordprt,hNameOvertyped,STRING * 35,PORDPRT.INC
+RcdFmtordprt,hAddrOvertyped,STRING * 20,PORDPRT.INC
+RcdFmtordprt,hSuburbOvertyped,STRING * 20,PORDPRT.INC
+RcdFmtordprt,gsno,INTEGER,PORDPRT.INC
+RcdFmtordprt,gtaxin,STRING * 1,PORDPRT.INC
+RcdFmtordprt,gtender,STRING * 1,PORDPRT.INC
+RcdFmtordprt,gdoctype,STRING * 11    'TAX INVOICE',PORDPRT.INC
+RcdFmtordprt,gformtype,STRING * 14  ',PORDPRT.INC
+RcdFmtordprt,gexdisc,DOUBLE,PORDPRT.INC
+RcdFmtordprt,gvdisc,DOUBLE,PORDPRT.INC
+RcdFmtordprt,gadvalue,CURRENCY,PORDPRT.INC
+RcdFmtordprt,gadtax,CURRENCY,PORDPRT.INC
+RcdFmtordprt,gOSCurrency,STRING * 3,PORDPRT.INC
+RcdFmtordprt,hfiller,STRING * 156,PORDPRT.INC
+RcdFmtlbl,Desc1,STRING * 40,PRODUCT.inc
+RcdFmtlbl,Desc2,STRING * 40,PRODUCT.inc
+RcdFmtlbl,Haz1,STRING * 1,PRODUCT.inc
+RcdFmtlbl,Haz2,STRING * 1,PRODUCT.inc
+RcdFmtlbl,Un,STRING * 4,PRODUCT.inc
+RcdFmtlbl,Con1,STRING * 28,PRODUCT.inc
+RcdFmtlbl,Con2,STRING * 28,PRODUCT.inc
+RcdFmtlbl,Con3,STRING * 28,PRODUCT.inc
+RcdFmtlbl,Col,STRING * 2,PRODUCT.inc
+RcdFmtproject,no,INTEGER,PROJECT.inc
+RcdFmtproject,name,STRING * 25,PROJECT.inc
+RcdFmtproject,opened,STRING * 8,PROJECT.inc
+RcdFmtproject,closed,STRING * 8,PROJECT.inc
+RcdFmtproject,duedate,STRING * 8,PROJECT.inc
+RcdFmtproject,type,STRING * 10,PROJECT.inc
+RcdFmtproject,report,STRING * 10,PROJECT.inc
+RcdFmtproject,text(1 TO 18),STRING * 78,PROJECT.inc
+RcdFmtproject,filler,STRING * 125,PROJECT.inc
+RcdFmtExtra,no,INTEGER,QEXTRA1.inc
+RcdFmtExtra,name,STRING * 25,QEXTRA1.inc
+RcdFmtExtra,opened,STRING * 8,QEXTRA1.inc
+RcdFmtExtra,closed,STRING * 8,QEXTRA1.inc
+RcdFmtExtra,duedate,STRING * 8,QEXTRA1.inc
+RcdFmtExtra,type,STRING * 10,QEXTRA1.inc
+RcdFmtExtra,report,STRING * 10,QEXTRA1.inc
+RcdFmtExtra,text(1 TO 36),STRING * 78,QEXTRA1.inc
+RcdFmtExtra,filler,STRING * 129,QEXTRA1.inc
+RcdFmtRMORDER,text,STRING * 78,RMORDER.inc
+RcdFmtRMORDER,cr,STRING * 1,RMORDER.inc
+RcdFmtRMORDER,lf,STRING * 1,RMORDER.inc
+RcdFmtSearch,key,STRING * 5,SEARCH.inc
+RcdFmtSearch,type,STRING * 2,SEARCH.inc
+RcdFmtSearch,company,STRING * 25,SEARCH.inc
+RcdFmtSearch,compnum,STRING * 5,SEARCH.inc
+RcdFmtSearch,name,STRING * 20,SEARCH.inc
+RcdFmtSearch,phone1,STRING * 7,SEARCH.inc
+RcdFmtSearch,area1,STRING * 3,SEARCH.inc
+RcdFmtSearch,phone2,STRING * 7,SEARCH.inc
+RcdFmtSearch,area2,STRING * 3,SEARCH.inc
+RcdFmtSearch,phone3,STRING * 7,SEARCH.inc
+RcdFmtSearch,area3,STRING * 3,SEARCH.inc
+RcdFmtSearch,crlf,STRING * 1,SEARCH.inc
+RcdFmtsizes,skey,STRING * 2,SIZES.inc
+RcdFmtsizes,sdesc,STRING * 15,SIZES.inc
+RcdFmtsizes,short,STRING * 5,SIZES.inc
+RcdFmtsizes,cst(1 TO 10),STRING * 2,SIZES.inc
+RcdFmtsizes,prcret,STRING * 4,SIZES.inc
+RcdFmtsizes,prctrd,STRING * 4,SIZES.inc
+RcdFmtsizes,prcdst,STRING * 4,SIZES.inc
+RcdFmtsupx,wcde,STRING * 5,SUPX.inc
+RcdFmtsupx,wrrn,STRING * 2,SUPX.inc
+RcdFmttntdet,tnt,LONG,TNTDET.INC
+RcdFmttntdet,rmat,INTEGER,TNTDET.INC
+RcdFmttntdet,qty,SINGLE,TNTDET.INC
+RcdFmttntdet,cmt,INTEGER,TNTDET.INC
+RcdFmttntdet,cmtqty,SINGLE,TNTDET.INC
+RcdFmttntdet,ltkg,STRING * 1,TNTDET.INC
+RcdFmttntdet,tfiller,STRING * 15,TNTDET.INC
+RcdFmttntdet,tnt,INTEGER,TNTDETX.INC
+RcdFmttntdet,rmat,INTEGER,TNTDETX.INC
+RcdFmttntdet,qty,SINGLE,TNTDETX.INC
+RcdFmttntdet,cmt,INTEGER,TNTDETX.INC
+RcdFmttntdet,cmtqty,SINGLE,TNTDETX.INC
+RcdFmttntdetx,tnt,LONG,TNTDETX.INC
+RcdFmttntdetx,rmat,INTEGER,TNTDETX.INC
+RcdFmttntdetx,qty,SINGLE,TNTDETX.INC
+RcdFmttntdetx,cmt,INTEGER,TNTDETX.INC
+RcdFmttntdetx,cmtqty,SINGLE,TNTDETX.INC
+RcdFmttntdetx,ltkg,STRING * 1,TNTDETX.INC
+RcdFmttntdetx,tfiller,STRING * 15,TNTDETX.INC
+RcdFmttnthed,tnt,INTEGER,TNTHED.INC
+RcdFmttnthed,tnta,STRING * 4,TNTHED.INC
+RcdFmttnthed,revision,INTEGER,TNTHED.INC
+RcdFmttnthed,name,STRING * 30,TNTHED.INC
+RcdFmttnthed,desc,STRING * 30,TNTHED.INC
+RcdFmttnthed,cust,STRING * 5,TNTHED.INC
+RcdFmttnthed,SorW,STRING * 1,TNTHED.INC
+RcdFmttnthed,class,INTEGER,TNTHED.INC
+RcdFmttnthed,yield,SINGLE,TNTHED.INC
+RcdFmttnthed,ltr,SINGLE,TNTHED.INC
+RcdFmttnthed,kg,SINGLE,TNTHED.INC
+RcdFmttnthed,visc1h,SINGLE,TNTHED.INC
+RcdFmttnthed,visc1l,SINGLE,TNTHED.INC
+RcdFmttnthed,visc2h,SINGLE,TNTHED.INC
+RcdFmttnthed,visc2l,SINGLE,TNTHED.INC
+RcdFmttnthed,alccost,SINGLE,TNTHED.INC
+RcdFmttnthed,rawcost,SINGLE,TNTHED.INC
+RcdFmttnthed,filter,INTEGER,TNTHED.INC
+RcdFmttnthed,grind,SINGLE,TNTHED.INC
+RcdFmttnthed,ph,SINGLE,TNTHED.INC
+RcdFmttnthed,sg,SINGLE,TNTHED.INC
+RcdFmttnthed,Vsol,SINGLE,TNTHED.INC
+RcdFmttnthed,Wsol,SINGLE,TNTHED.INC
+RcdFmttnthed,pvc,SINGLE,TNTHED.INC
+RcdFmttnthed,pbr,SINGLE,TNTHED.INC
+RcdFmttnthed,gloss,SINGLE,TNTHED.INC
+RcdFmttnthed,Hazard,STRING * 1,TNTHED.INC
+RcdFmttnthed,date,STRING * 8,TNTHED.INC
+RcdFmttnthed,asRmat,INTEGER,TNTHED.INC
+RcdFmttnthed,CostPer,STRING * 2,TNTHED.INC
+RcdFmttnthed,filler,STRING * 1,TNTHED.INC
+RcdFmttnthedx,tnta(1 TO 999),STRING * 4,TNTHEDX.INC
+RcdFmttnthedx,rrn(1 TO 999),INTEGER,TNTHEDX.INC
+FILE,SHARED,#42 LEN = 80,TYPES.inc
+FILE,1,"dftype$, 25 AS dfdesc$, 1 AS x1$, 1 AS x2$, 1 AS x3$, 1 AS x4$, 1 AS x5$, 1 AS x6$, 1 AS x7$, 1 AS x8$, 1 AS x9$, 1 AS x10$, 1 AS x11$, 1 AS x12$, 1 AS x13$, 1 AS x14$, 1 AS x15$, 1 AS x16$, 1 AS x17$, 1 AS  _",TYPES.inc
+FILE,1,"x19$, 1 AS x20$",TYPES.inc
+FILE,dftype,STRING * 1,TYPES.inc
+FILE,dfdesc,STRING * 25,TYPES.inc
+FILE,x1,STRING * 1,TYPES.inc
+FILE,x2,STRING * 1,TYPES.inc
+FILE,x3,STRING * 1,TYPES.inc
+FILE,x4,STRING * 1,TYPES.inc
+FILE,x5,STRING * 1,TYPES.inc
+FILE,x6,STRING * 1,TYPES.inc
+FILE,x7,STRING * 1,TYPES.inc
+FILE,x8,STRING * 1,TYPES.inc
+FILE,x9,STRING * 1,TYPES.inc
+FILE,x10,STRING * 1,TYPES.inc
+FILE,x11,STRING * 1,TYPES.inc
+FILE,x12,STRING * 1,TYPES.inc
+FILE,x13,STRING * 1,TYPES.inc
+FILE,x14,STRING * 1,TYPES.inc
+FILE,x15,STRING * 1,TYPES.inc
+FILE,x16,STRING * 1,TYPES.inc
+FILE,x17,STRING * 1,TYPES.inc
+FILE,x18,STRING * 1,TYPES.inc
+FILE,x19,STRING * 1,TYPES.inc
+FILE,x20,STRING * 1,TYPES.inc
+RcdFmtwhoext,no,INTEGER,WHOEXT.inc
+RcdFmtwhoext,search,STRING * 5,WHOEXT.inc
+RcdFmtwhoext,names(3),STRING * 25,WHOEXT.inc
+RcdFmtwhoext,phone1(3),STRING * 20,WHOEXT.inc
+RcdFmtwhoext,phone2(3),STRING * 20,WHOEXT.inc
+RcdFmtwhoext,addr,STRING * 25,WHOEXT.inc
+RcdFmtwhoext,sub,STRING * 20,WHOEXT.inc
+RcdFmtwhoext,pcode,STRING * 4,WHOEXT.inc
+RcdFmtwhoext,machine(5),STRING * 8,WHOEXT.inc
+RcdFmtwhoext,text(13),STRING * 77,WHOEXT.inc
+RcdFmtwhoext,filler,STRING * 67,WHOEXT.inc
+RcdFmtwho,sno,STRING * 2,WHOF.inc
+RcdFmtwho,search,STRING * 4,WHOF.inc
+RcdFmtwho,stype,STRING * 1,WHOF.inc
+RcdFmtwho,sname,STRING * 35,WHOF.inc
+RcdFmtwho,filler1,STRING * 5,WHOF.inc
+RcdFmtwho,saddr,STRING * 35,WHOF.inc
+RcdFmtwho,filler2,STRING * 5,WHOF.inc
+RcdFmtwho,saddr2,STRING * 35,WHOF.inc
+RcdFmtwho,filler3,STRING * 5,WHOF.inc
+RcdFmtwho,suburb,STRING * 20,WHOF.inc
+RcdFmtwho,state,STRING * 20,WHOF.inc
+RcdFmtwho,spcode,STRING * 8,WHOF.inc
+RcdFmtwho,spbox,STRING * 8,WHOF.inc
+RcdFmtwho,spboxsub,STRING * 20,WHOF.inc
+RcdFmtwho,spboxpcode,STRING * 8,WHOF.inc
+RcdFmtwho,slevel,SINGLE,WHOF.inc
+RcdFmtwho,ytd,SINGLE,WHOF.inc
+RcdFmtwho,p1,SINGLE,WHOF.inc
+RcdFmtwho,email,STRING * 40,WHOF.inc
+RcdFmtwho,www,STRING * 40,WHOF.inc
+RcdFmtwho,pstnCC,STRING * 3,WHOF.inc
+RcdFmtwho,scontTitle,STRING * 3,WHOF.inc
+RcdFmtwho,scont,STRING * 40,WHOF.inc
+RcdFmtwho,sphone,STRING * 18,WHOF.inc
+RcdFmtwho,sphone1,STRING * 18   ' Fax,WHOF.inc
+RcdFmtwho,taxe,STRING * 10,WHOF.inc
+RcdFmtwho,sgl,STRING * 4,WHOF.inc
+RcdFmtwho,rep,STRING * 1,WHOF.inc
+RcdFmtwho,callfreq,STRING * 1,WHOF.inc
+RcdFmtwho,sdays,STRING * 2,WHOF.inc
+RcdFmtwho,sterms,STRING * 4,WHOF.inc
+RcdFmtwho,daysmax,STRING * 2,WHOF.inc
+RcdFmtwho,scur,STRING * 4,WHOF.inc
+RcdFmtwho,s0,STRING * 4,WHOF.inc
+RcdFmtwho,s30,STRING * 4,WHOF.inc
+RcdFmtwho,s60,STRING * 4,WHOF.inc
+RcdFmtwho,s90,STRING * 4,WHOF.inc
+RcdFmtwho,opn,STRING * 4,WHOF.inc
+RcdFmtwho,opn30,STRING * 4,WHOF.inc
+RcdFmtwho,opn60,STRING * 4,WHOF.inc
+RcdFmtwho,opn90,STRING * 4,WHOF.inc
+RcdFmtwho,account,STRING * 4,WHOF.inc
+RcdFmtwho,advalue,STRING * 4,WHOF.inc
+RcdFmtwho,climit,STRING * 4,WHOF.inc
+RcdFmtwho,spnum,STRING * 2,WHOF.inc
+RcdFmtwho,spname,STRING * 30,WHOF.inc
+RcdFmtwho,spsub,STRING * 40,WHOF.inc
+RcdFmtwho,sdist,STRING * 1,WHOF.inc
+RcdFmtwho,sret,STRING * 1,WHOF.inc
+RcdFmtwho,countercde,STRING * 1,WHOF.inc
+RcdFmtwho,tradecde,STRING * 1,WHOF.inc
+RcdFmtwho,contractcde,STRING * 1,WHOF.inc
+RcdFmtwho,industrialcde,STRING * 1,WHOF.inc
+RcdFmtwho,scont1,STRING * 1,WHOF.inc
+RcdFmtwho,scont2,STRING * 1,WHOF.inc
+RcdFmtwho,wholesalecde,STRING * 1,WHOF.inc
+RcdFmtwho,addocnum,STRING * 8,WHOF.inc
+RcdFmtwho,addate,STRING * 8,WHOF.inc
+RcdFmtwho,sdate,STRING * 8,WHOF.inc
+RcdFmtwho,Active,STRING * 1,WHOF.inc
+RcdFmtwho,ContactFirstName(6),STRING * 16,WHOF.inc
+RcdFmtwho,ContactSurName(6),STRING * 20,WHOF.inc
+RcdFmtwho,ContactTitle(6),STRING * 20,WHOF.inc
+RcdFmtwho,ContactPhone(6),STRING * 18 '+61 xxx3 9xxx xxxx,WHOF.inc
+RcdFmtwho,ContactMobile(6),STRING * 18'+61 x419 x338 x450,WHOF.inc
+RcdFmtwho,ContactFax(6),STRING * 18   '+61 x419 x338 x450,WHOF.inc
+RcdFmtwho,Contactemail(6),STRING * 40,WHOF.inc
+RcdFmtwho,BO,STRING * 1,WHOF.inc
+RcdFmtwho,abn,STRING * 16,WHOF.inc
+RcdFmtwho,bankcde,STRING * 3,WHOF.inc
+RcdFmtwho,bankacct,STRING * 16,WHOF.inc
+RcdFmtwho,p2,SINGLE,WHOF.inc
+RcdFmtwho,p3,SINGLE,WHOF.inc
+RcdFmtwho,p4,SINGLE,WHOF.inc
+RcdFmtwho,p5,SINGLE,WHOF.inc
+RcdFmtwho,p6,SINGLE,WHOF.inc
+RcdFmtwho,p7,SINGLE,WHOF.inc
+RcdFmtwho,p8,SINGLE,WHOF.inc
+RcdFmtwho,p9,SINGLE,WHOF.inc
+RcdFmtwho,p10,SINGLE,WHOF.inc
+RcdFmtwho,p11,SINGLE,WHOF.inc
+RcdFmtwho,p12,SINGLE,WHOF.inc
+RcdFmtwho,filler5,STRING * 3,WHOF.inc
+RcdFmtWHOold,sno,STRING * 2,WHOF.inc
+RcdFmtWHOold,search,STRING * 4,WHOF.inc
+RcdFmtWHOold,stype,STRING * 1,WHOF.inc
+RcdFmtWHOold,sname,STRING * 40,WHOF.inc
+RcdFmtWHOold,saddr,STRING * 40,WHOF.inc
+RcdFmtWHOold,saddr2,STRING * 40,WHOF.inc
+RcdFmtWHOold,suburb,STRING * 20,WHOF.inc
+RcdFmtWHOold,state,STRING * 20,WHOF.inc
+RcdFmtWHOold,spcode,STRING * 8,WHOF.inc
+RcdFmtWHOold,spbox,STRING * 8,WHOF.inc
+RcdFmtWHOold,spboxsub,STRING * 40,WHOF.inc
+RcdFmtWHOold,email,STRING * 40,WHOF.inc
+RcdFmtWHOold,www,STRING * 40,WHOF.inc
+RcdFmtWHOold,pstnCC,STRING * 3,WHOF.inc
+RcdFmtWHOold,scontTitle,STRING * 3,WHOF.inc
+RcdFmtWHOold,scont,STRING * 40,WHOF.inc
+RcdFmtWHOold,sphone,STRING * 12,WHOF.inc
+RcdFmtWHOold,sphone1,STRING * 12   ' Fax,WHOF.inc
+RcdFmtWHOold,mobile,STRING * 12,WHOF.inc
+RcdFmtWHOold,ServiceTitle,STRING * 3,WHOF.inc
+RcdFmtWHOold,ServiceName,STRING * 30,WHOF.inc
+RcdFmtWHOold,Servicephone,STRING * 12,WHOF.inc
+RcdFmtWHOold,ServiceFax,STRING * 12,WHOF.inc
+RcdFmtWHOold,taxe,STRING * 10,WHOF.inc
+RcdFmtWHOold,sgl,STRING * 4,WHOF.inc
+RcdFmtWHOold,rep,STRING * 1,WHOF.inc
+RcdFmtWHOold,callfreq,STRING * 1,WHOF.inc
+RcdFmtWHOold,sdays,STRING * 2,WHOF.inc
+RcdFmtWHOold,sterms,STRING * 4,WHOF.inc
+RcdFmtWHOold,daysmax,STRING * 2,WHOF.inc
+RcdFmtWHOold,scur,STRING * 4,WHOF.inc
+RcdFmtWHOold,s0,STRING * 4,WHOF.inc
+RcdFmtWHOold,s30,STRING * 4,WHOF.inc
+RcdFmtWHOold,s60,STRING * 4,WHOF.inc
+RcdFmtWHOold,s90,STRING * 4,WHOF.inc
+RcdFmtWHOold,opn,STRING * 4,WHOF.inc
+RcdFmtWHOold,opn30,STRING * 4,WHOF.inc
+RcdFmtWHOold,opn60,STRING * 4,WHOF.inc
+RcdFmtWHOold,opn90,STRING * 4,WHOF.inc
+RcdFmtWHOold,account,STRING * 4,WHOF.inc
+RcdFmtWHOold,advalue,STRING * 4,WHOF.inc
+RcdFmtWHOold,climit,STRING * 4,WHOF.inc
+RcdFmtWHOold,spnum,STRING * 2,WHOF.inc
+RcdFmtWHOold,spname,STRING * 30,WHOF.inc
+RcdFmtWHOold,spsub,STRING * 40,WHOF.inc
+RcdFmtWHOold,sdist,STRING * 1,WHOF.inc
+RcdFmtWHOold,sret,STRING * 1,WHOF.inc
+RcdFmtWHOold,countercde,STRING * 1,WHOF.inc
+RcdFmtWHOold,tradecde,STRING * 1,WHOF.inc
+RcdFmtWHOold,contractcde,STRING * 1,WHOF.inc
+RcdFmtWHOold,industrialcde,STRING * 1,WHOF.inc
+RcdFmtWHOold,scont1,STRING * 1,WHOF.inc
+RcdFmtWHOold,scont2,STRING * 1,WHOF.inc
+RcdFmtWHOold,wholesalecde,STRING * 1,WHOF.inc
+RcdFmtWHOold,addocnum,STRING * 8,WHOF.inc
+RcdFmtWHOold,addate,STRING * 8,WHOF.inc
+RcdFmtWHOold,sunpoz,STRING * 2,WHOF.inc
+RcdFmtWHOold,smlpoz,STRING * 4,WHOF.inc
+RcdFmtWHOold,sdate,STRING * 8,WHOF.inc
+RcdFmtWHOold,Active,STRING * 1,WHOF.inc
+RcdFmtWHOold,filler1,STRING * 1,WHOF.inc
+RcdFmtWHOold,filler2,STRING * 1,WHOF.inc
+RcdFmtWHOold,filler4,STRING * 6,WHOF.inc
+RcdFmtWHOold,filler5,STRING * 166,WHOF.inc
+RcdFmtWHOnew,sno,STRING * 2,WHOF.inc
+RcdFmtWHOnew,search,STRING * 4,WHOF.inc
+RcdFmtWHOnew,stype,STRING * 1,WHOF.inc
+RcdFmtWHOnew,sname,STRING * 40,WHOF.inc
+RcdFmtWHOnew,saddr,STRING * 40,WHOF.inc
+RcdFmtWHOnew,saddr2,STRING * 40,WHOF.inc
+RcdFmtWHOnew,suburb,STRING * 20,WHOF.inc
+RcdFmtWHOnew,state,STRING * 20,WHOF.inc
+RcdFmtWHOnew,spcode,STRING * 8,WHOF.inc
+RcdFmtWHOnew,spbox,STRING * 8,WHOF.inc
+RcdFmtWHOnew,spboxsub,STRING * 40,WHOF.inc
+RcdFmtWHOnew,email,STRING * 40,WHOF.inc
+RcdFmtWHOnew,www,STRING * 40,WHOF.inc
+RcdFmtWHOnew,pstnCC,STRING * 3,WHOF.inc
+RcdFmtWHOnew,scontTitle,STRING * 3,WHOF.inc
+RcdFmtWHOnew,scont,STRING * 40,WHOF.inc
+RcdFmtWHOnew,sphone,STRING * 12,WHOF.inc
+RcdFmtWHOnew,sphone1,STRING * 12   ' Fax,WHOF.inc
+RcdFmtWHOnew,mobile,STRING * 12,WHOF.inc
+RcdFmtWHOnew,ServiceTitle,STRING * 3,WHOF.inc
+RcdFmtWHOnew,ServiceName,STRING * 30,WHOF.inc
+RcdFmtWHOnew,Servicephone,STRING * 12,WHOF.inc
+RcdFmtWHOnew,ServiceFax,STRING * 12,WHOF.inc
+RcdFmtWHOnew,taxe,STRING * 10,WHOF.inc
+RcdFmtWHOnew,sgl,STRING * 4,WHOF.inc
+RcdFmtWHOnew,rep,STRING * 1,WHOF.inc
+RcdFmtWHOnew,callfreq,STRING * 1,WHOF.inc
+RcdFmtWHOnew,sdays,STRING * 2,WHOF.inc
+RcdFmtWHOnew,sterms,STRING * 4,WHOF.inc
+RcdFmtWHOnew,daysmax,STRING * 2,WHOF.inc
+RcdFmtWHOnew,scur,STRING * 4,WHOF.inc
+RcdFmtWHOnew,s0,STRING * 4,WHOF.inc
+RcdFmtWHOnew,s30,STRING * 4,WHOF.inc
+RcdFmtWHOnew,s60,STRING * 4,WHOF.inc
+RcdFmtWHOnew,s90,STRING * 4,WHOF.inc
+RcdFmtWHOnew,opn,STRING * 4,WHOF.inc
+RcdFmtWHOnew,opn30,STRING * 4,WHOF.inc
+RcdFmtWHOnew,opn60,STRING * 4,WHOF.inc
+RcdFmtWHOnew,opn90,STRING * 4,WHOF.inc
+RcdFmtWHOnew,account,STRING * 4,WHOF.inc
+RcdFmtWHOnew,advalue,STRING * 4,WHOF.inc
+RcdFmtWHOnew,climit,STRING * 4,WHOF.inc
+RcdFmtWHOnew,spnum,STRING * 2,WHOF.inc
+RcdFmtWHOnew,spname,STRING * 30,WHOF.inc
+RcdFmtWHOnew,spsub,STRING * 40,WHOF.inc
+RcdFmtWHOnew,sdist,STRING * 1,WHOF.inc
+RcdFmtWHOnew,sret,STRING * 1,WHOF.inc
+RcdFmtWHOnew,countercde,STRING * 1,WHOF.inc
+RcdFmtWHOnew,tradecde,STRING * 1,WHOF.inc
+RcdFmtWHOnew,contractcde,STRING * 1,WHOF.inc
+RcdFmtWHOnew,industrialcde,STRING * 1,WHOF.inc
+RcdFmtWHOnew,scont1,STRING * 1,WHOF.inc
+RcdFmtWHOnew,scont2,STRING * 1,WHOF.inc
+RcdFmtWHOnew,wholesalecde,STRING * 1,WHOF.inc
+RcdFmtWHOnew,addocnum,STRING * 8,WHOF.inc
+RcdFmtWHOnew,addate,STRING * 8,WHOF.inc
+RcdFmtWHOnew,sunpoz,STRING * 2,WHOF.inc
+RcdFmtWHOnew,smlpoz,STRING * 4,WHOF.inc
+RcdFmtWHOnew,sdate,STRING * 8,WHOF.inc
+RcdFmtWHOnew,Active,STRING * 1,WHOF.inc
+RcdFmtWHOnew,filler1,STRING * 1,WHOF.inc
+RcdFmtWHOnew,filler2,STRING * 1,WHOF.inc
+RcdFmtWHOnew,filler4,STRING * 6,WHOF.inc
+RcdFmtWHOnew,filler5,STRING * 166,WHOF.inc
+RcdFmtWHOnew,ContactName(10),STRING * 20,WHOF.inc
+RcdFmtWHOnew,ContactTitle(10),STRING * 20,WHOF.inc
+RcdFmtWHOnew,ContactPhone(10),STRING * 20,WHOF.inc
+RcdFmtWHOnew,ContactMobile(10),STRING * 20,WHOF.inc
+RcdFmtWHOnew,Contactemail(10),STRING * 40,WHOF.inc
+RcdFmtwhox,wcde,STRING * 5,WHOX.inc
+RcdFmtwhox,wrrn,STRING * 2,WHOX.inc

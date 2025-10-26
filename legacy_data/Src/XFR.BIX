@@ -1,0 +1,92 @@
+DECLARE SUB searchindex (keyin$, chi%, found%)
+  OPEN stdout$ FOR OUTPUT AS #99
+  WIDTH #99, 132
+  IF stdout$ = "CON" THEN CLS
+  lin% = 32766: pag% = 0
+  hrec% = 1
+  GET #48, hrec%, ordhed
+  WHILE NOT EOF(48)
+    IF lin% > 45 THEN GOSUB heading
+    IF stdout$ <> "CON" THEN
+      LOCATE 20, 20: PRINT "Checking order record "; hrec%: LOCATE 1, 1
+    END IF
+
+    IF CVI(ordhed.hord$) = hrec% THEN
+      '/// Convert fields to numeric
+      hord% = CVI(ordhed.hord$)
+      keyin$ = ordhed.hsup$
+      CALL searchindex(keyin$, 23, found%)
+      IF NOT found% THEN
+        keyin$ = "ZZZZZ"
+        CALL searchindex(keyin$, 23, found%)
+        IF NOT found% THEN
+          suplr% = 1
+          GET #43, suplr%, cus
+        END IF
+        GET #48, hrec%, ordhed
+        ordhed.hsup$ = cus.search$ + cus.stype$
+        PUT #48, hrec%, ordhed
+        keyin$ = ordhed.hsup$
+        CALL searchindex(keyin$, 23, found%)
+
+      END IF
+
+      suplr% = CVI(supx.wrrn$)
+      IF NOT found% THEN suplr% = 1
+      horgq = CVS(ordhed.horgq$)
+      hinvq = CVS(ordhed.hinvq$)
+      hordq = CVS(ordhed.hordq$)
+      hdollar = CVS(ordhed.hdollar$)
+      '/// And now the actual print
+      SELECT CASE opt%
+      CASE 1:
+        IF hord% <> 0 THEN
+          IF suplr% < 1 OR suplr% > maxcus% THEN suplr% = 1
+          GET #43, suplr%, cus
+          a$ = cus.search$ + cus.stype$
+          PRINT #99, USING "  ###  &   &-####   ###,###   ###,###   ###,###    $$#,###.##  \       \  \          \"; hord%; cus.sname$; a$; suplr%; horgq; hinvq; hordq; hdollar; FNDYY$(ordhed.hdate$); FNDYY$(ordhed.hreford$)
+          lin% = lin% + 1
+        END IF
+
+      END SELECT
+    END IF
+
+    GET #48, , ordhed: hrec% = hrec% + 1
+  WEND
+
+  PRINT #99, CHR$(18);
+  IF pag% > 0 THEN PRINT #99, CHR$(18); CHR$(12);
+
+  CLOSE #99
+  LOCATE 20, 2
+  shella$ = "COPY DSREP02.PRT LPT1"
+  SHELL shella$
+  RETURN
+   '///////////////////////////////////////////////////////////////////
+   '///////////      G E N R A L      H E A D I N G       ////////////
+   '///////////////////////////////////////////////////////////////////
+heading:
+  pag% = pag% + 1: lin% = 0
+  IF pag% > 1 THEN PRINT #99, CHR$(12);
+   '/////
+  IF opt% = 1 THEN head$ = "F I L E    L I S T I N G"
+   '/////
+  IF opt% = 1 THEN col$ = "O/No.  Customer..............................     Code......    L/Inv.    L/Ord.    B/Ord.       Amount.  Ord/Date   Ord/Ref...."
+  '/////  print actual heading
+
+  PRINT #99, CHR$(18);
+  PRINT #99, "#dsrep02"; TAB(64); "Date:"; DATE1$
+  PRINT #99, TAB(64); "Time:"; TIME$
+  PRINT #99, " "
+  PRINT #99, CHR$(14); msmisc.cc$
+  PRINT #99, " "
+  PRINT #99, SPC(22); "O R D E R   "; head$
+  PRINT #99,
+  PRINT #99, TAB(70); "Page:"; pag%
+  PRINT #99, CHR$(15);
+  PRINT #99, STRING$(131, "=")
+  PRINT #99, col$
+  PRINT #99, STRING$(131, "-")
+  IF stdout$ = "CON" THEN X$ = INPUT$(1)
+   RETURN
+

@@ -1,0 +1,14 @@
+	'@pgmerrbas
+	'////////////////////////////////////////////////////////////////////////////
+	'///////// Standard error routine
+	'////////////////////////////////////////////////////////////////////////////
+	'ON ERROR GOTO ERT
+	GOTO MER
+ERT:
+	RETCODE% = ERR
+	CALL AERROR(RETCODE%)
+	IF RETCODE% = 0 THEN RESUME
+	IF RETCODE% = -1 THEN CLOSE : CALL exitpgm(APGM$): CHAIN APGM$
+	ON ERROR GOTO 0
+MER:
+

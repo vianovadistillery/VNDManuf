@@ -1,0 +1,74 @@
+SUB DoSort (SortArray() AS INTEGER, Low AS INTEGER, High AS INTEGER)
+
+DIM Lower AS INTEGER
+DIM Higher AS INTEGER
+DIM RandIndex AS INTEGER
+DIM Partition AS INTEGER
+
+
+'QuickSort works by picking a random "pivot" element in SortArray, then
+'moving every element that is bigger to one side of the pivot, and every
+'element that is smaller to the other side. QuickSort is then called
+'recursively with the two subdivisions created by the pivot. Once the
+'number of elements in a subdivision reaches two, the recursive calls end
+'and the array is sorted.
+
+IF Low < High THEN
+
+        ' *** Only two elements in this subdivision ***
+        ' *** Swap them if they are out of order, then end recursive calls: ***
+
+        IF High - Low = 1 THEN
+                IF SortArray(Low) > SortArray(High) THEN
+                        SWAP SortArray(Low), SortArray(High)
+                END IF
+
+        ELSE
+
+                '*** Pick a pivot element at random, then move it to the end ***
+
+                RandIndex = INT(RND * (High - Low + 1)) + Low
+                SWAP SortArray(High), SortArray(RandIndex)
+                Partition = SortArray(High)
+                DO
+
+                        '*** Move in from both sides towards the pivot element ***
+
+                        Lower = Low
+                        Higher = High
+                        DO WHILE (Lower < Higher) AND (SortArray(Lower) <= Partition)
+                                Lower = Lower + 1
+                        LOOP
+
+                        DO WHILE (Higher > Lower) AND (SortArray(Higher) >= Partition)
+                                Higher = Higher - 1
+                        LOOP
+
+                        '*** If pivot element not reached, it means that ***
+                        '*** two elements on either side are out of order, ***
+                        '*** so swap them ***
+
+                        IF Lower < Higher THEN
+                                SWAP SortArray(Lower), SortArray(Higher)
+                        END IF
+
+                LOOP WHILE Lower < Higher
+
+                '*** Move the pivot element back to its proper place in the array ***
+
+                SWAP SortArray(Lower), SortArray(High)
+
+                '*** Recursively call the SortArray sub ***
+                '*** Pass the smaller subdivision first to use less stack space ***
+
+                IF (Lower - Low) < (High - Lower) THEN
+                        DoSort SortArray(), Low, Lower - 1
+                        DoSort SortArray(), Lower + 1, High
+                ELSE
+                        DoSort SortArray(), Lower + 1, High
+                        DoSort SortArray(), Low, Lower - 1
+                END IF
+        END IF
+END IF
+
+END SUB

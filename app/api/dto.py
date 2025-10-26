@@ -1,0 +1,388 @@
+# app/api/dto.py
+"""Pydantic DTOs for API requests and responses."""
+
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional, List
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+
+# Common DTOs
+class ErrorResponse(BaseModel):
+    """Standard error response."""
+    error: str
+    detail: Optional[str] = None
+    field: Optional[str] = None
+
+
+# Product DTOs
+class ProductVariantCreate(BaseModel):
+    """Create product variant request."""
+    variant_code: str = Field(..., min_length=1, max_length=50)
+    variant_name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+
+
+class ProductVariantResponse(BaseModel):
+    """Product variant response."""
+    id: str
+    product_id: str
+    variant_code: str
+    variant_name: str
+    description: Optional[str]
+    is_active: bool
+    created_at: datetime
+
+
+class ProductCreate(BaseModel):
+    """Create product request."""
+    sku: str = Field(..., min_length=1, max_length=50)
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    ean13: Optional[str] = Field(None, max_length=20)
+    supplier_id: Optional[str] = None
+    size: Optional[str] = Field(None, max_length=10)
+    base_unit: Optional[str] = Field(None, max_length=10)
+    pack: Optional[int] = None
+    density_kg_per_l: Optional[Decimal] = Field(None, ge=0)
+    abv_percent: Optional[Decimal] = Field(None, ge=0, le=100)
+    dgflag: Optional[str] = Field(None, max_length=1)
+    form: Optional[str] = Field(None, max_length=10)
+    pkge: Optional[int] = None
+    label: Optional[int] = None
+    manu: Optional[int] = None
+    taxinc: Optional[str] = Field(None, max_length=1)
+    salestaxcde: Optional[str] = Field(None, max_length=1)
+    purcost: Optional[Decimal] = Field(None, ge=0)
+    purtax: Optional[Decimal] = Field(None, ge=0)
+    wholesalecost: Optional[Decimal] = Field(None, ge=0)
+    disccdeone: Optional[str] = Field(None, max_length=1)
+    disccdetwo: Optional[str] = Field(None, max_length=1)
+    wholesalecde: Optional[str] = Field(None, max_length=1)
+    retailcde: Optional[str] = Field(None, max_length=1)
+    countercde: Optional[str] = Field(None, max_length=1)
+    tradecde: Optional[str] = Field(None, max_length=1)
+    contractcde: Optional[str] = Field(None, max_length=1)
+    industrialcde: Optional[str] = Field(None, max_length=1)
+    distributorcde: Optional[str] = Field(None, max_length=1)
+    is_active: bool = True
+
+
+class ProductUpdate(BaseModel):
+    """Update product request."""
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    ean13: Optional[str] = Field(None, max_length=20)
+    supplier_id: Optional[str] = None
+    size: Optional[str] = Field(None, max_length=10)
+    base_unit: Optional[str] = Field(None, max_length=10)
+    pack: Optional[int] = None
+    density_kg_per_l: Optional[Decimal] = Field(None, ge=0)
+    abv_percent: Optional[Decimal] = Field(None, ge=0, le=100)
+    dgflag: Optional[str] = Field(None, max_length=1)
+    form: Optional[str] = Field(None, max_length=10)
+    pkge: Optional[int] = None
+    label: Optional[int] = None
+    manu: Optional[int] = None
+    taxinc: Optional[str] = Field(None, max_length=1)
+    salestaxcde: Optional[str] = Field(None, max_length=1)
+    purcost: Optional[Decimal] = Field(None, ge=0)
+    purtax: Optional[Decimal] = Field(None, ge=0)
+    wholesalecost: Optional[Decimal] = Field(None, ge=0)
+    disccdeone: Optional[str] = Field(None, max_length=1)
+    disccdetwo: Optional[str] = Field(None, max_length=1)
+    wholesalecde: Optional[str] = Field(None, max_length=1)
+    retailcde: Optional[str] = Field(None, max_length=1)
+    countercde: Optional[str] = Field(None, max_length=1)
+    tradecde: Optional[str] = Field(None, max_length=1)
+    contractcde: Optional[str] = Field(None, max_length=1)
+    industrialcde: Optional[str] = Field(None, max_length=1)
+    distributorcde: Optional[str] = Field(None, max_length=1)
+    is_active: Optional[bool] = None
+
+
+class ProductResponse(BaseModel):
+    """Product response."""
+    id: str
+    sku: str
+    name: str
+    description: Optional[str]
+    ean13: Optional[str]
+    supplier_id: Optional[str]
+    size: Optional[str]
+    base_unit: Optional[str]
+    pack: Optional[int]
+    density_kg_per_l: Optional[Decimal]
+    abv_percent: Optional[Decimal]
+    dgflag: Optional[str]
+    form: Optional[str]
+    pkge: Optional[int]
+    label: Optional[int]
+    manu: Optional[int]
+    taxinc: Optional[str]
+    salestaxcde: Optional[str]
+    purcost: Optional[Decimal]
+    purtax: Optional[Decimal]
+    wholesalecost: Optional[Decimal]
+    disccdeone: Optional[str]
+    disccdetwo: Optional[str]
+    wholesalecde: Optional[str]
+    retailcde: Optional[str]
+    countercde: Optional[str]
+    tradecde: Optional[str]
+    contractcde: Optional[str]
+    industrialcde: Optional[str]
+    distributorcde: Optional[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    variants: List[ProductVariantResponse] = []
+
+
+# Pricing DTOs
+class PricingResolutionRequest(BaseModel):
+    """Pricing resolution request."""
+    customer_id: str
+    product_id: str
+    pack_unit: Optional[str] = None
+
+
+class PricingResolutionResponse(BaseModel):
+    """Pricing resolution response."""
+    unit_price_ex_tax: Decimal
+    tax_rate: Decimal
+    resolution_source: str  # "customer_price", "price_list_item", "error"
+
+
+# Packing DTOs
+class PackConversionRequest(BaseModel):
+    """Pack conversion request."""
+    product_id: str
+    qty: Decimal = Field(..., gt=0)
+    from_unit: str
+    to_unit: str
+
+
+class PackConversionResponse(BaseModel):
+    """Pack conversion response."""
+    converted_qty: Decimal
+    conversion_factor: Decimal
+    from_unit: str
+    to_unit: str
+
+
+# Invoice DTOs
+class InvoiceLineCreate(BaseModel):
+    """Create invoice line request."""
+    product_id: str
+    quantity_kg: Decimal = Field(..., gt=0)
+    unit_price_ex_tax: Decimal = Field(..., ge=0)
+    tax_rate: Decimal = Field(..., ge=0, le=100)
+
+
+class InvoiceCreate(BaseModel):
+    """Create invoice request."""
+    customer_id: str
+    sales_order_id: Optional[str] = None
+    invoice_date: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    lines: List[InvoiceLineCreate] = Field(..., min_items=1)
+    notes: Optional[str] = None
+
+
+class InvoiceLineResponse(BaseModel):
+    """Invoice line response."""
+    id: str
+    product_id: str
+    quantity_kg: Decimal
+    unit_price_ex_tax: Decimal
+    tax_rate: Decimal
+    line_total_ex_tax: Decimal
+    line_total_inc_tax: Decimal
+    sequence: int
+
+
+class InvoiceResponse(BaseModel):
+    """Invoice response."""
+    id: str
+    customer_id: str
+    sales_order_id: Optional[str]
+    invoice_number: str
+    invoice_date: datetime
+    due_date: Optional[datetime]
+    status: str
+    subtotal_ex_tax: Decimal
+    total_tax: Decimal
+    total_inc_tax: Decimal
+    notes: Optional[str]
+    lines: List[InvoiceLineResponse] = []
+
+
+class InvoiceIssueRequest(BaseModel):
+    """Issue invoice request."""
+    notes: Optional[str] = None
+
+
+# Batch DTOs
+class BatchComponentCreate(BaseModel):
+    """Create batch component request."""
+    ingredient_product_id: str
+    lot_id: str
+    quantity_kg: Decimal = Field(..., gt=0)
+
+
+class BatchCreate(BaseModel):
+    """Create batch request."""
+    work_order_id: str
+    batch_code: str = Field(..., min_length=1, max_length=50)
+    quantity_kg: Decimal = Field(..., gt=0)
+    notes: Optional[str] = None
+
+
+class BatchComponentResponse(BaseModel):
+    """Batch component response."""
+    id: str
+    ingredient_product_id: str
+    lot_id: str
+    quantity_kg: Decimal
+    unit_cost: Optional[Decimal]
+
+
+class BatchResponse(BaseModel):
+    """Batch response."""
+    id: str
+    work_order_id: str
+    batch_code: str
+    quantity_kg: Decimal
+    status: str
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+    notes: Optional[str]
+    components: List[BatchComponentResponse] = []
+
+
+class BatchFinishRequest(BaseModel):
+    """Finish batch request."""
+    notes: Optional[str] = None
+
+
+# Print DTOs
+class PrintResponse(BaseModel):
+    """Print response."""
+    content: str
+    format: str
+    generated_at: datetime
+
+
+# Raw Material DTOs
+class RawMaterialCreate(BaseModel):
+    """Create raw material request."""
+    code: int
+    desc1: str = Field(..., max_length=25)
+    desc2: Optional[str] = Field(None, max_length=25)
+    search_key: Optional[str] = Field(None, max_length=5)
+    search_ext: Optional[str] = Field(None, max_length=8)
+    sg: Optional[Decimal] = Field(None, ge=0)
+    purchase_cost: Optional[Decimal] = Field(None, ge=0)
+    purchase_unit: Optional[str] = Field(None, max_length=2)
+    usage_cost: Optional[Decimal] = Field(None, ge=0)
+    usage_unit: Optional[str] = Field(None, max_length=2)
+    deal_cost: Optional[Decimal] = Field(None, ge=0)
+    sup_unit: Optional[str] = Field(None, max_length=2)
+    sup_qty: Optional[Decimal] = Field(None, ge=0)
+    group_id: Optional[str] = None
+    active_flag: str = Field(default="A", max_length=1)
+    soh: Optional[Decimal] = Field(None, ge=0)
+    restock_level: Optional[Decimal] = Field(None, ge=0)
+    hazard: Optional[str] = Field(None, max_length=1)
+    condition: Optional[str] = Field(None, max_length=1)
+    msds_flag: Optional[str] = Field(None, max_length=1)
+    notes: Optional[str] = Field(None, max_length=25)
+    xero_account: Optional[str] = Field(None, max_length=50)
+
+
+class RawMaterialUpdate(BaseModel):
+    """Update raw material request."""
+    desc1: Optional[str] = Field(None, max_length=25)
+    desc2: Optional[str] = Field(None, max_length=25)
+    search_key: Optional[str] = Field(None, max_length=5)
+    search_ext: Optional[str] = Field(None, max_length=8)
+    sg: Optional[Decimal] = Field(None, ge=0)
+    purchase_cost: Optional[Decimal] = Field(None, ge=0)
+    purchase_unit: Optional[str] = Field(None, max_length=2)
+    usage_cost: Optional[Decimal] = Field(None, ge=0)
+    usage_unit: Optional[str] = Field(None, max_length=2)
+    deal_cost: Optional[Decimal] = Field(None, ge=0)
+    sup_unit: Optional[str] = Field(None, max_length=2)
+    sup_qty: Optional[Decimal] = Field(None, ge=0)
+    group_id: Optional[str] = None
+    active_flag: Optional[str] = Field(None, max_length=1)
+    soh: Optional[Decimal] = Field(None, ge=0)
+    opening_soh: Optional[Decimal] = Field(None, ge=0)
+    soh_value: Optional[Decimal] = Field(None, ge=0)
+    restock_level: Optional[Decimal] = Field(None, ge=0)
+    hazard: Optional[str] = Field(None, max_length=1)
+    condition: Optional[str] = Field(None, max_length=1)
+    msds_flag: Optional[str] = Field(None, max_length=1)
+    notes: Optional[str] = Field(None, max_length=25)
+    xero_account: Optional[str] = Field(None, max_length=50)
+
+
+class RawMaterialResponse(BaseModel):
+    """Raw material response."""
+    id: str
+    code: int
+    desc1: str
+    desc2: Optional[str]
+    search_key: Optional[str]
+    search_ext: Optional[str]
+    sg: Optional[Decimal]
+    purchase_cost: Optional[Decimal]
+    purchase_unit: Optional[str]
+    usage_cost: Optional[Decimal]
+    usage_unit: Optional[str]
+    deal_cost: Optional[Decimal]
+    sup_unit: Optional[str]
+    sup_qty: Optional[Decimal]
+    group_id: Optional[str]
+    active_flag: str
+    soh: Optional[Decimal]
+    opening_soh: Optional[Decimal]
+    soh_value: Optional[Decimal]
+    so_on_order: Optional[int]
+    so_in_process: Optional[Decimal]
+    restock_level: Optional[Decimal]
+    used_ytd: Optional[Decimal]
+    hazard: Optional[str]
+    condition: Optional[str]
+    msds_flag: Optional[str]
+    altno1: Optional[int]
+    altno2: Optional[int]
+    altno3: Optional[int]
+    altno4: Optional[int]
+    altno5: Optional[int]
+    last_movement_date: Optional[str]
+    last_purchase_date: Optional[str]
+    notes: Optional[str]
+    ean13: Optional[Decimal]
+    xero_account: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class RawMaterialGroupResponse(BaseModel):
+    """Raw material group response."""
+    id: str
+    code: str
+    name: str
+    description: Optional[str]
+    is_active: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

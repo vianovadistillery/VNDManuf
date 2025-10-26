@@ -1,0 +1,34 @@
+'////////////////////////////////////////////////////////////////////////
+'>> MSRMAT01
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+	typefields% = -1
+
+	'$INCLUDE: '\tpmanuf\src\msrmat.INC'
+
+CALL setup("Z E R O   M S R M A T")
+
+last% = LOF(38) / LEN(msrmat)
+rec% = 1
+
+GET #38, rec%, msrmat
+DO WHILE rec% < last% + 1
+
+	LOCATE 10, 40: PRINT "Record..."; msrmat.no%
+	'msrmat.searchs$ = SPACE$(8)
+	'msrmat.soh = 0
+	'msrmat.sip = 0
+	'msrmat.soo = 0
+	'msrmat.used = 0
+	msrmat.supqty! = msrmat.purqty%
+	PUT #38, rec%, msrmat
+
+	rec% = rec% + 1
+
+	GET #38, rec%, msrmat
+LOOP
+
+END
+
+

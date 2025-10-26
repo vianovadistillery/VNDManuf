@@ -1,0 +1,1999 @@
+DECLARE SUB exportrec (rec%, exportall%)
+DECLARE SUB export ()
+DECLARE SUB browse38i (rec%)
+DECLARE SUB RmatBrowseII (rec%)
+DECLARE SUB Exchange.rmat (updwn%, cpyfrom%, cpyto%, auto%)
+DECLARE SUB searchindex (keyin$, chi%, found%)
+DECLARE SUB calcusecost ()
+DECLARE SUB Exchange.rmats (p%)
+DECLARE SUB zdeleteinact ()
+DECLARE SUB trimfile (ok%)
+DECLARE SUB updalt (rec%, updwn%)
+DECLARE SUB dsply.usage (rec%)
+DECLARE SUB calcsolidsg (updwn%)
+DECLARE SUB browse39 (firstonscreen%, updwn%)
+DECLARE SUB browse38 (browse38.result%, updwn%)
+DECLARE SUB get.mtype (flag$, ok%)
+DECLARE SUB hazard (code$)
+'////////////////////////////////////////////////////////////////////////
+'>> MSRMAT01
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
+	apgm$ = "MSMENU"
+'$ INCLUDE: '\tpmanuf\src\pgmerr.inc'
+	t = 4: t1 = t + 21: p = 0
+	aa$ = "<-" + CHR$(FNE)
+	aqq$ = SPACE$(20)
+	X = -14
+	DB.OR.CR$ = "CR"
+	'
+	typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\whof.INC'
+	'$INCLUDE: '\tpmanuf\src\msrmat.INC'
+	'$INCLUDE: '\tpmanuf\src\msmisc.INC'
+	'$INCLUDE: '\tpmanuf\src\msrmgp.INC'
+	'$INCLUDE: '\tpmanuf\src\sup.INC'
+	'$INCLUDE: '\tpmanuf\src\supx.inc'
+	'$INCLUDE: '\tpmanuf\src\cusx.inc'
+	'$INCLUDE: '\tpmanuf\src\mtypes.INC'
+	'$INCLUDE: '\tpmanuf\src\tnthed.inc'
+	'$INCLUDE: '\tpmanuf\src\tntdet.inc'
+	'$INCLUDE: '\tpmanuf\src\forhed.inc'
+	'$INCLUDE: '\tpmanuf\src\fordet.inc'
+	CONST vn% = 14
+	DIM SHARED v$(vn%), mtype$(26), mtype%
+	DIM SHARED maxrmat%
+	DIM SHARED altno(1 TO 5) AS INTEGER, altdesc(1 TO 5) AS STRING * 25, altsearch(1 TO 5) AS STRING * 5
+	DIM SHARED qk$, keyl%
+
+	keyl% = 32: qk$ = SPACE$(keyl%)
+	CALL index("OPEN ", ind%, "msrmatx2.msf", 7, keyl%)
+
+	'
+	GET #36, 1, msmisc
+	'
+	maxsup% = CVI(msmisc.max1$): maxform% = CVI(msmisc.max2$): maxrmat% = CVI(msmisc.max3$)
+	maxgrp% = 999
+	FOR i% = 1 TO vn%: READ v$(i%): NEXT
+	DATA KG,LT,EA,/M,MN,EQ,MT,HR,/H,TK,OZ,ML,GM,UT,
+
+	rec% = 1
+	GET #56, 1, mtypes
+	DO WHILE NOT EOF(56) AND rec% <= 26
+		mtype% = mtype% + 1: mtype$(mtype%) = mtypes.dftype$
+		GET #56, , mtypes: rec% = rec% + 1
+		LOOP
+	rec% = 0
+
+
+start:
+	CALL setup("UPDATE RAW MATERIALS FILE")
+	btm$ = "F1-R F2-Exp F4-D F5-Cst F6-B F7-T F8-Exch F9-Grp F10-C. F11-Use F12-Idx Esc-Mlt"
+get.num:
+	CALL prtbtm(btm$)
+	COLOR 2, 0
+	LOCATE 3, 26: PRINT "Material Number..> "
+	COLOR 2, 0
+	IF skip$ = "Y" THEN
+		skip$ = "N": updwn% = 13
+		IF cmd8 = 1 THEN updwn% = 68
+		ELSE
+		p$ = ""
+		LOCATE 3, 44
+		CALL inpnew(p$, 105!, updwn%, "13,59,60,62-68,72,80,27" + ALT$): GOSUB ALT
+	END IF
+	LOCATE 22, 20: COLOR 14: PRINT CHR$(FNE)
+
+proc:
+	'>-- Search ----<
+	start% = 1: IF updwn% = 64 THEN start% = last.found% + 1: p$ = last.search$
+	p$ = UCASE$(p$)
+	lenz% = LEN(p$)
+	IF MID$(p$, 1, 1) >= "A" AND MID$(p$, 1, 1) <= "Z" THEN
+	FOR j% = start% TO maxrmat%
+		GET #38, j%, msrmat
+		IF msrmat.no% = j% AND MID$(msrmat.search$, 1, lenz%) = p$ THEN
+			last.found% = j%: last.search$ = p$
+			p$ = MID$(STR$(j%), 2)
+			EXIT FOR
+			END IF
+		NEXT
+	END IF
+
+	IF updwn% = 27 THEN GOSUB multupd
+	IF multi$ <> "" THEN updwn% = 0
+
+	IF updwn% = 59 THEN CLOSE : CALL EXITPGM(apgm$): CHAIN apgm$
+	IF updwn% = 60 THEN CALL export: CALL exportrec(1, -1): GOTO start
+	IF updwn% = 62 THEN GOSUB do.delete: IF updwn% = 68 GOTO start
+	IF updwn% = 63 THEN cmd8 = 1: updwn% = 68
+	IF updwn% = 64 THEN
+		browse38.result% = rec%:
+		CALL browse38(browse38.result%, updwn%)
+		IF updwn% = 63 THEN CALL Exchange.rmats(browse38.result%)
+		p$ = MID$(STR$(browse38.result%), 2)
+		skip$ = "Y": GOTO start
+	END IF
+	IF updwn% = 65 THEN CALL trimfile(ok%): GOTO start
+	IF updwn% = 66 THEN CALL Exchange.rmat(updwn%, 0, 0, 0): GOTO start
+	IF updwn% = 67 THEN CALL browse39(browse39.result%, updwn%): GOTO start
+	IF updwn% = 133 THEN CALL dsply.usage(rec%): p$ = STR$(rec%): skip$ = "Y": GOTO start
+	IF updwn% = 134 THEN
+		npgm$ = "RMBLD03"
+		CALL EXITPGM(npgm$)
+		PCOPY 0, 1
+		'CHAIN npgm$
+		CLOSE #38, #36
+		SHELL npgm$
+		OPEN "msmisc.msf" FOR RANDOM SHARED AS #36 LEN = 128
+		OPEN "MSRMNEW.MSF" FOR RANDOM SHARED AS #38 LEN = LEN(msrmat)
+		PCOPY 1, 0
+
+	END IF
+	IF updwn% = 72 THEN p = p - 1: rec% = p: IF p < 1 THEN p = 1
+	IF updwn% = 80 THEN p = p + 1: rec% = p: IF p > maxrmat% THEN p = maxrmat%
+	IF updwn% = 13 THEN
+		IF LEN(p$) = 0 THEN p = p + 1 ELSE p = VAL(MID$(p$, 1, 4))
+		IF p < .1 OR p > maxrmat% THEN p = 1
+		X = p - 15
+		rec% = p
+		END IF
+	GOSUB dsply
+	IF updwn% = 68 THEN GOSUB change
+	IF multi$ <> "" THEN
+		GOSUB change
+		IF updwn% = 59 THEN multi$ = ""
+
+		IF multi$ <> "" THEN
+			 DO
+			 rec% = rec% + 1
+			 GET #38, rec%, msrmat
+			 LOOP WHILE rec% < maxrmat% AND msrmat.no <> rec%
+			 END IF
+		END IF
+	GOTO get.num
+'//////////////////////////////////////////////////////////////////////
+'>>/////
+'//////////////////////////////////////////////////////////////////////
+dsply:
+	IF rec% < 1 OR rec% > maxrmat% GOTO x.dsply
+	GET #38, rec%, msrmat
+	FOR i% = 1 TO 5: altno%(i%) = msrmat.altno(i%): NEXT
+	
+	FOR i% = 1 TO 5
+		IF altno(i%) <= 0 OR altno(i%) > maxrmat% THEN
+		altno%(i%) = 0: altdesc$(i%) = SPACE$(99): altsearch$(i%) = SPACE$(99)
+		ELSE
+		GET #38, altno(i%), msrmat
+		altdesc$(i%) = msrmat.desc1$
+		altsearch$(i%) = msrmat.search$
+		END IF
+		NEXT
+	GET #38, rec%, msrmat
+
+	LSET sup.search$ = SPACE$(99)
+	LSET sup.stype$ = SPACE$(99)
+	LSET sup.sname$ = SPACE$(99)
+	keyin$ = msrmat.search$: chi% = 45
+	CALL searchindex(keyin$, chi%, found%)
+	supno% = CVI(supx.wrrn$)
+	IF supno% >= 1 AND supno% <= maxsup% THEN
+		GET #44, supno%, sup
+		END IF
+	LSET msrmgp.rmgroup$ = SPACE$(99)
+	IF msrmat.Group% >= 1 AND msrmat.Group% <= maxgrp% THEN
+		GET #39, msrmat.Group%, msrmgp
+		END IF
+
+	CALL get.mtype(msrmat.cond$, ok%)
+
+	FOR i% = 1 TO 5
+	IF msrmat.altno(i%) = 0 THEN
+	COLOR 2, 0
+	LOCATE 6 + i%, 31: PRINT USING "                                            !"; " "
+	ELSE
+	COLOR 5, 0
+	LOCATE 6 + i%, 31: PRINT USING "    #### - \                          \ \   \"; msrmat.altno(i%); altdesc(i%); altsearch(i%)
+	END IF
+	NEXT
+	COLOR 2, 0
+
+	LOCATE 3, t: PRINT "Updated:  "; FNDYY$(msrmat.date$)
+	LOCATE 3, t + 48: PRINT USING "MYOB Account..> #####"; msrmat.Osoh
+	LOCATE 4, t: PRINT "Record number......: "; : PRINT USING "####"; rec%
+	LOCATE 4, t + 48:       PRINT "Search String.> "; : PRINT USING "\      \"; msrmat.searchs$
+	LOCATE 5, t: PRINT "Description........> "; msrmat.desc1$
+	LOCATE 5, t + 48:       PRINT "Last Purchase.> "; : COLOR 3: PRINT USING "\      \"; FNDYY$(msrmat.lastpur$): COLOR 2
+	LOCATE 6, t: PRINT "Also Known As......> "; msrmat.desc2$
+	LOCATE 6, t + 48: PRINT USING "Stock on Hand.>###,###.##\\"; msrmat.soh; msrmat.UseUnit$
+	LOCATE 7, t: PRINT "Supplier...........> "; sup.search$; sup.stype$; " - "; MID$(sup.sname$, 1, 17)
+	LOCATE 7, t + 48: PRINT USING "Stock on Order>###,###.##\\"; msrmat.soo; msrmat.UseUnit$
+	LOCATE 8, t: PRINT "Specific gravity...> "; : PRINT USING "#.####"; msrmat.sg
+	LOCATE 8, t + 48: PRINT USING "In Production.>###,###.##\\"; msrmat.sip; msrmat.UseUnit$
+	LOCATE 9, t: PRINT "Weight Solids......> "; : PRINT USING "###%"; msrmat.Wtsolid
+	LOCATE 9, t + 48: PRINT USING "Restock Level.>###,###.##\\"; msrmat.restock; msrmat.UseUnit$
+	LOCATE 10, t: PRINT "Solids S/gravity...> "; : PRINT USING "#.####"; msrmat.Solidsg
+	IF msrmat.PurUnit$ = "TK" THEN
+		LOCATE 9, t: PRINT USING "Tank size..........>#####      "; msrmat.Wtsolid!
+				 LOCATE 10, t: PRINT "Tank Lt/mm.........> "; : PRINT USING "#.####"; msrmat.Solidsg
+	END IF
+	LOCATE 10, t + 48: PRINT USING "Used..........>###,###.##\\"; msrmat.used; msrmat.UseUnit$
+	LOCATE 11, t: PRINT "Hazard code........> "; : PRINT USING "!"; msrmat.hazard$
+	LOCATE 11, t + 48: PRINT USING "Barcode.......>#############"; msrmat.ean13
+	LOCATE 12, t: PRINT USING "Purchase Price ....>$####.#### \\"; msrmat.purcost; msrmat.PurUnit$
+	
+	LOCATE 14, t: PRINT USING "Delivery Qty/Unit..>  ####.## \\"; msrmat.supqty!; msrmat.SupUnit$
+	LOCATE 15, t: PRINT USING "Formula Cost.......> $####.## \\"; msrmat.UseCost; msrmat.UseUnit$
+	
+	LOCATE 17, t: PRINT "Group..............> "; : PRINT USING "### &"; msrmat.Group%; msrmgp.rmgroup$
+	a$ = SPACE$(30): b$ = " "
+	IF msrmat.active$ = "A" THEN LSET aqq$ = " - ACTIVE         ": b$ = msrmat.active$
+	IF msrmat.active$ = "S" THEN LSET aqq$ = " - SUSPENDED      ": b$ = msrmat.active$
+	IF msrmat.active$ = "R" THEN LSET aqq$ = " - REDUNDANT      ": b$ = msrmat.active$
+	IF msrmat.active$ = "M" THEN LSET aqq$ = " - MISCELLANIOUS  ": b$ = msrmat.active$
+	IF msrmat.no <> rec% THEN LSET aqq$ = SPACE$(20): b$ = " "
+	LOCATE 18, t: PRINT "Activity...........> "; b$; aqq$
+	LOCATE 19, t: PRINT "Notes..............> "; msrmat.Notes$; aa$
+	LOCATE 20, t: PRINT "Condition flag.....> "; msrmat.cond$; " - "; mtypes.dfdesc$
+	LOCATE 21, t: PRINT "Saft Data Sheet....> "; msrmat.msdsflag;
+	'safty data
+	'd1$ = FNDY$(DATE1$)
+	'd2$ = msrmat.msdsdate$
+	'diff = VAL(d1$) - VAL(d2$)
+	'IF diff > 40000 THEN
+	'    COLOR 4, 0 'More that 4 years old
+	'    LOCATE 21, T: PRINT "Safty Data Sheet...> "; msrmat.msdsflag; " "; FNDYY$(msrmat.msdsdate$)
+	'    sndmsg ("Safty data sheet more that four years old")
+	'    COLOR 2, 0
+	'END IF
+
+	
+	COLOR 6, 0
+	LOCATE 3, t: PRINT "Updated:  ";
+	LOCATE 3, t + 48: PRINT "MYOB Account..> ";
+	LOCATE 4, t: PRINT "Record number......: ";
+	LOCATE 4, t + 48: PRINT "Search String.>"
+	LOCATE 5, t: PRINT "Description........> "
+	LOCATE 5, t + 48: PRINT "Last Purchase.> ";
+	LOCATE 6, t: PRINT "Also Known As......>"
+	LOCATE 6, t + 48: PRINT "Stock on hand.>"
+	LOCATE 7, t: PRINT "Supplier...........> "
+	LOCATE 7, t + 48: PRINT "Stock on Order>"
+	LOCATE 8, t: PRINT "Specific gravity...> "
+	LOCATE 8, t + 48: PRINT "In Production.>"
+	LOCATE 9, t: PRINT "Weight Solids......> "
+	LOCATE 9, t + 48: PRINT "Restock Level.>"
+	LOCATE 10, t: PRINT "Solids S/gravity...> ";
+	IF msrmat.PurUnit$ = "TK" THEN
+		LOCATE 9, t: PRINT "Tank size..........>";
+		LOCATE 10, t: PRINT "Tank Lt/mm.........> "
+	END IF
+
+	LOCATE 10, t + 48: PRINT "Used..........>"
+	LOCATE 11, t: PRINT "Hazard code........> ";
+	LOCATE 11, t + 48: PRINT "Barcode.......>"
+	LOCATE 12, t: PRINT "Purchase Price ....> ";
+	
+	
+	LOCATE 14, t: PRINT "Delivery Qty/Unit..> ";
+	LOCATE 15, t: PRINT "Formula Cost.......> ";
+	
+	LOCATE 17, t: PRINT "Group..............> ";
+	LOCATE 18, t: PRINT "Activity...........> ";
+	LOCATE 19, t: PRINT "Notes..............> ";
+	LOCATE 20, t: PRINT "Condition flag.....> ";
+	LOCATE 21, t: PRINT "Safty Data Sheet...> ";
+	CALL hazard(msrmat.hazard)
+x.dsply:
+RETURN
+'//////////////////////////////////////////////////////////////////////
+'* /////  Change data
+'//////////////////////////////////////////////////////////////////////
+change:
+	IF rec% < 1 OR rec% > maxrmat% THEN GOTO x.change  'Return
+	IF cmd8 = 1 AND msrmat.no <> rec% THEN GOTO x.change'Return
+	s$ = SPACE$(20)
+	IF cmd8 = 1 THEN 1220 'was 1280
+	IF multi$ = "S/G" THEN GOTO 1190
+	IF multi$ = "W/S" THEN GOTO 1191
+	IF multi$ = "HAZ" THEN GOTO 1193
+	IF multi$ = "GRP" THEN GOTO 1710
+	IF multi$ = "NOT" THEN GOTO 1880
+	IF multi$ = "CON" THEN GOTO 1995
+1060
+
+	CALL sndmsg("F2 - Update alternate materials.")
+	LOCATE 5, t1
+	CALL inpnew(msrmat.desc1$, 125!, updwn%, "13,59-60")
+	CALL sndmsg("")
+	IF updwn% = 60 THEN CALL updalt(rec%, updwn%)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1060
+1070
+	LOCATE 6, t1
+	IF msrmat.desc2$ = SPACE$(25) THEN msrmat.desc2$ = msrmat.desc1$
+	IF msrmat.desc2$ = msrmat.desc1$ AND updwn% = 13 THEN GOTO 1080
+	CALL inpnew(msrmat.desc2$, 125!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1060
+	IF msrmat.desc2$ = SPACE$(25) THEN updwn% = 60: GOTO 1070
+1080
+	LOCATE 4, t + 64
+	CALL inpnew(msrmat.searchs$, 108!, updwn%, "13,59-60")
+	msrmat.searchs$ = UCASE$(msrmat.searchs$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1070
+	
+
+1090
+	LOCATE 7, t1
+	a$ = sup.search$ + sup.stype$
+	CALL inpnew(a$, 205!, updwn%, "13,59-60")
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1080
+	keyin$ = a$: chi% = 45
+	CALL searchindex(keyin$, chi%, found%)
+	supno% = CVI(supx.wrrn$)
+	IF NOT found% THEN supno% = 0
+	IF supno% < 1 OR supno% > maxsup% THEN
+			LOCATE 8, 59: COLOR 14: PRINT "Supplier not valid": COLOR 2
+			GOTO 1090
+	END IF
+	GET #44, supno%, sup
+	msrmat.search$ = sup.search$ + sup.stype$
+	LOCATE 7, t1: PRINT msrmat.search$; " - "; MID$(sup.sname$, 1, 17)
+	'LOCATE 7, 59: COLOR 14: PRINT "                 ": COLOR 2
+1180
+	
+	LOCATE 3, t + 64
+	a$ = STR$(msrmat.Osoh)
+				CALL inpnew(a$, 5!, updwn%, "13,59-60")
+	msrmat.Osoh = VAL(a$)
+	COLOR 2
+	LOCATE 3, t + 64: PRINT USING "#####"; msrmat.Osoh
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1090
+	IF multi$ <> "" THEN GOTO 2040'upd
+
+1190
+	LOCATE 8, t1
+	a$ = STR$(msrmat.sg)
+				CALL inpnew(a$, 5.4, updwn%, "13,59-60")
+	msrmat.sg = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1180
+	IF multi$ <> "" THEN GOTO 2040'upd
+1191
+
+	LOCATE 9, t1
+	a$ = STR$(msrmat.Wtsolid)
+	IF msrmat.PurUnit$ <> "TK" THEN
+		CALL inpnew(a$, 4!, updwn%, "13,59-60")
+		msrmat.Wtsolid = VAL(a$)
+		END IF
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1190
+	IF multi$ <> "" THEN GOTO 2040'upd
+	IF msrmat.Wtsolid = 100 THEN
+		msrmat.Solidsg = msrmat.sg
+		LOCATE 11, t: PRINT "Solids S/gravity...> "; : PRINT USING "#.###"; msrmat.Solidsg
+		GOTO 1193
+		END IF
+
+1192
+	IF updwn% = 13 AND msrmat.Wtsolid > 1 AND msrmat.Wtsolid < 99 THEN
+		CALL calcsolidsg(updwn%)
+		IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+		IF updwn% = 60 THEN cmd8 = 0: GOTO 1191
+		END IF
+
+	LOCATE 10, t1
+	a$ = STR$(msrmat.Solidsg)
+				CALL inpnew(a$, 5.3, updwn%, "13,59-60")
+	msrmat.Solidsg = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1191
+	IF multi$ <> "" THEN GOTO 2040'upd
+1193
+	PCOPY 0, 1
+	CALL sndmsg("F3=more details.")
+1194
+	COLOR 3
+	
+	hazardold$ = msrmat.hazard$
+	CALL hazard(msrmat.hazard$)
+	CALL hazard("#")
+	
+	COLOR 2
+
+	
+	LOCATE 11, t1
+	CALL inpnew(msrmat.hazard$, 101!, updwn%, "13,59-61")
+	msrmat.hazard$ = UCASE$(msrmat.hazard$)
+	IF updwn% = 59 THEN
+		cmd8 = 0:
+		PCOPY 1, 0
+		LOCATE 10, t1
+		PRINT msrmat.hazard$
+		CALL hazard(msrmat.hazard$)
+
+		GOTO 2040
+		END IF
+	IF updwn% = 61 THEN
+		CALL hazard("?")
+		CALL sndmsg("")
+		GOTO 1194
+		END IF
+	IF msrmat.hazard$ <> hazardold$ THEN GOTO 1194
+	IF updwn% = 60 THEN
+		cmd8 = 0
+		PCOPY 1, 0
+		LOCATE 11, t1
+		PRINT msrmat.hazard$
+		CALL hazard(msrmat.hazard$)
+		GOTO 1192
+		END IF
+	
+
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	CALL hazard("? ")
+	CALL hazard(msrmat.hazard)
+	PCOPY 1, 0
+	LOCATE 10, t1
+	PRINT msrmat.hazard$
+	CALL hazard(msrmat.hazard$)
+	IF multi$ <> "" THEN GOTO 2040'upd
+
+1210
+	LOCATE 12, t1 - 1
+	a$ = STR$(msrmat.purcost)
+				CALL inpnew(a$, 9.4, updwn%, "13,59-60")
+	msrmat.purcost = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1194
+	IF msrmat.PurUnit$ = "TK" THEN msrmat.UseUnit$ = "EQ": GOTO 1400
+	IF cmd8 = 1 GOTO 1420
+	LOCATE 12, t1 - 1: PRINT USING "$####.####"; msrmat.purcost
+	'CALL round(msrmat.purcost, 2.5)
+	'GOTO 1400
+
+
+1220
+	COLOR 3
+	LOCATE 22, 2: PRINT "   KG - Kilo  LT - Litre  /M Thousand  MN - Mins  EQ - Equipmt  GM - Gram"
+	LOCATE 23, 2: PRINT "   HR - Hour  MT - Tonne  /H Hundred.  EA - Each  OZ - F/Ounce  ML - Mil."
+	COLOR 2
+
+	LOCATE 12, t1 + 10
+	CALL inpnew(msrmat.PurUnit$, 102!, updwn%, "13,59-60")
+	msrmat.PurUnit$ = UCASE$(msrmat.PurUnit$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN
+		LOCATE 22, 2: PRINT CHR$(FNE)
+		LOCATE 23, 2: PRINT CHR$(FNE)
+		END IF
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1210
+
+	IF msrmat.PurUnit$ = "TK" THEN
+		LOCATE 9, t1 - 21: PRINT "Tank size..........>";
+		LOCATE 9, t1
+		a$ = LTRIM$(STR$(msrmat.Wtsolid!))
+		CALL inpnew(a$, 104!, updwn%, "13,59-60")
+		msrmat.Wtsolid! = VAL(a$)
+		END IF
+
+
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	CALL hazard(msrmat.hazard)
+	IF multi$ <> "" THEN GOTO 2040'upd
+
+1280
+	'* End tank processing
+1383
+	LOCATE 14, t1
+	a$ = STR$(msrmat.supqty!)
+				CALL inpnew(a$, 7.2, updwn%, "13,59-60")
+	msrmat.supqty! = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1220
+1384
+	COLOR 3
+	LOCATE 22, 2: PRINT "   KG - Kilo  LT - Litre  /M Thousand  MN - Mins  EQ - Equipmt  GM - Gram"
+	LOCATE 23, 2: PRINT "   HR - Hour  MT - Tonne  /H Hundred.  EA - Each  OZ - F/Ounce  ML - Mil.";
+	COLOR 2
+	LOCATE 14, t1 + 9
+	a$ = msrmat.SupUnit$
+	CALL inpnew(a$, 102!, updwn%, "13,59-60")
+	msrmat.SupUnit$ = UCASE$(a$)
+	LOCATE 14, t1 + 9: PRINT msrmat.SupUnit$
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1383
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	
+1400
+	COLOR 3
+	LOCATE 22, 2: PRINT "   KG - Kilo  LT - Litre  /M Thousand  MN - Mins  EQ - Equipmt  GM - Gram"
+	LOCATE 23, 2: PRINT "   HR - Hour  MT - Tonne  /H Hundred.  EA - Each  OZ - F/Ounce  ML - Mil.";
+	COLOR 2
+	LOCATE 15, t1 + 9
+
+	CALL inpnew(msrmat.UseUnit$, 102!, updwn%, "13,59-60")
+	msrmat.UseUnit$ = UCASE$(msrmat.UseUnit$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1384
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	CALL hazard(msrmat.hazard)
+
+1420
+	IF updwn% = 60 THEN cmd8 = 0: cmd8 = 0: GOTO 1383
+	found% = 0
+	FOR j% = 1 TO vn%
+		IF v$(j%) = msrmat.UseUnit$ THEN found% = -1: EXIT FOR
+		NEXT
+	IF NOT found% THEN
+		LOCATE 15, 45: COLOR 14
+		PRINT "INVALID UNIT DESCRIPTION"
+		GOTO 1400
+	ELSE
+		LOCATE 15, 45: COLOR 2
+		PRINT SPACE$(4)
+	END IF
+1450
+	CALL calcusecost
+	LOCATE 15, t1: PRINT USING "$####.##"; msrmat.UseCost
+	IF cmd8 = 1 GOTO 2040
+1680
+	LOCATE 15, t1
+	a$ = STR$(msrmat.UseCost)
+				CALL inpnew(a$, 7.2, updwn%, "13,59-60")
+	msrmat.UseCost = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1400
+1710
+	LOCATE 17, t1
+	a$ = STR$(msrmat.Group)
+	COLOR 3
+	LOCATE 23, 2: PRINT "  F6- Browse or Edit the group"
+	LOCATE 17, t1
+	COLOR 2
+	CALL inpnew(a$, 3!, updwn%, "13,59-60,64")
+	msrmat.Group = VAL(a$)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1680
+	IF updwn% = 64 THEN CALL browse39(result%, updwn%): msrmat.Group = result%: GOTO 1710
+	IF msrmat.Group% < 0 OR msrmat.Group% > 999 THEN LOCATE 15, 55: PRINT "Out of range.": GOTO 1710
+	IF msrmat.Group% >= 1 AND msrmat.Group% <= 999 THEN
+		GET #39, msrmat.Group%, msrmgp
+		END IF
+1790
+	LOCATE 17, t1: PRINT USING "### \                   \"; msrmat.Group%; msrmgp.rmgroup$
+	IF multi$ <> "" THEN GOTO 2040'upd
+
+
+	'
+1800
+	'Clear Unit Help Display at Bottom of Screen
+	COLOR 3
+	LOCATE 23, 4: PRINT "R/Mat (A/S/R/M - Active/Suspended/Redundant/Misc.)"
+	COLOR 2
+	'
+1850
+	LOCATE 18, t1
+	CALL inpnew(msrmat.active$, 101!, updwn%, "13,59-60")
+	msrmat.active$ = UCASE$(msrmat.active$)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	CALL hazard(msrmat.hazard)
+
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1710
+	 ok% = 0
+	 IF msrmat.active$ = "A" THEN ok% = -1
+	 IF msrmat.active$ = "S" THEN ok% = -1
+	 IF msrmat.active$ = "R" THEN ok% = -1
+	 IF msrmat.active$ = "M" THEN ok% = -1
+	IF NOT ok% THEN
+		COLOR 15: LOCATE 17, 44: PRINT "Activity not valid. Re-enter.": COLOR 2
+		GOTO 1800
+		END IF
+
+
+	 '/// Get msrmat.notes
+1880
+	LOCATE 19, t1
+	CALL inpnew(msrmat.Notes$, 125!, updwn%, "13,59-60")  '110
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1800
+	IF multi$ <> "" THEN GOTO 2040'upd
+1990
+	 '////////// SOH
+	LOCATE 6, 68
+	a$ = STR$(msrmat.soh)
+				CALL inpnew(a$, 8.2, updwn%, "13,59-60")
+	msrmat.soh = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1880
+1991
+	 '////////// Restock
+	LOCATE 9, 68
+	a$ = STR$(msrmat.restock)
+				CALL inpnew(a$, 8.2, updwn%, "13,59-60")
+	msrmat.restock = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1990
+1992
+	 '////////// ean13
+	LOCATE 11, 67
+	a$ = STR$(msrmat.ean13)
+				CALL inpnew(a$, 113!, updwn%, "13,59-60")
+	msrmat.ean13 = VAL(a$)
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1991
+
+
+1995
+	'Clear Unit Help Display at Bottom of Screen
+	COLOR 3
+	LOCATE 22, 18: PRINT "Flags:"
+	LOCATE 22, 25: FOR i% = 1 TO 13: PRINT USING "!-"; mtype$(i%); : NEXT
+	LOCATE 23, 25: FOR i% = 14 TO 26: PRINT USING "!-"; mtype$(i%); : NEXT
+	COLOR 2
+	 '////////// Condition
+	LOCATE 20, t1
+	a$ = msrmat.cond$
+				CALL inpnew(a$, 101!, updwn%, "13,59-60")
+	a$ = UCASE$(a$)
+	CALL get.mtype(a$, found%)
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	CALL hazard(msrmat.hazard)
+
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1992
+	IF NOT found% THEN 1995
+	msrmat.cond$ = a$
+1996
+	LOCATE 21, t1
+	CALL inpnew(msrmat.msdsflag, 101!, updwn%, "13,59-60")  '110
+	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+	IF updwn% = 60 THEN cmd8 = 0: GOTO 1995
+
+'1997
+'    LOCATE 21, t1 + 2
+'    a$ = FNDYY$(msrmat.msdsdate$)
+'    CALL inpnew(a$, 100!, updwn%, "13,59-60")  '110
+'    IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
+'    IF updwn% = 60 THEN cmd8 = 0: GOTO 1996
+'    msrmat.msdsdate$ = FNDY$(a$)
+	
+
+2040
+	'* What was entered
+	wrkd$ = MID$(DATE$, 4, 2) + "/" + MID$(DATE$, 1, 2) + "/" + MID$(DATE$, 9, 2)
+	msrmat.date$ = FNDY$(wrkd$)
+	msrmat.no% = rec%
+	PUT #38, rec%, msrmat
+	CALL exportrec(rec%, 0)
+x.change:
+	IF cmd8 = 1 THEN rec% = rec% + 1
+	p = rec%
+	p$ = MID$(STR$(p), 2)
+	LOCATE 22, 2: PRINT CHR$(FNE)
+	LOCATE 23, 2: PRINT CHR$(FNE)
+	skip$ = "Y"
+RETURN
+	 '////////////////////////////////////////////////////
+	'>>>>> D E L E T E   A   R E C O R D
+	'////////////////////////////////////////////////////
+do.delete:
+	 IF rec% > 0 AND rec% <= maxrmat% THEN 3000
+	 LOCATE 21, 20: COLOR 14: PRINT "NO RECORD TO DELETE"
+	 LOCATE 22, 20: COLOR 14: PRINT "F1=Return  F4=delete inactive";
+	 CALL inpnew(X$, 101!, updwn%, "59,62")
+	IF updwn% = 62 THEN
+		LOCATE 21, 20: COLOR 2, 0: PRINT SPACE$(30);
+		LOCATE 22, 20: COLOR 2, 0: PRINT SPACE$(30);
+		CALL zdeleteinact
+	END IF
+	RETURN
+	'//////////////////////////
+3000
+	'Check the Raw in not in use
+	i& = 1: found% = 0
+	GET #65, i&, tntdet
+	DO WHILE NOT EOF(65) AND i&
+		IF tntdet.rmat% = rec% THEN
+			found% = -1
+			EXIT DO
+		END IF
+		GET #65, , tntdet: i& = i& + 1
+	LOOP
+	IF found% THEN
+		LOCATE 22, 20: COLOR 14: PRINT "Raw Material is in use."
+		LOCATE 1, 1
+		updwn% = 59
+		RETURN
+	END IF
+
+
+	LOCATE 5, 23: COLOR 14: PRINT " Deletion pending "; CHR$(FNE); : COLOR 2, 0
+	LOCATE 25, 1: COLOR 0, 7: PRINT "                     F1 - Abort.  F10 - Continue                                "; : COLOR 2, 0
+	 FOR i% = 1 TO 100: X$ = INKEY$: NEXT
+	 LOCATE 1, 1
+	CALL inpnew(X$, 0!, updwn%, "59,68")
+	IF updwn% = 59 THEN LOCATE 5, 24: PRINT "Record not deleted"; : RETURN
+	COLOR 2, 0
+	 LOCATE 5, 22: PRINT "Record deleted"; CHR$(FNE): LOCATE 1, 1
+		msrmat.desc1$ = " "
+		msrmat.desc2$ = " "
+		msrmat.search$ = " "
+		msrmat.searchs$ = SPACE$(8)
+		msrmat.soh = 0
+		msrmat.Osoh = 0
+		msrmat.sg = 0
+		msrmat.PurUnit$ = " "
+		msrmat.UseCost = 0
+		msrmat.UseUnit$ = " "
+		msrmat.Group = 0
+		msrmat.active$ = " "
+		msrmat.purcost = 0
+		msrmat.date$ = "        "
+		msrmat.Notes$ = ""
+		msrmat.Dealcost = 0
+		msrmat.hazard$ = " "
+		msrmat.Wtsolid = 0
+		msrmat.Solidsg = 0
+		msrmat.SupUnit = SPACE$(2)
+		msrmat.cond = " "
+		msrmat.no% = 0
+		msrmat.altno(1) = 0
+		msrmat.altno(2) = 0
+		msrmat.altno(3) = 0
+		msrmat.altno(4) = 0
+		msrmat.altno(5) = 0
+	 PUT #38, rec%, msrmat
+	RETURN
+
+'////////////////////////////////////////////////////////////////////////////
+'>>>>>   S E C O N D     C H A N G E     M E N U
+'////////////////////////////////////////////////////////////////////////////
+multupd:
+	IF rec% < 1 OR rec% > maxrmat% THEN GOTO x.multupd
+	COLOR 15, 10
+	LOCATE 25, 1: PRINT SPACE$(80);
+	LOCATE 25, 1: PRINT " F1)Exit  F2)S/Gravity  F3)W/Solids  F4)Hazard  F5)Group  F6)Note  F7)Condition";
+
+	multi$ = ""
+DO UNTIL multi$ > ""
+	COLOR 2, 0
+	LOCATE 1, 1: CALL inpnew(a$, 0!, updwn%, "59-68,27")
+	
+	IF updwn% = 59 THEN multi$ = "..."
+	IF updwn% = 60 THEN multi$ = "S/G"
+	IF updwn% = 61 THEN multi$ = "W/S"
+	IF updwn% = 62 THEN multi$ = "HAZ"
+	IF updwn% = 63 THEN multi$ = "GRP"
+	IF updwn% = 64 THEN multi$ = "NOT"
+	IF updwn% = 65 THEN multi$ = "CON"
+	LOOP
+	IF multi$ = "..." THEN multi$ = "": updwn% = 0
+
+	COLOR 2, 0
+x.multupd:
+RETURN
+
+SUB browse38 (browse38.result%, updwn%)
+'$INCLUDE: '\tpmanuf\src\browse38.bi'
+END SUB
+
+SUB browse38i (rec%) STATIC
+		 CALL setup("BROWSE BY ALPHA")
+		 COLOR 6, 0
+		 LOCATE 4, 2: PRINT "SEQ. DESCRIPTION.............. SUPL. A     PRICE. Restk  SOH.  SIP.  SOO. Reqd.";
+		 COLOR 2, 0
+		 btm$ = " F1-Exit   F3-Search   F5-Active/Suspended"
+		 CALL prtbtm(btm$): COLOR 2, 0
+		 REDIM rrn38%(maxrmat%)
+
+		 LSET qk$ = SPACE$(keyl%)
+		 CALL index("CHAIN", ind%, qk$, 7, keyl%)
+		 IF ind% < 0 THEN
+			 CALL index("READ ", ind%, qk$, 7, keyl%)
+		 END IF
+		 IF ind% >= 1 AND ind% <= maxrmat% THEN rec1% = ind% ELSE rec1% = 2
+
+
+		 n% = 0
+		 paglen% = 19
+		 aselect$ = "*"
+		 xactive$ = "*"
+		 prevselect$ = aselect$
+		 dsplyfrom% = 1
+		 start% = browse38i.result%
+		 skip% = -1
+			updwn% = 0
+
+browse38icf1:
+		LOCATE 3, 23: PRINT "Browse from ........> ";
+		IF NOT skip% THEN
+			z$ = ""
+			CALL inpnew(z$, 215!, updwn%, "13,59-60,63,72,73,80,81")
+		END IF
+		skip% = 0
+
+		IF VAL(z$) > 0 THEN
+				aselect$ = "*"
+				n% = 0
+				dsplyfrom% = 1
+				start% = VAL(z$)
+				prevselect$ = aselect$
+		ELSE
+				LSET qk$ = z$
+				CALL index("CHAIN", ind%, qk$, 7, keyl%)
+				IF ind% < 0 THEN
+					CALL index("READ ", ind%, qk$, 7, keyl%)
+				END IF
+				IF ind% >= 1 AND ind% <= maxrmat% THEN
+					aselect$ = "*"
+					n% = 0
+					dsplyfrom% = 1
+					start% = ind%
+					prevselect$ = aselect$
+
+				END IF
+
+		END IF
+
+
+		SELECT CASE updwn%
+		CASE 59: GOTO xbrowse38i
+		CASE 63:
+						SELECT CASE xactive$
+						CASE "*": xactive$ = "A"
+						CASE "A": xactive$ = "S"
+						CASE "S": xactive$ = "R"
+						CASE "R": xactive$ = "M"
+						CASE "M": xactive$ = "*"
+						CASE ELSE: xactive$ = "*"
+						END SELECT
+						LOCATE 3, 70: PRINT USING "Active..:&"; xactive$
+						n% = 0
+						dsplyfrom% = 1
+						start% = rec1%
+
+		CASE 72: dsplyfrom% = dsplyfrom% - 1
+						 IF dsplyfrom% <= 0 AND aselect$ = "*" THEN
+								n% = 0
+								start% = firstrec% - 1
+								dsplyfrom% = 1
+								prevselect$ = aselect$
+						 END IF
+		CASE 73: dsplyfrom% = dsplyfrom% - paglen%
+						 IF dsplyfrom% <= 0 AND aselect$ = "*" THEN
+								n% = 0
+								dsplyfrom% = 1
+								start% = firstrec% - paglen%
+								prevselect$ = aselect$
+						 END IF
+
+		CASE 80: dsplyfrom% = dsplyfrom% + 1
+					rec% = rrn38%(2)
+					 IF rec% >= 1 AND rec% <= maxrmat% THEN
+					GET #38, rec%, msrmat
+					LSET qk$ = msrmat.desc1$ + CHR$(0)
+					CALL index("CHAIN", ind%, qk$, 7, keyl%)
+					IF ind% < 0 THEN
+						CALL index("READ ", ind%, qk$, 7, keyl%)
+					END IF
+					IF ind% >= 1 AND ind% <= maxrmat% THEN
+						rec% = ind%
+						dsplyfrom% = 1
+						start% = rec%
+						n% = 0
+					END IF
+				END IF
+		CASE 81: dsplyfrom% = dsplyfrom% + paglen%
+				LSET qk$ = msrmat.desc1$ + CHR$(0)
+				CALL index("CHAIN", ind%, qk$, 7, keyl%)
+				IF ind% < 0 THEN
+					CALL index("READ ", ind%, qk$, 7, keyl%)
+				END IF
+				IF ind% >= 1 AND ind% <= maxrmat% THEN
+					rec% = ind%
+					dsplyfrom% = 1
+					start% = rec%
+					n% = 0
+				END IF
+
+
+
+						'??
+		CASE 13
+		CASE ELSE
+		END SELECT
+
+		GOSUB load38i
+		GOSUB dsply38fromi
+		GOTO browse38icf1
+
+
+'>-- Load ---<
+load38i:
+		thispag% = 0
+		IF start% < 1 THEN start% = rec1%
+
+		IF updwn% = 72 AND aselect$ = "*" THEN
+			rec% = start%
+			GET #38, rec%, msrmat
+			DO WHILE msrmat.no% <> rec% AND rec% > 1
+				start% = start% - 1
+				rec% = start%
+				GET #38, rec%, msrmat
+			LOOP
+		END IF
+
+			rec% = start%
+			GET #38, rec%, msrmat
+				'>----
+				LSET qk$ = msrmat.desc1$
+				CALL index("CHAIN", ind%, qk$, 7, keyl%)
+				IF ind% < 0 THEN
+					CALL index("READ ", ind%, qk$, 7, keyl%)
+				END IF
+				IF ind% >= 1 AND ind% <= maxrmat% THEN
+					rec% = ind%
+					GET #38, rec%, msrmat
+				END IF
+
+			DO WHILE NOT EOF(38) AND rec% <= maxrmat%
+				IF msrmat.no% = rec% THEN
+					ok% = 0
+					IF aselect$ = "*" THEN ok% = -1
+					IF aselect$ = MID$(msrmat.search$, 1, LEN(aselect$)) THEN ok% = -1
+					IF INSTR(msrmat.desc1, aselect$) > 0 THEN ok% = -1
+					'IF INSTR(msrmat.desc2, aselect$) > 0 THEN ok% = -1
+
+					IF ok% AND xactive$ <> "*" AND msrmat.active <> xactive$ THEN ok% = 0
+
+					IF ok% THEN
+							n% = n% + 1
+							rrn38%(n%) = rec%
+							thispag% = thispag% + 1
+							IF aselect$ = "*" AND thispag% > paglen% THEN
+								EXIT DO
+							END IF
+					END IF
+				END IF
+				X$ = INKEY$
+				IF X$ = CHR$(27) OR X$ = CHR$(0) + CHR$(59) THEN EXIT DO
+				IF rec% MOD 100 = 0 AND aselect$ <> "*" THEN CALL sndmsg(STR$(rec%))
+
+				'??
+				LSET qk$ = msrmat.desc1$
+				CALL index("READ ", ind%, qk$, 7, keyl%)
+				IF ind% < 0 THEN
+					ind% = 0 - ind%
+				END IF
+				'>-
+				IF ind% >= 1 AND ind% <= maxrmat% THEN
+					rec% = ind%
+					GET #38, rec%, msrmat
+				ELSE
+					GET #38, , msrmat: rec% = rec% + 1
+				END IF
+				
+
+			LOOP
+
+				CALL sndmsg("")
+				start% = rec% + 1'
+RETURN
+
+
+dsply38fromi:
+IF dsplyfrom% < 1 THEN dsplyfrom% = 1
+IF dsplyfrom% > n% THEN dsplyfrom% = n%
+
+
+FOR lin% = 1 TO paglen%
+		item% = dsplyfrom% + lin% - 1
+		IF n% = 0 THEN EXIT FOR
+		IF item% > n% THEN EXIT FOR
+
+		rec% = rrn38%(item%)
+		GET #38, rec%, msrmat
+		reqd = msrmat.sip + msrmat.restock - msrmat.soh
+		LOCATE lin% + 4, 2: COLOR 2, 0
+		PRINT USING "#### \                       \ \   \ \\#####.##\\ ##### ##### ##### ##### #####"; msrmat.no%; msrmat.desc1$; msrmat.search$; msrmat.active$; msrmat.purcost; msrmat.PurUnit$; msrmat.restock; msrmat.soh; msrmat.sip; msrmat.soo; reqd
+		IF lin% = 1 THEN firstrec% = rec%
+		NEXT
+
+i% = lin%
+FOR lin% = i% TO paglen%
+		LOCATE lin% + 4, 2: COLOR 2, 0
+		PRINT SPACE$(78);
+		NEXT
+RETURN
+
+xbrowse38i:
+		browse38i.result% = firstrec%
+		IF browse38i.result% < 1 THEN browse38i.result% = 1
+		IF browse38i.result% > maxrmat% THEN browse38i.result% = 1
+
+END SUB
+
+SUB browse39 (result%, updwn%) STATIC
+DIM text(0 TO 9) AS STRING * 25
+PCOPY 0, 1
+	maxbpage% = 20
+	bbtm$ = " F1-R. F10-C."
+	wrk$ = STR$(msrmat.Group) + "    "
+	opt1% = VAL(MID$(wrk$, 2, 1))
+	opt2% = VAL(MID$(wrk$, 3, 1)) + 1
+	opt3% = VAL(MID$(wrk$, 4, 1)) + 1
+'------------------------------------------------------
+'- Tree structure (1st level)
+'------------------------------------------------------
+cf0.39:
+	CALL setup("BROWSE")
+	COLOR 0, 3: LOCATE 25, 1: PRINT bbtm$; : COLOR 2, 0
+	opt0% = 0
+
+cf1.39:
+	y1% = 5: x1% = 2: n% = 0:
+	rrn% = 1
+	LOCATE y1% - 1, x1%: PRINT "    Start "; rrn%
+	FOR i% = rrn% TO rrn% + 8
+		n% = n% + 1
+		GET #39, i%, msrmgp: text$(n%) = STR$(n%) + ".." + msrmgp.rmgroup$ + " "
+		LOCATE n% + y1% - 1, x1%: PRINT text$(n%)
+		NEXT
+	CALL menu(y1%, x1%, y1% + 9, x1% + 25, opt1%, updwn%, ",13,27,59,68")
+	IF updwn% = 27 OR updwn% = 59 THEN GOTO x.browse39
+	IF updwn% = 60 GOTO cf1.39
+	IF updwn% = 68 THEN GOTO cf99.39
+	IF updwn% <> 13 THEN GOTO cf1.39
+
+'------------------------------------------------------
+'- Tree structure (2nd level)
+'------------------------------------------------------
+
+cf2.39:
+	y1% = 7: x1% = 28: n% = 0
+	rrn% = opt1% * 10
+	LOCATE y1% - 1, x1%: PRINT "    Start "; rrn%
+	FOR i% = rrn% TO rrn% + 9
+		n% = n% + 1
+		GET #39, i%, msrmgp: text$(n% - 1) = STR$(n% - 1) + ".." + msrmgp.rmgroup$ + " "
+		LOCATE n% + y1% - 1, x1%: PRINT text$(n% - 1)
+		NEXT
+	CALL menu(y1%, x1%, y1% + 9, x1% + 25, opt2%, updwn%, ",13,59-60,68,27")
+	IF updwn% = 27 OR updwn% = 59 THEN GOTO x.browse39
+	IF updwn% = 60 GOTO cf1.39
+	IF updwn% = 68 THEN GOTO cf99.39
+	IF updwn% <> 13 THEN GOTO cf2.39
+
+'------------------------------------------------------
+'- Tree structure (3rd level)
+'------------------------------------------------------
+
+cf3.39:
+	y1% = 9: x1% = 54: n% = 0
+	rrn% = opt1% * 100 + ((opt2% - 1) * 10)
+	LOCATE y1% - 1, x1%: PRINT "    Start "; rrn%
+	FOR i% = rrn% TO rrn% + 9
+		n% = n% + 1
+		GET #39, i%, msrmgp: text$(n% - 1) = STR$(n% - 1) + ".." + msrmgp.rmgroup$ + " "
+		LOCATE n% + y1% - 1, x1%: PRINT text$(n% - 1)
+		NEXT
+	CALL menu(y1%, x1%, y1% + 9, x1% + 25, opt3%, updwn%, ",13,59-60,68,27")
+	IF updwn% = 27 OR updwn% = 59 THEN GOTO x.browse39
+	IF updwn% = 60 GOTO cf2.39
+	IF updwn% = 68 THEN GOTO cf99.39
+	IF updwn% <> 13 THEN GOTO cf3.39
+
+GOTO x.browse39
+
+cf99.39:
+
+	max% = LOF(39) / LEN(msgrp)
+	maxbpage% = 20
+	bbtm$ = "F1-R."
+'///////////////////////////////////////////////////////////////////////
+'>>> -
+'///////////////////////////////////////////////////////////////////////
+do.group:
+	'>>>>> U P D A T E   R/M  G R O U P
+	CALL setup(" UPDATE GROUP DESCRIPTIONS")
+	COLOR 0, 3: LOCATE 25, 2: PRINT " F1 - Return.                     PgUp/PGDown                      F10 - Change"; : COLOR 2, 0
+	GOTO 3420
+3310
+	LOCATE 3, 23: PRINT "Display group number..> "; CHR$(FNH);
+	a$ = ""
+	CALL inpnew(a$, 3!, updwn%, "13,59-60,68,73,81")
+	IF updwn% = 59 THEN GOTO x.dogroup
+	IF updwn% = 60 THEN GOTO x.dogroup
+	IF updwn% = 73 THEN k% = k% - 57: GOTO 3420
+	IF updwn% = 81 THEN k% = k% + 57: GOTO 3420
+	IF updwn% = 13 THEN
+		a% = VAL(a$)
+		k% = a% - (a% MOD 57)
+		GOTO 3420
+		END IF
+	IF updwn% = 68 THEN
+		LOCATE 3, 23: PRINT "Change group number...> "; CHR$(FNH);
+		CALL inpnew(b$, 3!, updwn%, "13,59-60,65-66")
+		b% = VAL(b$)
+		IF b% < 1 OR b% > 999 THEN GOTO 3310
+		GET #39, b%, msrmgp
+		a$ = msrmgp.rmgroup$
+		LOCATE 3, 23: PRINT "Enter new group..> "; CHR$(FNH);
+		CALL inpnew(a$, 122!, updwn%, "13,59-60")
+		LOCATE 3, 23: PRINT CHR$(FNE)
+		IF updwn% = 59 THEN GOTO 3310
+		IF LEN(a$) > 0 THEN msrmgp.rmgroup$ = a$
+		PUT #39, b%, msrmgp
+		k% = b% - (b% MOD 57)
+		END IF
+	'>>>>>>- Listing starts here <<<<<
+3420
+	IF k% < 1 THEN k% = 1
+	IF k% > 950 THEN k% = 950
+	'
+	gpaglen% = 18
+	l% = 0
+	FOR i% = k% TO k% + gpaglen%
+		l% = l% + 1: LOCATE l% + 3, 2
+		j% = i% + 1 + gpaglen%: kk% = j% + 1 + gpaglen%
+		GET #39, i%, msrmgp: a$ = msrmgp.rmgroup$
+		GET #39, j%, msrmgp: b$ = msrmgp.rmgroup$
+		IF kk% < 999 THEN GET #39, kk%, msrmgp: c$ = msrmgp.rmgroup$
+		PRINT USING "### \                    \### \                    \"; i%; a$; j%; b$;
+		IF kk% < 999 THEN PRINT USING "### \                    \"; kk%; c$;
+		IF kk% > 998 THEN PRINT CHR$(FNE);
+		PRINT
+		NEXT
+	 GOTO 3310
+x.dogroup:
+	 GOTO cf0.39
+x.browse39:
+result% = opt1% * 100 + ((opt2% - 1) * 10) + (opt3% - 1)
+
+PCOPY 1, 0
+END SUB
+
+SUB calcsolidsg (updwn%)
+	PCOPY 0, 1
+	IF msrmat.sg! = 0 THEN GOTO x.calcsolidsg
+
+
+	LOCATE 8, 33: PRINT SPACE$(47)
+	LOCATE 9, 33: PRINT SPACE$(47)
+	LOCATE 10, 33: PRINT SPACE$(47)
+	LOCATE 11, 33: PRINT SPACE$(47)
+	LOCATE 12, 33: PRINT SPACE$(47)
+
+	LOCATE 9, 33: PRINT "Enter Estimated Solvent SG..>"; estsolsg!
+
+cf1:
+	a$ = STR$(estsolsg!)
+				LOCATE 9, 62: CALL inpnew(a$, 4.3, updwn%, "13,59-60")
+	IF updwn% = 59 THEN GOTO x.calcsolidsg
+	IF updwn% = 60 THEN GOTO x.calcsolidsg
+	estsolsg! = VAL(a$)
+	IF estsolsg! = 0 THEN GOTO x.calcsolidsg
+
+	msrmat.Solidsg! = msrmat.Wtsolid! * 100 / msrmat.sg!
+
+	b! = 100 / msrmat.sg!
+	c! = (100 - msrmat.Wtsolid!) / estsolsg!
+
+	IF (b! - c!) <> 0 THEN
+		msrmat.Solidsg! = msrmat.Wtsolid! / (b! - c!)
+		END IF
+
+
+x.calcsolidsg:
+	PCOPY 1, 0
+END SUB
+
+SUB calcusecost
+	 '* Calculate use cost from SG & cost price
+	ab$ = msrmat.PurUnit$ + "-" + msrmat.UseUnit$
+	SELECT CASE ab$
+	CASE "KG-LT": msrmat.UseCost = msrmat.purcost * msrmat.sg
+	CASE "KG-ML": msrmat.UseCost = msrmat.purcost * msrmat.sg / 1000
+	CASE "LT-KG"
+				IF msrmat.sg <> 0 THEN msrmat.UseCost = msrmat.purcost / msrmat.sg
+				IF msrmat.sg = 0 THEN msrmat.UseCost = msrmat.purcost
+	CASE "LT-GM"
+				IF msrmat.sg <> 0 THEN msrmat.UseCost = msrmat.purcost / msrmat.sg * 1000
+				IF msrmat.sg = 0 THEN msrmat.UseCost = msrmat.purcost / 1000
+	CASE "/M-EA": msrmat.UseCost = msrmat.purcost / 1000
+	CASE "/H-EA": msrmat.UseCost = msrmat.purcost / 100
+	CASE "MT-KG": msrmat.UseCost = msrmat.purcost / 1000
+	CASE "MT-GM": msrmat.UseCost = msrmat.purcost / 1000 / 1000
+	CASE "MT-LT": msrmat.UseCost = msrmat.purcost * msrmat.sg / 1000
+	CASE "MT-ML": msrmat.UseCost = msrmat.purcost * msrmat.sg / 1000000
+	CASE "LT-OZ": msrmat.UseCost = msrmat.purcost / 28.413
+	CASE "LT-UT": msrmat.UseCost = msrmat.purcost / 28.413 / 64
+	CASE "LT-ML": msrmat.UseCost = msrmat.purcost / 1000
+	CASE "KG-GM": msrmat.UseCost = msrmat.purcost / 1000
+	CASE "GM-LT": msrmat.UseCost = msrmat.purcost * msrmat.sg / 1000
+	CASE "ML-LT": msrmat.UseCost = msrmat.purcost * 1000
+	CASE "TK": msrmat.UseCost = msrmat.purcost
+	CASE ELSE: msrmat.UseCost = msrmat.purcost
+	END SELECT
+	'* Round to 2 decimal plmsrmat.activees UP ie 3.0001 = 3.01
+	CALL round(msrmat.UseCost, 2.5)
+
+
+END SUB
+
+SUB dsply.usage (rec%)
+	'- Formulation file
+	REDIM c$(10)
+	CALL setup("Search for Raw Material")
+
+	OPEN "c:\tpexe\Search.wrk" FOR OUTPUT AS #99
+	count% = 0
+
+	'- Formulation file
+	rec65& = 1
+	GET #65, rec65&, tntdet
+	DO WHILE NOT EOF(65)
+		IF tntdet.rmat% = rec% AND tntdet.tnt& = rec65& THEN
+			count% = count% + 1
+			idx% = (rec65& / 38) + 1
+			GET #64, idx%, tnthed
+			test = VAL(MID$(tnthed.tnta$, 1, 3))
+			IF test > 0 AND test < 999 THEN PRINT #99, tnthed.tnta$ + "   ";
+			PRINT tnthed.tnta$ + "   ";
+		END IF
+		IF rec65& MOD 10 = 0 THEN X$ = INKEY$
+		IF X$ = CHR$(27) THEN EXIT DO
+		IF X$ = CHR$(0) + CHR$(59) THEN EXIT DO
+
+		IF rec65& MOD 100 = 0 THEN CALL sndmsg("Searching Tints... " + STR$(rec65&))
+
+		GET #65, , tntdet: rec65& = rec65& + 1
+	LOOP
+
+	'- Tinter file
+	rec55& = 1
+	GET #55, rec55&, tntdet
+	DO WHILE NOT EOF(55)
+		IF tntdet.rmat% = rec% AND tntdet.tnt& = rec55& THEN
+			count% = count% + 1
+			idx% = (rec55& / 38) + 1
+			GET #54, idx%, tnthed
+			test = VAL(MID$(tnthed.tnta$, 1, 3))
+			IF test > 0 AND test < 999 THEN PRINT #99, tnthed.tnta$ + "   ";
+			PRINT tnthed.tnta$ + "   ";
+			END IF
+
+		IF rec55& MOD 10 = 0 THEN X$ = INKEY$
+		IF X$ = CHR$(27) THEN EXIT DO
+		IF X$ = CHR$(0) + CHR$(59) THEN EXIT DO
+
+		IF rec55& MOD 500 = 0 THEN CALL sndmsg("Searching Formula Details... " + STR$(rec55&))
+
+		GET #55, , tntdet: rec55& = rec55& + 1
+	LOOP
+
+	'-Other sets
+	c$(1) = "BRIdet.asf"
+	c$(2) = "hendet.asf"
+	c$(3) = "hicdet.asf"
+	c$(4) = "JOTdet.asf"
+	c$(5) = "reddet.asf"
+	c$(6) = "SICdet.asf"
+	c$(7) = "tntdet.asf"
+	c$(8) = "WAGdet.asf"
+	c$(9) = "WATdet.asf"
+
+	FOR c% = 1 TO 9
+
+		file$ = c$(c%)
+		a$ = DIR$(file$)
+		IF a$ > "" THEN
+			OPEN file$ FOR RANDOM SHARED AS #165 LEN = 32
+
+			'- Formulation file (Other sets)
+			rec165& = 1
+			GET #165, rec165&, tntdet
+			DO WHILE NOT EOF(165)
+				IF tntdet.rmat% = rec% AND tntdet.tnt& = rec165& THEN
+					count% = count% + 1
+					idx% = (rec165& / 38) + 1
+					GET #64, idx%, tnthed
+					test = VAL(MID$(tnthed.tnta$, 1, 3))
+					IF test > 0 AND test < 999 THEN PRINT #99, tnthed.tnta$ + "   ";
+					PRINT tnthed.tnta$ + "   ";
+				END IF
+				IF rec165& MOD 10 = 0 THEN X$ = INKEY$
+				IF X$ = CHR$(27) THEN EXIT DO
+				IF X$ = CHR$(0) + CHR$(59) THEN EXIT DO
+
+				'IF rec165% MOD 100 = 0 THEN CALL sndmsg("Searching Tints... " + STR$(rec165%))
+
+				GET #165, , tntdet: rec165& = rec165& + 1
+			LOOP
+
+			CLOSE #165
+		END IF
+	NEXT
+
+	CLOSE #99
+	a$ = " "
+	LOCATE 24, 41: CALL inpnew(a$, 101!, updwn%, "13,59,60")
+	CALL sndmsg("")
+END SUB
+
+SUB Exchange.rmat (updwn%, cpyfrom%, cpyto%, auto%)
+	DIM c$(1 TO 10)
+	CALL setup("RAW MATERIAL EXCHANGE")
+	btm$ = " F1-R."
+	COLOR 8, 3: LOCATE 25, 1: PRINT btm$; : COLOR 2, 0
+
+	'rec38% = 1
+	'GET #38, rec38%, msrmat
+	'DO WHILE NOT EOF(38)
+	'    IF rec38% MOD 100 = 0 THEN LOCATE 10, 10: PRINT rec38%
+	'    IF msrmat.Active$ = "S" THEN msrmat.Active$ = "I"
+	'    PUT #38, rec38%, msrmat
+	'    GET #38, , msrmat: rec38% = rec38% + 1
+	'LOOP
+
+exchange.rmat.0:
+	IF cpyfrom% < 1 OR cpyfrom% > maxrmat% THEN
+		COLOR 2, 0
+		LOCATE 6, 10: PRINT "From raw material number..>"
+		COLOR 2, 0
+		LOCATE 6, 37: CALL inpnew(cpyfrom$, 4!, updwn%, "13,59-60")
+		IF updwn% = 59 THEN GOTO x.exchange.rmat
+		IF updwn% = 60 THEN GOTO exchange.rmat.0
+		cpyfrom% = VAL(cpyfrom$)
+		IF cpyfrom% < 1 OR cpyfrom% > maxrmat% THEN GOTO exchange.rmat.0
+	END IF
+	GET #38, cpyfrom%, msrmat
+	LOCATE 7, 10: PRINT USING "#### &"; msrmat.no; msrmat.desc1$
+
+	factor$ = "100.00"
+	factor# = 100
+
+exchange.rmat.1:
+	IF cpyto% < 1 OR cpyto% > maxrmat% THEN
+		COLOR 2, 0
+		LOCATE 9, 10: PRINT "  To raw material number..>"
+		COLOR 2, 0
+		LOCATE 9, 37: CALL inpnew(cpyto$, 4!, updwn%, "13,59-60")
+		IF updwn% = 59 THEN GOTO x.exchange.rmat
+		IF updwn% = 60 THEN GOTO exchange.rmat.0
+		cpyto% = VAL(cpyto$)
+		IF cpyto% < 1 OR cpyto% > maxrmat% THEN GOTO exchange.rmat.1
+	END IF
+	GET #38, cpyto%, msrmat
+	LOCATE 10, 10: PRINT USING "#### &"; msrmat.no; msrmat.desc1$;
+
+	'<<< If the destination does not exist then move RMAT record as well >>>
+	addnew% = 0
+	IF msrmat.no% <> cpyto% THEN
+		LOCATE 10, 10: PRINT "Create new raw material."
+		addnew% = -1
+	END IF
+	IF msrmat.date$ = "        " THEN
+		LOCATE 10, 10: PRINT msrmat.desc1$; "    (Date Blanked)"
+		addnew% = -1
+	END IF
+
+exchange.rmat.2:
+	IF NOT auto% THEN
+		COLOR 2, 0
+		LOCATE 12, 10: PRINT "  Factor...............%..>"
+		LOCATE 12, 37: CALL inpnew(factor$, 5.2, updwn%, "13,59-60")
+		IF updwn% = 59 THEN GOTO x.exchange.rmat
+		IF updwn% = 60 THEN GOTO exchange.rmat.1
+		factor# = VAL(factor$) / 100
+	END IF
+
+	confirm$ = "N"
+exchange.rmat.3:
+	IF NOT auto% THEN
+		COLOR 2, 0
+		LOCATE 15, 10: PRINT "       Confirm (Y/N)......>"
+		LOCATE 15, 37: CALL inpnew(confirm$, 101!, updwn%, "13,59-60")
+		confirm$ = UCASE$(confirm$)
+		IF updwn% = 59 THEN GOTO x.exchange.rmat
+		IF updwn% = 60 THEN GOTO exchange.rmat.2
+		IF confirm$ <> "Y" THEN GOTO x.exchange.rmat
+	END IF
+
+
+
+	'>----------------------------------------------------------------------
+	'>- Go for it!
+	'>----------------------------------------------------------------------
+	IF addnew% THEN
+		GET #38, cpyfrom%, msrmat
+		msrmat.date$ = "        "
+		PUT #38, cpyfrom%, msrmat
+
+		msrmat.no% = cpyto%
+		msrmat.date$ = MID$(DATE$, 9, 2) + "/" + MID$(DATE$, 1, 2) + "/" + MID$(DATE$, 4, 2)
+		wrkd$ = MID$(DATE$, 4, 2) + "/" + MID$(DATE$, 1, 2) + "/" + MID$(DATE$, 9, 2)
+		msrmat.date$ = FNDY$(wrkd$)
+		PUT #38, cpyto%, msrmat
+	END IF
+
+	GET #38, cpyfrom%, msrmat
+	msrmat.active$ = "S"
+	PUT #38, cpyfrom%, msrmat
+
+	GET #38, cpyto%, msrmat
+	msrmat.active$ = "A"
+	PUT #38, cpyto%, msrmat
+
+
+
+	'- Change alternates
+	count% = 0
+	rec38% = 1
+	GET #38, rec38%, msrmat
+	DO WHILE NOT EOF(38)
+		IF rec38% MOD 100 = 0 THEN LOCATE 15, 50: PRINT USING "##,###"; rec38%
+		found% = 0
+		FOR i% = 1 TO 5
+			IF msrmat.altno%(i%) = cpyfrom% THEN
+				msrmat.altno%(i%) = cpyto%
+				found% = -1
+			END IF
+			IF msrmat.altno%(i%) > 9999 OR msrmat.altno%(i%) < 0 THEN
+				msrmat.altno%(i%) = 0: found% = -1
+			END IF
+		NEXT
+		IF found% THEN
+			PUT #38, rec38%, msrmat
+			count% = count% + 1
+		END IF
+		GET #38, , msrmat: rec38% = rec38% + 1
+	LOOP
+
+	'>-Formulation headers (Some formulations create raws)
+	i% = 1
+	GET #54, i%, tnthed
+	DO WHILE NOT EOF(54) AND i% < 32000
+		IF i% = tnthed.tnt THEN
+			IF tnthed.asRmat% = cpyfrom% THEN
+				tnthed.asRmat% = cpyto%
+				PUT #54, i%, tnthed
+			END IF
+		END IF
+		GET #54, , tnthed: i% = i% + 1
+	LOOP
+
+
+	'- Formulation detail file
+	count% = 0
+	rec65& = 1
+	GET #65, rec65&, tntdet
+	DO WHILE NOT EOF(65)
+		IF rec65& MOD 100 = 0 THEN LOCATE 15, 50: PRINT USING "##,###"; rec65&
+		IF tntdet.rmat% = cpyfrom% THEN
+		'IF tntdet.tnt = rec65% THEN
+			tntdet.rmat% = cpyto%
+			IF factor# <> 1 AND factor# <> 0 THEN
+				tntdet.qty = tntdet.qty * factor#
+				CALL round(tntdet.qty, 2.5)
+			END IF
+			PUT #65, rec65&, tntdet
+			count% = count% + 1
+	 'END IF
+		END IF
+		GET #65, , tntdet: rec65& = rec65& + 1
+	LOOP
+
+	'- Tinter file
+	rec55& = 1
+	GET #55, rec55&, tntdet
+	DO WHILE NOT EOF(55)
+		IF rec55& MOD 100 = 0 THEN LOCATE 16, 50: PRINT USING "##,###"; rec55&
+		IF tntdet.rmat% = cpyfrom% THEN
+		'IF tntdet.tnt = rec55% THEN
+			tntdet.rmat% = cpyto%
+			IF factor# <> 1 AND factor# <> 0 THEN
+				tntdet.qty = tntdet.qty * factor#
+				CALL round(tntdet.qty, 2.5)
+			END IF
+			PUT #55, rec55&, tntdet
+			count% = count% + 1
+		'END IF
+		END IF
+		GET #55, , tntdet: rec55& = rec55& + 1
+		LOOP
+
+	'-Other sets
+	c$(1) = "bridet.asf"
+	c$(2) = "hendet.asf"
+	c$(3) = "hicdet.asf"
+	c$(4) = "jotdet.asf"
+	c$(5) = "reddet.asf"
+	c$(6) = "sicdet.asf"
+	c$(7) = "wagdet.asf"
+	c$(8) = "watdet.asf"
+
+
+	COLOR 2, 0
+	LOCATE 3, 45: PRINT "Other Sets"
+	
+	FOR c% = 1 TO 8
+
+		file$ = c$(c%)
+		LOCATE 3 + c%, 45: PRINT file$
+		a$ = DIR$(file$)
+		IF a$ > "" THEN
+
+			OPEN file$ FOR RANDOM SHARED AS #165 LEN = 32
+
+			'- Formulation file
+			rec65& = 1
+			GET #165, rec65&, tntdet
+			DO WHILE NOT EOF(165)
+				IF rec65& MOD 100 = 0 THEN LOCATE 16, 50: PRINT USING "##,###"; rec65&
+				IF tntdet.rmat% = cpyfrom% THEN
+				'IF tntdet.tnt = rec65% THEN
+					tntdet.rmat% = cpyto%
+					IF factor# <> 1 AND factor# <> 0 THEN
+						tntdet.qty = tntdet.qty * factor#
+						CALL round(tntdet.qty, 2.5)
+					END IF
+					PUT #165, rec65&, tntdet
+					count% = count% + 1
+				'END IF
+				END IF
+				GET #165, , tntdet: rec65& = rec65& + 1
+			LOOP
+			CLOSE #165
+		ELSE
+		LOCATE 3 + c%, 45: PRINT file$ + " Not found.";
+		END IF
+
+	NEXT
+
+	msg$ = "Raw #" + cpyfrom$ + " exchanged with #" + cpyto$ + " with " + STR$(count%) + " occurances."
+	CALL sndmsg(msg$)
+	X$ = INPUT$(1)
+
+
+x.exchange.rmat:
+	CALL sndmsg("")
+
+END SUB
+
+SUB Exchange.rmats (p%)
+
+	 REDIM rrn38%(maxrmat%)
+	 paglen% = 15
+
+	'- Formulation file
+	CALL setup("CHANGE MULTIPLE RAW MATERIAL")
+	GET #38, p%, msrmat
+	LOCATE 4, 2: COLOR 7, 0
+	PRINT USING "#### \                       \ \   \ ### \\#.### #####.###\ \\               \"; msrmat.no%; msrmat.desc1$; msrmat.search$; msrmat.Group%; msrmat.active$; msrmat.sg; msrmat.purcost; msrmat.PurUnit$; msrmat.Notes$
+	desc1$ = msrmat.desc1$
+'>-- Load ---<
+	thispag% = 0
+	n% = 0
+
+	FOR rec% = 1 TO maxrmat%
+		GET #38, rec%, msrmat
+		IF msrmat.no% = rec% THEN
+		ok% = 0
+		IF msrmat.desc1$ = desc1$ THEN ok% = 1
+		IF rec% = p% THEN ok% = 0'Don't select the 'to Raw'
+		IF ok% THEN
+			n% = n% + 1
+			rrn38%(n%) = rec%
+			thispag% = thispag% + 1
+			'IF thispag% > paglen% THEN EXIT FOR
+			IF aselect$ = "*" AND thispag% > paglen% THEN EXIT FOR
+			'IF aselect$ <> "*" THEN GOSUB dsply38from
+			END IF
+		END IF
+		X$ = INKEY$
+		IF X$ = CHR$(27) OR X$ = CHR$(0) + CHR$(59) THEN EXIT FOR
+		IF rec% MOD 100 = 0 AND aselect$ <> "*" THEN CALL sndmsg(STR$(rec%))
+		NEXT
+
+	CALL sndmsg("")
+	start% = rec% + 1'
+	GOSUB dsply38fromExchange.rmats:
+
+	IF n% > paglen% THEN
+		LOCATE 21, 27: PRINT "More found."
+	END IF
+	LOCATE 22, 27: PRINT "Change all over? ";
+				CALL inpnew(a$, 101!, updwn%, "59,13")
+	IF updwn% = 59 THEN EXIT SUB
+	a$ = UCASE$(a$)
+	IF a$ <> "Y" THEN EXIT SUB
+
+	'-> Go for it...
+	LOCATE 22, 2: PRINT SPACE$(78);
+	FOR i% = 1 TO n%
+		rec% = rrn38%(i%)
+		GET #38, rec%, msrmat
+		LOCATE 22, 2
+		PRINT "Updating "; msrmat.no, msrmat.search$, msrmat.desc1$
+		CALL Exchange.rmat(updwn%, p%, rec%, -1)
+	NEXT
+
+	LOCATE 22, 2: PRINT SPACE$(78);
+	LOCATE 22, 2: PRINT "Done.";
+	X$ = INPUT$(1)
+
+
+	
+
+
+
+
+EXIT SUB
+
+	
+dsply38fromExchange.rmats:
+IF dsplyfrom% < 1 THEN dsplyfrom% = 1
+IF dsplyfrom% > n% THEN dsplyfrom% = n%
+
+
+FOR lin% = 1 TO paglen%
+	item% = dsplyfrom% + lin% - 1
+	IF n% = 0 THEN EXIT FOR
+	IF item% > n% THEN EXIT FOR
+
+	rec% = rrn38%(item%)
+	GET #38, rec%, msrmat
+	LOCATE lin% + 6, 2: COLOR 2, 0
+	PRINT USING "#### \                       \ \   \ ### \\#.### #####.###\ \\               \"; msrmat.no%; msrmat.desc1$; msrmat.search$; msrmat.Group%; msrmat.active$; msrmat.sg; msrmat.purcost; msrmat.PurUnit$; msrmat.Notes$
+	IF lin% = 1 THEN firstrec% = rec%
+	NEXT
+
+i% = lin%
+FOR lin% = i% TO paglen%
+	LOCATE lin% + 6, 2: COLOR 2, 0
+	PRINT SPACE$(78);
+	NEXT
+RETURN
+
+
+END SUB
+
+SUB export
+
+OPEN ".\rmat.sro" FOR OUTPUT AS #98
+		
+		FOR i% = 1 TO (LOF(38) / LEN(msrmat))
+
+		GET #38, i%, msrmat
+		IF msrmat.no% = i% THEN
+
+		a$ = STR$(msrmat.no%)
+		b$ = msrmat.desc1$
+		c$ = msrmat.desc2$
+		d$ = STR$(msrmat.supqty!)
+		e$ = msrmat.search$
+		f$ = STR$(msrmat.sg)
+		g$ = STR$(msrmat.purcost)
+		h$ = msrmat.PurUnit$
+		i$ = STR$(msrmat.UseCost)
+		j$ = msrmat.UseUnit$
+		k$ = STR$(msrmat.Dealcost)
+		l$ = msrmat.SupUnit$
+		m$ = STR$(msrmat.Group%)
+		n$ = msrmat.active$
+		o$ = STR$(msrmat.Volsolid)
+		p$ = STR$(msrmat.Solidsg)
+		q$ = STR$(msrmat.Wtsolid)
+		r$ = msrmat.Notes$
+		s$ = STR$(msrmat.soh)
+		t$ = STR$(msrmat.Osoh)
+		u$ = msrmat.date$
+		v$ = msrmat.hazard$
+		w$ = msrmat.cond$
+		X$ = STR$(msrmat.altno%(1))
+		y$ = STR$(msrmat.altno%(2))
+		z$ = STR$(msrmat.altno%(3))
+		aa$ = STR$(msrmat.altno%(4))
+		ab$ = STR$(msrmat.altno%(5))
+		ac$ = msrmat.msdsflag$
+		ad$ = msrmat.searchs$
+		ae$ = STR$(msrmat.soo%)
+		af$ = STR$(msrmat.sip)
+		ag$ = STR$(msrmat.sohv)
+		ah$ = STR$(msrmat.restock)
+		ai$ = STR$(msrmat.used)
+		aj$ = STR$(msrmat.ean13)
+		
+		
+		WRITE #98, a$, b$, c$, d$, e$, f$, g$, h$, i$, j$, k$, l$, m$, n$, o$, p$, q$, r$, s$, t$, u$, v$, w$, X$, y$, z$, aa$, ab$, ac$, ad$, ae$, af$, ag$, ah$, ai$, aj$
+		END IF
+NEXT
+
+CLOSE #98
+
+END SUB
+
+SUB exportrec (rec%, exportall%)
+
+IF exportall% = -1 THEN
+		FOR i% = 1 TO LOF(38) / LEN(msrmat)
+			rec% = i%
+			GOSUB exportrec
+			NEXT
+ELSE
+
+exportrec:
+	GET #38, rec%, msrmat
+
+	IF msrmat.no% = rec% THEN
+
+	y$ = STR$(msrmat.no%)
+	MID$(y$, 1, 1) = "0"
+	y$ = "00000000" + y$
+	z$ = RIGHT$(y$, 7)
+
+	OPEN ".\export\R" + z$ + ".raw" FOR OUTPUT AS #98
+
+
+		a$ = STR$(msrmat.no%)
+		b$ = msrmat.desc1$
+		c$ = msrmat.desc2$
+		d$ = STR$(msrmat.supqty!)
+		e$ = msrmat.search$
+		f$ = STR$(msrmat.sg)
+		g$ = STR$(msrmat.purcost)
+		h$ = msrmat.PurUnit$
+		i$ = STR$(msrmat.UseCost)
+		j$ = msrmat.UseUnit$
+		k$ = STR$(msrmat.Dealcost)
+		l$ = msrmat.SupUnit$
+		m$ = STR$(msrmat.Group%)
+		n$ = msrmat.active$
+		o$ = STR$(msrmat.Volsolid)
+		p$ = STR$(msrmat.Solidsg)
+		q$ = STR$(msrmat.Wtsolid)
+		r$ = msrmat.Notes$
+		s$ = STR$(msrmat.soh)
+		t$ = STR$(msrmat.Osoh)
+		u$ = msrmat.date$
+		v$ = msrmat.hazard$
+		w$ = msrmat.cond$
+		X$ = STR$(msrmat.altno%(1))
+		y$ = STR$(msrmat.altno%(2))
+		z$ = STR$(msrmat.altno%(3))
+		aa$ = STR$(msrmat.altno%(4))
+		ab$ = STR$(msrmat.altno%(5))
+		ac$ = msrmat.msdsflag$
+		ad$ = msrmat.searchs$
+		ae$ = STR$(msrmat.soo%)
+		af$ = STR$(msrmat.sip)
+		ag$ = STR$(msrmat.sohv)
+		ah$ = STR$(msrmat.restock)
+		ai$ = STR$(msrmat.used)
+		aj$ = STR$(msrmat.ean13)
+
+		WRITE #98, "R", a$, b$, c$, d$, e$, f$, g$, h$, i$, j$, k$, l$, m$, n$, o$, p$, q$, r$, s$, t$, u$, v$, w$, X$, y$, z$, aa$, ab$, ac$, ad$, ae$, af$, ag$, ah$, ai$, aj$
+
+		CLOSE #98
+	END IF
+	IF exportall% = -1 THEN RETURN
+END IF
+
+
+
+END SUB
+
+SUB get.mtype (flag$, ok%) STATIC
+
+	rec56% = 1
+	ok% = 0
+	FOR i% = 1 TO mtype%
+		IF flag$ = mtype$(i%) THEN rec56% = i%: ok% = -1: EXIT FOR
+		NEXT
+
+	GET #56, rec56%, mtypes
+
+END SUB
+
+SUB hazard (code$) STATIC
+'$INCLUDE: '\tpmanuf\src\hazard.bi'
+END SUB
+
+SUB searchindex (keyin$, chi%, found%) STATIC
+	'$INCLUDE: '\tpmanuf\src\searchx.bi'
+END SUB
+
+SUB trimfile (ok%)
+	'Search for the last active record
+	lastactive% = 0
+	rec38% = 1
+	GET #38, rec38%, msrmat
+	DO WHILE NOT EOF(38)
+	IF msrmat.no = rec38% THEN lastactive% = rec38%
+	IF rec38% MOD 100 = 0 THEN CALL sndmsg("Searching Record" + STR$(rec38%))
+	GET #38, , msrmat: rec38% = rec38% + 1
+	LOOP
+	CALL sndmsg("Last active Record" + STR$(lastactive%))
+
+
+	OPEN "c:\tpexe\MSRMNEW.wrk" FOR RANDOM AS #99 LEN = LEN(msrmat)
+	rec38% = 1
+	GET #38, rec38%, msrmat
+	DO WHILE NOT EOF(38) AND rec38% <= lastactive%
+	IF msrmat.no <> rec38% THEN
+		msrmat.no = 0
+		msrmat.desc1 = SPACE$(99)
+		msrmat.desc2 = SPACE$(99)
+		msrmat.purqty = 0
+		msrmat.search = SPACE$(99)
+		msrmat.sg = 0
+		msrmat.purcost = 0
+		msrmat.PurUnit = SPACE$(99)
+		msrmat.UseCost = 0
+		msrmat.UseUnit = SPACE$(99)
+		msrmat.Dealcost = 0
+		msrmat.SupUnit = SPACE$(2)
+		msrmat.Group = 0
+		msrmat.active = SPACE$(99)
+		msrmat.Volsolid = 0
+		msrmat.Solidsg = 0
+		msrmat.Wtsolid = 0
+		msrmat.Notes = SPACE$(99)
+		msrmat.soh = 0
+		msrmat.Osoh = 0
+		msrmat.date = SPACE$(99)
+		msrmat.hazard = SPACE$(99)
+		msrmat.cond = SPACE$(99)
+		msrmat.altno(1) = 0
+		msrmat.altno(2) = 0
+		msrmat.altno(3) = 0
+		msrmat.altno(4) = 0
+		msrmat.altno(5) = 0
+		msrmat.soo = 0
+		END IF
+
+	PUT #99, rec38%, msrmat
+
+	IF rec38% MOD 100 = 0 THEN CALL sndmsg("Writing Record" + STR$(rec38%))
+	GET #38, , msrmat: rec38% = rec38% + 1
+	LOOP
+
+	CLOSE #38
+	CLOSE #99
+
+	SHELL "COPY c:\tpexe\MSRMNEW.WRK MSRMNEW.MSF"
+	KILL "c:\tpexe\MSRMNEW.WRK"
+
+	OPEN "MSRMNEW.MSF" FOR RANDOM AS #38 LEN = LEN(msrmat)
+
+END SUB
+
+SUB updalt (rec%, updwn%)
+	PUT #38, rec%, msrmat
+	FOR i% = 1 TO 5: altno%(i%) = msrmat.altno(i%): NEXT
+
+lin% = 1
+DO
+	IF lin% < 1 THEN lin% = 1
+	IF lin% > 5 AND updwn% = 13 THEN EXIT DO
+	IF lin% > 5 THEN lin% = 5
+
+	LOCATE 6 + lin%, 35
+	in$ = MID$(STR$(altno(lin%)), 2)
+	CALL inpnew(in$, 4!, updwn%, "13,59-60")
+	'-edit
+	altno%(lin%) = VAL(in$)
+	IF altno%(lin%) < 1 OR altno%(lin%) > maxrmat% THEN
+		altno%(lin%) = 0
+		altno(lin%) = 0: altdesc$(lin%) = SPACE$(99): altsearch$(lin%) = SPACE$(99)
+		ELSE
+		GET #38, altno%(lin%), msrmat
+		altno(lin%) = altno%(lin%)
+		altdesc$(lin%) = msrmat.desc1$
+		altsearch$(lin%) = msrmat.search$
+	END IF
+
+	IF altno%(lin%) = 0 THEN
+	LOCATE 6 + lin%, 35: PRINT USING "                                        !"; "  "
+	ELSE
+	LOCATE 6 + lin%, 35: PRINT USING "#### - \                          \ \   \"; altno(lin%); altdesc(lin%); altsearch(lin%)
+	END IF
+
+	IF updwn% = 59 THEN EXIT DO
+	IF updwn% = 60 THEN lin% = lin% - 2
+
+	lin% = lin% + 1
+	LOOP
+
+
+	GET #38, rec%, msrmat
+	FOR i% = 1 TO 5: msrmat.altno(i%) = altno%(i%): NEXT
+END SUB
+
+SUB zdeleteinact
+
+	LOCATE 5, 23: COLOR 14: PRINT " Deletion inactive pending "; CHR$(FNE); : COLOR 2, 0
+	LOCATE 25, 1: COLOR 0, 7: PRINT "                     F1 - Abort.  F10 - Continue                                "; : COLOR 2, 0
+	 FOR i% = 1 TO 100: X$ = INKEY$: NEXT
+	 LOCATE 1, 1
+	CALL inpnew(X$, 0!, updwn%, "59,68")
+	IF updwn% = 59 THEN EXIT SUB
+	COLOR 2, 0
+
+	LOCATE 5, 23: COLOR 14: PRINT " Counting..."; CHR$(FNE); : COLOR 2, 0
+	cnta% = 0: cnti% = 0
+	rec38% = 1
+	GET #38, rec38%, msrmat
+	DO WHILE NOT EOF(38)
+	IF msrmat.active = "A" THEN cnta% = cnta% + 1
+	IF msrmat.active <> "A" THEN cnti% = cnti% + 1
+	IF rec38% MOD 100 = 0 THEN CALL sndmsg("Record" + STR$(rec38%))
+	GET #38, , msrmat: rec38% = rec38% + 1
+	LOOP
+	LOCATE 5, 23: COLOR 2: PRINT USING "  Active ##,###"; cnta%
+	LOCATE 6, 23: COLOR 2: PRINT USING "Inactive ##,###"; cnti%
+
+
+	LOCATE 8, 23: COLOR 14: PRINT " Purging..."; CHR$(FNE); : COLOR 2, 0
+	rec38% = 1
+	GET #38, rec38%, msrmat
+	DO WHILE NOT EOF(38)
+	IF msrmat.active <> "A" THEN
+		msrmat.no = 0
+		msrmat.desc1 = SPACE$(99)
+		msrmat.desc2 = SPACE$(99)
+		msrmat.supqty! = 0
+		msrmat.search = SPACE$(99)
+		msrmat.sg = 0
+		msrmat.purcost = 0
+		msrmat.PurUnit = SPACE$(99)
+		msrmat.UseCost = 0
+		msrmat.Dealcost = 0
+		msrmat.SupUnit = SPACE$(2)
+		msrmat.Group = 0
+		msrmat.active = SPACE$(99)
+		msrmat.Volsolid = 0
+		msrmat.Solidsg = 0
+		msrmat.Wtsolid = 0
+		msrmat.Notes = SPACE$(99)
+		msrmat.soh = 0
+		msrmat.Osoh = 0
+		msrmat.date = SPACE$(99)
+		msrmat.hazard = SPACE$(99)
+		msrmat.cond = SPACE$(99)
+		msrmat.altno(1) = 0
+		msrmat.altno(2) = 0
+		msrmat.altno(3) = 0
+		msrmat.altno(4) = 0
+		msrmat.altno(5) = 0
+		msrmat.soo = 0
+		PUT #38, rec38%, msrmat
+		END IF
+
+	IF rec38% MOD 100 = 0 THEN CALL sndmsg("Record" + STR$(rec38%))
+	GET #38, , msrmat: rec38% = rec38% + 1
+	LOOP
+
+	LOCATE 8, 23: COLOR 14: PRINT " Done."; CHR$(FNE); : COLOR 2, 0
+	LOCATE 25, 1: COLOR 0, 7: PRINT "                     F1 - Return                                "; : COLOR 2, 0
+	CALL inpnew(X$, 0!, updwn%, "59,68")
+	IF updwn% = 59 THEN EXIT SUB
+
+END SUB
+

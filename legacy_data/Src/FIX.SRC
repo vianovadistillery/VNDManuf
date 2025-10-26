@@ -1,0 +1,4 @@
+OPEN "COM1:" FOR OUTPUT AS #97
+PRINT #97, "Open drawer"
+CLOSE #97
+
