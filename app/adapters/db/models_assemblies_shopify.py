@@ -44,7 +44,7 @@ class InventoryReservation(Base):
     source = Column(String(16), nullable=False)  # 'shopify'|'internal'
     reference_id = Column(String(128), nullable=True)
     status = Column(String(16), nullable=False, default="ACTIVE")  # ACTIVE|RELEASED|COMMITTED
-    created_at = Column(DateTime(timezone=True), server_default="now()", nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default="now()", onupdate=datetime.datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
     product = relationship("Product")
 

@@ -250,6 +250,11 @@ class Batch(Base):
     # Extended status for new workflow
     batch_status = Column(String(20), default="planned")  # planned, in_process, closed
     
+    # Actual production results
+    yield_actual = Column(Numeric(12, 3))  # Actual yield in kg
+    yield_litres = Column(Numeric(12, 3))  # Actual yield in litres
+    variance_percent = Column(Numeric(5, 2))  # Variance percentage
+    
     # Relationships
     work_order = relationship("WorkOrder", back_populates="batches")
     components = relationship("BatchComponent", back_populates="batch")

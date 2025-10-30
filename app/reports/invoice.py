@@ -73,7 +73,6 @@ def render_invoice_hardcoded(invoice_code: str) -> str:
         " ",
         "  W1                                          W0",
         "  W0                                                                                    W0   EAMOUNT DUEF        $501.84  ",
-        "C",
     ]
     
     return "\n".join(lines)
@@ -152,7 +151,6 @@ def render_invoice_from_data(invoice_data: Dict[str, Any]) -> str:
         " ",
         "  W1                                          W0",
         f"  W0                                                                                    W0   EAMOUNT DUEF        ${invoice.total_inc_tax:6.2f}  ",
-        "C",
     ])
     
     return "\n".join(invoice_lines)
