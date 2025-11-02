@@ -44,6 +44,7 @@ from .pages.condition_types_page import ConditionTypesPage
 from .pages.suppliers_page import SuppliersPage
 from .pages.contacts_page import ContactsPage
 from .units_callbacks import register_units_callbacks
+from .excise_rates_callbacks import register_excise_rates_callbacks
 # Xero integration temporarily disabled - will re-enable later
 # from .pages.accounting_integration_page import accounting_integration_page
 
@@ -373,57 +374,58 @@ def render_tab_content(active_tab):
     Output("products-table", "data"),
     [Input("main-tabs", "active_tab"),
      Input("products-refresh", "n_clicks")],
-    [State("filter-raw", "value"),
-     State("filter-wip", "value"),
-     State("filter-finished", "value")],
+    [State("filter-purchase", "value"),
+     State("filter-sell", "value"),
+     State("filter-assemble", "value")],
     prevent_initial_call=True
 )
-def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filter_finished):
+def load_products_table(active_tab, refresh_clicks, filter_purchase, filter_sell, filter_assemble):
     """Load products table when products tab is activated or refresh is clicked."""
     if active_tab != "products":
         return no_update
     
-    print(f"[load_products_table] active_tab={active_tab}, filters: raw={filter_raw}, wip={filter_wip}, finished={filter_finished}")
+    print(f"[load_products_table] active_tab={active_tab}, filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}")
+    
+    # Initialize products list
+    all_products = []
     
     try:
-        # Build filter query - handle None values gracefully
-        product_types = []
-        if filter_raw is True:
-            product_types.append("RAW")
-        if filter_wip is True:
-            product_types.append("WIP")
-        if filter_finished is True:
-            product_types.append("FINISHED")
+        # Build filter query using capabilities
+        filter_params = {}
+        if filter_purchase is True:
+            filter_params["is_purchase"] = True
+        if filter_sell is True:
+            filter_params["is_sell"] = True
+        if filter_assemble is True:
+            filter_params["is_assemble"] = True
         
-        # Default to all types if no filters selected
-        if not product_types:
-            product_types = ["RAW", "WIP", "FINISHED"]
-        
-        print(f"[load_products_table] Fetching products for types: {product_types}")
+        print(f"[load_products_table] Fetching products with filters: {filter_params}")
         
         # Fetch products with filters
-        all_products = []
-        for ptype in product_types:
-            try:
-                response = make_api_request("GET", "/products/", data={"product_type": ptype})
-                print(f"[load_products_table] Response for {ptype}: type={type(response).__name__}")
-                
-                if isinstance(response, list):
-                    print(f"[load_products_table] Got {len(response)} products as list for {ptype}")
-                    all_products.extend(response)
-                elif isinstance(response, dict):
-                    if "error" in response:
-                        print(f"[load_products_table] Error: {response.get('error')}")
-                    elif "products" in response:
-                        print(f"[load_products_table] Got {len(response['products'])} products from dict for {ptype}")
-                        all_products.extend(response["products"])
-                    else:
-                        print(f"[load_products_table] Unexpected dict keys: {list(response.keys())}")
-            except Exception as e:
-                print(f"[load_products_table] Error fetching {ptype}: {e}")
-                import traceback
-                traceback.print_exc()
-                continue
+        try:
+            response = make_api_request("GET", "/products/", data=filter_params)
+            print(f"[load_products_table] Response: type={type(response).__name__}")
+            
+            if isinstance(response, list):
+                print(f"[load_products_table] Got {len(response)} products as list")
+                all_products = response
+            elif isinstance(response, dict):
+                if "error" in response:
+                    print(f"[load_products_table] Error: {response.get('error')}")
+                    all_products = []  # Ensure assignment on error
+                elif "products" in response:
+                    print(f"[load_products_table] Got {len(response['products'])} products from dict")
+                    all_products = response["products"]
+                else:
+                    print(f"[load_products_table] Unexpected dict keys: {list(response.keys())}")
+                    all_products = []
+            else:
+                all_products = []
+        except Exception as e:
+            print(f"[load_products_table] Error fetching products: {e}")
+            import traceback
+            traceback.print_exc()
+            all_products = []
         
         # If still no products, try fetching all
         if not all_products:
@@ -432,10 +434,20 @@ def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filt
                 response = make_api_request("GET", "/products/")
                 if isinstance(response, list):
                     all_products = response
-                elif isinstance(response, dict) and "products" in response:
-                    all_products = response["products"]
+                elif isinstance(response, dict):
+                    if "products" in response:
+                        all_products = response["products"]
+                    elif "error" in response:
+                        print(f"[load_products_table] Error fetching all: {response.get('error')}")
+                        all_products = []
+                    else:
+                        print(f"[load_products_table] Unexpected response keys: {list(response.keys())}")
+                        all_products = []
+                else:
+                    all_products = []
             except Exception as e:
                 print(f"[load_products_table] Error fetching all: {e}")
+                all_products = []
         
         print(f"[load_products_table] Total products: {len(all_products)}")
         
@@ -452,7 +464,7 @@ def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filt
         
         print(f"[load_products_table] Unique products: {len(unique_products)}")
         
-        # Flatten nested fields
+        # Flatten nested fields and format for table
         for product in unique_products:
             # Convert variants list to string
             if "variants" in product and isinstance(product["variants"], list):
@@ -462,10 +474,17 @@ def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filt
                     if isinstance(v, dict)
                 ]
                 product["variants"] = ", ".join(variant_names) if variant_names else None
+            # Convert capabilities to checkmarks
+            product["is_purchase"] = "✓" if product.get("is_purchase") else ""
+            product["is_sell"] = "✓" if product.get("is_sell") else ""
+            product["is_assemble"] = "✓" if product.get("is_assemble") else ""
             # Convert datetime objects to strings
             for date_field in ["created_at", "updated_at"]:
                 if date_field in product and product[date_field]:
                     product[date_field] = str(product[date_field])
+            # Add placeholder fields for table display
+            product["stock"] = product.get("stock_on_hand", 0.0) or 0.0
+            product["primary_assembly_cost"] = product.get("manufactured_cost_ex_gst") or product.get("purchase_cost_ex_gst") or product.get("usage_cost_ex_gst") or 0.0
         
         # Prepare DataFrame
         if unique_products:
@@ -503,61 +522,87 @@ def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filt
 # Separate callback for filter changes
 @app.callback(
     Output("products-table", "data", allow_duplicate=True),
-    [Input("filter-raw", "value"),
-     Input("filter-wip", "value"),
-     Input("filter-finished", "value")],
+    [Input("filter-purchase", "value"),
+     Input("filter-sell", "value"),
+     Input("filter-assemble", "value")],
     [State("main-tabs", "active_tab")],
     prevent_initial_call=True
 )
-def update_products_on_filter_change(filter_raw, filter_wip, filter_finished, active_tab):
+def update_products_on_filter_change(filter_purchase, filter_sell, filter_assemble, active_tab):
     """Update products table when filters change (only if products tab is active)."""
     if active_tab != "products":
         return no_update
     
     # Reuse the same logic as the main callback
     try:
-        product_types = []
-        if filter_raw:
-            product_types.append("RAW")
-        if filter_wip:
-            product_types.append("WIP")
-        if filter_finished:
-            product_types.append("FINISHED")
+        filter_params = {}
+        if filter_purchase is True:
+            filter_params["is_purchase"] = True
+        if filter_sell is True:
+            filter_params["is_sell"] = True
+        if filter_assemble is True:
+            filter_params["is_assemble"] = True
         
-        if not product_types:
-            product_types = ["RAW", "WIP", "FINISHED"]
+        # Fetch products with filters
+        try:
+            response = make_api_request("GET", "/products/", data=filter_params)
+            
+            if isinstance(response, list):
+                all_products = response
+            elif isinstance(response, dict):
+                if "error" in response:
+                    print(f"[update_products_on_filter_change] Error: {response.get('error')}")
+                    all_products = []
+                elif "products" in response:
+                    all_products = response["products"]
+                else:
+                    all_products = []
+            else:
+                all_products = []
+        except Exception as e:
+            print(f"[update_products_on_filter_change] Error fetching products: {e}")
+            all_products = []
         
-        all_products = []
-        for ptype in product_types:
+        # If still no products, try fetching all
+        if not all_products:
             try:
-                response = make_api_request("GET", "/products/", data={"product_type": ptype})
+                response = make_api_request("GET", "/products/")
                 if isinstance(response, list):
-                    all_products.extend(response)
+                    all_products = response
                 elif isinstance(response, dict) and "products" in response:
-                    all_products.extend(response["products"])
+                    all_products = response["products"]
             except Exception as e:
-                print(f"Error fetching products for type {ptype}: {e}")
-                continue
+                print(f"[update_products_on_filter_change] Error fetching all: {e}")
+                all_products = []
         
-        # Remove duplicates
+        # Remove duplicates and format
         seen_ids = set()
         unique_products = []
         for product in all_products:
-            if isinstance(product, dict):
-                prod_id = product.get("id")
-                if prod_id and prod_id not in seen_ids:
-                    seen_ids.add(prod_id)
-                    unique_products.append(product)
+            if not isinstance(product, dict):
+                continue
+            prod_id = product.get("id")
+            if prod_id and prod_id not in seen_ids:
+                seen_ids.add(prod_id)
+                unique_products.append(product)
         
-        # Flatten nested fields
+        # Format for table display
         for product in unique_products:
             if "variants" in product and isinstance(product["variants"], list):
-                variant_names = [v.get("variant_name", v.get("variant_code", "")) for v in product["variants"] if isinstance(v, dict)]
-                product["variants"] = ", ".join(variant_names) if variant_names else "None"
-            if "created_at" in product:
-                product["created_at"] = str(product["created_at"]) if product["created_at"] else ""
-            if "updated_at" in product:
-                product["updated_at"] = str(product["updated_at"]) if product["updated_at"] else ""
+                variant_names = [
+                    v.get("variant_name") or v.get("variant_code", "") 
+                    for v in product["variants"] 
+                    if isinstance(v, dict)
+                ]
+                product["variants"] = ", ".join(variant_names) if variant_names else None
+            product["is_purchase"] = "✓" if product.get("is_purchase") else ""
+            product["is_sell"] = "✓" if product.get("is_sell") else ""
+            product["is_assemble"] = "✓" if product.get("is_assemble") else ""
+            for date_field in ["created_at", "updated_at"]:
+                if date_field in product and product[date_field]:
+                    product[date_field] = str(product[date_field])
+            product["stock"] = product.get("stock_on_hand", 0.0) or 0.0
+            product["primary_assembly_cost"] = product.get("manufactured_cost_ex_gst") or product.get("purchase_cost_ex_gst") or product.get("usage_cost_ex_gst") or 0.0
         
         if unique_products:
             try:
@@ -566,12 +611,14 @@ def update_products_on_filter_change(filter_raw, filter_wip, filter_finished, ac
                 df = df[scalar_cols] if scalar_cols else df
                 return df.to_dict("records")
             except Exception as e:
-                print(f"Error creating DataFrame: {e}")
+                print(f"[update_products_on_filter_change] DataFrame error: {e}")
                 return unique_products
         
         return []
     except Exception as e:
-        print(f"Error updating products on filter change: {e}")
+        print(f"[update_products_on_filter_change] Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 
@@ -881,6 +928,7 @@ register_formulas_callbacks(app, make_api_request)
 register_suppliers_callbacks(app, make_api_request)
 register_contacts_callbacks(app, make_api_request)
 register_units_callbacks(app, make_api_request)
+register_excise_rates_callbacks(app, make_api_request)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth

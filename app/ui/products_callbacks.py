@@ -1,7 +1,7 @@
 """CRUD callbacks for products page."""
 
 import dash
-from dash import Input, Output, State, no_update
+from dash import Input, Output, State, no_update, html, dash_table
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
@@ -58,20 +58,17 @@ def register_product_callbacks(app, make_api_request):
          Output("product-raw-material-group-id", "value", allow_duplicate=True),
          Output("product-base-unit", "value", allow_duplicate=True),
          Output("product-is-active", "value", allow_duplicate=True),
-         Output("product-type", "value", allow_duplicate=True),
+         Output("product-is-purchase", "value", allow_duplicate=True),
+         Output("product-is-sell", "value", allow_duplicate=True),
+         Output("product-is-assemble", "value", allow_duplicate=True),
+         Output("product-pricing-table", "data", allow_duplicate=True),
+         Output("product-cost-table", "data", allow_duplicate=True),
          Output("product-size", "value", allow_duplicate=True),
-         Output("product-weight", "value", allow_duplicate=True),
          Output("product-pack", "value", allow_duplicate=True),
          Output("product-pkge", "value", allow_duplicate=True),
          Output("product-density", "value", allow_duplicate=True),
          Output("product-abv", "value", allow_duplicate=True),
-         Output("product-vol-solid", "value", allow_duplicate=True),
-         Output("product-solid-sg", "value", allow_duplicate=True),
-         Output("product-wt-solid", "value", allow_duplicate=True),
-         Output("product-form", "value", allow_duplicate=True),
          Output("product-dgflag", "value", allow_duplicate=True),
-         Output("product-label", "value", allow_duplicate=True),
-         Output("product-manu", "value", allow_duplicate=True),
          Output("product-taxinc", "value", allow_duplicate=True),
          Output("product-salestaxcde", "value", allow_duplicate=True),
          Output("product-purcost", "value", allow_duplicate=True),
@@ -111,8 +108,66 @@ def register_product_callbacks(app, make_api_request):
         
         if button_id == "add-product-btn":
             # Add mode - clear form
-            empty_values = [None] * 43  # 43 outputs (first 2 are modal state)
-            return tuple([True, "Add Product"] + empty_values)
+            pricing_data = [
+                {"price_level": "Retail", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Wholesale", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Distributor", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Counter", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Trade", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Contract", "inc_gst": None, "ex_gst": None, "excise": None},
+                {"price_level": "Industrial", "inc_gst": None, "ex_gst": None, "excise": None},
+            ]
+            cost_data = [
+                {"cost_type": "Purchase Cost", "ex_gst": None, "inc_gst": None, "tax_included": False},
+                {"cost_type": "Usage Cost", "ex_gst": None, "inc_gst": None, "tax_included": False},
+                {"cost_type": "Manufactured Cost", "ex_gst": None, "inc_gst": None, "tax_included": "N/A"},
+            ]
+            return (
+                True,  # is_open
+                "Add Product",  # title
+                None,  # sku
+                None,  # name
+                None,  # description
+                None,  # ean13
+                None,  # supplier_id
+                None,  # raw_material_group_id
+                None,  # base_unit
+                "true",  # is_active
+                False,  # is_purchase
+                False,  # is_sell
+                False,  # is_assemble
+                pricing_data,  # pricing_table
+                cost_data,  # cost_table
+                None,  # size
+                None,  # pack
+                None,  # pkge
+                None,  # density
+                None,  # abv
+                None,  # dgflag
+                None,  # taxinc
+                None,  # salestaxcde
+                None,  # purcost
+                None,  # purtax
+                None,  # wholesalecost
+                None,  # excise-amount
+                None,  # wholesalecde
+                None,  # retailcde
+                None,  # countercde
+                None,  # tradecde
+                None,  # contractcde
+                None,  # industrialcde
+                None,  # distributorcde
+                None,  # disccdeone
+                None,  # disccdetwo
+                None,  # purchase-unit
+                None,  # purchase-volume
+                None,  # usage-unit
+                None,  # usage-cost
+                None,  # restock-level
+                None,  # formula-id
+                None,  # formula-revision
+                "",  # product-form-hidden (product_id)
+            )
         
         elif button_id == "edit-product-btn":
             if not selected_rows or not data:
@@ -156,6 +211,24 @@ def register_product_callbacks(app, make_api_request):
             else:
                 purchase_unit_id = str(purchase_unit_id)
             
+            # Build pricing table data
+            pricing_data = [
+                {"price_level": "Retail", "inc_gst": safe_float(product.get("retail_price_inc_gst")), "ex_gst": safe_float(product.get("retail_price_ex_gst")), "excise": safe_float(product.get("retail_excise"))},
+                {"price_level": "Wholesale", "inc_gst": safe_float(product.get("wholesale_price_inc_gst")), "ex_gst": safe_float(product.get("wholesale_price_ex_gst")), "excise": safe_float(product.get("wholesale_excise"))},
+                {"price_level": "Distributor", "inc_gst": safe_float(product.get("distributor_price_inc_gst")), "ex_gst": safe_float(product.get("distributor_price_ex_gst")), "excise": safe_float(product.get("distributor_excise"))},
+                {"price_level": "Counter", "inc_gst": safe_float(product.get("counter_price_inc_gst")), "ex_gst": safe_float(product.get("counter_price_ex_gst")), "excise": safe_float(product.get("counter_excise"))},
+                {"price_level": "Trade", "inc_gst": safe_float(product.get("trade_price_inc_gst")), "ex_gst": safe_float(product.get("trade_price_ex_gst")), "excise": safe_float(product.get("trade_excise"))},
+                {"price_level": "Contract", "inc_gst": safe_float(product.get("contract_price_inc_gst")), "ex_gst": safe_float(product.get("contract_price_ex_gst")), "excise": safe_float(product.get("contract_excise"))},
+                {"price_level": "Industrial", "inc_gst": safe_float(product.get("industrial_price_inc_gst")), "ex_gst": safe_float(product.get("industrial_price_ex_gst")), "excise": safe_float(product.get("industrial_excise"))},
+            ]
+            
+            # Build cost table data
+            cost_data = [
+                {"cost_type": "Purchase Cost", "ex_gst": safe_float(product.get("purchase_cost_ex_gst")), "inc_gst": safe_float(product.get("purchase_cost_inc_gst")), "tax_included": product.get("purchase_tax_included") or False},
+                {"cost_type": "Usage Cost", "ex_gst": safe_float(product.get("usage_cost_ex_gst")), "inc_gst": safe_float(product.get("usage_cost_inc_gst")), "tax_included": product.get("usage_tax_included") or False},
+                {"cost_type": "Manufactured Cost", "ex_gst": safe_float(product.get("manufactured_cost_ex_gst")), "inc_gst": safe_float(product.get("manufactured_cost_inc_gst")), "tax_included": "N/A"},
+            ]
+            
             return (
                 True,  # is_open
                 "Edit Product",  # title
@@ -166,28 +239,24 @@ def register_product_callbacks(app, make_api_request):
                 str(product.get("supplier_id", "")) if product.get("supplier_id") else "",
                 str(product.get("raw_material_group_id", "")) if product.get("raw_material_group_id") else "",
                 product.get("base_unit") or "",
-                is_active_str,  # Fixed: ensure "true" or "false"
-                product.get("product_type") or "RAW",
+                is_active_str,
+                product.get("is_purchase") or False,
+                product.get("is_sell") or False,
+                product.get("is_assemble") or False,
+                pricing_data,
+                cost_data,
                 product.get("size") or "",
-                safe_float(product.get("weight")),
                 safe_int(product.get("pack")),
                 safe_int(product.get("pkge")),
                 safe_float(product.get("density_kg_per_l")),
                 safe_float(product.get("abv_percent")),
-                safe_float(product.get("vol_solid")),
-                safe_float(product.get("solid_sg")),
-                safe_float(product.get("wt_solid")),
-                product.get("form") or "",
                 product.get("dgflag") or "",
-                safe_int(product.get("label")),
-                safe_int(product.get("manu")),
                 product.get("taxinc") or "",
                 product.get("salestaxcde") or "",
                 safe_float(product.get("purcost")),
                 safe_float(product.get("purtax")),
                 safe_float(product.get("wholesalecost")),
                 safe_float(product.get("excise_amount")),
-                # Pricing fields - try to convert to float if numeric, otherwise None
                 safe_float(product.get("wholesalecde")),
                 safe_float(product.get("retailcde")),
                 safe_float(product.get("countercde")),
@@ -197,14 +266,14 @@ def register_product_callbacks(app, make_api_request):
                 safe_float(product.get("distributorcde")),
                 safe_float(product.get("disccdeone")),
                 safe_float(product.get("disccdetwo")),
-                purchase_unit_id,  # Fixed: ensure proper type
+                purchase_unit_id,
                 safe_float(product.get("purchase_volume")),
                 product.get("usage_unit") or "",
                 safe_float(product.get("usage_cost")),
                 safe_float(product.get("restock_level")),
                 str(product.get("formula_id", "")) if product.get("formula_id") else "",
                 safe_int(product.get("formula_revision")),
-                str(product.get("id", "")) if product.get("id") else ""  # Hidden field - product ID, ensure string
+                str(product.get("id", "")) if product.get("id") else ""
             )
         
         raise PreventUpdate
@@ -238,20 +307,17 @@ def register_product_callbacks(app, make_api_request):
          State("product-raw-material-group-id", "value"),
          State("product-base-unit", "value"),
          State("product-is-active", "value"),
-         State("product-type", "value"),
+         State("product-is-purchase", "value"),
+         State("product-is-sell", "value"),
+         State("product-is-assemble", "value"),
+         State("product-pricing-table", "data"),
+         State("product-cost-table", "data"),
          State("product-size", "value"),
-         State("product-weight", "value"),
          State("product-pack", "value"),
          State("product-pkge", "value"),
          State("product-density", "value"),
          State("product-abv", "value"),
-         State("product-vol-solid", "value"),
-         State("product-solid-sg", "value"),
-         State("product-wt-solid", "value"),
-         State("product-form", "value"),
          State("product-dgflag", "value"),
-         State("product-label", "value"),
-         State("product-manu", "value"),
          State("product-taxinc", "value"),
          State("product-salestaxcde", "value"),
          State("product-purcost", "value"),
@@ -283,8 +349,9 @@ def register_product_callbacks(app, make_api_request):
             raise PreventUpdate
         
         # Extract all form values
-        (sku, name, description, ean13, supplier_id, raw_material_group_id, base_unit, is_active, product_type,
-         size, weight, pack, pkge, density, abv, vol_solid, solid_sg, wt_solid, form, dgflag, label, manu,
+        (sku, name, description, ean13, supplier_id, raw_material_group_id, base_unit, is_active,
+         is_purchase, is_sell, is_assemble, pricing_data, cost_data,
+         size, pack, pkge, density, abv, dgflag,
          taxinc, salestaxcde, purcost, purtax, wholesalecost, excise_amount,
          wholesalecde, retailcde, countercde, tradecde, contractcde, industrialcde, distributorcde,
          disccdeone, disccdetwo, purchase_unit_id, purchase_volume,
@@ -294,38 +361,55 @@ def register_product_callbacks(app, make_api_request):
         if not sku or not name:
             return True, "Error", "SKU and Name are required", dash.no_update
         
+        # Extract pricing data from table
+        def get_price_value(pricing_data, price_level, field):
+            if not pricing_data:
+                return None
+            for row in pricing_data:
+                if row.get("price_level") == price_level:
+                    val = row.get(field)
+                    return float(val) if val is not None and val != "" else None
+            return None
+        
+        # Extract cost data from table
+        def get_cost_value(cost_data, cost_type, field):
+            if not cost_data:
+                return None
+            for row in cost_data:
+                if row.get("cost_type") == cost_type:
+                    val = row.get(field)
+                    if field == "tax_included":
+                        return val if val != "N/A" else None
+                    return float(val) if val is not None and val != "" else None
+            return None
+        
         # Prepare product data
         product_data = {
             "sku": sku,
             "name": name,
             "description": description if description else None,
-            "product_type": product_type if product_type else "RAW",
+            "product_type": "RAW",  # Default for backward compatibility
+            "is_purchase": bool(is_purchase) if is_purchase is not None else False,
+            "is_sell": bool(is_sell) if is_sell is not None else False,
+            "is_assemble": bool(is_assemble) if is_assemble is not None else False,
             "ean13": ean13 if ean13 else None,
             "supplier_id": supplier_id if supplier_id else None,
             "raw_material_group_id": raw_material_group_id if raw_material_group_id else None,
             "base_unit": base_unit if base_unit else None,
             "is_active": is_active == "true" if isinstance(is_active, str) else is_active,
             "size": size if size else None,
-            "weight": float(weight) if weight else None,
             "pack": int(pack) if pack else None,
             "pkge": int(pkge) if pkge else None,
             "density_kg_per_l": float(density) if density else None,
             "abv_percent": float(abv) if abv else None,
-            "vol_solid": float(vol_solid) if vol_solid else None,
-            "solid_sg": float(solid_sg) if solid_sg else None,
-            "wt_solid": float(wt_solid) if wt_solid else None,
-            "form": form if form else None,
             "dgflag": dgflag if dgflag else None,
-            "label": int(label) if label else None,
-            "manu": int(manu) if manu else None,
             "taxinc": taxinc if taxinc else None,
             "salestaxcde": salestaxcde if salestaxcde else None,
             "purcost": float(purcost) if purcost else None,
             "purtax": float(purtax) if purtax else None,
             "wholesalecost": float(wholesalecost) if wholesalecost else None,
             "excise_amount": float(excise_amount) if excise_amount else None,
-            # Pricing fields - store as string codes (legacy format) but UI displays as currency
-            # Note: Database may store codes as strings, but UI treats them as currency amounts
+            # Legacy pricing fields (for backward compatibility)
             "wholesalecde": str(wholesalecde) if wholesalecde else None,
             "retailcde": str(retailcde) if retailcde else None,
             "countercde": str(countercde) if countercde else None,
@@ -335,6 +419,37 @@ def register_product_callbacks(app, make_api_request):
             "distributorcde": str(distributorcde) if distributorcde else None,
             "disccdeone": str(disccdeone) if disccdeone else None,
             "disccdetwo": str(disccdetwo) if disccdetwo else None,
+            # Sales Pricing from table
+            "retail_price_inc_gst": get_price_value(pricing_data, "Retail", "inc_gst"),
+            "retail_price_ex_gst": get_price_value(pricing_data, "Retail", "ex_gst"),
+            "retail_excise": get_price_value(pricing_data, "Retail", "excise"),
+            "wholesale_price_inc_gst": get_price_value(pricing_data, "Wholesale", "inc_gst"),
+            "wholesale_price_ex_gst": get_price_value(pricing_data, "Wholesale", "ex_gst"),
+            "wholesale_excise": get_price_value(pricing_data, "Wholesale", "excise"),
+            "distributor_price_inc_gst": get_price_value(pricing_data, "Distributor", "inc_gst"),
+            "distributor_price_ex_gst": get_price_value(pricing_data, "Distributor", "ex_gst"),
+            "distributor_excise": get_price_value(pricing_data, "Distributor", "excise"),
+            "counter_price_inc_gst": get_price_value(pricing_data, "Counter", "inc_gst"),
+            "counter_price_ex_gst": get_price_value(pricing_data, "Counter", "ex_gst"),
+            "counter_excise": get_price_value(pricing_data, "Counter", "excise"),
+            "trade_price_inc_gst": get_price_value(pricing_data, "Trade", "inc_gst"),
+            "trade_price_ex_gst": get_price_value(pricing_data, "Trade", "ex_gst"),
+            "trade_excise": get_price_value(pricing_data, "Trade", "excise"),
+            "contract_price_inc_gst": get_price_value(pricing_data, "Contract", "inc_gst"),
+            "contract_price_ex_gst": get_price_value(pricing_data, "Contract", "ex_gst"),
+            "contract_excise": get_price_value(pricing_data, "Contract", "excise"),
+            "industrial_price_inc_gst": get_price_value(pricing_data, "Industrial", "inc_gst"),
+            "industrial_price_ex_gst": get_price_value(pricing_data, "Industrial", "ex_gst"),
+            "industrial_excise": get_price_value(pricing_data, "Industrial", "excise"),
+            # Cost Pricing from table
+            "purchase_cost_ex_gst": get_cost_value(cost_data, "Purchase Cost", "ex_gst"),
+            "purchase_cost_inc_gst": get_cost_value(cost_data, "Purchase Cost", "inc_gst"),
+            "purchase_tax_included": get_cost_value(cost_data, "Purchase Cost", "tax_included"),
+            "usage_cost_ex_gst": get_cost_value(cost_data, "Usage Cost", "ex_gst"),
+            "usage_cost_inc_gst": get_cost_value(cost_data, "Usage Cost", "inc_gst"),
+            "usage_tax_included": get_cost_value(cost_data, "Usage Cost", "tax_included"),
+            "manufactured_cost_ex_gst": get_cost_value(cost_data, "Manufactured Cost", "ex_gst"),
+            "manufactured_cost_inc_gst": get_cost_value(cost_data, "Manufactured Cost", "inc_gst"),
             # Raw Material specific fields
             "purchase_unit_id": purchase_unit_id if purchase_unit_id else None,
             "purchase_volume": float(purchase_volume) if purchase_volume else None,
@@ -432,6 +547,1132 @@ def register_product_callbacks(app, make_api_request):
         
         except Exception as e:
             return no_update, True, "Error", f"Failed to delete product: {str(e)}"
+    
+    # Auto-calculate excise and GST for pricing table
+    @app.callback(
+        Output("product-pricing-table", "data", allow_duplicate=True),
+        [Input("product-pricing-table", "data"),
+         Input("product-abv", "value"),
+         Input("product-density", "value")],
+        prevent_initial_call=True
+    )
+    def calculate_pricing_table(pricing_data, abv, density):
+        """Auto-calculate excise and GST when pricing values change."""
+        if not pricing_data:
+            raise PreventUpdate
+        
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise PreventUpdate
+        
+        # Get current excise rate
+        try:
+            excise_response = make_api_request("GET", "/excise-rates/current")
+            excise_rate_per_l_abv = float(excise_response.get("rate_per_l_abv", 0)) if isinstance(excise_response, dict) else 0.0
+        except Exception as e:
+            print(f"Error fetching excise rate: {e}")
+            excise_rate_per_l_abv = 0.0
+        
+        # GST rate (10% in Australia)
+        GST_RATE = 0.10
+        
+        # Calculate excise and GST for each price level
+        updated_data = []
+        for row in pricing_data:
+            price_level = row.get("price_level", "")
+            inc_gst = row.get("inc_gst")
+            ex_gst = row.get("ex_gst")
+            
+            # If inc_gst is provided, calculate ex_gst and excise
+            if inc_gst is not None and inc_gst != "":
+                try:
+                    inc_gst_val = float(inc_gst)
+                    # Calculate ex_gst (remove GST)
+                    ex_gst_val = inc_gst_val / (1 + GST_RATE)
+                except (ValueError, TypeError):
+                    ex_gst_val = None
+            # If ex_gst is provided, calculate inc_gst
+            elif ex_gst is not None and ex_gst != "":
+                try:
+                    ex_gst_val = float(ex_gst)
+                    # Calculate inc_gst (add GST)
+                    inc_gst_val = ex_gst_val * (1 + GST_RATE)
+                except (ValueError, TypeError):
+                    inc_gst_val = None
+                    ex_gst_val = None
+            else:
+                inc_gst_val = None
+                ex_gst_val = None
+            
+            # Calculate excise if we have ABV and density
+            excise_val = None
+            if abv and density and ex_gst_val is not None:
+                try:
+                    abv_val = float(abv)
+                    density_val = float(density)
+                    # Excise is calculated per liter of ABV
+                    # If price is per kg, convert to liters first
+                    # Excise = (ex_gst_price / density) * (abv/100) * excise_rate_per_l_abv
+                    if density_val > 0:
+                        liters = 1.0 / density_val  # 1 kg = X liters
+                        abv_liters = liters * (abv_val / 100.0)
+                        excise_val = abv_liters * excise_rate_per_l_abv
+                except (ValueError, TypeError):
+                    excise_val = None
+            
+            updated_data.append({
+                "price_level": price_level,
+                "inc_gst": round(inc_gst_val, 2) if inc_gst_val is not None else None,
+                "ex_gst": round(ex_gst_val, 2) if ex_gst_val is not None else None,
+                "excise": round(excise_val, 2) if excise_val is not None else None,
+            })
+        
+        return updated_data
+    
+    # Auto-calculate GST for cost table
+    @app.callback(
+        Output("product-cost-table", "data", allow_duplicate=True),
+        [Input("product-cost-table", "data")],
+        prevent_initial_call=True
+    )
+    def calculate_cost_table(cost_data):
+        """Auto-calculate GST when cost values change."""
+        if not cost_data:
+            raise PreventUpdate
+        
+        GST_RATE = 0.10
+        
+        updated_data = []
+        for row in cost_data:
+            cost_type = row.get("cost_type", "")
+            ex_gst = row.get("ex_gst")
+            inc_gst = row.get("inc_gst")
+            tax_included = row.get("tax_included")
+            
+            # Calculate missing value based on tax_included flag
+            if cost_type == "Manufactured Cost":
+                # Manufactured cost doesn't have tax_included option
+                if inc_gst is not None and inc_gst != "":
+                    try:
+                        ex_gst_val = float(inc_gst) / (1 + GST_RATE)
+                    except (ValueError, TypeError):
+                        ex_gst_val = None
+                elif ex_gst is not None and ex_gst != "":
+                    try:
+                        inc_gst_val = float(ex_gst) * (1 + GST_RATE)
+                    except (ValueError, TypeError):
+                        inc_gst_val = None
+                    else:
+                        ex_gst_val = float(ex_gst)
+                else:
+                    ex_gst_val = None
+                    inc_gst_val = None
+                
+                updated_data.append({
+                    "cost_type": cost_type,
+                    "ex_gst": round(ex_gst_val, 2) if ex_gst_val is not None else None,
+                    "inc_gst": round(inc_gst_val, 2) if inc_gst_val is not None else None,
+                    "tax_included": "N/A",
+                })
+            else:
+                # Purchase/Usage cost - use tax_included flag
+                if tax_included and (inc_gst is not None and inc_gst != ""):
+                    # Price includes tax, calculate ex_gst
+                    try:
+                        ex_gst_val = float(inc_gst) / (1 + GST_RATE)
+                        inc_gst_val = float(inc_gst)
+                    except (ValueError, TypeError):
+                        ex_gst_val = None
+                        inc_gst_val = None
+                elif not tax_included and (ex_gst is not None and ex_gst != ""):
+                    # Price excludes tax, calculate inc_gst
+                    try:
+                        ex_gst_val = float(ex_gst)
+                        inc_gst_val = float(ex_gst) * (1 + GST_RATE)
+                    except (ValueError, TypeError):
+                        ex_gst_val = None
+                        inc_gst_val = None
+                elif inc_gst is not None and inc_gst != "":
+                    # Default: assume includes tax
+                    try:
+                        ex_gst_val = float(inc_gst) / (1 + GST_RATE)
+                        inc_gst_val = float(inc_gst)
+                        tax_included = True
+                    except (ValueError, TypeError):
+                        ex_gst_val = None
+                        inc_gst_val = None
+                elif ex_gst is not None and ex_gst != "":
+                    # Default: assume excludes tax
+                    try:
+                        ex_gst_val = float(ex_gst)
+                        inc_gst_val = float(ex_gst) * (1 + GST_RATE)
+                        tax_included = False
+                    except (ValueError, TypeError):
+                        ex_gst_val = None
+                        inc_gst_val = None
+                else:
+                    ex_gst_val = None
+                    inc_gst_val = None
+                
+                updated_data.append({
+                    "cost_type": cost_type,
+                    "ex_gst": round(ex_gst_val, 2) if ex_gst_val is not None else None,
+                    "inc_gst": round(inc_gst_val, 2) if inc_gst_val is not None else None,
+                    "tax_included": tax_included if tax_included is not None else False,
+                })
+        
+        return updated_data
+    
+    # Display product detail panel when product is selected
+    @app.callback(
+        [Output("product-detail-title", "children"),
+         Output("product-detail-sku", "children"),
+         Output("product-detail-capabilities", "children"),
+         Output("product-detail-name", "children"),
+         Output("product-detail-description", "children"),
+         Output("product-detail-base-unit", "children"),
+         Output("product-detail-size", "children"),
+         Output("product-detail-density", "children"),
+         Output("product-detail-abv", "children"),
+         Output("product-detail-pricing-table", "children"),
+         Output("product-detail-cost-table", "children"),
+         Output("product-detail-stock", "children"),
+         Output("product-detail-lots-count", "children"),
+         Output("product-detail-fifo-cost", "children"),
+         Output("product-detail-avg-cost", "children"),
+         Output("product-detail-cost-source", "children"),
+         Output("product-detail-restock", "children"),
+         Output("product-detail-active", "children"),
+         Output("adjust-inventory-btn", "style")],
+        [Input("products-table", "selected_rows")],
+        [State("products-table", "data")],
+        prevent_initial_call=True
+    )
+    def display_product_detail(selected_rows, data):
+        """Display product details in the right panel when product is selected."""
+        if not selected_rows or not data or len(selected_rows) == 0:
+            return (
+                "Select a product...",
+                "-", "-", "-", "-", "-", "-", "-", "-",
+                html.Div("No pricing data"),
+                html.Div("No cost data"),
+                "-", "-", "-", "-", "-", "-", "-",
+                {"display": "none"}
+            )
+        
+        product = data[selected_rows[0]]
+        product_id = product.get("id")
+        
+        # Fetch inventory summary if product has ID
+        stock_kg = 0.0
+        lots_count = 0
+        fifo_cost = 0.0
+        avg_cost = 0.0
+        cost_source = "-"
+        
+        if product_id:
+            try:
+                inv_summary = make_api_request("GET", f"/inventory/product/{product_id}/summary")
+                if isinstance(inv_summary, dict) and "error" not in inv_summary:
+                    stock_kg = inv_summary.get("stock_on_hand_kg", 0.0) or 0.0
+                    lots_count = inv_summary.get("active_lots_count", 0) or 0
+                    fifo_cost = inv_summary.get("fifo_cost_per_kg", 0.0) or 0.0
+                    avg_cost = inv_summary.get("avg_cost_per_kg", 0.0) or 0.0
+                    cost_source = inv_summary.get("cost_source", "-") or "-"
+            except Exception as e:
+                print(f"Error fetching inventory summary: {e}")
+                # Try simple SOH endpoint as fallback
+                try:
+                    soh_response = make_api_request("GET", f"/inventory/product/{product_id}/soh")
+                    if isinstance(soh_response, dict) and "error" not in soh_response:
+                        stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
+                except:
+                    pass
+        
+        # Format capabilities - handle both boolean and string (✓) formats
+        caps = []
+        is_purchase = product.get("is_purchase")
+        is_sell = product.get("is_sell")
+        is_assemble = product.get("is_assemble")
+        
+        if is_purchase is True or is_purchase == "✓" or (isinstance(is_purchase, str) and is_purchase.strip() == "✓"):
+            caps.append("Purchase")
+        if is_sell is True or is_sell == "✓" or (isinstance(is_sell, str) and is_sell.strip() == "✓"):
+            caps.append("Sell")
+        if is_assemble is True or is_assemble == "✓" or (isinstance(is_assemble, str) and is_assemble.strip() == "✓"):
+            caps.append("Assemble")
+        capabilities = ", ".join(caps) if caps else "None"
+        
+        # Build pricing table for display
+        pricing_rows = []
+        price_levels = ["Retail", "Wholesale", "Distributor", "Counter", "Trade", "Contract", "Industrial"]
+        for level in price_levels:
+            level_lower = level.lower()
+            inc_key = f"{level_lower}_price_inc_gst"
+            ex_key = f"{level_lower}_price_ex_gst"
+            excise_key = f"{level_lower}_excise"
+            
+            inc_val = product.get(inc_key)
+            ex_val = product.get(ex_key)
+            excise_val = product.get(excise_key)
+            
+            pricing_rows.append({
+                "Price Level": level,
+                "Inc GST": f"${inc_val:.2f}" if inc_val else "-",
+                "Ex GST": f"${ex_val:.2f}" if ex_val else "-",
+                "Excise": f"${excise_val:.2f}" if excise_val else "-",
+            })
+        
+        pricing_table = dash_table.DataTable(
+            data=pricing_rows,
+            columns=[
+                {"name": "Price Level", "id": "Price Level"},
+                {"name": "Inc GST", "id": "Inc GST"},
+                {"name": "Ex GST", "id": "Ex GST"},
+                {"name": "Excise", "id": "Excise"},
+            ],
+            style_cell={'textAlign': 'left', 'fontSize': '11px', 'padding': '5px'},
+            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+        )
+        
+        # Build cost table for display
+        cost_rows = [
+            {
+                "Cost Type": "Purchase Cost",
+                "Ex GST": f"${product.get('purchase_cost_ex_gst', 0):.2f}" if product.get('purchase_cost_ex_gst') else "-",
+                "Inc GST": f"${product.get('purchase_cost_inc_gst', 0):.2f}" if product.get('purchase_cost_inc_gst') else "-",
+                "Tax Included": "Yes" if product.get('purchase_tax_included') else "No",
+            },
+            {
+                "Cost Type": "Usage Cost",
+                "Ex GST": f"${product.get('usage_cost_ex_gst', 0):.2f}" if product.get('usage_cost_ex_gst') else "-",
+                "Inc GST": f"${product.get('usage_cost_inc_gst', 0):.2f}" if product.get('usage_cost_inc_gst') else "-",
+                "Tax Included": "Yes" if product.get('usage_tax_included') else "No",
+            },
+            {
+                "Cost Type": "Manufactured Cost",
+                "Ex GST": f"${product.get('manufactured_cost_ex_gst', 0):.2f}" if product.get('manufactured_cost_ex_gst') else "-",
+                "Inc GST": f"${product.get('manufactured_cost_inc_gst', 0):.2f}" if product.get('manufactured_cost_inc_gst') else "-",
+                "Tax Included": "N/A",
+            },
+        ]
+        
+        cost_table = dash_table.DataTable(
+            data=cost_rows,
+            columns=[
+                {"name": "Cost Type", "id": "Cost Type"},
+                {"name": "Ex GST", "id": "Ex GST"},
+                {"name": "Inc GST", "id": "Inc GST"},
+                {"name": "Tax Included", "id": "Tax Included"},
+            ],
+            style_cell={'textAlign': 'left', 'fontSize': '11px', 'padding': '5px'},
+            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+        )
+        
+        return (
+            product.get("name", "Product Details"),
+            product.get("sku", "-"),
+            capabilities,
+            product.get("name", "-"),
+            product.get("description") or "-",
+            product.get("base_unit") or "-",
+            product.get("size") or "-",
+            f"{product.get('density_kg_per_l', 0):.3f}" if product.get('density_kg_per_l') else "-",
+            f"{product.get('abv_percent', 0):.2f}%" if product.get('abv_percent') else "-",
+            pricing_table,
+            cost_table,
+            f"{stock_kg:.3f} kg",
+            f"{lots_count}",
+            f"${fifo_cost:.2f}/kg" if fifo_cost > 0 else "-",
+            f"${avg_cost:.2f}/kg" if avg_cost > 0 else "-",
+            cost_source,
+            f"{product.get('restock_level', 0):.3f} kg" if product.get('restock_level') else "-",
+            "Yes" if product.get('is_active') else "No",
+            {"display": "block"} if product_id else {"display": "none"},
+        )
+    
+    # Open inventory adjustment modal
+    @app.callback(
+        [Output("adjust-inventory-modal", "is_open", allow_duplicate=True),
+         Output("adjust-product-name", "children", allow_duplicate=True),
+         Output("adjust-current-stock", "children", allow_duplicate=True),
+         Output("adjust-product-id-hidden", "children", allow_duplicate=True),
+         Output("adjust-quantity", "value", allow_duplicate=True),
+         Output("adjust-unit-cost", "value", allow_duplicate=True),
+         Output("adjust-lot-code", "value", allow_duplicate=True),
+         Output("adjust-notes", "value", allow_duplicate=True),
+         Output("adjust-type", "value", allow_duplicate=True)],
+        [Input("adjust-inventory-btn", "n_clicks")],
+        [State("products-table", "selected_rows"),
+         State("products-table", "data")],
+        prevent_initial_call=True
+    )
+    def open_adjust_inventory_modal(n_clicks, selected_rows, data):
+        """Open inventory adjustment modal and populate product info."""
+        if not n_clicks or not selected_rows or not data:
+            raise PreventUpdate
+        
+        product = data[selected_rows[0]]
+        product_id = product.get("id")
+        product_name = product.get("name", "Unknown Product")
+        
+        # Get current stock
+        current_stock = "-"
+        if product_id:
+            try:
+                soh_response = make_api_request("GET", f"/inventory/product/{product_id}/soh")
+                if isinstance(soh_response, dict) and "error" not in soh_response:
+                    stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
+                    current_stock = f"{stock_kg:.3f} kg"
+            except Exception as e:
+                print(f"Error fetching stock: {e}")
+                current_stock = "Unknown"
+        
+        return (
+            True,  # is_open
+            product_name,  # product_name
+            current_stock,  # current_stock
+            product_id or "",  # product_id (hidden)
+            None,  # quantity
+            None,  # unit_cost
+            None,  # lot_code
+            "",  # notes
+            "INCREASE",  # adjustment_type
+        )
+    
+    # Close inventory adjustment modal
+    @app.callback(
+        Output("adjust-inventory-modal", "is_open", allow_duplicate=True),
+        [Input("adjust-cancel-btn", "n_clicks"),
+         Input("adjust-confirm-btn", "n_clicks")],
+        prevent_initial_call=True
+    )
+    def close_adjust_modal(cancel_clicks, confirm_clicks):
+        """Close modal on cancel or confirm."""
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise PreventUpdate
+        return False
+    
+    # Apply inventory adjustment
+    @app.callback(
+        [Output("toast", "is_open", allow_duplicate=True),
+         Output("toast", "header", allow_duplicate=True),
+         Output("toast", "children", allow_duplicate=True),
+         Output("product-detail-stock", "children", allow_duplicate=True)],
+        [Input("adjust-confirm-btn", "n_clicks")],
+        [State("adjust-product-id-hidden", "children"),
+         State("adjust-type", "value"),
+         State("adjust-quantity", "value"),
+         State("adjust-unit-cost", "value"),
+         State("adjust-lot-code", "value"),
+         State("adjust-notes", "value")],
+        prevent_initial_call=True
+    )
+    def apply_inventory_adjustment(n_clicks, product_id, adjustment_type, quantity, unit_cost, lot_code, notes):
+        """Apply inventory adjustment."""
+        if not n_clicks:
+            raise PreventUpdate
+        
+        if not product_id:
+            return True, "Error", "Product ID not found", no_update
+        
+        if not adjustment_type or quantity is None:
+            return True, "Error", "Adjustment Type and Quantity are required", no_update
+        
+        try:
+            adjustment_data = {
+                "product_id": product_id,
+                "adjustment_type": adjustment_type,
+                "quantity_kg": float(quantity),
+                "unit_cost": float(unit_cost) if unit_cost else None,
+                "lot_id": None,  # Let API create new lot or use existing based on lot_code if needed
+                "notes": notes.strip() if notes else None,
+                "reference_type": "MANUAL",
+                "reference_id": None
+            }
+            
+            response = make_api_request("POST", "/inventory/adjust", adjustment_data)
+            
+            if "error" in response:
+                error_msg = response["error"]
+                if isinstance(error_msg, dict) and "detail" in error_msg:
+                    error_msg = error_msg["detail"]
+                return True, "Error", f"Failed to adjust inventory: {error_msg}", no_update
+            
+            # Refresh stock display
+            try:
+                soh_response = make_api_request("GET", f"/inventory/product/{product_id}/soh")
+                if isinstance(soh_response, dict) and "error" not in soh_response:
+                    stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
+                    new_stock = f"{stock_kg:.3f} kg"
+                else:
+                    new_stock = no_update
+            except:
+                new_stock = no_update
+            
+            return True, "Success", f"Inventory adjusted successfully. New stock: {new_stock if isinstance(new_stock, str) else 'updated'}", new_stock
+        
+        except Exception as e:
+            return True, "Error", f"Failed to adjust inventory: {str(e)}", no_update
+    
+    # Load assembly definitions (formulas) for a product
+    @app.callback(
+        Output("product-assemblies-table", "data", allow_duplicate=True),
+        [Input("product-form-modal", "is_open"),
+         Input("product-form-hidden", "children")],
+        prevent_initial_call=True
+    )
+    def load_product_assemblies(modal_open, product_id):
+        """Load assembly definitions (formulas) when product modal opens."""
+        if not modal_open or not product_id:
+            return []
+        
+        try:
+            # Get all formulas for this product
+            formulas_response = make_api_request("GET", f"/formulas/?product_id={product_id}")
+            
+            if isinstance(formulas_response, list):
+                # Format for display in table
+                assembly_data = []
+                for formula in formulas_response:
+                    # Get primary formula (marked as is_primary somehow - may need to check default_formula_id or similar)
+                    # For now, we'll show all formulas with their version
+                    lines_count = len(formula.get("lines", []))
+                    
+                    # Calculate total cost from lines (simplified - would need actual component costs)
+                    total_cost = 0.0
+                    for line in formula.get("lines", []):
+                        qty = line.get("quantity_kg", 0.0) or 0.0
+                        # Would need to fetch component product cost - simplified for now
+                        total_cost += qty  # Placeholder
+                    
+                    assembly_data.append({
+                        "formula_id": formula.get("id"),
+                        "version": formula.get("version", 1),
+                        "formula_code": formula.get("formula_code", ""),
+                        "formula_name": formula.get("formula_name", ""),
+                        "sequence": 1,  # Would be from formula or line
+                        "ratio": "1:1",  # Would calculate from formula lines
+                        "yield_factor": "1.0",  # Would be from formula
+                        "is_primary": "✓" if formula.get("is_active") else "",
+                        "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
+                        "lines_count": lines_count,
+                    })
+                
+                return assembly_data
+            
+            return []
+        except Exception as e:
+            print(f"Error loading assemblies: {e}")
+            return []
+    
+    # Toggle edit/delete/duplicate/archive buttons based on selection
+    @app.callback(
+        [Output("edit-assembly-btn", "disabled"),
+         Output("duplicate-assembly-btn", "disabled"),
+         Output("archive-assembly-btn", "disabled")],
+        [Input("product-assemblies-table", "selected_rows")]
+    )
+    def toggle_assembly_buttons(selected_rows):
+        """Enable/disable assembly action buttons based on selection."""
+        disabled = not selected_rows or len(selected_rows) == 0
+        return disabled, disabled, disabled
+    
+    # Open assembly form modal (for new/edit)
+    @app.callback(
+        [Output("assembly-form-modal", "is_open", allow_duplicate=True),
+         Output("assembly-form-title", "children", allow_duplicate=True),
+         Output("assembly-formula-id", "children", allow_duplicate=True),
+         Output("assembly-product-id", "children", allow_duplicate=True),
+         Output("assembly-code", "value", allow_duplicate=True),
+         Output("assembly-name", "value", allow_duplicate=True),
+         Output("assembly-version", "value", allow_duplicate=True),
+         Output("assembly-lines-table", "data", allow_duplicate=True)],
+        [Input("new-assembly-btn", "n_clicks"),
+         Input("edit-assembly-btn", "n_clicks")],
+        [State("product-assemblies-table", "selected_rows"),
+         State("product-assemblies-table", "data"),
+         State("product-form-hidden", "children")],
+        prevent_initial_call=True
+    )
+    def open_assembly_modal(new_clicks, edit_clicks, selected_rows, assembly_data, product_id):
+        """Open assembly form modal for new or edit."""
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise PreventUpdate
+        
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        
+        if button_id == "new-assembly-btn":
+            # New assembly - clear form
+            return (
+                True,  # is_open
+                "New Assembly Definition",  # title
+                "",  # formula_id (hidden)
+                product_id or "",  # product_id (hidden)
+                "",  # code
+                "",  # name
+                1,  # version
+                [],  # lines data
+            )
+        
+        elif button_id == "edit-assembly-btn":
+            if not selected_rows or not assembly_data or not product_id:
+                raise PreventUpdate
+            
+            formula_id = assembly_data[selected_rows[0]].get("formula_id")
+            
+            # Fetch formula details
+            try:
+                formula_response = make_api_request("GET", f"/formulas/{formula_id}")
+                
+                if isinstance(formula_response, dict) and "error" not in formula_response:
+                    # Format lines for table
+                    lines_data = []
+                    for line in formula_response.get("lines", []):
+                        # Get product details
+                        product_id = line.get("raw_material_id")
+                        product_sku = ""
+                        product_name = line.get("ingredient_name", "")
+                        unit_cost = 0.0
+                        
+                        if product_id:
+                            try:
+                                product_resp = make_api_request("GET", f"/products/{product_id}")
+                                if isinstance(product_resp, dict) and "error" not in product_resp:
+                                    product_sku = product_resp.get("sku", "")
+                                    product_name = product_resp.get("name", product_name)
+                                    unit_cost = float(
+                                        product_resp.get("usage_cost_ex_gst", 0) or 
+                                        product_resp.get("purchase_cost_ex_gst", 0) or 0
+                                    )
+                            except:
+                                pass
+                        
+                        quantity_kg = line.get("quantity_kg", 0.0) or 0.0
+                        unit = line.get("unit", "kg")
+                        density = line.get("ingredient_density_kg_per_l") or 0
+                        
+                        # Convert kg to display unit
+                        if unit.lower() in ["l", "ltr", "liter", "litre"] and density > 0:
+                            quantity_display = quantity_kg / density
+                        else:
+                            quantity_display = quantity_kg
+                        
+                        line_cost = quantity_kg * unit_cost
+                        
+                        lines_data.append({
+                            "sequence": line.get("sequence", 0),
+                            "product_search": product_sku or product_name or "",
+                            "product_id": product_id,
+                            "product_sku": product_sku,
+                            "product_name": product_name,
+                            "quantity": round(quantity_display, 3),
+                            "unit": unit,
+                            "quantity_kg": round(quantity_kg, 3),
+                            "unit_cost": round(unit_cost, 2),
+                            "line_cost": round(line_cost, 2),
+                            "notes": line.get("notes", ""),
+                        })
+                    
+                    return (
+                        True,  # is_open
+                        f"Edit Assembly: {formula_response.get('formula_code', '')}",  # title
+                        formula_id,  # formula_id
+                        product_id,  # product_id
+                        formula_response.get("formula_code", ""),  # code
+                        formula_response.get("formula_name", ""),  # name
+                        formula_response.get("version", 1),  # version
+                        lines_data,  # lines data
+                    )
+            except Exception as e:
+                print(f"Error loading formula: {e}")
+                raise PreventUpdate
+        
+        raise PreventUpdate
+    
+    # Save assembly (create or update)
+    @app.callback(
+        [Output("assembly-form-modal", "is_open", allow_duplicate=True),
+         Output("toast", "is_open", allow_duplicate=True),
+         Output("toast", "header", allow_duplicate=True),
+         Output("toast", "children", allow_duplicate=True),
+         Output("product-assemblies-table", "data", allow_duplicate=True)],
+        [Input("assembly-save-btn", "n_clicks")],
+        [State("assembly-formula-id", "children"),
+         State("assembly-product-id", "children"),
+         State("assembly-code", "value"),
+         State("assembly-name", "value"),
+         State("assembly-version", "value"),
+         State("assembly-lines-table", "data")],
+        prevent_initial_call=True
+    )
+    def save_assembly(n_clicks, formula_id, product_id, code, name, version, lines_data):
+        """Save assembly definition (formula)."""
+        if not n_clicks:
+            raise PreventUpdate
+        
+        if not product_id or not code or not name:
+            return False, True, "Error", "Product ID, Formula Code, and Name are required", no_update
+        
+        try:
+            # Format lines for API - use quantity_kg from calculations
+            formula_lines = []
+            for i, line in enumerate(lines_data or []):
+                product_id_line = line.get("product_id")
+                if not product_id_line:
+                    continue  # Skip lines without product
+                
+                # Use quantity_kg if available (from calculations), otherwise convert
+                quantity_kg = line.get("quantity_kg")
+                if quantity_kg is None:
+                    quantity = float(line.get("quantity", 0.0) or 0.0)
+                    unit = line.get("unit", "kg")
+                    # Would need density for L conversion, but use quantity as fallback
+                    quantity_kg = quantity
+                
+                formula_lines.append({
+                    "raw_material_id": product_id_line,
+                    "quantity_kg": float(quantity_kg),
+                    "sequence": int(line.get("sequence", i + 1)),
+                    "notes": line.get("notes", ""),
+                    "unit": line.get("unit", "kg"),
+                })
+            
+            if formula_id:
+                # Update existing formula
+                # First update header
+                update_data = {
+                    "formula_name": name,
+                }
+                make_api_request("PUT", f"/formulas/{formula_id}", update_data)
+                
+                # Then replace lines
+                make_api_request("PUT", f"/formulas/{formula_id}/lines", formula_lines)
+                
+                message = f"Assembly '{code}' updated successfully"
+            else:
+                # Create new formula
+                formula_data = {
+                    "product_id": product_id,
+                    "formula_code": code,
+                    "formula_name": name,
+                    "version": int(version) if version else 1,
+                    "is_active": True,
+                    "lines": formula_lines,
+                }
+                
+                make_api_request("POST", "/formulas/", formula_data)
+                message = f"Assembly '{code}' created successfully"
+            
+            # Reload assemblies table
+            try:
+                formulas_response = make_api_request("GET", f"/formulas/?product_id={product_id}")
+                
+                if isinstance(formulas_response, list):
+                    assembly_data = []
+                    for formula in formulas_response:
+                        lines_count = len(formula.get("lines", []))
+                        total_cost = 0.0
+                        for line in formula.get("lines", []):
+                            qty = line.get("quantity_kg", 0.0) or 0.0
+                            total_cost += qty  # Placeholder
+                        
+                        assembly_data.append({
+                            "formula_id": formula.get("id"),
+                            "version": formula.get("version", 1),
+                            "formula_code": formula.get("formula_code", ""),
+                            "formula_name": formula.get("formula_name", ""),
+                            "sequence": 1,
+                            "ratio": "1:1",
+                            "yield_factor": "1.0",
+                            "is_primary": "✓" if formula.get("is_active") else "",
+                            "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
+                            "lines_count": lines_count,
+                        })
+                    
+                    return False, True, "Success", message, assembly_data
+            except Exception as e:
+                print(f"Error reloading assemblies: {e}")
+            
+            return False, True, "Success", message, no_update
+        
+        except Exception as e:
+            return True, True, "Error", f"Failed to save assembly: {str(e)}", no_update
+    
+    # Cancel assembly form
+    @app.callback(
+        Output("assembly-form-modal", "is_open", allow_duplicate=True),
+        [Input("assembly-cancel-btn", "n_clicks")],
+        prevent_initial_call=True
+    )
+    def cancel_assembly_form(n_clicks):
+        """Close assembly form modal."""
+        if n_clicks:
+            return False
+        raise PreventUpdate
+    
+    # Duplicate assembly (create new version)
+    @app.callback(
+        [Output("toast", "is_open", allow_duplicate=True),
+         Output("toast", "header", allow_duplicate=True),
+         Output("toast", "children", allow_duplicate=True),
+         Output("product-assemblies-table", "data", allow_duplicate=True)],
+        [Input("duplicate-assembly-btn", "n_clicks")],
+        [State("product-assemblies-table", "selected_rows"),
+         State("product-assemblies-table", "data"),
+         State("product-form-hidden", "children")],
+        prevent_initial_call=True
+    )
+    def duplicate_assembly(n_clicks, selected_rows, assembly_data, product_id):
+        """Duplicate assembly as new version."""
+        if not n_clicks or not selected_rows or not assembly_data or not product_id:
+            raise PreventUpdate
+        
+        formula_id = assembly_data[selected_rows[0]].get("formula_id")
+        
+        try:
+            # Create new version using API
+            make_api_request("POST", f"/formulas/{formula_id}/new-version", {})
+            
+            # Reload assemblies
+            formulas_response = make_api_request("GET", f"/formulas/?product_id={product_id}")
+            
+            if isinstance(formulas_response, list):
+                assembly_data_new = []
+                for formula in formulas_response:
+                    lines_count = len(formula.get("lines", []))
+                    total_cost = 0.0
+                    for line in formula.get("lines", []):
+                        qty = line.get("quantity_kg", 0.0) or 0.0
+                        total_cost += qty
+                    
+                    assembly_data_new.append({
+                        "formula_id": formula.get("id"),
+                        "version": formula.get("version", 1),
+                        "formula_code": formula.get("formula_code", ""),
+                        "formula_name": formula.get("formula_name", ""),
+                        "sequence": 1,
+                        "ratio": "1:1",
+                        "yield_factor": "1.0",
+                        "is_primary": "✓" if formula.get("is_active") else "",
+                        "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
+                        "lines_count": lines_count,
+                    })
+                
+                return True, "Success", "Assembly duplicated successfully", assembly_data_new
+            
+            return True, "Success", "Assembly duplicated successfully", no_update
+        
+        except Exception as e:
+            return True, "Error", f"Failed to duplicate assembly: {str(e)}", no_update
+    
+    # Archive assembly (set is_active=False)
+    @app.callback(
+        [Output("toast", "is_open", allow_duplicate=True),
+         Output("toast", "header", allow_duplicate=True),
+         Output("toast", "children", allow_duplicate=True),
+         Output("product-assemblies-table", "data", allow_duplicate=True)],
+        [Input("archive-assembly-btn", "n_clicks")],
+        [State("product-assemblies-table", "selected_rows"),
+         State("product-assemblies-table", "data"),
+         State("product-form-hidden", "children")],
+        prevent_initial_call=True
+    )
+    def archive_assembly(n_clicks, selected_rows, assembly_data, product_id):
+        """Archive assembly (set is_active=False)."""
+        if not n_clicks or not selected_rows or not assembly_data or not product_id:
+            raise PreventUpdate
+        
+        formula_id = assembly_data[selected_rows[0]].get("formula_id")
+        
+        try:
+            # Update formula to set is_active=False
+            make_api_request("PUT", f"/formulas/{formula_id}", {"is_active": False})
+            
+            # Reload assemblies
+            formulas_response = make_api_request("GET", f"/formulas/?product_id={product_id}")
+            
+            if isinstance(formulas_response, list):
+                assembly_data_new = []
+                for formula in formulas_response:
+                    lines_count = len(formula.get("lines", []))
+                    total_cost = 0.0
+                    for line in formula.get("lines", []):
+                        qty = line.get("quantity_kg", 0.0) or 0.0
+                        total_cost += qty
+                    
+                    assembly_data_new.append({
+                        "formula_id": formula.get("id"),
+                        "version": formula.get("version", 1),
+                        "formula_code": formula.get("formula_code", ""),
+                        "formula_name": formula.get("formula_name", ""),
+                        "sequence": 1,
+                        "ratio": "1:1",
+                        "yield_factor": "1.0",
+                        "is_primary": "✓" if formula.get("is_active") else "",
+                        "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
+                        "lines_count": lines_count,
+                    })
+                
+                return True, "Success", "Assembly archived successfully", assembly_data_new
+            
+            return True, "Success", "Assembly archived successfully", no_update
+        
+        except Exception as e:
+            return True, "Error", f"Failed to archive assembly: {str(e)}", no_update
+    
+    # Add line to assembly table
+    @app.callback(
+        Output("assembly-lines-table", "data", allow_duplicate=True),
+        [Input("assembly-add-line-btn", "n_clicks")],
+        [State("assembly-lines-table", "data")],
+        prevent_initial_call=True
+    )
+    def add_assembly_line(n_clicks, current_data):
+        """Add a new empty line to assembly table."""
+        if not n_clicks:
+            raise PreventUpdate
+        
+        new_line = {
+            "sequence": len(current_data) + 1 if current_data else 1,
+            "product_search": "",
+            "product_id": "",
+            "product_sku": "",
+            "product_name": "",
+            "quantity": 0.0,
+            "unit": "kg",
+            "quantity_kg": 0.0,
+            "unit_cost": 0.0,
+            "line_cost": 0.0,
+            "notes": "",
+        }
+        
+        return (current_data or []) + [new_line]
+    
+    # Product lookup for assembly lines
+    @app.callback(
+        Output("assembly-lines-table", "data", allow_duplicate=True),
+        [Input("assembly-lookup-product-btn", "n_clicks")],
+        [State("assembly-product-search", "value"),
+         State("assembly-lines-table", "data"),
+         State("assembly-lines-table", "selected_rows")],
+        prevent_initial_call=True
+    )
+    def lookup_product_for_line(n_clicks, search_term, lines_data, selected_rows):
+        """Lookup product and populate selected line."""
+        if not n_clicks or not search_term or not lines_data:
+            raise PreventUpdate
+        
+        if not selected_rows or len(selected_rows) == 0:
+            raise PreventUpdate
+        
+        try:
+            # Search for product
+            products_response = make_api_request("GET", f"/products/?query={search_term}&limit=1")
+            
+            if isinstance(products_response, list) and len(products_response) > 0:
+                product = products_response[0]
+                
+                # Update selected line
+                updated_data = lines_data.copy()
+                selected_idx = selected_rows[0]
+                
+                if selected_idx < len(updated_data):
+                    updated_data[selected_idx] = {
+                        **updated_data[selected_idx],
+                        "product_search": search_term,
+                        "product_id": product.get("id", ""),
+                        "product_sku": product.get("sku", ""),
+                        "product_name": product.get("name", ""),
+                        "unit": product.get("base_unit", "kg") or "kg",
+                        "unit_cost": float(product.get("usage_cost_ex_gst", 0) or product.get("purchase_cost_ex_gst", 0) or 0),
+                    }
+                    
+                    # Auto-calculate quantity_kg and line_cost
+                    quantity = float(updated_data[selected_idx].get("quantity", 0.0) or 0.0)
+                    unit = updated_data[selected_idx].get("unit", "kg")
+                    density = float(product.get("density_kg_per_l", 0) or 0)
+                    
+                    # Convert to kg
+                    if unit.lower() in ["l", "ltr", "liter", "litre"]:
+                        if density > 0:
+                            quantity_kg = quantity * density
+                        else:
+                            quantity_kg = quantity  # Fallback
+                    else:
+                        quantity_kg = quantity
+                    
+                    unit_cost = float(updated_data[selected_idx].get("unit_cost", 0.0) or 0.0)
+                    line_cost = quantity_kg * unit_cost if unit_cost > 0 else 0.0
+                    
+                    updated_data[selected_idx]["quantity_kg"] = round(quantity_kg, 3)
+                    updated_data[selected_idx]["line_cost"] = round(line_cost, 2)
+                
+                return updated_data
+            
+            return no_update
+        except Exception as e:
+            print(f"Error looking up product: {e}")
+            return no_update
+    
+    # Auto-calculate unit conversions and costs when quantity/unit changes
+    @app.callback(
+        [Output("assembly-lines-table", "data", allow_duplicate=True),
+         Output("assembly-total-cost", "children", allow_duplicate=True)],
+        [Input("assembly-lines-table", "data")],
+        prevent_initial_call=True
+    )
+    def calculate_assembly_line_costs(lines_data):
+        """Calculate quantity_kg, line_cost, and total cost for assembly lines."""
+        if not lines_data:
+            return [], "$0.00"
+        
+        total_cost = 0.0
+        updated_data = []
+        
+        for line in lines_data:
+            product_id = line.get("product_id")
+            quantity = float(line.get("quantity", 0.0) or 0.0)
+            unit = line.get("unit", "kg")
+            
+            # Get product density if needed
+            density = 0.0
+            unit_cost = float(line.get("unit_cost", 0.0) or 0.0)
+            
+            if product_id:
+                try:
+                    product_response = make_api_request("GET", f"/products/{product_id}")
+                    if isinstance(product_response, dict) and "error" not in product_response:
+                        density = float(product_response.get("density_kg_per_l", 0) or 0)
+                        if unit_cost == 0:
+                            # Get cost from product
+                            unit_cost = float(
+                                product_response.get("usage_cost_ex_gst", 0) or 
+                                product_response.get("purchase_cost_ex_gst", 0) or 0
+                            )
+                except:
+                    pass
+            
+            # Convert quantity to kg
+            if unit.lower() in ["l", "ltr", "liter", "litre"]:
+                if density > 0:
+                    quantity_kg = quantity * density
+                else:
+                    quantity_kg = quantity  # Fallback
+            else:
+                quantity_kg = quantity
+            
+            # Calculate line cost
+            line_cost = quantity_kg * unit_cost if unit_cost > 0 else 0.0
+            total_cost += line_cost
+            
+            updated_line = {
+                **line,
+                "quantity_kg": round(quantity_kg, 3),
+                "unit_cost": round(unit_cost, 2),
+                "line_cost": round(line_cost, 2),
+            }
+            updated_data.append(updated_line)
+        
+        return updated_data, f"${total_cost:.2f}"
+    
+    # Populate product dropdown options
+    @app.callback(
+        Output("assembly-lines-table", "dropdown", allow_duplicate=True),
+        [Input("assembly-lines-table", "data")],
+        prevent_initial_call=True
+    )
+    def update_assembly_product_dropdown(lines_data):
+        """Update product dropdown options for assembly lines."""
+        try:
+            # Get all products for dropdown
+            products_response = make_api_request("GET", "/products/?limit=1000")
+            
+            if isinstance(products_response, list):
+                product_options = [
+                    {"label": f"{p.get('sku', '')} - {p.get('name', '')}", "value": p.get("id", "")}
+                    for p in products_response
+                ]
+                
+                # Also get units for unit dropdown
+                unit_options = [
+                    {"label": "kg", "value": "kg"},
+                    {"label": "g", "value": "g"},
+                    {"label": "L", "value": "L"},
+                    {"label": "mL", "value": "mL"},
+                ]
+                
+                return {
+                    "product_search": {"options": product_options},
+                    "unit": {"options": unit_options},
+                }
+        except:
+            pass
+        
+        return no_update
+    
+    # Handle product selection from dropdown
+    @app.callback(
+        Output("assembly-lines-table", "data", allow_duplicate=True),
+        [Input("assembly-lines-table", "data_previous")],
+        [State("assembly-lines-table", "data")],
+        prevent_initial_call=True
+    )
+    def handle_product_selection(previous_data, current_data):
+        """Handle product selection change in dropdown."""
+        if not previous_data or not current_data:
+            raise PreventUpdate
+        
+        # Find which line changed
+        for i, (prev_line, curr_line) in enumerate(zip(previous_data, current_data)):
+            if prev_line.get("product_search") != curr_line.get("product_search"):
+                # Product changed - fetch product details
+                product_search = curr_line.get("product_search")
+                if product_search:
+                    # Extract product ID from dropdown value
+                    try:
+                        # Dropdown returns product ID as value
+                        product_id = product_search
+                        
+                        product_response = make_api_request("GET", f"/products/{product_id}")
+                        
+                        if isinstance(product_response, dict) and "error" not in product_response:
+                            updated_data = current_data.copy()
+                            updated_data[i] = {
+                                **updated_data[i],
+                                "product_id": product_id,
+                                "product_sku": product_response.get("sku", ""),
+                                "product_name": product_response.get("name", ""),
+                                "unit": product_response.get("base_unit", "kg") or "kg",
+                                "unit_cost": float(
+                                    product_response.get("usage_cost_ex_gst", 0) or 
+                                    product_response.get("purchase_cost_ex_gst", 0) or 0
+                                ),
+                            }
+                            
+                            # Recalculate quantity_kg and line_cost
+                            quantity = float(updated_data[i].get("quantity", 0.0) or 0.0)
+                            unit = updated_data[i].get("unit", "kg")
+                            density = float(product_response.get("density_kg_per_l", 0) or 0)
+                            
+                            if unit.lower() in ["l", "ltr", "liter", "litre"]:
+                                quantity_kg = quantity * density if density > 0 else quantity
+                            else:
+                                quantity_kg = quantity
+                            
+                            unit_cost = float(updated_data[i].get("unit_cost", 0.0) or 0.0)
+                            line_cost = quantity_kg * unit_cost
+                            
+                            updated_data[i]["quantity_kg"] = round(quantity_kg, 3)
+                            updated_data[i]["line_cost"] = round(line_cost, 2)
+                            
+                            return updated_data
+                    except Exception as e:
+                        print(f"Error fetching product: {e}")
+        
+        raise PreventUpdate
     
     # Note: Table refresh is now handled by the main callback in app.py that responds to filter changes
 

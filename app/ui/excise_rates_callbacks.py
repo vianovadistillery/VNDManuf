@@ -24,11 +24,12 @@ def register_excise_rates_callbacks(app, make_api_request):
     @app.callback(
         Output("excise-rates-table", "data"),
         [Input("main-tabs", "active_tab"),
+         Input("settings-tabs", "active_tab"),
          Input("excise-rates-refresh", "n_clicks")]
     )
-    def load_excise_rates_table(active_tab, refresh_clicks):
-        """Load excise rates table when settings tab is activated or refresh clicked."""
-        if active_tab != "settings":
+    def load_excise_rates_table(main_tab, settings_tab, refresh_clicks):
+        """Load excise rates table when settings tab is activated and excise-rates sub-tab is active."""
+        if main_tab != "settings" or settings_tab != "excise-rates":
             return []
         
         try:
@@ -38,16 +39,27 @@ def register_excise_rates_callbacks(app, make_api_request):
             
             rates = response if isinstance(response, list) else []
             
-            # Format dates for display
+            # Format dates and rates for display
             for rate in rates:
                 if "date_active_from" in rate:
                     try:
                         dt = datetime.fromisoformat(rate["date_active_from"].replace("Z", "+00:00"))
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d %H:%M")
+                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
                     except:
                         pass
                 if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    rate["rate_per_l_abv"] = f"${float(rate['rate_per_l_abv']):.4f}"
+                    try:
+                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                    except:
+                        pass
+                if "created_at" in rate:
+                    try:
+                        dt = datetime.fromisoformat(rate["created_at"].replace("Z", "+00:00"))
+                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        pass
+                if "is_active" in rate:
+                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
             
             return rates
         except Exception as e:
@@ -58,9 +70,10 @@ def register_excise_rates_callbacks(app, make_api_request):
     @app.callback(
         [Output("excise-rate-form-modal", "is_open", allow_duplicate=True),
          Output("excise-rate-modal-title", "children", allow_duplicate=True),
-         Output("excise-rate-date-active", "date", allow_duplicate=True),
-         Output("excise-rate-value", "value", allow_duplicate=True),
+         Output("excise-rate-date", "date", allow_duplicate=True),
+         Output("excise-rate-rate", "value", allow_duplicate=True),
          Output("excise-rate-description", "value", allow_duplicate=True),
+         Output("excise-rate-is-active", "value", allow_duplicate=True),
          Output("excise-rate-form-hidden", "children", allow_duplicate=True)],
         [Input("add-excise-rate-btn", "n_clicks"),
          Input("edit-excise-rate-btn", "n_clicks")],
@@ -78,7 +91,7 @@ def register_excise_rates_callbacks(app, make_api_request):
         
         if button_id == "add-excise-rate-btn":
             # Add mode - clear form
-            return [True, "Add Excise Rate", None, None, "", ""]
+            return [True, "Add Excise Rate", None, None, "", True, ""]
         
         elif button_id == "edit-excise-rate-btn":
             if not selected_rows or not data:
@@ -91,7 +104,7 @@ def register_excise_rates_callbacks(app, make_api_request):
             date_value = None
             if date_str:
                 try:
-                    dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
+                    dt = datetime.strptime(date_str, "%Y-%m-%d")
                     date_value = dt.strftime("%Y-%m-%d")
                 except:
                     try:
@@ -100,11 +113,12 @@ def register_excise_rates_callbacks(app, make_api_request):
                     except:
                         pass
             
-            # Extract numeric value from formatted string
+            # Extract numeric value
             rate_value = rate.get("rate_per_l_abv", "")
             if rate_value:
                 try:
-                    rate_value = rate_value.replace("$", "").strip()
+                    if isinstance(rate_value, str):
+                        rate_value = rate_value.replace("$", "").strip()
                     rate_value = float(rate_value)
                 except:
                     rate_value = None
@@ -113,8 +127,9 @@ def register_excise_rates_callbacks(app, make_api_request):
                 True,  # is_open
                 "Edit Excise Rate",  # title
                 date_value,  # date
-                rate_value,  # value
+                rate_value,  # rate
                 rate.get("description", ""),  # description
+                rate.get("is_active", True),  # is_active
                 rate.get("id")  # Hidden field - rate ID
             )
         
@@ -129,26 +144,28 @@ def register_excise_rates_callbacks(app, make_api_request):
          Output("toast", "children", allow_duplicate=True),
          Output("excise-rates-table", "data", allow_duplicate=True)],
         [Input("save-excise-rate-btn", "n_clicks")],
-        [State("excise-rate-date-active", "date"),
-         State("excise-rate-value", "value"),
+        [State("excise-rate-date", "date"),
+         State("excise-rate-rate", "value"),
          State("excise-rate-description", "value"),
+         State("excise-rate-is-active", "value"),
          State("excise-rate-form-hidden", "children")],
         prevent_initial_call=True
     )
-    def save_excise_rate(n_clicks, date_active, rate_value, description, rate_id):
+    def save_excise_rate(n_clicks, date_active, rate_value, description, is_active, rate_id):
         """Save excise rate - create or update based on hidden state."""
         if not n_clicks:
             raise PreventUpdate
         
         # Validate required fields
         if not date_active or rate_value is None:
-            return [True, "Error", True, "Error", "Date Active From and Rate are required", no_update]
+            return [False, "Add Excise Rate", True, "Error", "Date Active From and Rate are required", no_update]
         
         # Prepare rate data
         rate_data = {
             "date_active_from": f"{date_active}T00:00:00Z",
             "rate_per_l_abv": str(rate_value),
-            "description": description.strip() if description else None
+            "description": description.strip() if description else None,
+            "is_active": bool(is_active) if is_active is not None else True
         }
         
         try:
@@ -167,16 +184,27 @@ def register_excise_rates_callbacks(app, make_api_request):
             rates_response = make_api_request("GET", "/excise-rates/")
             rates = rates_response if isinstance(rates_response, list) else []
             
-            # Format dates for display
+            # Format dates and rates for display
             for rate in rates:
                 if "date_active_from" in rate:
                     try:
                         dt = datetime.fromisoformat(rate["date_active_from"].replace("Z", "+00:00"))
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d %H:%M")
+                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
                     except:
                         pass
                 if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    rate["rate_per_l_abv"] = f"${float(rate['rate_per_l_abv']):.4f}"
+                    try:
+                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                    except:
+                        pass
+                if "created_at" in rate:
+                    try:
+                        dt = datetime.fromisoformat(rate["created_at"].replace("Z", "+00:00"))
+                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        pass
+                if "is_active" in rate:
+                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
             
             return [False, "Add Excise Rate", True, "Success", message, rates]
         
@@ -226,16 +254,27 @@ def register_excise_rates_callbacks(app, make_api_request):
             rates_response = make_api_request("GET", "/excise-rates/")
             rates = rates_response if isinstance(rates_response, list) else []
             
-            # Format dates for display
+            # Format dates and rates for display
             for rate in rates:
                 if "date_active_from" in rate:
                     try:
                         dt = datetime.fromisoformat(rate["date_active_from"].replace("Z", "+00:00"))
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d %H:%M")
+                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
                     except:
                         pass
                 if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    rate["rate_per_l_abv"] = f"${float(rate['rate_per_l_abv']):.4f}"
+                    try:
+                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                    except:
+                        pass
+                if "created_at" in rate:
+                    try:
+                        dt = datetime.fromisoformat(rate["created_at"].replace("Z", "+00:00"))
+                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        pass
+                if "is_active" in rate:
+                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
             
             return rates, True, "Success", "Excise rate deleted successfully"
         

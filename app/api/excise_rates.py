@@ -21,6 +21,7 @@ class ExciseRateCreate(BaseModel):
     date_active_from: datetime = Field(..., description="Date from which this rate is active")
     rate_per_l_abv: Decimal = Field(..., gt=0, description="Excise rate in $/L ABV")
     description: Optional[str] = None
+    is_active: bool = True
 
 
 class ExciseRateUpdate(BaseModel):
@@ -28,6 +29,7 @@ class ExciseRateUpdate(BaseModel):
     date_active_from: Optional[datetime] = None
     rate_per_l_abv: Optional[Decimal] = Field(None, gt=0)
     description: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class ExciseRateResponse(BaseModel):
@@ -36,6 +38,7 @@ class ExciseRateResponse(BaseModel):
     date_active_from: datetime
     rate_per_l_abv: Decimal
     description: Optional[str] = None
+    is_active: bool
     created_at: datetime
     updated_at: datetime
     
@@ -50,6 +53,7 @@ def excise_rate_to_response(rate: ExciseRate) -> ExciseRateResponse:
         date_active_from=rate.date_active_from,
         rate_per_l_abv=rate.rate_per_l_abv,
         description=rate.description,
+        is_active=rate.is_active if rate.is_active is not None else True,
         created_at=rate.created_at,
         updated_at=rate.updated_at
     )
@@ -142,10 +146,21 @@ async def create_excise_rate(
     db: Session = Depends(get_db)
 ):
     """Create a new excise rate."""
+    # Check for duplicate date_active_from
+    existing = db.execute(
+        select(ExciseRate).where(ExciseRate.date_active_from == data.date_active_from)
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Excise rate with date_active_from '{data.date_active_from}' already exists"
+        )
+    
     rate = ExciseRate(
         date_active_from=data.date_active_from,
         rate_per_l_abv=data.rate_per_l_abv,
-        description=data.description
+        description=data.description,
+        is_active=data.is_active
     )
     
     db.add(rate)
@@ -169,12 +184,27 @@ async def update_excise_rate(
             detail="Excise rate not found"
         )
     
-    if data.date_active_from is not None:
+    # Check for duplicate date_active_from if changing it
+    if data.date_active_from is not None and data.date_active_from != rate.date_active_from:
+        existing = db.execute(
+            select(ExciseRate).where(
+                ExciseRate.date_active_from == data.date_active_from,
+                ExciseRate.id != rate_id
+            )
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Excise rate with date_active_from '{data.date_active_from}' already exists"
+            )
         rate.date_active_from = data.date_active_from
+    
     if data.rate_per_l_abv is not None:
         rate.rate_per_l_abv = data.rate_per_l_abv
     if data.description is not None:
         rate.description = data.description
+    if data.is_active is not None:
+        rate.is_active = data.is_active
     
     db.commit()
     db.refresh(rate)

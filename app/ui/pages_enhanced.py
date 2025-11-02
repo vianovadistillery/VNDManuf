@@ -23,25 +23,32 @@ class ProductsPageEnhanced:
                         ], width=8),
                         dbc.Col([
                             html.Div([
-                                dbc.Label("Filter by Type:", className="me-2", style={"display": "inline-block", "marginRight": "10px"}),
-                                dbc.Checkbox(id="filter-raw", label="RAW", value=True, className="me-2", style={"display": "inline-block"}),
-                                dbc.Checkbox(id="filter-wip", label="WIP", value=True, className="me-2", style={"display": "inline-block"}),
-                                dbc.Checkbox(id="filter-finished", label="FINISHED", value=True, style={"display": "inline-block"}),
+                                dbc.Label("Filter by Capabilities:", className="me-2", style={"display": "inline-block", "marginRight": "10px"}),
+                                dbc.Checkbox(id="filter-purchase", label="Purchase", value=True, className="me-2", style={"display": "inline-block"}),
+                                dbc.Checkbox(id="filter-sell", label="Sell", value=True, className="me-2", style={"display": "inline-block"}),
+                                dbc.Checkbox(id="filter-assemble", label="Assemble", value=True, style={"display": "inline-block"}),
                             ], style={"textAlign": "right"})
                         ], width=4)
                     ], className="mb-3"),
+                ], width=12)
+            ]),
+            dbc.Row([
+                dbc.Col([
                     dash_table.DataTable(
                         id="products-table",
                         columns=[
                             {"name": "SKU", "id": "sku"},
                             {"name": "Name", "id": "name"},
-                            {"name": "Type", "id": "product_type"},
-                            {"name": "Base Unit", "id": "base_unit"},
+                            {"name": "Purchase", "id": "is_purchase", "presentation": "markdown"},
+                            {"name": "Sell", "id": "is_sell", "presentation": "markdown"},
+                            {"name": "Assemble", "id": "is_assemble", "presentation": "markdown"},
                             {"name": "Size", "id": "size"},
+                            {"name": "Base Unit", "id": "base_unit"},
                             {"name": "Pack", "id": "pack"},
                             {"name": "Density (kg/L)", "id": "density_kg_per_l"},
                             {"name": "ABV (%)", "id": "abv_percent"},
-                            {"name": "Purchase Cost", "id": "purcost"},
+                            {"name": "Stock", "id": "stock"},
+                            {"name": "Cost", "id": "primary_assembly_cost"},
                             {"name": "Active", "id": "is_active"},
                         ],
                         data=[],
@@ -56,7 +63,70 @@ class ProductsPageEnhanced:
                         style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
                         style_data={'whiteSpace': 'normal', 'height': 'auto'},
                     )
-                ])
+                ], width=8),
+                # Product Detail Panel (Right Side)
+                dbc.Col([
+                    html.Div([
+                        html.H5(id="product-detail-title", children="Select a product..."),
+                        html.Hr(),
+                        html.Div([
+                            html.P([
+                                html.Strong("SKU: "), html.Span(id="product-detail-sku", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Capabilities: "), html.Span(id="product-detail-capabilities", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Name: "), html.Span(id="product-detail-name", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Description: "), html.Span(id="product-detail-description", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Base Unit: "), html.Span(id="product-detail-base-unit", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Size: "), html.Span(id="product-detail-size", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Density: "), html.Span(id="product-detail-density", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("ABV: "), html.Span(id="product-detail-abv", children="-")
+                            ]),
+                            html.Hr(),
+                            html.H6("Sales & Pricing"),
+                            html.Div(id="product-detail-pricing-table"),
+                            html.Hr(),
+                            html.H6("Cost & Usage"),
+                            html.Div(id="product-detail-cost-table"),
+                            html.Hr(),
+                            html.P([
+                                html.Strong("Stock: "), html.Span(id="product-detail-stock", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Lots: "), html.Span(id="product-detail-lots-count", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("FIFO Cost: "), html.Span(id="product-detail-fifo-cost", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Avg Cost: "), html.Span(id="product-detail-avg-cost", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Cost Source: "), html.Span(id="product-detail-cost-source", children="-")
+                            ]),
+                            dbc.Button("Adjust Inventory", id="adjust-inventory-btn", color="primary", className="mt-2", style={"display": "none"}),
+                            html.Hr(),
+                            html.P([
+                                html.Strong("Restock Level: "), html.Span(id="product-detail-restock", children="-")
+                            ]),
+                            html.P([
+                                html.Strong("Active: "), html.Span(id="product-detail-active", children="-")
+                            ]),
+                        ])
+                    ], className="card p-3", style={"position": "sticky", "top": "20px"})
+                ], width=4)
             ]),
             
             # Add/Edit Product Modal
@@ -78,18 +148,13 @@ class ProductsPageEnhanced:
                             ], className="mb-3"),
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("Product Type *"),
-                                    dbc.Select(
-                                        id="product-type",
-                                        options=[
-                                            {"label": "RAW - Raw Material", "value": "RAW"},
-                                            {"label": "WIP - Work In Progress", "value": "WIP"},
-                                            {"label": "FINISHED - Finished Good", "value": "FINISHED"},
-                                        ],
-                                        value="RAW",
-                                        required=True
-                                    )
-                                ], width=6),
+                                    dbc.Label("Product Capabilities *"),
+                                    html.Div([
+                                        dbc.Checkbox(id="product-is-purchase", label="Purchase", value=False, className="me-3"),
+                                        dbc.Checkbox(id="product-is-sell", label="Sell", value=False, className="me-3"),
+                                        dbc.Checkbox(id="product-is-assemble", label="Assemble", value=False),
+                                    ])
+                                ], width=8),
                                 dbc.Col([
                                     dbc.Label("Is Active"),
                                     dbc.Select(
@@ -100,7 +165,7 @@ class ProductsPageEnhanced:
                                         ],
                                         value="true"
                                     )
-                                ], width=6),
+                                ], width=4),
                             ], className="mb-3"),
                             dbc.Row([
                                 dbc.Col([
@@ -112,7 +177,18 @@ class ProductsPageEnhanced:
                                 dbc.Col([
                                     dbc.Label("EAN13 Barcode"),
                                     dbc.Input(id="product-ean13", placeholder="EAN13")
-                                ], width=12),
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("DG Flag"),
+                                    dbc.Select(
+                                        id="product-dgflag",
+                                        options=[
+                                            {"label": "Y", "value": "Y"},
+                                            {"label": "N", "value": "N"},
+                                        ],
+                                        placeholder="Dangerous goods"
+                                    )
+                                ], width=6),
                             ], className="mb-3"),
                             dbc.Row([
                                 dbc.Col([
@@ -164,54 +240,94 @@ class ProductsPageEnhanced:
                                 ], width=6),
                                 dbc.Col([], width=6),
                             ], className="mb-3"),
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("Volume Solid"),
-                                    dbc.Input(id="product-vol-solid", type="number", step="0.000001", placeholder="0.000000")
-                                ], width=4),
-                                dbc.Col([
-                                    dbc.Label("Solid SG"),
-                                    dbc.Input(id="product-solid-sg", type="number", step="0.000001", placeholder="0.000000")
-                                ], width=4),
-                                dbc.Col([
-                                    dbc.Label("Weight Solid"),
-                                    dbc.Input(id="product-wt-solid", type="number", step="0.000001", placeholder="0.000000")
-                                ], width=4),
-                            ])
                         ], title="Physical Properties", item_id="physical"),
                         
-                        # Classifications
+                        # Sales & Pricing (conditional - grey if is_sell=False)
                         dbc.AccordionItem([
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("Form Code"),
-                                    dbc.Input(id="product-form", placeholder="Form code")
-                                ], width=6),
-                                dbc.Col([
-                                    dbc.Label("DG Flag"),
-                                    dbc.Select(
-                                        id="product-dgflag",
-                                        options=[
-                                            {"label": "Y", "value": "Y"},
-                                            {"label": "N", "value": "N"},
-                                        ],
-                                        placeholder="Dangerous goods"
-                                    )
-                                ], width=6),
-                            ], className="mb-3"),
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("Label Type"),
-                                    dbc.Input(id="product-label", type="number", placeholder="Label")
-                                ], width=4),
-                                dbc.Col([
-                                    dbc.Label("Manufacturer Code"),
-                                    dbc.Input(id="product-manu", type="number", placeholder="Manufacturer")
-                                ], width=4),
-                            ])
-                        ], title="Classifications", item_id="classifications"),
+                            html.Div(id="sales-pricing-disabled-notice", style={"display": "none"}),
+                            dash_table.DataTable(
+                                id="product-pricing-table",
+                                columns=[
+                                    {"name": "Price Level", "id": "price_level", "editable": False},
+                                    {"name": "Inc GST", "id": "inc_gst", "type": "numeric", "format": {"specifier": ".2f"}},
+                                    {"name": "Ex GST", "id": "ex_gst", "type": "numeric", "format": {"specifier": ".2f"}},
+                                    {"name": "Excise", "id": "excise", "type": "numeric", "format": {"specifier": ".2f"}, "editable": False},
+                                ],
+                                data=[
+                                    {"price_level": "Retail", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Wholesale", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Distributor", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Counter", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Trade", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Contract", "inc_gst": None, "ex_gst": None, "excise": None},
+                                    {"price_level": "Industrial", "inc_gst": None, "ex_gst": None, "excise": None},
+                                ],
+                                editable=True,
+                                style_cell={'textAlign': 'left', 'fontSize': '12px'},
+                                style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+                                style_data_conditional=[
+                                    {
+                                        'if': {'filter_query': '{is_sell} = False'},
+                                        'backgroundColor': '#f0f0f0',
+                                        'color': '#999',
+                                    },
+                                ],
+                            )
+                        ], title="Sales & Pricing", item_id="sales-pricing"),
                         
-                        # Cost Information
+                        # Usage Cost Settings (conditional - grey based on capabilities)
+                        dbc.AccordionItem([
+                            html.Div(id="cost-settings-disabled-notice", style={"display": "none"}),
+                            dash_table.DataTable(
+                                id="product-cost-table",
+                                columns=[
+                                    {"name": "Cost Type", "id": "cost_type", "editable": False},
+                                    {"name": "Ex GST", "id": "ex_gst", "type": "numeric", "format": {"specifier": ".2f"}},
+                                    {"name": "Inc GST", "id": "inc_gst", "type": "numeric", "format": {"specifier": ".2f"}},
+                                    {"name": "Tax Included", "id": "tax_included", "presentation": "markdown", "editable": False},
+                                ],
+                                data=[
+                                    {"cost_type": "Purchase Cost", "ex_gst": None, "inc_gst": None, "tax_included": False},
+                                    {"cost_type": "Usage Cost", "ex_gst": None, "inc_gst": None, "tax_included": False},
+                                    {"cost_type": "Manufactured Cost", "ex_gst": None, "inc_gst": None, "tax_included": "N/A"},
+                                ],
+                                editable=True,
+                                style_cell={'textAlign': 'left', 'fontSize': '12px'},
+                                style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+                            )
+                        ], title="Usage Cost Settings", item_id="cost-settings"),
+                        
+                        # Assembly Section (conditional - grey if is_assemble=False)
+                        dbc.AccordionItem([
+                            html.Div(id="assembly-disabled-notice", style={"display": "none"}),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Button("New Assembly", id="new-assembly-btn", color="success", className="me-2", size="sm"),
+                                    dbc.Button("Edit", id="edit-assembly-btn", color="primary", className="me-2", size="sm", disabled=True),
+                                    dbc.Button("Duplicate", id="duplicate-assembly-btn", color="info", className="me-2", size="sm", disabled=True),
+                                    dbc.Button("Archive", id="archive-assembly-btn", color="warning", size="sm", disabled=True),
+                                ])
+                            ], className="mb-3"),
+                            dash_table.DataTable(
+                                id="product-assemblies-table",
+                                columns=[
+                                    {"name": "Version", "id": "version"},
+                                    {"name": "Sequence", "id": "sequence"},
+                                    {"name": "Ratio", "id": "ratio"},
+                                    {"name": "Yield Factor", "id": "yield_factor"},
+                                    {"name": "Is Primary", "id": "is_primary", "presentation": "markdown"},
+                                    {"name": "Cost", "id": "cost"},
+                                    {"name": "Actions", "id": "actions", "presentation": "markdown"},
+                                ],
+                                data=[],
+                                sort_action="native",
+                                row_selectable="single",
+                                style_cell={'textAlign': 'left', 'fontSize': '12px'},
+                                style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+                            )
+                        ], title="Assembly", item_id="assembly"),
+                        
+                        # Cost Information (Legacy - keeping for backward compatibility but can be removed)
                         dbc.AccordionItem([
                             dbc.Row([
                                 dbc.Col([
@@ -376,7 +492,124 @@ class ProductsPageEnhanced:
                     dbc.Button("Delete", id="delete-confirm-btn", color="danger", className="me-2"),
                     dbc.Button("Cancel", id="delete-cancel-btn", color="secondary")
                 ])
-            ], id="delete-confirm-modal", is_open=False)
+            ], id="delete-confirm-modal", is_open=False),
+            
+            # Inventory Adjustment Modal
+            dbc.Modal([
+                dbc.ModalHeader(dbc.ModalTitle("Adjust Inventory")),
+                dbc.ModalBody([
+                    html.P([
+                        html.Strong("Product: "), html.Span(id="adjust-product-name", children="-")
+                    ], className="mb-3"),
+                    html.P([
+                        html.Strong("Current Stock: "), html.Span(id="adjust-current-stock", children="-")
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Adjustment Type *"),
+                            dbc.Select(
+                                id="adjust-type",
+                                options=[
+                                    {"label": "Set Count", "value": "SET_COUNT"},
+                                    {"label": "Increase", "value": "INCREASE"},
+                                    {"label": "Decrease", "value": "DECREASE"},
+                                ],
+                                value="INCREASE",
+                                required=True
+                            )
+                        ], width=6),
+                        dbc.Col([
+                            dbc.Label("Quantity (kg) *"),
+                            dbc.Input(id="adjust-quantity", type="number", step="0.001", required=True, min=0)
+                        ], width=6),
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Unit Cost"),
+                            dbc.Input(id="adjust-unit-cost", type="number", step="0.01", placeholder="Leave empty for default")
+                        ], width=6),
+                        dbc.Col([
+                            dbc.Label("Lot Code"),
+                            dbc.Input(id="adjust-lot-code", placeholder="Auto-generated if empty")
+                        ], width=6),
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Notes"),
+                            dbc.Textarea(id="adjust-notes", rows=3, placeholder="Optional notes for this adjustment")
+                        ], width=12)
+                    ]),
+                    html.Div(id="adjust-product-id-hidden", style={"display": "none"})
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Apply Adjustment", id="adjust-confirm-btn", color="primary", className="me-2"),
+                    dbc.Button("Cancel", id="adjust-cancel-btn", color="secondary")
+                ])
+            ], id="adjust-inventory-modal", is_open=False, size="lg"),
+            
+            # Assembly Form Modal
+            dbc.Modal([
+                dbc.ModalHeader(dbc.ModalTitle(id="assembly-form-title")),
+                dbc.ModalBody([
+                    html.Div(id="assembly-formula-id", style={"display": "none"}),
+                    html.Div(id="assembly-product-id", style={"display": "none"}),
+                    dbc.Form([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Formula Code *"),
+                                dbc.Input(id="assembly-code", required=True, maxLength=50)
+                            ], width=6),
+                            dbc.Col([
+                                dbc.Label("Version"),
+                                dbc.Input(id="assembly-version", type="number", value=1, min=1, readonly=True)
+                            ], width=3),
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Formula Name *"),
+                                dbc.Input(id="assembly-name", required=True, maxLength=200)
+                            ], width=12)
+                        ], className="mb-3"),
+                        html.Hr(),
+                        html.H5("Assembly Lines", className="mb-3"),
+                        html.P("Total Cost: ", className="mb-2", style={"fontWeight": "bold"}),
+                        html.P(id="assembly-total-cost", children="$0.00", className="mb-3", style={"fontSize": "16px", "color": "green"}),
+                        dash_table.DataTable(
+                            id="assembly-lines-table",
+                            columns=[
+                                {"name": "Seq", "id": "sequence", "type": "numeric", "editable": True},
+                                {"name": "Product", "id": "product_search", "presentation": "dropdown", "editable": True},
+                                {"name": "Product SKU", "id": "product_sku", "editable": False},
+                                {"name": "Product Name", "id": "product_name", "editable": False},
+                                {"name": "Quantity", "id": "quantity", "type": "numeric", "format": {"specifier": ".3f"}, "editable": True},
+                                {"name": "Unit", "id": "unit", "presentation": "dropdown", "editable": True},
+                                {"name": "Qty (kg)", "id": "quantity_kg", "type": "numeric", "format": {"specifier": ".3f"}, "editable": False},
+                                {"name": "Unit Cost", "id": "unit_cost", "type": "numeric", "format": {"specifier": ".2f"}, "editable": False},
+                                {"name": "Line Cost", "id": "line_cost", "type": "numeric", "format": {"specifier": ".2f"}, "editable": False},
+                                {"name": "Notes", "id": "notes", "editable": True},
+                            ],
+                            data=[],
+                            editable=True,
+                            row_deletable=True,
+                            style_cell={'textAlign': 'left', 'fontSize': '11px'},
+                            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
+                        ),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Button("Add Line", id="assembly-add-line-btn", color="info", size="sm", className="me-2"),
+                                dbc.Button("Lookup Product", id="assembly-lookup-product-btn", color="secondary", size="sm"),
+                            ], width=6),
+                            dbc.Col([
+                                dbc.Input(id="assembly-product-search", placeholder="Search by SKU or name...", size="sm", className="ms-auto"),
+                            ], width=6),
+                        ], className="mt-2"),
+                    ])
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Save", id="assembly-save-btn", color="primary", className="me-2"),
+                    dbc.Button("Cancel", id="assembly-cancel-btn", color="secondary")
+                ])
+            ], id="assembly-form-modal", is_open=False, size="xl")
         ], fluid=True)
 
 

@@ -26,6 +26,10 @@ def product_to_response(product: Product) -> ProductResponse:
         name=product.name,
         description=product.description,
         product_type=product.product_type or "RAW",
+        # Product Capabilities
+        is_purchase=product.is_purchase or False,
+        is_sell=product.is_sell or False,
+        is_assemble=product.is_assemble or False,
         ean13=product.ean13,
         supplier_id=str(product.supplier_id) if product.supplier_id else None,
         raw_material_group_id=str(product.raw_material_group_id) if product.raw_material_group_id else None,
@@ -70,6 +74,37 @@ def product_to_response(product: Product) -> ProductResponse:
         # Finished Good specific fields
         formula_id=str(product.formula_id) if product.formula_id else None,
         formula_revision=product.formula_revision,
+        # Sales Pricing
+        retail_price_inc_gst=product.retail_price_inc_gst,
+        retail_price_ex_gst=product.retail_price_ex_gst,
+        retail_excise=product.retail_excise,
+        wholesale_price_inc_gst=product.wholesale_price_inc_gst,
+        wholesale_price_ex_gst=product.wholesale_price_ex_gst,
+        wholesale_excise=product.wholesale_excise,
+        distributor_price_inc_gst=product.distributor_price_inc_gst,
+        distributor_price_ex_gst=product.distributor_price_ex_gst,
+        distributor_excise=product.distributor_excise,
+        counter_price_inc_gst=product.counter_price_inc_gst,
+        counter_price_ex_gst=product.counter_price_ex_gst,
+        counter_excise=product.counter_excise,
+        trade_price_inc_gst=product.trade_price_inc_gst,
+        trade_price_ex_gst=product.trade_price_ex_gst,
+        trade_excise=product.trade_excise,
+        contract_price_inc_gst=product.contract_price_inc_gst,
+        contract_price_ex_gst=product.contract_price_ex_gst,
+        contract_excise=product.contract_excise,
+        industrial_price_inc_gst=product.industrial_price_inc_gst,
+        industrial_price_ex_gst=product.industrial_price_ex_gst,
+        industrial_excise=product.industrial_excise,
+        # Cost Pricing
+        purchase_cost_inc_gst=product.purchase_cost_inc_gst,
+        purchase_cost_ex_gst=product.purchase_cost_ex_gst,
+        purchase_tax_included=product.purchase_tax_included or False,
+        usage_cost_inc_gst=product.usage_cost_inc_gst,
+        usage_cost_ex_gst=product.usage_cost_ex_gst,
+        usage_tax_included=product.usage_tax_included or False,
+        manufactured_cost_inc_gst=product.manufactured_cost_inc_gst,
+        manufactured_cost_ex_gst=product.manufactured_cost_ex_gst,
         is_active=product.is_active,
         created_at=product.created_at,
         updated_at=product.updated_at,
@@ -92,10 +127,13 @@ async def list_products(
     skip: int = 0,
     limit: int = 100,
     query: Optional[str] = None,
-    product_type: Optional[str] = None,  # Filter by product_type (RAW, WIP, FINISHED)
+    product_type: Optional[str] = None,  # Filter by product_type (RAW, WIP, FINISHED) - deprecated
+    is_purchase: Optional[bool] = None,  # Filter by capability
+    is_sell: Optional[bool] = None,  # Filter by capability
+    is_assemble: Optional[bool] = None,  # Filter by capability
     db: Session = Depends(get_db)
 ):
-    """List products with optional search and product_type filtering."""
+    """List products with optional search and filtering."""
     stmt = select(Product).options(joinedload(Product.variants))
     
     if query:
@@ -103,8 +141,17 @@ async def list_products(
             Product.name.contains(query) | Product.sku.contains(query)
         )
     
+    # Support legacy product_type filter
     if product_type:
         stmt = stmt.where(Product.product_type == product_type)
+    
+    # Filter by capabilities (preferred)
+    if is_purchase is not None:
+        stmt = stmt.where(Product.is_purchase == is_purchase)
+    if is_sell is not None:
+        stmt = stmt.where(Product.is_sell == is_sell)
+    if is_assemble is not None:
+        stmt = stmt.where(Product.is_assemble == is_assemble)
     
     stmt = stmt.offset(skip).limit(limit)
     products = db.execute(stmt).scalars().unique().all()
@@ -158,7 +205,11 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         sku=product_data.sku,
         name=product_data.name,
         description=product_data.description,
-        product_type=product_data.product_type,
+        product_type=product_data.product_type or "RAW",
+        # Product Capabilities
+        is_purchase=product_data.is_purchase,
+        is_sell=product_data.is_sell,
+        is_assemble=product_data.is_assemble,
         ean13=product_data.ean13,
         supplier_id=product_data.supplier_id,
         raw_material_group_id=product_data.raw_material_group_id,
@@ -203,6 +254,37 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         # Finished Good specific fields
         formula_id=product_data.formula_id,
         formula_revision=product_data.formula_revision,
+        # Sales Pricing
+        retail_price_inc_gst=product_data.retail_price_inc_gst,
+        retail_price_ex_gst=product_data.retail_price_ex_gst,
+        retail_excise=product_data.retail_excise,
+        wholesale_price_inc_gst=product_data.wholesale_price_inc_gst,
+        wholesale_price_ex_gst=product_data.wholesale_price_ex_gst,
+        wholesale_excise=product_data.wholesale_excise,
+        distributor_price_inc_gst=product_data.distributor_price_inc_gst,
+        distributor_price_ex_gst=product_data.distributor_price_ex_gst,
+        distributor_excise=product_data.distributor_excise,
+        counter_price_inc_gst=product_data.counter_price_inc_gst,
+        counter_price_ex_gst=product_data.counter_price_ex_gst,
+        counter_excise=product_data.counter_excise,
+        trade_price_inc_gst=product_data.trade_price_inc_gst,
+        trade_price_ex_gst=product_data.trade_price_ex_gst,
+        trade_excise=product_data.trade_excise,
+        contract_price_inc_gst=product_data.contract_price_inc_gst,
+        contract_price_ex_gst=product_data.contract_price_ex_gst,
+        contract_excise=product_data.contract_excise,
+        industrial_price_inc_gst=product_data.industrial_price_inc_gst,
+        industrial_price_ex_gst=product_data.industrial_price_ex_gst,
+        industrial_excise=product_data.industrial_excise,
+        # Cost Pricing
+        purchase_cost_inc_gst=product_data.purchase_cost_inc_gst,
+        purchase_cost_ex_gst=product_data.purchase_cost_ex_gst,
+        purchase_tax_included=product_data.purchase_tax_included or False,
+        usage_cost_inc_gst=product_data.usage_cost_inc_gst,
+        usage_cost_ex_gst=product_data.usage_cost_ex_gst,
+        usage_tax_included=product_data.usage_tax_included or False,
+        manufactured_cost_inc_gst=product_data.manufactured_cost_inc_gst,
+        manufactured_cost_ex_gst=product_data.manufactured_cost_ex_gst,
         is_active=product_data.is_active
     )
     
@@ -234,6 +316,13 @@ async def update_product(
         product.description = product_data.description
     if product_data.product_type is not None:
         product.product_type = product_data.product_type
+    # Product Capabilities
+    if product_data.is_purchase is not None:
+        product.is_purchase = product_data.is_purchase
+    if product_data.is_sell is not None:
+        product.is_sell = product_data.is_sell
+    if product_data.is_assemble is not None:
+        product.is_assemble = product_data.is_assemble
     if product_data.ean13 is not None:
         product.ean13 = product_data.ean13
     if product_data.supplier_id is not None:
@@ -320,6 +409,66 @@ async def update_product(
         product.formula_id = product_data.formula_id
     if product_data.formula_revision is not None:
         product.formula_revision = product_data.formula_revision
+    # Sales Pricing
+    if product_data.retail_price_inc_gst is not None:
+        product.retail_price_inc_gst = product_data.retail_price_inc_gst
+    if product_data.retail_price_ex_gst is not None:
+        product.retail_price_ex_gst = product_data.retail_price_ex_gst
+    if product_data.retail_excise is not None:
+        product.retail_excise = product_data.retail_excise
+    if product_data.wholesale_price_inc_gst is not None:
+        product.wholesale_price_inc_gst = product_data.wholesale_price_inc_gst
+    if product_data.wholesale_price_ex_gst is not None:
+        product.wholesale_price_ex_gst = product_data.wholesale_price_ex_gst
+    if product_data.wholesale_excise is not None:
+        product.wholesale_excise = product_data.wholesale_excise
+    if product_data.distributor_price_inc_gst is not None:
+        product.distributor_price_inc_gst = product_data.distributor_price_inc_gst
+    if product_data.distributor_price_ex_gst is not None:
+        product.distributor_price_ex_gst = product_data.distributor_price_ex_gst
+    if product_data.distributor_excise is not None:
+        product.distributor_excise = product_data.distributor_excise
+    if product_data.counter_price_inc_gst is not None:
+        product.counter_price_inc_gst = product_data.counter_price_inc_gst
+    if product_data.counter_price_ex_gst is not None:
+        product.counter_price_ex_gst = product_data.counter_price_ex_gst
+    if product_data.counter_excise is not None:
+        product.counter_excise = product_data.counter_excise
+    if product_data.trade_price_inc_gst is not None:
+        product.trade_price_inc_gst = product_data.trade_price_inc_gst
+    if product_data.trade_price_ex_gst is not None:
+        product.trade_price_ex_gst = product_data.trade_price_ex_gst
+    if product_data.trade_excise is not None:
+        product.trade_excise = product_data.trade_excise
+    if product_data.contract_price_inc_gst is not None:
+        product.contract_price_inc_gst = product_data.contract_price_inc_gst
+    if product_data.contract_price_ex_gst is not None:
+        product.contract_price_ex_gst = product_data.contract_price_ex_gst
+    if product_data.contract_excise is not None:
+        product.contract_excise = product_data.contract_excise
+    if product_data.industrial_price_inc_gst is not None:
+        product.industrial_price_inc_gst = product_data.industrial_price_inc_gst
+    if product_data.industrial_price_ex_gst is not None:
+        product.industrial_price_ex_gst = product_data.industrial_price_ex_gst
+    if product_data.industrial_excise is not None:
+        product.industrial_excise = product_data.industrial_excise
+    # Cost Pricing
+    if product_data.purchase_cost_inc_gst is not None:
+        product.purchase_cost_inc_gst = product_data.purchase_cost_inc_gst
+    if product_data.purchase_cost_ex_gst is not None:
+        product.purchase_cost_ex_gst = product_data.purchase_cost_ex_gst
+    if product_data.purchase_tax_included is not None:
+        product.purchase_tax_included = product_data.purchase_tax_included
+    if product_data.usage_cost_inc_gst is not None:
+        product.usage_cost_inc_gst = product_data.usage_cost_inc_gst
+    if product_data.usage_cost_ex_gst is not None:
+        product.usage_cost_ex_gst = product_data.usage_cost_ex_gst
+    if product_data.usage_tax_included is not None:
+        product.usage_tax_included = product_data.usage_tax_included
+    if product_data.manufactured_cost_inc_gst is not None:
+        product.manufactured_cost_inc_gst = product_data.manufactured_cost_inc_gst
+    if product_data.manufactured_cost_ex_gst is not None:
+        product.manufactured_cost_ex_gst = product_data.manufactured_cost_ex_gst
     if product_data.is_active is not None:
         product.is_active = product_data.is_active
     

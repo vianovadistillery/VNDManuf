@@ -17,6 +17,7 @@ class SettingsPage:
                         active_tab="units",
                         children=[
                             dbc.Tab(label="Units", tab_id="units"),
+                            dbc.Tab(label="Excise Rates", tab_id="excise-rates"),
                         ],
                         className="mb-4"
                     )
@@ -116,6 +117,85 @@ class SettingsPage:
             ], id="unit-form-modal", is_open=False, size="lg"),
             
             # Hidden field for unit ID
-            html.Div(id="unit-form-hidden", style={"display": "none"})
+            html.Div(id="unit-form-hidden", style={"display": "none"}),
+            
+            # Excise Rates Tab
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Button("Add Excise Rate", id="add-excise-rate-btn", color="success", className="me-2"),
+                                dbc.Button("Edit Selected", id="edit-excise-rate-btn", color="primary", className="me-2", disabled=True),
+                                dbc.Button("Delete Selected", id="delete-excise-rate-btn", color="danger", className="me-2", disabled=True),
+                                dbc.Button("Refresh", id="excise-rates-refresh", color="info"),
+                            ], width=12)
+                        ], className="mb-3"),
+                        dash_table.DataTable(
+                            id="excise-rates-table",
+                            columns=[
+                                {"name": "Date Active From", "id": "date_active_from"},
+                                {"name": "Rate ($/L ABV)", "id": "rate_per_l_abv", "type": "numeric", "format": {"specifier": ".2f"}},
+                                {"name": "Description", "id": "description"},
+                                {"name": "Active", "id": "is_active"},
+                                {"name": "Created", "id": "created_at"},
+                            ],
+                            data=[],
+                            sort_action="native",
+                            filter_action="native",
+                            page_action="native",
+                            page_current=0,
+                            page_size=20,
+                            row_selectable="single",
+                            selected_rows=[],
+                            style_cell={'textAlign': 'left'},
+                            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'}
+                        )
+                    ], id="excise-rates-list-content")
+                ])
+            ], id="excise-rates-tab-content", style={"display": "none"}),
+            
+            # Excise Rate Form Modal
+            dbc.Modal([
+                dbc.ModalHeader(dbc.ModalTitle(id="excise-rate-modal-title")),
+                dbc.ModalBody([
+                    dbc.Form([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Date Active From *"),
+                                dcc.DatePickerSingle(
+                                    id="excise-rate-date",
+                                    required=True,
+                                    display_format="YYYY-MM-DD",
+                                    style={"width": "100%"}
+                                )
+                            ], width=6),
+                            dbc.Col([
+                                dbc.Label("Rate ($/L ABV) *"),
+                                dbc.Input(id="excise-rate-rate", type="number", step="0.01", required=True, min=0)
+                            ], width=6),
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Description"),
+                                dbc.Textarea(id="excise-rate-description", rows=3)
+                            ], width=12)
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Active"),
+                                dbc.Switch(id="excise-rate-is-active", value=True)
+                            ], width=12)
+                        ])
+                    ])
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Save", id="save-excise-rate-btn", color="primary"),
+                    dbc.Button("Cancel", id="cancel-excise-rate-btn", color="secondary")
+                ])
+            ], id="excise-rate-form-modal", is_open=False, size="lg"),
+            
+            # Hidden field for excise rate ID
+            html.Div(id="excise-rate-form-hidden", style={"display": "none"})
         ], fluid=True)
 

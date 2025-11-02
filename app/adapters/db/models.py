@@ -62,7 +62,13 @@ class Product(Base):
     abv_percent = Column(Numeric(5, 2))  # ABV as % v/v
     
     # Product Classifications
-    product_type = Column(String(20), nullable=False, default=ProductType.RAW.value, index=True)  # RAW, WIP, FINISHED
+    product_type = Column(String(20), nullable=False, default=ProductType.RAW.value, index=True)  # RAW, WIP, FINISHED (deprecated, use capabilities)
+    
+    # Product Capabilities (replaces product_type)
+    is_purchase = Column(Boolean, default=False, nullable=False, index=True)  # Can be purchased
+    is_sell = Column(Boolean, default=False, nullable=False, index=True)  # Can be sold
+    is_assemble = Column(Boolean, default=False, nullable=False, index=True)  # Can be assembled
+    
     dgflag = Column(String(1))  # Dangerous goods flag
     form = Column(String(10))  # Form code
     pkge = Column(Integer)  # Package type
@@ -121,6 +127,47 @@ class Product(Base):
     industrialcde = Column(String(1))
     distributorcde = Column(String(1))
     
+    # Sales Pricing (inc_gst, ex_gst, excise for each price level)
+    retail_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    retail_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    retail_excise = Column(Numeric(10, 2), nullable=True)
+    
+    wholesale_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    wholesale_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    wholesale_excise = Column(Numeric(10, 2), nullable=True)
+    
+    distributor_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    distributor_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    distributor_excise = Column(Numeric(10, 2), nullable=True)
+    
+    counter_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    counter_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    counter_excise = Column(Numeric(10, 2), nullable=True)
+    
+    trade_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    trade_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    trade_excise = Column(Numeric(10, 2), nullable=True)
+    
+    contract_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    contract_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    contract_excise = Column(Numeric(10, 2), nullable=True)
+    
+    industrial_price_inc_gst = Column(Numeric(10, 2), nullable=True)
+    industrial_price_ex_gst = Column(Numeric(10, 2), nullable=True)
+    industrial_excise = Column(Numeric(10, 2), nullable=True)
+    
+    # Cost Pricing (inc_gst, ex_gst, tax_included flags)
+    purchase_cost_inc_gst = Column(Numeric(10, 2), nullable=True)
+    purchase_cost_ex_gst = Column(Numeric(10, 2), nullable=True)
+    purchase_tax_included = Column(Boolean, default=False, nullable=True)
+    
+    usage_cost_inc_gst = Column(Numeric(10, 2), nullable=True)
+    usage_cost_ex_gst = Column(Numeric(10, 2), nullable=True)
+    usage_tax_included = Column(Boolean, default=False, nullable=True)
+    
+    manufactured_cost_inc_gst = Column(Numeric(10, 2), nullable=True)  # From assembly
+    manufactured_cost_ex_gst = Column(Numeric(10, 2), nullable=True)
+    
     # Status
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -139,6 +186,7 @@ class Product(Base):
     
     __table_args__ = (
         Index("ix_product_type", "product_type"),
+        Index("ix_product_capabilities", "is_purchase", "is_sell", "is_assemble"),
     )
 
 
@@ -906,4 +954,23 @@ class XeroSyncLog(Base):
     __table_args__ = (
         Index("ix_sync_log_ts", "ts"),
         Index("ix_sync_log_object", "object_type", "object_id"),
+    )
+
+
+# Excise Rate Model
+class ExciseRate(Base):
+    """Excise tax rates over time - allows historical accuracy."""
+    __tablename__ = "excise_rates"
+    
+    id = uuid_column()
+    date_active_from = Column(DateTime, nullable=False, index=True)  # Date when rate becomes effective
+    rate_per_l_abv = Column(Numeric(10, 2), nullable=False)  # Rate in $/L ABV
+    description = Column(Text)  # Optional description/notes
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint("date_active_from", name="uq_excise_rate_date"),
+        Index("ix_excise_rate_active", "is_active", "date_active_from"),
     )

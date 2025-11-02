@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.settings import settings
 from app.logging_config import RequestIDMiddleware, logger
 from app.error_handlers import register_error_handlers, business_exception_handler, BusinessRuleViolation
-from app.api import products, pricing, packing, invoices, batches, raw_materials, formulas, reports, suppliers, assemblies, shopify, contacts, units
+from app.api import products, pricing, packing, invoices, batches, raw_materials, formulas, reports, suppliers, assemblies, shopify, contacts, units, excise_rates
 
 
 def create_app() -> FastAPI:
@@ -52,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(assemblies.router, prefix="/api/v1")
     app.include_router(shopify.router, prefix="/api/v1")
     app.include_router(units.router, prefix="/api/v1")
+    app.include_router(excise_rates.router, prefix="/api/v1")
     
     # Health check endpoint
     @app.get("/health")

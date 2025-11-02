@@ -41,7 +41,11 @@ class ProductCreate(BaseModel):
     sku: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    product_type: str = Field("RAW", pattern="^(RAW|WIP|FINISHED)$")  # Product type enum
+    product_type: Optional[str] = Field("RAW", pattern="^(RAW|WIP|FINISHED)$")  # Deprecated, use capabilities
+    # Product Capabilities (replaces product_type)
+    is_purchase: bool = False
+    is_sell: bool = False
+    is_assemble: bool = False
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
     raw_material_group_id: Optional[str] = None
@@ -86,6 +90,37 @@ class ProductCreate(BaseModel):
     # Finished Good specific fields
     formula_id: Optional[str] = None
     formula_revision: Optional[int] = None
+    # Sales Pricing (inc_gst, ex_gst, excise for each price level)
+    retail_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    retail_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    retail_excise: Optional[Decimal] = Field(None, ge=0)
+    wholesale_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    wholesale_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    wholesale_excise: Optional[Decimal] = Field(None, ge=0)
+    distributor_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    distributor_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    distributor_excise: Optional[Decimal] = Field(None, ge=0)
+    counter_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    counter_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    counter_excise: Optional[Decimal] = Field(None, ge=0)
+    trade_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    trade_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    trade_excise: Optional[Decimal] = Field(None, ge=0)
+    contract_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    contract_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    contract_excise: Optional[Decimal] = Field(None, ge=0)
+    industrial_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    industrial_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    industrial_excise: Optional[Decimal] = Field(None, ge=0)
+    # Cost Pricing (inc_gst, ex_gst, tax_included flags)
+    purchase_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    purchase_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    purchase_tax_included: Optional[bool] = False
+    usage_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    usage_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    usage_tax_included: Optional[bool] = False
+    manufactured_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    manufactured_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
     is_active: bool = True
 
 
@@ -93,7 +128,11 @@ class ProductUpdate(BaseModel):
     """Update product request."""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    product_type: Optional[str] = Field(None, pattern="^(RAW|WIP|FINISHED)$")
+    product_type: Optional[str] = Field(None, pattern="^(RAW|WIP|FINISHED)$")  # Deprecated
+    # Product Capabilities
+    is_purchase: Optional[bool] = None
+    is_sell: Optional[bool] = None
+    is_assemble: Optional[bool] = None
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
     raw_material_group_id: Optional[str] = None
@@ -138,6 +177,37 @@ class ProductUpdate(BaseModel):
     # Finished Good specific fields
     formula_id: Optional[str] = None
     formula_revision: Optional[int] = None
+    # Sales Pricing
+    retail_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    retail_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    retail_excise: Optional[Decimal] = Field(None, ge=0)
+    wholesale_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    wholesale_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    wholesale_excise: Optional[Decimal] = Field(None, ge=0)
+    distributor_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    distributor_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    distributor_excise: Optional[Decimal] = Field(None, ge=0)
+    counter_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    counter_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    counter_excise: Optional[Decimal] = Field(None, ge=0)
+    trade_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    trade_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    trade_excise: Optional[Decimal] = Field(None, ge=0)
+    contract_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    contract_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    contract_excise: Optional[Decimal] = Field(None, ge=0)
+    industrial_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    industrial_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    industrial_excise: Optional[Decimal] = Field(None, ge=0)
+    # Cost Pricing
+    purchase_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    purchase_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    purchase_tax_included: Optional[bool] = None
+    usage_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    usage_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    usage_tax_included: Optional[bool] = None
+    manufactured_cost_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    manufactured_cost_ex_gst: Optional[Decimal] = Field(None, ge=0)
     is_active: Optional[bool] = None
 
 
@@ -147,7 +217,11 @@ class ProductResponse(BaseModel):
     sku: str
     name: str
     description: Optional[str]
-    product_type: str  # RAW, WIP, or FINISHED
+    product_type: str  # RAW, WIP, or FINISHED (deprecated)
+    # Product Capabilities
+    is_purchase: bool
+    is_sell: bool
+    is_assemble: bool
     ean13: Optional[str]
     supplier_id: Optional[str]
     raw_material_group_id: Optional[str]
@@ -192,6 +266,37 @@ class ProductResponse(BaseModel):
     # Finished Good specific fields
     formula_id: Optional[str] = None
     formula_revision: Optional[int] = None
+    # Sales Pricing
+    retail_price_inc_gst: Optional[Decimal] = None
+    retail_price_ex_gst: Optional[Decimal] = None
+    retail_excise: Optional[Decimal] = None
+    wholesale_price_inc_gst: Optional[Decimal] = None
+    wholesale_price_ex_gst: Optional[Decimal] = None
+    wholesale_excise: Optional[Decimal] = None
+    distributor_price_inc_gst: Optional[Decimal] = None
+    distributor_price_ex_gst: Optional[Decimal] = None
+    distributor_excise: Optional[Decimal] = None
+    counter_price_inc_gst: Optional[Decimal] = None
+    counter_price_ex_gst: Optional[Decimal] = None
+    counter_excise: Optional[Decimal] = None
+    trade_price_inc_gst: Optional[Decimal] = None
+    trade_price_ex_gst: Optional[Decimal] = None
+    trade_excise: Optional[Decimal] = None
+    contract_price_inc_gst: Optional[Decimal] = None
+    contract_price_ex_gst: Optional[Decimal] = None
+    contract_excise: Optional[Decimal] = None
+    industrial_price_inc_gst: Optional[Decimal] = None
+    industrial_price_ex_gst: Optional[Decimal] = None
+    industrial_excise: Optional[Decimal] = None
+    # Cost Pricing
+    purchase_cost_inc_gst: Optional[Decimal] = None
+    purchase_cost_ex_gst: Optional[Decimal] = None
+    purchase_tax_included: Optional[bool] = None
+    usage_cost_inc_gst: Optional[Decimal] = None
+    usage_cost_ex_gst: Optional[Decimal] = None
+    usage_tax_included: Optional[bool] = None
+    manufactured_cost_inc_gst: Optional[Decimal] = None
+    manufactured_cost_ex_gst: Optional[Decimal] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
