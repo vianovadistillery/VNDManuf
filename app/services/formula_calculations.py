@@ -10,19 +10,18 @@ from sqlalchemy import select, func
 
 from app.adapters.db import get_db
 from app.adapters.db.models import Formula, FormulaLine, Product
-from app.adapters.db.qb_models import RawMaterial
 
 
 def calculate_theoretical_cost(formula_id: str, db: Session) -> Decimal:
     """
     Calculate theoretical cost for a formula.
-    Sum of (line.quantity_kg * raw_material.usage_cost) for all lines.
+    Sum of (line.quantity_kg * product.usage_cost) for all lines.
     """
     stmt = (
         select(
-            func.sum(FormulaLine.quantity_kg * RawMaterial.usage_cost)
+            func.sum(FormulaLine.quantity_kg * Product.usage_cost)
         )
-        .join(RawMaterial, FormulaLine.ingredient_product_id == RawMaterial.id)
+        .join(Product, FormulaLine.product_id == Product.id)
         .where(FormulaLine.formula_id == formula_id)
     )
     
@@ -38,9 +37,9 @@ def calculate_theoretical_cost_per_line(formula_id: str, db: Session) -> Dict[st
     stmt = (
         select(
             FormulaLine.id,
-            (FormulaLine.quantity_kg * RawMaterial.usage_cost).label('line_cost')
+            (FormulaLine.quantity_kg * Product.usage_cost).label('line_cost')
         )
-        .join(RawMaterial, FormulaLine.ingredient_product_id == RawMaterial.id)
+        .join(Product, FormulaLine.product_id == Product.id)
         .where(FormulaLine.formula_id == formula_id)
     )
     
@@ -68,10 +67,10 @@ def calculate_theoretical_yield(formula_id: str, db: Session) -> Dict[str, Decim
     # Calculate litres using weighted average SG
     stmt_sg = (
         select(
-            func.sum(FormulaLine.quantity_kg * RawMaterial.sg).label('weighted_sg'),
+            func.sum(FormulaLine.quantity_kg * Product.specific_gravity).label('weighted_sg'),
             func.sum(FormulaLine.quantity_kg).label('total_qty')
         )
-        .join(RawMaterial, FormulaLine.ingredient_product_id == RawMaterial.id)
+        .join(Product, FormulaLine.product_id == Product.id)
         .where(FormulaLine.formula_id == formula_id)
     )
     
@@ -137,17 +136,17 @@ def validate_formula_lines(formula_id: str, db: Session) -> Dict[str, any]:
     
     # Check each line
     for line in lines:
-        material = db.get(RawMaterial, line.ingredient_product_id)
+        product = db.get(Product, line.product_id)
         
-        if not material:
-            issues.append(f"Line {line.sequence}: Material {line.ingredient_product_id} not found")
+        if not product:
+            issues.append(f"Line {line.sequence}: Product {line.product_id} not found")
         
-        if material:
-            if not material.usage_cost:
-                warnings.append(f"Line {line.sequence}: Material {material.desc1} has no usage cost")
+        if product:
+            if not product.usage_cost:
+                warnings.append(f"Line {line.sequence}: Product {product.name or product.sku} has no usage cost")
             
-            if not material.sg:
-                warnings.append(f"Line {line.sequence}: Material {material.desc1} has no SG value")
+            if not product.specific_gravity:
+                warnings.append(f"Line {line.sequence}: Product {product.name or product.sku} has no specific gravity value")
     
     return {
         'valid': len(issues) == 0,

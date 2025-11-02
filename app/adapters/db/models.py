@@ -2,18 +2,33 @@
 """SQLAlchemy database models."""
 
 import uuid
+import enum
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint
+    Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, Enum
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from .session import Base
 from app.settings import settings
+
+
+class ProductType(str, enum.Enum):
+    """Product type classification."""
+    RAW = "RAW"
+    WIP = "WIP"
+    FINISHED = "FINISHED"
+
+
+class ContactType(str, enum.Enum):
+    """Contact type classification."""
+    CUSTOMER = "CUSTOMER"
+    SUPPLIER = "SUPPLIER"
+    OTHER = "OTHER"
 
 
 def uuid_column():
@@ -47,11 +62,46 @@ class Product(Base):
     abv_percent = Column(Numeric(5, 2))  # ABV as % v/v
     
     # Product Classifications
+    product_type = Column(String(20), nullable=False, default=ProductType.RAW.value, index=True)  # RAW, WIP, FINISHED
     dgflag = Column(String(1))  # Dangerous goods flag
     form = Column(String(10))  # Form code
     pkge = Column(Integer)  # Package type
     label = Column(Integer)  # Label type
     manu = Column(Integer)  # Manufacturer code
+    
+    # Raw Material Group (nullable - only for RAW type)
+    raw_material_group_id = Column(String(36), ForeignKey("raw_material_groups.id"), nullable=True)
+    
+    # Raw Material Specific Fields (nullable - only for RAW type)
+    raw_material_code = Column(Integer, nullable=True, index=True)  # Legacy QB material code
+    raw_material_search_key = Column(String(5))
+    raw_material_search_ext = Column(String(8))
+    specific_gravity = Column(Numeric(10, 6))  # sg from raw_materials
+    vol_solid = Column(Numeric(10, 6))  # Volume solid
+    solid_sg = Column(Numeric(10, 6))  # Solid specific gravity
+    wt_solid = Column(Numeric(10, 6))  # Weight solid
+    usage_unit = Column(String(2))  # Usage unit
+    usage_cost = Column(Numeric(10, 2))  # Usage cost
+    restock_level = Column(Numeric(12, 3))  # Restock level
+    purchase_unit_id = Column(String(36), ForeignKey("units.id"), nullable=True)  # Purchase unit from units table
+    purchase_volume = Column(Numeric(12, 3))  # Purchase volume in purchase unit
+    used_ytd = Column(Numeric(12, 3))  # Used year-to-date
+    hazard = Column(String(1))  # Hazard flag
+    condition = Column(String(1))  # Condition flag
+    msds_flag = Column(String(1))  # MSDS flag
+    altno1 = Column(Integer, nullable=True)  # Alternative material 1
+    altno2 = Column(Integer, nullable=True)  # Alternative material 2
+    altno3 = Column(Integer, nullable=True)  # Alternative material 3
+    altno4 = Column(Integer, nullable=True)  # Alternative material 4
+    altno5 = Column(Integer, nullable=True)  # Alternative material 5
+    last_movement_date = Column(String(8))  # Last movement date (YYYYMMDD)
+    last_purchase_date = Column(String(8))  # Last purchase date (YYYYMMDD)
+    ean13_raw = Column(Numeric(18, 4))  # Legacy EAN from raw materials
+    xero_account = Column(String(50))  # Xero account code
+    
+    # Finished Good Specific Fields (nullable - only for FINISHED type)
+    formula_id = Column(String(36), ForeignKey("formulas.id"), nullable=True)  # Default formula
+    formula_revision = Column(Integer, nullable=True)  # Formula revision
     
     # Financial/Tax
     taxinc = Column(String(1))  # Tax included flag
@@ -78,12 +128,18 @@ class Product(Base):
     
     # Relationships
     supplier = relationship("Supplier", foreign_keys=[supplier_id])
+    raw_material_group = relationship("RawMaterialGroup", foreign_keys=[raw_material_group_id])
+    default_formula = relationship("Formula", foreign_keys=[formula_id], post_update=True)
     variants = relationship("ProductVariant", back_populates="product")
-    formulas = relationship("Formula", back_populates="product")
+    formulas = relationship("Formula", back_populates="product", foreign_keys="Formula.product_id")
     inventory_lots = relationship("InventoryLot", back_populates="product")
     pack_conversions = relationship("PackConversion", back_populates="product")
     price_list_items = relationship("PriceListItem", back_populates="product")
     customer_prices = relationship("CustomerPrice", back_populates="product")
+    
+    __table_args__ = (
+        Index("ix_product_type", "product_type"),
+    )
 
 
 class ProductVariant(Base):
@@ -119,7 +175,7 @@ class Formula(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    product = relationship("Product", back_populates="formulas")
+    product = relationship("Product", foreign_keys=[product_id], back_populates="formulas")
     lines = relationship("FormulaLine", back_populates="formula")
     
     __table_args__ = (
@@ -132,7 +188,7 @@ class FormulaLine(Base):
     
     id = uuid_column()
     formula_id = Column(String(36), ForeignKey("formulas.id"), nullable=False)
-    raw_material_id = Column(String(36), ForeignKey("raw_materials.id"), nullable=False)
+    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)  # Unified product reference
     quantity_kg = Column(Numeric(12, 3), nullable=False)  # Canonical storage in kg
     sequence = Column(Integer, nullable=False)
     notes = Column(Text)
@@ -140,7 +196,28 @@ class FormulaLine(Base):
     
     # Relationships
     formula = relationship("Formula", back_populates="lines")
-    raw_material = relationship("RawMaterial")
+    product = relationship("Product")
+    
+    # Backward compatibility properties for raw_material
+    @property
+    def raw_material(self):
+        """Backward compatibility: return product for raw_material."""
+        return self.product
+    
+    @raw_material.setter
+    def raw_material(self, value):
+        """Backward compatibility: set product from raw_material."""
+        self.product = value
+    
+    @property
+    def raw_material_id(self):
+        """Backward compatibility: return product_id as raw_material_id."""
+        return self.product_id
+    
+    @raw_material_id.setter
+    def raw_material_id(self, value):
+        """Backward compatibility: set product_id from raw_material_id."""
+        self.product_id = value
     
     __table_args__ = (
         UniqueConstraint("formula_id", "sequence", name="uq_formula_line_sequence"),
@@ -343,8 +420,7 @@ class InventoryMovement(Base):
     id = uuid_column()
     ts = Column(DateTime, nullable=False, default=datetime.utcnow)  # UTC timestamp
     date = Column(String(10), nullable=False)  # Business date (YYYY-MM-DD)
-    item_type = Column(String(10), nullable=False)  # RAW or FG
-    item_id = Column(String(36), nullable=False)  # Points to products.id (RAW) or finished_goods.id (FG)
+    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)  # Unified product reference
     qty = Column(Numeric(12, 3), nullable=False)  # Positive magnitude
     unit = Column(String(10), nullable=False)
     direction = Column(String(10), nullable=False)  # IN or OUT
@@ -352,10 +428,11 @@ class InventoryMovement(Base):
     note = Column(Text)
     
     # Relationships
+    product = relationship("Product")
     batch = relationship("Batch")
     
     __table_args__ = (
-        Index("ix_movements_item", "item_type", "item_id"),
+        Index("ix_movements_product", "product_id"),
         Index("ix_movements_date", "date"),
         Index("ix_movements_batch", "source_batch_id"),
     )
@@ -378,7 +455,57 @@ class QcResult(Base):
     batch = relationship("Batch", back_populates="qc_results")
 
 
-# Supplier and Purchase Order Models
+# Unified Contact Models (Supersedes separate Supplier/Customer)
+class Contact(Base):
+    """Unified contact model for customers, suppliers, and other contacts."""
+    __tablename__ = "contacts"
+    
+    id = uuid_column()
+    code = Column(String(50), unique=True, nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    contact_person = Column(String(100))
+    email = Column(String(200))
+    phone = Column(String(50))
+    address = Column(Text)
+    
+    # Contact type flags (can be multiple)
+    is_customer = Column(Boolean, default=False, nullable=False, index=True)
+    is_supplier = Column(Boolean, default=False, nullable=False, index=True)
+    is_other = Column(Boolean, default=False, nullable=False)
+    
+    # Additional fields
+    tax_rate = Column(Numeric(5, 2), default=10.0)  # Default GST rate for customers
+    xero_contact_id = Column(String(100))  # Xero Contact UUID
+    last_sync = Column(DateTime)  # Last successful sync to Xero
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships - commented out until FK columns are added
+    # purchase_orders = relationship("PurchaseOrder", back_populates="contact", foreign_keys="PurchaseOrder.contact_id")
+    # sales_orders = relationship("SalesOrder", back_populates="contact", foreign_keys="SalesOrder.contact_id")
+    # invoices = relationship("Invoice", back_populates="contact", foreign_keys="Invoice.contact_id")
+    # customer_prices = relationship("CustomerPrice", back_populates="contact", foreign_keys="CustomerPrice.contact_id")
+    
+    __table_args__ = (
+        Index("ix_contact_code", "code"),
+        Index("ix_contact_type", "is_customer", "is_supplier", "is_other"),
+    )
+    
+    @property
+    def contact_types(self) -> list[str]:
+        """Return list of active contact types."""
+        types = []
+        if self.is_customer:
+            types.append("CUSTOMER")
+        if self.is_supplier:
+            types.append("SUPPLIER")
+        if self.is_other:
+            types.append("OTHER")
+        return types
+
+
+# Supplier and Purchase Order Models (DEPRECATED - use Contact instead)
 class Supplier(Base):
     __tablename__ = "suppliers"
     
@@ -625,6 +752,26 @@ class PackUnit(Base):
     
     __table_args__ = (
         Index("ix_pack_unit_code", "code"),
+    )
+
+
+class Unit(Base):
+    """Platform-wide units of measurement table."""
+    __tablename__ = "units"
+    
+    id = uuid_column()
+    code = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    symbol = Column(String(10))  # Display symbol (e.g., "kg", "L", "mL")
+    unit_type = Column(String(20))  # MASS, VOLUME, COUNT, etc.
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        Index("ix_unit_code", "code"),
+        Index("ix_unit_type", "unit_type"),
     )
 
 

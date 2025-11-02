@@ -25,8 +25,10 @@ def product_to_response(product: Product) -> ProductResponse:
         sku=product.sku,
         name=product.name,
         description=product.description,
+        product_type=product.product_type or "RAW",
         ean13=product.ean13,
         supplier_id=str(product.supplier_id) if product.supplier_id else None,
+        raw_material_group_id=str(product.raw_material_group_id) if product.raw_material_group_id else None,
         size=product.size,
         base_unit=product.base_unit,
         pack=product.pack,
@@ -51,6 +53,23 @@ def product_to_response(product: Product) -> ProductResponse:
         contractcde=product.contractcde,
         industrialcde=product.industrialcde,
         distributorcde=product.distributorcde,
+        # Raw Material specific fields
+        purchase_unit_id=str(product.purchase_unit_id) if product.purchase_unit_id else None,
+        purchase_volume=product.purchase_volume,
+        specific_gravity=product.specific_gravity,
+        vol_solid=product.vol_solid,
+        solid_sg=product.solid_sg,
+        wt_solid=product.wt_solid,
+        usage_unit=product.usage_unit,
+        usage_cost=product.usage_cost,
+        restock_level=product.restock_level,
+        used_ytd=product.used_ytd,
+        hazard=product.hazard,
+        condition=product.condition,
+        msds_flag=product.msds_flag,
+        # Finished Good specific fields
+        formula_id=str(product.formula_id) if product.formula_id else None,
+        formula_revision=product.formula_revision,
         is_active=product.is_active,
         created_at=product.created_at,
         updated_at=product.updated_at,
@@ -73,15 +92,19 @@ async def list_products(
     skip: int = 0,
     limit: int = 100,
     query: Optional[str] = None,
+    product_type: Optional[str] = None,  # Filter by product_type (RAW, WIP, FINISHED)
     db: Session = Depends(get_db)
 ):
-    """List products with optional search."""
+    """List products with optional search and product_type filtering."""
     stmt = select(Product).options(joinedload(Product.variants))
     
     if query:
         stmt = stmt.where(
             Product.name.contains(query) | Product.sku.contains(query)
         )
+    
+    if product_type:
+        stmt = stmt.where(Product.product_type == product_type)
     
     stmt = stmt.offset(skip).limit(limit)
     products = db.execute(stmt).scalars().unique().all()
@@ -135,8 +158,10 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         sku=product_data.sku,
         name=product_data.name,
         description=product_data.description,
+        product_type=product_data.product_type,
         ean13=product_data.ean13,
         supplier_id=product_data.supplier_id,
+        raw_material_group_id=product_data.raw_material_group_id,
         size=product_data.size,
         base_unit=product_data.base_unit,
         pack=product_data.pack,
@@ -161,6 +186,23 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         contractcde=product_data.contractcde,
         industrialcde=product_data.industrialcde,
         distributorcde=product_data.distributorcde,
+        # Raw Material specific fields
+        purchase_unit_id=product_data.purchase_unit_id,
+        purchase_volume=product_data.purchase_volume,
+        specific_gravity=product_data.specific_gravity,
+        vol_solid=product_data.vol_solid,
+        solid_sg=product_data.solid_sg,
+        wt_solid=product_data.wt_solid,
+        usage_unit=product_data.usage_unit,
+        usage_cost=product_data.usage_cost,
+        restock_level=product_data.restock_level,
+        used_ytd=product_data.used_ytd,
+        hazard=product_data.hazard,
+        condition=product_data.condition,
+        msds_flag=product_data.msds_flag,
+        # Finished Good specific fields
+        formula_id=product_data.formula_id,
+        formula_revision=product_data.formula_revision,
         is_active=product_data.is_active
     )
     
@@ -190,10 +232,14 @@ async def update_product(
         product.name = product_data.name
     if product_data.description is not None:
         product.description = product_data.description
+    if product_data.product_type is not None:
+        product.product_type = product_data.product_type
     if product_data.ean13 is not None:
         product.ean13 = product_data.ean13
     if product_data.supplier_id is not None:
         product.supplier_id = product_data.supplier_id
+    if product_data.raw_material_group_id is not None:
+        product.raw_material_group_id = product_data.raw_material_group_id
     if product_data.size is not None:
         product.size = product_data.size
     if product_data.base_unit is not None:
@@ -242,6 +288,38 @@ async def update_product(
         product.industrialcde = product_data.industrialcde
     if product_data.distributorcde is not None:
         product.distributorcde = product_data.distributorcde
+    # Raw Material specific fields
+    if product_data.purchase_unit_id is not None:
+        product.purchase_unit_id = product_data.purchase_unit_id
+    if product_data.purchase_volume is not None:
+        product.purchase_volume = product_data.purchase_volume
+    if product_data.specific_gravity is not None:
+        product.specific_gravity = product_data.specific_gravity
+    if product_data.vol_solid is not None:
+        product.vol_solid = product_data.vol_solid
+    if product_data.solid_sg is not None:
+        product.solid_sg = product_data.solid_sg
+    if product_data.wt_solid is not None:
+        product.wt_solid = product_data.wt_solid
+    if product_data.usage_unit is not None:
+        product.usage_unit = product_data.usage_unit
+    if product_data.usage_cost is not None:
+        product.usage_cost = product_data.usage_cost
+    if product_data.restock_level is not None:
+        product.restock_level = product_data.restock_level
+    if product_data.used_ytd is not None:
+        product.used_ytd = product_data.used_ytd
+    if product_data.hazard is not None:
+        product.hazard = product_data.hazard
+    if product_data.condition is not None:
+        product.condition = product_data.condition
+    if product_data.msds_flag is not None:
+        product.msds_flag = product_data.msds_flag
+    # Finished Good specific fields
+    if product_data.formula_id is not None:
+        product.formula_id = product_data.formula_id
+    if product_data.formula_revision is not None:
+        product.formula_revision = product_data.formula_revision
     if product_data.is_active is not None:
         product.is_active = product_data.is_active
     

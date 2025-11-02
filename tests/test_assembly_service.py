@@ -15,6 +15,7 @@ def test_assemble_basic(db_session: Session):
     parent = Product(
         sku="PARENT-001",
         name="Parent Product",
+        product_type="FINISHED",
         base_unit="KG",
         density_kg_per_l=None
     )
@@ -24,6 +25,7 @@ def test_assemble_basic(db_session: Session):
     child = Product(
         sku="CHILD-001",
         name="Child Product",
+        product_type="RAW",
         base_unit="KG",
         density_kg_per_l=None
     )
@@ -77,6 +79,7 @@ def test_disassemble_basic(db_session: Session):
     parent = Product(
         sku="PARENT-002",
         name="Parent Product",
+        product_type="FINISHED",
         base_unit="KG",
         density_kg_per_l=None
     )
@@ -86,6 +89,7 @@ def test_disassemble_basic(db_session: Session):
     child = Product(
         sku="CHILD-002",
         name="Child Product",
+        product_type="RAW",
         base_unit="KG",
         density_kg_per_l=None
     )
@@ -136,9 +140,9 @@ def test_assemble_multiple_children(db_session: Session):
     Test assembly with multiple child products.
     """
     # Create products
-    parent = Product(sku="PARENT-003", name="Parent", base_unit="KG")
-    child1 = Product(sku="CHILD-003A", name="Child A", base_unit="KG")
-    child2 = Product(sku="CHILD-003B", name="Child B", base_unit="KG")
+    parent = Product(sku="PARENT-003", name="Parent", product_type="FINISHED", base_unit="KG")
+    child1 = Product(sku="CHILD-003A", name="Child A", product_type="RAW", base_unit="KG")
+    child2 = Product(sku="CHILD-003B", name="Child B", product_type="RAW", base_unit="KG")
     
     for p in [parent, child1, child2]:
         db_session.add(p)
@@ -197,8 +201,8 @@ def test_assemble_insufficient_stock(db_session: Session):
     Test assembly fails when insufficient child inventory.
     """
     # Create products
-    parent = Product(sku="PARENT-004", name="Parent", base_unit="KG")
-    child = Product(sku="CHILD-004", name="Child", base_unit="KG")
+    parent = Product(sku="PARENT-004", name="Parent", product_type="FINISHED", base_unit="KG")
+    child = Product(sku="CHILD-004", name="Child", product_type="RAW", base_unit="KG")
     
     for p in [parent, child]:
         db_session.add(p)
@@ -234,4 +238,181 @@ def test_assemble_insufficient_stock(db_session: Session):
         assert False, "Should have raised ValueError"
     except ValueError as e:
         assert "Insufficient stock" in str(e)
+
+
+def test_assemble_raw_to_wip(db_session: Session):
+    """
+    Test assembly from RAW to WIP.
+    """
+    # Create RAW and WIP products
+    raw = Product(
+        sku="RAW-001",
+        name="Raw Material",
+        product_type="RAW",
+        base_unit="KG",
+        density_kg_per_l=None
+    )
+    wip = Product(
+        sku="WIP-001",
+        name="Work In Progress",
+        product_type="WIP",
+        base_unit="KG",
+        density_kg_per_l=None
+    )
+    db_session.add_all([raw, wip])
+    db_session.flush()
+    
+    # Create assembly: WIP from RAW
+    assembly = Assembly(
+        parent_product_id=wip.id,
+        child_product_id=raw.id,
+        ratio=Decimal("1.0"),
+        direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
+        loss_factor=Decimal("0.0")
+    )
+    db_session.add(assembly)
+    db_session.flush()
+    
+    # Create raw material inventory
+    raw_lot = InventoryLot(
+        product_id=raw.id,
+        lot_code="RAW-LOT-001",
+        quantity_kg=Decimal("100.0"),
+        unit_cost=Decimal("5.0"),
+        received_at=datetime.utcnow(),
+        is_active=True
+    )
+    db_session.add(raw_lot)
+    db_session.flush()
+    
+    # Assemble WIP from RAW
+    svc = AssemblyService(db_session)
+    result = svc.assemble(wip.id, Decimal("50.0"), "RAW_TO_WIP")
+    db_session.commit()
+    
+    # Verify WIP was created
+    assert result["produced"]["quantity_kg"] == Decimal("50.0")
+    assert result["produced"]["product_id"] == wip.id
+    assert len(result["consumed"]) == 1
+    assert result["consumed"][0]["qty_consumed"] == Decimal("50.0")
+    
+    # Check raw lot was consumed
+    db_session.refresh(raw_lot)
+    assert raw_lot.quantity_kg == Decimal("50.0")  # 100 - 50
+
+
+def test_assemble_wip_to_finished(db_session: Session):
+    """
+    Test assembly from WIP to FINISHED.
+    """
+    # Create WIP and FINISHED products
+    wip = Product(
+        sku="WIP-002",
+        name="Work In Progress",
+        product_type="WIP",
+        base_unit="KG",
+        density_kg_per_l=None
+    )
+    finished = Product(
+        sku="FINISHED-001",
+        name="Finished Product",
+        product_type="FINISHED",
+        base_unit="KG",
+        density_kg_per_l=None
+    )
+    db_session.add_all([wip, finished])
+    db_session.flush()
+    
+    # Create assembly: FINISHED from WIP
+    assembly = Assembly(
+        parent_product_id=finished.id,
+        child_product_id=wip.id,
+        ratio=Decimal("1.0"),
+        direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
+        loss_factor=Decimal("0.02")  # 2% loss
+    )
+    db_session.add(assembly)
+    db_session.flush()
+    
+    # Create WIP inventory
+    wip_lot = InventoryLot(
+        product_id=wip.id,
+        lot_code="WIP-LOT-001",
+        quantity_kg=Decimal("100.0"),
+        unit_cost=Decimal("15.0"),
+        received_at=datetime.utcnow(),
+        is_active=True
+    )
+    db_session.add(wip_lot)
+    db_session.flush()
+    
+    # Assemble FINISHED from WIP
+    svc = AssemblyService(db_session)
+    result = svc.assemble(finished.id, Decimal("50.0"), "WIP_TO_FINISHED")
+    db_session.commit()
+    
+    # Verify FINISHED was created
+    assert result["produced"]["quantity_kg"] == Decimal("50.0")
+    assert result["produced"]["product_id"] == finished.id
+    
+    # Check WIP lot was consumed (with loss factor)
+    # Need: 50 * 1.0 * 1.02 = 51.0
+    db_session.refresh(wip_lot)
+    assert wip_lot.quantity_kg == Decimal("49.0")  # 100 - 51
+
+
+def test_multi_stage_assembly(db_session: Session):
+    """
+    Test multi-stage assembly: RAW -> WIP -> FINISHED.
+    """
+    # Create products
+    raw = Product(sku="RAW-MULTI", name="Raw", product_type="RAW", base_unit="KG")
+    wip = Product(sku="WIP-MULTI", name="WIP", product_type="WIP", base_unit="KG")
+    finished = Product(sku="FIN-MULTI", name="Finished", product_type="FINISHED", base_unit="KG")
+    db_session.add_all([raw, wip, finished])
+    db_session.flush()
+    
+    # Create assemblies
+    raw_to_wip = Assembly(
+        parent_product_id=wip.id,
+        child_product_id=raw.id,
+        ratio=Decimal("1.0"),
+        direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
+        loss_factor=Decimal("0.0")
+    )
+    wip_to_finished = Assembly(
+        parent_product_id=finished.id,
+        child_product_id=wip.id,
+        ratio=Decimal("1.0"),
+        direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
+        loss_factor=Decimal("0.0")
+    )
+    db_session.add_all([raw_to_wip, wip_to_finished])
+    db_session.flush()
+    
+    # Create raw inventory
+    raw_lot = InventoryLot(
+        product_id=raw.id, lot_code="RAW-001",
+        quantity_kg=Decimal("100.0"), unit_cost=Decimal("5.0"),
+        received_at=datetime.utcnow(), is_active=True
+    )
+    db_session.add(raw_lot)
+    db_session.flush()
+    
+    # Stage 1: RAW -> WIP
+    svc = AssemblyService(db_session)
+    result1 = svc.assemble(wip.id, Decimal("50.0"), "STAGE1")
+    db_session.commit()
+    
+    # Stage 2: WIP -> FINISHED
+    result2 = svc.assemble(finished.id, Decimal("50.0"), "STAGE2")
+    db_session.commit()
+    
+    # Verify results
+    assert result1["produced"]["quantity_kg"] == Decimal("50.0")
+    assert result2["produced"]["quantity_kg"] == Decimal("50.0")
+    
+    # Check raw was fully consumed
+    db_session.refresh(raw_lot)
+    assert raw_lot.quantity_kg == Decimal("50.0")  # 100 - 50 (from stage 1)
 

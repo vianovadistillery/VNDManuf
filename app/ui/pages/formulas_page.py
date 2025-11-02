@@ -122,6 +122,8 @@ class FormulasPage:
                                     {"name": "Seq", "id": "sequence"},
                                     {"name": "Ingredient", "id": "ingredient_name"},
                                     {"name": "Qty (kg)", "id": "quantity_kg", "type": "numeric", "format": {"specifier": ".3f"}},
+                                    {"name": "Qty (Lt)", "id": "quantity_lt", "type": "numeric", "format": {"specifier": ".3f"}},
+                                    {"name": "SG", "id": "density", "type": "numeric", "format": {"specifier": ".6f"}},
                                     {"name": "Notes", "id": "notes"},
                                 ],
                                 data=[],
@@ -138,12 +140,20 @@ class FormulasPage:
                                 dbc.Col([
                                     html.Strong("Total Ingredients: "),
                                     html.Span(id="formula-total-lines", className="text-primary")
-                                ]),
+                                ], md=3),
                                 dbc.Col([
-                                    html.Strong("Total Quantity: "),
-                                    html.Span(id="formula-total-qty", className="text-success")
-                                ]),
-                            ])
+                                    html.Strong("Total Mass: "),
+                                    html.Span(id="formula-total-kg", className="text-success")
+                                ], md=3),
+                                dbc.Col([
+                                    html.Strong("Total Volume: "),
+                                    html.Span(id="formula-total-lt", className="text-info")
+                                ], md=3),
+                                dbc.Col([
+                                    html.Strong("Formula SG: "),
+                                    html.Span(id="formula-total-sg", className="text-warning")
+                                ], md=3),
+                            ], className="mt-2")
                         ])
                     ], style={"height": "600px"})
                 ], md=8)

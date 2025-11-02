@@ -20,16 +20,27 @@ class ProductsPageEnhanced:
                             dbc.Button("Edit Selected", id="edit-product-btn", color="primary", className="me-2", disabled=True),
                             dbc.Button("Delete Selected", id="delete-product-btn", color="danger", className="me-2", disabled=True),
                             dbc.Button("Refresh", id="products-refresh", color="info"),
-                        ])
+                        ], width=8),
+                        dbc.Col([
+                            html.Div([
+                                dbc.Label("Filter by Type:", className="me-2", style={"display": "inline-block", "marginRight": "10px"}),
+                                dbc.Checkbox(id="filter-raw", label="RAW", value=True, className="me-2", style={"display": "inline-block"}),
+                                dbc.Checkbox(id="filter-wip", label="WIP", value=True, className="me-2", style={"display": "inline-block"}),
+                                dbc.Checkbox(id="filter-finished", label="FINISHED", value=True, style={"display": "inline-block"}),
+                            ], style={"textAlign": "right"})
+                        ], width=4)
                     ], className="mb-3"),
                     dash_table.DataTable(
                         id="products-table",
                         columns=[
                             {"name": "SKU", "id": "sku"},
                             {"name": "Name", "id": "name"},
+                            {"name": "Type", "id": "product_type"},
                             {"name": "Base Unit", "id": "base_unit"},
                             {"name": "Size", "id": "size"},
                             {"name": "Pack", "id": "pack"},
+                            {"name": "Density (kg/L)", "id": "density_kg_per_l"},
+                            {"name": "ABV (%)", "id": "abv_percent"},
                             {"name": "Purchase Cost", "id": "purcost"},
                             {"name": "Active", "id": "is_active"},
                         ],
@@ -67,32 +78,16 @@ class ProductsPageEnhanced:
                             ], className="mb-3"),
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("Description"),
-                                    dbc.Textarea(id="product-description", placeholder="Enter description")
-                                ], width=12)
-                            ], className="mb-3"),
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("EAN13 Barcode"),
-                                    dbc.Input(id="product-ean13", placeholder="EAN13")
-                                ], width=6),
-                                dbc.Col([
-                                    dbc.Label("Supplier ID"),
-                                    dbc.Input(id="product-supplier-id", placeholder="Supplier ID")
-                                ], width=6),
-                            ], className="mb-3"),
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("Base Unit"),
+                                    dbc.Label("Product Type *"),
                                     dbc.Select(
-                                        id="product-base-unit",
+                                        id="product-type",
                                         options=[
-                                            {"label": "KG", "value": "KG"},
-                                            {"label": "LT", "value": "LT"},
-                                            {"label": "mL", "value": "mL"},
-                                            {"label": "EA", "value": "EA"},
+                                            {"label": "RAW - Raw Material", "value": "RAW"},
+                                            {"label": "WIP - Work In Progress", "value": "WIP"},
+                                            {"label": "FINISHED - Finished Good", "value": "FINISHED"},
                                         ],
-                                        placeholder="Select base unit"
+                                        value="RAW",
+                                        required=True
                                     )
                                 ], width=6),
                                 dbc.Col([
@@ -106,6 +101,24 @@ class ProductsPageEnhanced:
                                         value="true"
                                     )
                                 ], width=6),
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Description"),
+                                    dbc.Textarea(id="product-description", placeholder="Enter description")
+                                ], width=12)
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("EAN13 Barcode"),
+                                    dbc.Input(id="product-ean13", placeholder="EAN13")
+                                ], width=12),
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Raw Material Group ID"),
+                                    dbc.Input(id="product-raw-material-group-id", placeholder="Raw Material Group ID")
+                                ], width=12)
                             ])
                         ], title="Basic Information", item_id="basic"),
                         
@@ -113,9 +126,24 @@ class ProductsPageEnhanced:
                         dbc.AccordionItem([
                             dbc.Row([
                                 dbc.Col([
+                                    dbc.Label("Base Unit"),
+                                    dcc.Dropdown(
+                                        id="product-base-unit",
+                                        placeholder="Select base unit",
+                                        searchable=True,
+                                        clearable=True
+                                    )
+                                ], width=4),
+                                dbc.Col([
                                     dbc.Label("Size"),
                                     dbc.Input(id="product-size", placeholder="Size")
                                 ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Weight (kg)"),
+                                    dbc.Input(id="product-weight", type="number", step="0.001", placeholder="0.000")
+                                ], width=4),
+                            ], className="mb-3"),
+                            dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Pack"),
                                     dbc.Input(id="product-pack", type="number", placeholder="Pack quantity")
@@ -124,16 +152,31 @@ class ProductsPageEnhanced:
                                     dbc.Label("Package Type"),
                                     dbc.Input(id="product-pkge", type="number", placeholder="Package type")
                                 ], width=4),
-                            ], className="mb-3"),
-                            dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Density (kg/L)"),
                                     dbc.Input(id="product-density", type="number", step="0.001", placeholder="0.000")
-                                ], width=6),
+                                ], width=4),
+                            ], className="mb-3"),
+                            dbc.Row([
                                 dbc.Col([
                                     dbc.Label("ABV (%)"),
                                     dbc.Input(id="product-abv", type="number", step="0.01", placeholder="0.00")
                                 ], width=6),
+                                dbc.Col([], width=6),
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Volume Solid"),
+                                    dbc.Input(id="product-vol-solid", type="number", step="0.000001", placeholder="0.000000")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Solid SG"),
+                                    dbc.Input(id="product-solid-sg", type="number", step="0.000001", placeholder="0.000000")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Weight Solid"),
+                                    dbc.Input(id="product-wt-solid", type="number", step="0.000001", placeholder="0.000000")
+                                ], width=4),
                             ])
                         ], title="Physical Properties", item_id="physical"),
                         
@@ -168,7 +211,7 @@ class ProductsPageEnhanced:
                             ])
                         ], title="Classifications", item_id="classifications"),
                         
-                        # Financial Information
+                        # Cost Information
                         dbc.AccordionItem([
                             dbc.Row([
                                 dbc.Col([
@@ -186,6 +229,10 @@ class ProductsPageEnhanced:
                             ], className="mb-3"),
                             dbc.Row([
                                 dbc.Col([
+                                    dbc.Label("Excise Amount"),
+                                    dbc.Input(id="product-excise-amount", type="number", step="0.01", placeholder="0.00")
+                                ], width=4),
+                                dbc.Col([
                                     dbc.Label("Tax Included"),
                                     dbc.Select(
                                         id="product-taxinc",
@@ -195,35 +242,120 @@ class ProductsPageEnhanced:
                                         ],
                                         placeholder="Tax included?"
                                     )
-                                ], width=6),
+                                ], width=4),
                                 dbc.Col([
                                     dbc.Label("Sales Tax Code"),
                                     dbc.Input(id="product-salestaxcde", placeholder="Tax code")
-                                ], width=6),
+                                ], width=4),
                             ])
-                        ], title="Financial", item_id="financial"),
+                        ], title="Cost", item_id="cost"),
                         
-                        # Pricing Codes
+                        # Pricing
                         dbc.AccordionItem([
                             dbc.Row([
-                                dbc.Col([dbc.Label("Wholesale Code"), dbc.Input(id="product-wholesalecde", maxLength=1)], width=4),
-                                dbc.Col([dbc.Label("Retail Code"), dbc.Input(id="product-retailcde", maxLength=1)], width=4),
-                                dbc.Col([dbc.Label("Counter Code"), dbc.Input(id="product-countercde", maxLength=1)], width=4),
+                                dbc.Col([
+                                    dbc.Label("Wholesale"),
+                                    dbc.Input(id="product-wholesalecde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Retail"),
+                                    dbc.Input(id="product-retailcde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Counter"),
+                                    dbc.Input(id="product-countercde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
                             ], className="mb-3"),
                             dbc.Row([
-                                dbc.Col([dbc.Label("Trade Code"), dbc.Input(id="product-tradecde", maxLength=1)], width=4),
-                                dbc.Col([dbc.Label("Contract Code"), dbc.Input(id="product-contractcde", maxLength=1)], width=4),
-                                dbc.Col([dbc.Label("Industrial Code"), dbc.Input(id="product-industrialcde", maxLength=1)], width=4),
+                                dbc.Col([
+                                    dbc.Label("Trade"),
+                                    dbc.Input(id="product-tradecde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Contract"),
+                                    dbc.Input(id="product-contractcde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
+                                dbc.Col([
+                                    dbc.Label("Industrial"),
+                                    dbc.Input(id="product-industrialcde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=4),
                             ], className="mb-3"),
                             dbc.Row([
-                                dbc.Col([dbc.Label("Distributor Code"), dbc.Input(id="product-distributorcde", maxLength=1)], width=6),
+                                dbc.Col([
+                                    dbc.Label("Distributor"),
+                                    dbc.Input(id="product-distributorcde", type="number", step="0.01", placeholder="$0.00")
+                                ], width=6),
                                 dbc.Col([], width=6),
                             ]),
                             dbc.Row([
-                                dbc.Col([dbc.Label("Discount Code 1"), dbc.Input(id="product-disccdeone", maxLength=1)], width=6),
-                                dbc.Col([dbc.Label("Discount Code 2"), dbc.Input(id="product-disccdetwo", maxLength=1)], width=6),
+                                dbc.Col([
+                                    dbc.Label("Discount 1"),
+                                    dbc.Input(id="product-disccdeone", type="number", step="0.01", placeholder="$0.00")
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("Discount 2"),
+                                    dbc.Input(id="product-disccdetwo", type="number", step="0.01", placeholder="$0.00")
+                                ], width=6),
                             ], className="mt-3")
-                        ], title="Pricing Codes", item_id="pricing"),
+                        ], title="Pricing", item_id="pricing"),
+                        
+                        # Raw Material Usage Fields
+                        dbc.AccordionItem([
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Supplier ID"),
+                                    dbc.Input(id="product-supplier-id", placeholder="Supplier ID")
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("Purchase Unit"),
+                                    dcc.Dropdown(
+                                        id="product-purchase-unit",
+                                        placeholder="Select purchase unit",
+                                        searchable=True,
+                                        clearable=True
+                                    )
+                                ], width=6),
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Purchase Volume"),
+                                    dbc.Input(id="product-purchase-volume", type="number", step="0.001", placeholder="0.000")
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("Usage Cost"),
+                                    dbc.Input(id="product-usage-cost", type="number", step="0.01", placeholder="0.00")
+                                ], width=6),
+                            ], className="mb-3"),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Usage Unit"),
+                                    dcc.Dropdown(
+                                        id="product-usage-unit",
+                                        placeholder="Select usage unit",
+                                        searchable=True,
+                                        clearable=True
+                                    )
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("Restock Level"),
+                                    dbc.Input(id="product-restock-level", type="number", step="0.001", placeholder="0.000")
+                                ], width=6),
+                            ])
+                        ], title="Raw Material Usage", item_id="raw-material"),
+                        
+                        # Finished Good Specific Fields
+                        dbc.AccordionItem([
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label("Formula ID"),
+                                    dbc.Input(id="product-formula-id", placeholder="Formula ID")
+                                ], width=6),
+                                dbc.Col([
+                                    dbc.Label("Formula Revision"),
+                                    dbc.Input(id="product-formula-revision", type="number", placeholder="Revision number")
+                                ], width=6),
+                            ])
+                        ], title="Assembly", item_id="finished-good"),
                     ], start_collapsed=True, active_item="basic"),
                     html.Div(id="product-form-hidden", style={"display": "none"})
                 ]),

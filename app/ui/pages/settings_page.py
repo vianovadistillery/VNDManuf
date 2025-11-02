@@ -1,0 +1,121 @@
+"""Settings page with Units CRUD."""
+from dash import html, dcc, dash_table, Input, Output, State
+import dash_bootstrap_components as dbc
+
+
+class SettingsPage:
+    """Settings management page with Units CRUD."""
+    
+    @staticmethod
+    def get_layout():
+        return dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.H3("Settings", className="mb-4"),
+                    dbc.Tabs(
+                        id="settings-tabs",
+                        active_tab="units",
+                        children=[
+                            dbc.Tab(label="Units", tab_id="units"),
+                        ],
+                        className="mb-4"
+                    )
+                ])
+            ]),
+            
+            # Units Tab
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Button("Add Unit", id="add-unit-btn", color="success", className="me-2"),
+                                dbc.Button("Edit Selected", id="edit-unit-btn", color="primary", className="me-2", disabled=True),
+                                dbc.Button("Delete Selected", id="delete-unit-btn", color="danger", className="me-2", disabled=True),
+                                dbc.Button("Refresh", id="units-refresh", color="info"),
+                            ], width=12)
+                        ], className="mb-3"),
+                        dash_table.DataTable(
+                            id="units-table",
+                            columns=[
+                                {"name": "Code", "id": "code"},
+                                {"name": "Name", "id": "name"},
+                                {"name": "Symbol", "id": "symbol"},
+                                {"name": "Type", "id": "unit_type"},
+                                {"name": "Description", "id": "description"},
+                                {"name": "Active", "id": "is_active"},
+                            ],
+                            data=[],
+                            sort_action="native",
+                            filter_action="native",
+                            page_action="native",
+                            page_current=0,
+                            page_size=20,
+                            row_selectable="single",
+                            style_cell={'textAlign': 'left'},
+                            style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'}
+                        )
+                    ], id="units-list-content")
+                ])
+            ]),
+            
+            # Unit Form Modal
+            dbc.Modal([
+                dbc.ModalHeader(dbc.ModalTitle(id="unit-modal-title")),
+                dbc.ModalBody([
+                    dbc.Form([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Code *"),
+                                dbc.Input(id="unit-code", required=True, maxLength=20)
+                            ], width=6),
+                            dbc.Col([
+                                dbc.Label("Name *"),
+                                dbc.Input(id="unit-name", required=True, maxLength=100)
+                            ], width=6),
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Symbol"),
+                                dbc.Input(id="unit-symbol", maxLength=10)
+                            ], width=6),
+                            dbc.Col([
+                                dbc.Label("Type"),
+                                dbc.Select(
+                                    id="unit-type",
+                                    options=[
+                                        {"label": "MASS", "value": "MASS"},
+                                        {"label": "VOLUME", "value": "VOLUME"},
+                                        {"label": "COUNT", "value": "COUNT"},
+                                        {"label": "LENGTH", "value": "LENGTH"},
+                                        {"label": "AREA", "value": "AREA"},
+                                        {"label": "OTHER", "value": "OTHER"},
+                                    ],
+                                    placeholder="Select unit type"
+                                )
+                            ], width=6),
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Description"),
+                                dbc.Textarea(id="unit-description", rows=3)
+                            ], width=12)
+                        ], className="mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Active"),
+                                dbc.Switch(id="unit-is-active", value=True)
+                            ], width=12)
+                        ])
+                    ])
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Save", id="save-unit-btn", color="primary"),
+                    dbc.Button("Cancel", id="cancel-unit-btn", color="secondary")
+                ])
+            ], id="unit-form-modal", is_open=False, size="lg"),
+            
+            # Hidden field for unit ID
+            html.Div(id="unit-form-hidden", style={"display": "none"})
+        ], fluid=True)
+

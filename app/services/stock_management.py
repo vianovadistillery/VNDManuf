@@ -12,10 +12,8 @@ from sqlalchemy import select, and_
 
 from app.adapters.db import get_db
 from app.adapters.db.models import (
-    InventoryLot, InventoryTxn, Batch, BatchComponent,
-    RawMaterial
+    InventoryLot, InventoryTxn, Batch, BatchComponent, Product
 )
-from app.adapters.db.qb_models import RawMaterial as QBRawMaterial
 
 
 def reserve_materials(batch_id: str, db: Session) -> Dict[str, any]:
@@ -37,10 +35,10 @@ def reserve_materials(batch_id: str, db: Session) -> Dict[str, any]:
     issues = []
     
     for component in components:
-        # Get raw material
-        material = db.get(QBRawMaterial, component.ingredient_product_id)
-        if not material:
-            issues.append(f"Material {component.ingredient_product_id} not found")
+        # Get product
+        product = db.get(Product, component.ingredient_product_id)
+        if not product:
+            issues.append(f"Product {component.ingredient_product_id} not found")
             continue
         
         # Get available lots
@@ -171,28 +169,37 @@ def perform_stocktake(counts: List[Dict], db: Session) -> Dict[str, any]:
         material_id = count.get('material_id')
         physical_count = Decimal(str(count.get('physical_count', 0)))
         
-        # Get system SOH
-        material = db.get(QBRawMaterial, material_id)
-        if not material:
+        # Get system SOH from inventory lots
+        product = db.get(Product, material_id)
+        if not product:
             continue
         
-        system_soh = material.soh or Decimal('0')
+        # Calculate system SOH from inventory lots
+        lots_stmt = select(InventoryLot).where(
+            and_(
+                InventoryLot.product_id == material_id,
+                InventoryLot.is_active == True
+            )
+        )
+        lots = db.execute(lots_stmt).scalars().all()
+        system_soh = sum(lot.quantity_kg for lot in lots) if lots else Decimal('0')
         
         # Calculate variance
         variance = physical_count - system_soh
         variance_pct = (variance / system_soh * 100) if system_soh > 0 else Decimal('0.00')
         
         # Calculate values
-        system_value = system_soh * (material.usage_cost or Decimal('0'))
-        physical_value = physical_count * (material.usage_cost or Decimal('0'))
+        usage_cost = product.usage_cost or Decimal('0')
+        system_value = system_soh * usage_cost
+        physical_value = physical_count * usage_cost
         
         total_system_value += system_value
         total_physical_value += physical_value
         
         variances.append({
             'material_id': material_id,
-            'material_code': material.code,
-            'material_desc': material.desc1,
+            'material_code': product.raw_material_code or product.sku,
+            'material_desc': product.name,
             'system_soh': float(system_soh),
             'physical_count': float(physical_count),
             'variance': float(variance),
@@ -201,18 +208,33 @@ def perform_stocktake(counts: List[Dict], db: Session) -> Dict[str, any]:
             'physical_value': float(physical_value)
         })
         
-        # Update SOH if flagged
+        # Update SOH if flagged - create/adjust inventory lot
         if count.get('update_soh', False):
-            # Update raw material SOH
-            material.soh = physical_count
+            # Adjust inventory lot or create new one
+            if lots:
+                # Update existing lot
+                lots[0].quantity_kg = physical_count
+            else:
+                # Create new lot for stocktake adjustment
+                from app.adapters.db.models import InventoryLot
+                lot = InventoryLot(
+                    id=str(uuid.uuid4()),
+                    product_id=material_id,
+                    lot_code=f"STOCKTAKE-{datetime.now().strftime('%Y%m%d')}",
+                    quantity_kg=physical_count,
+                    unit_cost=usage_cost,
+                    received_at=datetime.utcnow(),
+                    is_active=True
+                )
+                db.add(lot)
             
             # Create transaction record
             txn = InventoryTxn(
                 id=str(uuid.uuid4()),
-                lot_id=None,  # Stocktake is not lot-specific
+                lot_id=lots[0].id if lots else None,
                 transaction_type="STOCKTAKE",
                 quantity_kg=variance,
-                unit_cost=material.usage_cost or Decimal('0'),
+                unit_cost=usage_cost,
                 notes=f"Stocktake: {count.get('notes', '')}"
             )
             db.add(txn)

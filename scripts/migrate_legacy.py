@@ -17,7 +17,7 @@ from sqlalchemy import select, and_
 
 from app.adapters.db import get_db, create_tables
 from app.adapters.db.models import (
-    Product, ProductVariant, Customer, Supplier, PackUnit, PackConversion,
+    Product, ProductVariant, Customer, Supplier, Contact, PackUnit, PackConversion,
     PriceList, PriceListItem, CustomerPrice, WorkOrder, Batch, BatchComponent,
     Invoice, InvoiceLine, InventoryLot, Formula, FormulaLine
 )
@@ -42,6 +42,7 @@ class LegacyMigrator:
             'products': 0,
             'customers': 0,
             'suppliers': 0,
+            'contacts': 0,
             'pack_units': 0,
             'price_lists': 0,
             'work_orders': 0,
@@ -62,6 +63,7 @@ class LegacyMigrator:
         self.migrate_products()
         self.migrate_customers()
         self.migrate_suppliers()
+        self.migrate_contacts()
         self.migrate_pack_units()
         self.migrate_pricing()
         self.migrate_inventory_lots()
@@ -212,6 +214,86 @@ class LegacyMigrator:
                 
             except Exception as e:
                 self._handle_anomaly('suppliers', supplier_data, str(e))
+    
+    def migrate_contacts(self) -> None:
+        """Migrate supplier and customer data to contacts."""
+        print("Migrating contacts...")
+        
+        # Sample contact data
+        contacts_data = [
+            {
+                'code': 'CONT-001',
+                'name': 'Acme Chemicals',
+                'contact_person': 'John Smith',
+                'email': 'john@acme.com',
+                'phone': '555-0101',
+                'address': '123 Main St',
+                'is_customer': False,
+                'is_supplier': True,
+                'is_other': False,
+                'tax_rate': 10.0,
+                'is_active': True
+            },
+            {
+                'code': 'CONT-002',
+                'name': 'Paint Distributors Inc',
+                'contact_person': 'Jane Customer',
+                'email': 'jane@paintdist.com',
+                'phone': '555-0202',
+                'address': '456 Oak Ave',
+                'is_customer': True,
+                'is_supplier': False,
+                'is_other': False,
+                'tax_rate': 10.0,
+                'is_active': True
+            },
+            {
+                'code': 'CONT-003',
+                'name': 'Global Materials Ltd',
+                'contact_person': 'Bob Johnson',
+                'email': 'bob@global.com',
+                'phone': '555-0303',
+                'address': '789 Pine Rd',
+                'is_customer': False,
+                'is_supplier': True,
+                'is_other': False,
+                'tax_rate': 10.0,
+                'is_active': True
+            }
+        ]
+        
+        for contact_data in contacts_data:
+            try:
+                existing = self.db.execute(
+                    select(Contact).where(Contact.code == contact_data['code'])
+                ).scalar_one_or_none()
+                
+                if existing:
+                    for key, value in contact_data.items():
+                        if key != 'code':
+                            setattr(existing, key, value)
+                    contact = existing
+                    action = "updated"
+                else:
+                    contact = Contact(**contact_data)
+                    self.db.add(contact)
+                    action = "created"
+                
+                if not self.dry_run:
+                    self.db.flush()
+                
+                self.audit_records.append({
+                    'table': 'contacts',
+                    'action': action,
+                    'key': contact_data['code'],
+                    'id': str(contact.id) if hasattr(contact, 'id') else 'new',
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+                
+                self.stats['contacts'] += 1
+                
+            except Exception as e:
+                self._handle_anomaly('contacts', contact_data, str(e))
     
     def migrate_pack_units(self) -> None:
         """Migrate pack unit data."""

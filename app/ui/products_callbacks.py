@@ -9,6 +9,33 @@ import dash_bootstrap_components as dbc
 def register_product_callbacks(app, make_api_request):
     """Register all product CRUD callbacks."""
     
+    # Load units for dropdowns
+    @app.callback(
+        [Output("product-base-unit", "options"),
+         Output("product-purchase-unit", "options"),
+         Output("product-usage-unit", "options")],
+        [Input("product-form-modal", "is_open")]
+    )
+    def load_units_dropdowns(modal_is_open):
+        """Load units from API for dropdown options."""
+        if not modal_is_open:
+            raise PreventUpdate
+        
+        try:
+            response = make_api_request("GET", "/units/?is_active=true")
+            units = response if isinstance(response, list) else []
+            
+            # Create options list for base_unit and usage_unit (store code, not ID)
+            code_options = [{"label": f"{u.get('code', '')} - {u.get('name', '')}", "value": u.get("code", "")} for u in units]
+            
+            # Create options list for purchase_unit (store ID, not code)
+            id_options = [{"label": f"{u.get('code', '')} - {u.get('name', '')}", "value": str(u.get("id", ""))} for u in units]
+            
+            return code_options, id_options, code_options
+        except Exception as e:
+            print(f"Error loading units: {e}")
+            return [], [], []
+    
     # Toggle edit/delete buttons based on selection
     @app.callback(
         [Output("edit-product-btn", "disabled"),
@@ -28,13 +55,19 @@ def register_product_callbacks(app, make_api_request):
          Output("product-description", "value", allow_duplicate=True),
          Output("product-ean13", "value", allow_duplicate=True),
          Output("product-supplier-id", "value", allow_duplicate=True),
+         Output("product-raw-material-group-id", "value", allow_duplicate=True),
          Output("product-base-unit", "value", allow_duplicate=True),
          Output("product-is-active", "value", allow_duplicate=True),
+         Output("product-type", "value", allow_duplicate=True),
          Output("product-size", "value", allow_duplicate=True),
+         Output("product-weight", "value", allow_duplicate=True),
          Output("product-pack", "value", allow_duplicate=True),
          Output("product-pkge", "value", allow_duplicate=True),
          Output("product-density", "value", allow_duplicate=True),
          Output("product-abv", "value", allow_duplicate=True),
+         Output("product-vol-solid", "value", allow_duplicate=True),
+         Output("product-solid-sg", "value", allow_duplicate=True),
+         Output("product-wt-solid", "value", allow_duplicate=True),
          Output("product-form", "value", allow_duplicate=True),
          Output("product-dgflag", "value", allow_duplicate=True),
          Output("product-label", "value", allow_duplicate=True),
@@ -44,6 +77,7 @@ def register_product_callbacks(app, make_api_request):
          Output("product-purcost", "value", allow_duplicate=True),
          Output("product-purtax", "value", allow_duplicate=True),
          Output("product-wholesalecost", "value", allow_duplicate=True),
+         Output("product-excise-amount", "value", allow_duplicate=True),
          Output("product-wholesalecde", "value", allow_duplicate=True),
          Output("product-retailcde", "value", allow_duplicate=True),
          Output("product-countercde", "value", allow_duplicate=True),
@@ -53,6 +87,13 @@ def register_product_callbacks(app, make_api_request):
          Output("product-distributorcde", "value", allow_duplicate=True),
          Output("product-disccdeone", "value", allow_duplicate=True),
          Output("product-disccdetwo", "value", allow_duplicate=True),
+         Output("product-purchase-unit", "value", allow_duplicate=True),
+         Output("product-purchase-volume", "value", allow_duplicate=True),
+         Output("product-usage-unit", "value", allow_duplicate=True),
+         Output("product-usage-cost", "value", allow_duplicate=True),
+         Output("product-restock-level", "value", allow_duplicate=True),
+         Output("product-formula-id", "value", allow_duplicate=True),
+         Output("product-formula-revision", "value", allow_duplicate=True),
          Output("product-form-hidden", "children", allow_duplicate=True)],
         [Input("add-product-btn", "n_clicks"),
          Input("edit-product-btn", "n_clicks")],
@@ -70,8 +111,8 @@ def register_product_callbacks(app, make_api_request):
         
         if button_id == "add-product-btn":
             # Add mode - clear form
-            empty_values = [None] * 31  # 31 outputs (first 2 are modal state)
-            return [True, "Add Product"] + empty_values
+            empty_values = [None] * 43  # 43 outputs (first 2 are modal state)
+            return tuple([True, "Add Product"] + empty_values)
         
         elif button_id == "edit-product-btn":
             if not selected_rows or not data:
@@ -79,40 +120,91 @@ def register_product_callbacks(app, make_api_request):
             
             product = data[selected_rows[0]]
             
+            # Helper function to safely convert to float
+            def safe_float(value, default=None):
+                if value is None or value == "":
+                    return default
+                try:
+                    return float(value)
+                except (ValueError, TypeError):
+                    return default
+            
+            # Helper function to safely convert to int
+            def safe_int(value, default=None):
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+            
+            # Handle is_active - ensure it's "true" or "false" string
+            is_active = product.get("is_active")
+            if is_active is None:
+                is_active_str = "true"
+            elif isinstance(is_active, bool):
+                is_active_str = "true" if is_active else "false"
+            elif isinstance(is_active, str):
+                is_active_str = "true" if is_active.lower() in ("true", "1", "yes", "y") else "false"
+            else:
+                is_active_str = "true" if bool(is_active) else "false"
+            
+            # Handle purchase_unit_id - ensure it's a string or None (for dropdown)
+            purchase_unit_id = product.get("purchase_unit_id")
+            if purchase_unit_id is None or purchase_unit_id == "":
+                purchase_unit_id = None
+            else:
+                purchase_unit_id = str(purchase_unit_id)
+            
             return (
                 True,  # is_open
                 "Edit Product",  # title
-                product.get("sku", ""),
-                product.get("name", ""),
-                product.get("description", ""),
-                product.get("ean13", ""),
-                product.get("supplier_id", ""),
-                product.get("base_unit", ""),
-                str(product.get("is_active", True)).lower(),
-                product.get("size", ""),
-                product.get("pack", ""),
-                product.get("pkge", ""),
-                float(product.get("density_kg_per_l", 0)) if product.get("density_kg_per_l") else None,
-                float(product.get("abv_percent", 0)) if product.get("abv_percent") else None,
-                product.get("form", ""),
-                product.get("dgflag", ""),
-                product.get("label", ""),
-                product.get("manu", ""),
-                product.get("taxinc", ""),
-                product.get("salestaxcde", ""),
-                float(product.get("purcost", 0)) if product.get("purcost") else None,
-                float(product.get("purtax", 0)) if product.get("purtax") else None,
-                float(product.get("wholesalecost", 0)) if product.get("wholesalecost") else None,
-                product.get("wholesalecde", ""),
-                product.get("retailcde", ""),
-                product.get("countercde", ""),
-                product.get("tradecde", ""),
-                product.get("contractcde", ""),
-                product.get("industrialcde", ""),
-                product.get("distributorcde", ""),
-                product.get("disccdeone", ""),
-                product.get("disccdetwo", ""),
-                product.get("id")  # Hidden field - product ID
+                product.get("sku") or "",
+                product.get("name") or "",
+                product.get("description") or "",
+                product.get("ean13") or "",
+                str(product.get("supplier_id", "")) if product.get("supplier_id") else "",
+                str(product.get("raw_material_group_id", "")) if product.get("raw_material_group_id") else "",
+                product.get("base_unit") or "",
+                is_active_str,  # Fixed: ensure "true" or "false"
+                product.get("product_type") or "RAW",
+                product.get("size") or "",
+                safe_float(product.get("weight")),
+                safe_int(product.get("pack")),
+                safe_int(product.get("pkge")),
+                safe_float(product.get("density_kg_per_l")),
+                safe_float(product.get("abv_percent")),
+                safe_float(product.get("vol_solid")),
+                safe_float(product.get("solid_sg")),
+                safe_float(product.get("wt_solid")),
+                product.get("form") or "",
+                product.get("dgflag") or "",
+                safe_int(product.get("label")),
+                safe_int(product.get("manu")),
+                product.get("taxinc") or "",
+                product.get("salestaxcde") or "",
+                safe_float(product.get("purcost")),
+                safe_float(product.get("purtax")),
+                safe_float(product.get("wholesalecost")),
+                safe_float(product.get("excise_amount")),
+                # Pricing fields - try to convert to float if numeric, otherwise None
+                safe_float(product.get("wholesalecde")),
+                safe_float(product.get("retailcde")),
+                safe_float(product.get("countercde")),
+                safe_float(product.get("tradecde")),
+                safe_float(product.get("contractcde")),
+                safe_float(product.get("industrialcde")),
+                safe_float(product.get("distributorcde")),
+                safe_float(product.get("disccdeone")),
+                safe_float(product.get("disccdetwo")),
+                purchase_unit_id,  # Fixed: ensure proper type
+                safe_float(product.get("purchase_volume")),
+                product.get("usage_unit") or "",
+                safe_float(product.get("usage_cost")),
+                safe_float(product.get("restock_level")),
+                str(product.get("formula_id", "")) if product.get("formula_id") else "",
+                safe_int(product.get("formula_revision")),
+                str(product.get("id", "")) if product.get("id") else ""  # Hidden field - product ID, ensure string
             )
         
         raise PreventUpdate
@@ -143,13 +235,19 @@ def register_product_callbacks(app, make_api_request):
          State("product-description", "value"),
          State("product-ean13", "value"),
          State("product-supplier-id", "value"),
+         State("product-raw-material-group-id", "value"),
          State("product-base-unit", "value"),
          State("product-is-active", "value"),
+         State("product-type", "value"),
          State("product-size", "value"),
+         State("product-weight", "value"),
          State("product-pack", "value"),
          State("product-pkge", "value"),
          State("product-density", "value"),
          State("product-abv", "value"),
+         State("product-vol-solid", "value"),
+         State("product-solid-sg", "value"),
+         State("product-wt-solid", "value"),
          State("product-form", "value"),
          State("product-dgflag", "value"),
          State("product-label", "value"),
@@ -159,6 +257,7 @@ def register_product_callbacks(app, make_api_request):
          State("product-purcost", "value"),
          State("product-purtax", "value"),
          State("product-wholesalecost", "value"),
+         State("product-excise-amount", "value"),
          State("product-wholesalecde", "value"),
          State("product-retailcde", "value"),
          State("product-countercde", "value"),
@@ -168,6 +267,13 @@ def register_product_callbacks(app, make_api_request):
          State("product-distributorcde", "value"),
          State("product-disccdeone", "value"),
          State("product-disccdetwo", "value"),
+         State("product-purchase-unit", "value"),
+         State("product-purchase-volume", "value"),
+         State("product-usage-unit", "value"),
+         State("product-usage-cost", "value"),
+         State("product-restock-level", "value"),
+         State("product-formula-id", "value"),
+         State("product-formula-revision", "value"),
          State("product-form-hidden", "children")],
         prevent_initial_call=True
     )
@@ -177,11 +283,12 @@ def register_product_callbacks(app, make_api_request):
             raise PreventUpdate
         
         # Extract all form values
-        (sku, name, description, ean13, supplier_id, base_unit, is_active,
-         size, pack, pkge, density, abv, form, dgflag, label, manu,
-         taxinc, salestaxcde, purcost, purtax, wholesalecost,
+        (sku, name, description, ean13, supplier_id, raw_material_group_id, base_unit, is_active, product_type,
+         size, weight, pack, pkge, density, abv, vol_solid, solid_sg, wt_solid, form, dgflag, label, manu,
+         taxinc, salestaxcde, purcost, purtax, wholesalecost, excise_amount,
          wholesalecde, retailcde, countercde, tradecde, contractcde, industrialcde, distributorcde,
-         disccdeone, disccdetwo, product_id) = args
+         disccdeone, disccdetwo, purchase_unit_id, purchase_volume,
+         usage_unit, usage_cost, restock_level, formula_id, formula_revision, product_id) = args
         
         # Validate required fields
         if not sku or not name:
@@ -192,15 +299,21 @@ def register_product_callbacks(app, make_api_request):
             "sku": sku,
             "name": name,
             "description": description if description else None,
+            "product_type": product_type if product_type else "RAW",
             "ean13": ean13 if ean13 else None,
             "supplier_id": supplier_id if supplier_id else None,
+            "raw_material_group_id": raw_material_group_id if raw_material_group_id else None,
             "base_unit": base_unit if base_unit else None,
             "is_active": is_active == "true" if isinstance(is_active, str) else is_active,
             "size": size if size else None,
+            "weight": float(weight) if weight else None,
             "pack": int(pack) if pack else None,
             "pkge": int(pkge) if pkge else None,
             "density_kg_per_l": float(density) if density else None,
             "abv_percent": float(abv) if abv else None,
+            "vol_solid": float(vol_solid) if vol_solid else None,
+            "solid_sg": float(solid_sg) if solid_sg else None,
+            "wt_solid": float(wt_solid) if wt_solid else None,
             "form": form if form else None,
             "dgflag": dgflag if dgflag else None,
             "label": int(label) if label else None,
@@ -210,15 +323,27 @@ def register_product_callbacks(app, make_api_request):
             "purcost": float(purcost) if purcost else None,
             "purtax": float(purtax) if purtax else None,
             "wholesalecost": float(wholesalecost) if wholesalecost else None,
-            "wholesalecde": wholesalecde if wholesalecde else None,
-            "retailcde": retailcde if retailcde else None,
-            "countercde": countercde if countercde else None,
-            "tradecde": tradecde if tradecde else None,
-            "contractcde": contractcde if contractcde else None,
-            "industrialcde": industrialcde if industrialcde else None,
-            "distributorcde": distributorcde if distributorcde else None,
-            "disccdeone": disccdeone if disccdeone else None,
-            "disccdetwo": disccdetwo if disccdetwo else None,
+            "excise_amount": float(excise_amount) if excise_amount else None,
+            # Pricing fields - store as string codes (legacy format) but UI displays as currency
+            # Note: Database may store codes as strings, but UI treats them as currency amounts
+            "wholesalecde": str(wholesalecde) if wholesalecde else None,
+            "retailcde": str(retailcde) if retailcde else None,
+            "countercde": str(countercde) if countercde else None,
+            "tradecde": str(tradecde) if tradecde else None,
+            "contractcde": str(contractcde) if contractcde else None,
+            "industrialcde": str(industrialcde) if industrialcde else None,
+            "distributorcde": str(distributorcde) if distributorcde else None,
+            "disccdeone": str(disccdeone) if disccdeone else None,
+            "disccdetwo": str(disccdetwo) if disccdetwo else None,
+            # Raw Material specific fields
+            "purchase_unit_id": purchase_unit_id if purchase_unit_id else None,
+            "purchase_volume": float(purchase_volume) if purchase_volume else None,
+            "usage_unit": usage_unit if usage_unit else None,
+            "usage_cost": float(usage_cost) if usage_cost else None,
+            "restock_level": float(restock_level) if restock_level else None,
+            # Finished Good specific fields
+            "formula_id": formula_id if formula_id else None,
+            "formula_revision": int(formula_revision) if formula_revision else None,
         }
         
         try:
@@ -308,38 +433,5 @@ def register_product_callbacks(app, make_api_request):
         except Exception as e:
             return no_update, True, "Error", f"Failed to delete product: {str(e)}"
     
-    # Refresh table callback
-    @app.callback(
-        Output("products-table", "data", allow_duplicate=True),
-        [Input("products-refresh", "n_clicks")],
-        prevent_initial_call=True
-    )
-    def refresh_table(n_clicks):
-        if not n_clicks:
-            raise PreventUpdate
-        
-        response = make_api_request("GET", "/products/")
-        
-        if "error" in response:
-            return []
-        
-        products = response if isinstance(response, list) else response.get("products", [])
-        
-        # Flatten nested fields for DataTable display
-        for product in products:
-            if "variants" in product and isinstance(product["variants"], list):
-                variant_names = [v.get("variant_name", v.get("variant_code", "")) for v in product["variants"] if isinstance(v, dict)]
-                product["variants"] = ", ".join(variant_names) if variant_names else "None"
-            if "created_at" in product:
-                product["created_at"] = str(product["created_at"]) if product["created_at"] else ""
-            if "updated_at" in product:
-                product["updated_at"] = str(product["updated_at"]) if product["updated_at"] else ""
-        
-        # Filter out non-scalar columns
-        import pandas as pd
-        df = pd.DataFrame(products)
-        scalar_cols = [col for col in df.columns if not df[col].apply(lambda x: isinstance(x, (list, dict))).any()]
-        df = df[scalar_cols] if scalar_cols else df
-        
-        return df.to_dict("records")
+    # Note: Table refresh is now handled by the main callback in app.py that responds to filter changes
 

@@ -13,7 +13,6 @@ from app.adapters.db.models import (
     Batch, BatchComponent, WorkOrder, Formula, FormulaLine, Product,
     InventoryLot, InventoryTxn, QcResult
 )
-from app.adapters.db.qb_models import RawMaterial
 from app.domain.rules import fifo_issue, FifoIssue, round_quantity, validate_non_negative_lot
 
 
@@ -120,8 +119,8 @@ class BatchingService:
         
         # Create batch components from formula
         for formula_line in formula_lines:
-            raw_material = formula_line.raw_material
-            if not raw_material:
+            product = formula_line.product
+            if not product:
                 continue
             
             # Scale required quantity
@@ -131,20 +130,20 @@ class BatchingService:
             # For now, just mark the component quantity - lot allocation happens on issue
             lots = self.db.execute(
                 select(InventoryLot).where(
-                    InventoryLot.product_id == raw_material.id,
+                    InventoryLot.product_id == product.id,
                     InventoryLot.is_active == True,
                     InventoryLot.quantity_kg > 0
                 ).order_by(InventoryLot.received_at.asc())
             ).scalars().first()  # Get oldest lot for now
             
             if not lots:
-                raise ValueError(f"No inventory available for ingredient {raw_material.code}")
+                raise ValueError(f"No inventory available for ingredient {product.sku or product.name}")
             
             # Check sufficient quantity exists
             total_available = sum(
                 lot.quantity_kg for lot in self.db.execute(
                     select(InventoryLot).where(
-                        InventoryLot.product_id == raw_material.id,
+                        InventoryLot.product_id == product.id,
                         InventoryLot.is_active == True
                     )
                 ).scalars().all()
@@ -152,7 +151,7 @@ class BatchingService:
             
             if total_available < required_qty:
                 raise ValueError(
-                    f"Insufficient stock: ingredient {raw_material.code} "
+                    f"Insufficient stock: ingredient {product.sku or product.name} "
                     f"requires {required_qty} kg, available {total_available} kg"
                 )
             
@@ -161,7 +160,7 @@ class BatchingService:
             component = BatchComponent(
                 id=str(uuid4()),
                 batch_id=batch.id,
-                ingredient_product_id=raw_material.id,
+                ingredient_product_id=product.id,
                 lot_id=lots.id,  # Use oldest lot by default
                 quantity_kg=required_qty,
                 unit_cost=lots.unit_cost
@@ -244,16 +243,20 @@ class BatchingService:
         batch_id: str, 
         qty_fg_kg: Optional[Decimal] = None,
         lot_code: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        create_wip: bool = False,
+        wip_product_id: Optional[str] = None
     ) -> Batch:
         """
-        Finish a batch: create FG lot and receipt transaction.
+        Finish a batch: create FG or WIP lot and receipt transaction.
         
         Args:
             batch_id: Batch ID
             qty_fg_kg: Finished goods quantity (defaults to batch target)
             lot_code: Lot code for finished goods
             notes: Optional notes
+            create_wip: If True, create/use WIP product instead of FINISHED
+            wip_product_id: Optional WIP product ID to use (creates new if not provided)
             
         Returns:
             Updated Batch
@@ -283,14 +286,49 @@ class BatchingService:
         else:
             qty_fg_kg = round_quantity(qty_fg_kg)
         
-        # Generate lot code if not provided
-        if not lot_code:
-            lot_code = f"FG-{batch.batch_code}"
+        # Determine target product (WIP or FINISHED)
+        if create_wip:
+            if wip_product_id:
+                # Use existing WIP product
+                wip_product = self.db.get(Product, wip_product_id)
+                if not wip_product:
+                    raise ValueError(f"WIP product {wip_product_id} not found")
+                if wip_product.product_type != "WIP":
+                    raise ValueError(f"Product {wip_product_id} is not a WIP product")
+                target_product = wip_product
+            else:
+                # Create new WIP product from work order product
+                target_product = Product(
+                    id=str(uuid4()),
+                    sku=f"WIP-{product.sku}-{batch.batch_code}",
+                    name=f"WIP {product.name}",
+                    description=f"Work in progress for {product.name}",
+                    product_type="WIP",
+                    base_unit=product.base_unit or "KG",
+                    formula_id=work_order.formula_id,
+                    is_active=True
+                )
+                self.db.add(target_product)
+                self.db.flush()
+            
+            # Generate lot code if not provided
+            if not lot_code:
+                lot_code = f"WIP-{batch.batch_code}"
+        else:
+            # Use FINISHED product
+            target_product = product
+            if target_product.product_type not in ["FINISHED", "WIP"]:
+                # Update product type to FINISHED if not already
+                target_product.product_type = "FINISHED"
+            
+            # Generate lot code if not provided
+            if not lot_code:
+                lot_code = f"FG-{batch.batch_code}"
         
-        # Create finished goods lot
+        # Create lot
         fg_lot = InventoryLot(
             id=str(uuid4()),
-            product_id=product.id,
+            product_id=target_product.id,
             lot_code=lot_code,
             quantity_kg=qty_fg_kg,
             unit_cost=self._calculate_batch_cost(batch),
@@ -309,7 +347,7 @@ class BatchingService:
             unit_cost=fg_lot.unit_cost,
             reference_type="BATCH",
             reference_id=batch.id,
-            notes=f"Finished goods from batch {batch.batch_code}",
+            notes=f"{'WIP' if create_wip else 'Finished goods'} from batch {batch.batch_code}",
             created_at=datetime.utcnow()
         )
         self.db.add(receipt_txn)
@@ -318,6 +356,7 @@ class BatchingService:
         batch.status = "COMPLETED"
         batch.batch_status = "closed"
         batch.completed_at = datetime.utcnow()
+        batch.yield_actual = qty_fg_kg
         
         if notes:
             batch.notes = (batch.notes or "") + f"\nFinish: {notes}"

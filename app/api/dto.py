@@ -41,8 +41,10 @@ class ProductCreate(BaseModel):
     sku: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
+    product_type: str = Field("RAW", pattern="^(RAW|WIP|FINISHED)$")  # Product type enum
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
+    raw_material_group_id: Optional[str] = None
     size: Optional[str] = Field(None, max_length=10)
     base_unit: Optional[str] = Field(None, max_length=10)
     pack: Optional[int] = None
@@ -67,6 +69,23 @@ class ProductCreate(BaseModel):
     contractcde: Optional[str] = Field(None, max_length=1)
     industrialcde: Optional[str] = Field(None, max_length=1)
     distributorcde: Optional[str] = Field(None, max_length=1)
+    # Raw Material specific fields
+    purchase_unit_id: Optional[str] = None  # Purchase unit from units table
+    purchase_volume: Optional[Decimal] = Field(None, ge=0)
+    specific_gravity: Optional[Decimal] = Field(None, ge=0)
+    vol_solid: Optional[Decimal] = Field(None, ge=0)
+    solid_sg: Optional[Decimal] = Field(None, ge=0)
+    wt_solid: Optional[Decimal] = Field(None, ge=0)
+    usage_unit: Optional[str] = Field(None, max_length=2)
+    usage_cost: Optional[Decimal] = Field(None, ge=0)
+    restock_level: Optional[Decimal] = Field(None, ge=0)
+    used_ytd: Optional[Decimal] = Field(None, ge=0)
+    hazard: Optional[str] = Field(None, max_length=1)
+    condition: Optional[str] = Field(None, max_length=1)
+    msds_flag: Optional[str] = Field(None, max_length=1)
+    # Finished Good specific fields
+    formula_id: Optional[str] = None
+    formula_revision: Optional[int] = None
     is_active: bool = True
 
 
@@ -74,8 +93,10 @@ class ProductUpdate(BaseModel):
     """Update product request."""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
+    product_type: Optional[str] = Field(None, pattern="^(RAW|WIP|FINISHED)$")
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
+    raw_material_group_id: Optional[str] = None
     size: Optional[str] = Field(None, max_length=10)
     base_unit: Optional[str] = Field(None, max_length=10)
     pack: Optional[int] = None
@@ -100,6 +121,23 @@ class ProductUpdate(BaseModel):
     contractcde: Optional[str] = Field(None, max_length=1)
     industrialcde: Optional[str] = Field(None, max_length=1)
     distributorcde: Optional[str] = Field(None, max_length=1)
+    # Raw Material specific fields
+    purchase_unit_id: Optional[str] = None  # Purchase unit from units table
+    purchase_volume: Optional[Decimal] = Field(None, ge=0)
+    specific_gravity: Optional[Decimal] = Field(None, ge=0)
+    vol_solid: Optional[Decimal] = Field(None, ge=0)
+    solid_sg: Optional[Decimal] = Field(None, ge=0)
+    wt_solid: Optional[Decimal] = Field(None, ge=0)
+    usage_unit: Optional[str] = Field(None, max_length=2)
+    usage_cost: Optional[Decimal] = Field(None, ge=0)
+    restock_level: Optional[Decimal] = Field(None, ge=0)
+    used_ytd: Optional[Decimal] = Field(None, ge=0)
+    hazard: Optional[str] = Field(None, max_length=1)
+    condition: Optional[str] = Field(None, max_length=1)
+    msds_flag: Optional[str] = Field(None, max_length=1)
+    # Finished Good specific fields
+    formula_id: Optional[str] = None
+    formula_revision: Optional[int] = None
     is_active: Optional[bool] = None
 
 
@@ -109,8 +147,10 @@ class ProductResponse(BaseModel):
     sku: str
     name: str
     description: Optional[str]
+    product_type: str  # RAW, WIP, or FINISHED
     ean13: Optional[str]
     supplier_id: Optional[str]
+    raw_material_group_id: Optional[str]
     size: Optional[str]
     base_unit: Optional[str]
     pack: Optional[int]
@@ -135,6 +175,23 @@ class ProductResponse(BaseModel):
     contractcde: Optional[str]
     industrialcde: Optional[str]
     distributorcde: Optional[str]
+    # Raw Material specific fields
+    purchase_unit_id: Optional[str] = None
+    purchase_volume: Optional[Decimal] = None
+    specific_gravity: Optional[Decimal] = None
+    vol_solid: Optional[Decimal] = None
+    solid_sg: Optional[Decimal] = None
+    wt_solid: Optional[Decimal] = None
+    usage_unit: Optional[str] = None
+    usage_cost: Optional[Decimal] = None
+    restock_level: Optional[Decimal] = None
+    used_ytd: Optional[Decimal] = None
+    hazard: Optional[str] = None
+    condition: Optional[str] = None
+    msds_flag: Optional[str] = None
+    # Finished Good specific fields
+    formula_id: Optional[str] = None
+    formula_revision: Optional[int] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -266,6 +323,9 @@ class BatchResponse(BaseModel):
 class BatchFinishRequest(BaseModel):
     """Finish batch request."""
     notes: Optional[str] = None
+    create_wip: bool = False
+    wip_product_id: Optional[str] = None
+    qty_fg_kg: Optional[Decimal] = Field(None, gt=0)
 
 
 # Print DTOs

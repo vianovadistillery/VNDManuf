@@ -29,39 +29,45 @@
 
 ## Phase 4: API Endpoints (In Progress)
 
-### Raw Materials API ✅
+### Unified Products API ✅
+**Note:** Raw materials, WIP, and finished goods are now unified in the products API.
+
 **Endpoints:**
-- `GET /api/v1/raw-materials/` - List with filters (status, group, search)
-- `GET /api/v1/raw-materials/groups` - List groups
-- `GET /api/v1/raw-materials/{id}` - Get by ID
-- `GET /api/v1/raw-materials/code/{code}` - Get by code
-- `POST /api/v1/raw-materials/` - Create
-- `PUT /api/v1/raw-materials/{id}` - Update
-- `DELETE /api/v1/raw-materials/{id}` - Delete
+- `GET /api/v1/products?product_type=RAW|WIP|FINISHED` - List products with optional type filtering
+- `GET /api/v1/products/{id}` - Get product by ID
+- `GET /api/v1/products/sku/{sku}` - Get product by SKU
+- `POST /api/v1/products` - Create product (supports product_type: RAW, WIP, FINISHED)
+- `PUT /api/v1/products/{id}` - Update product
+- `DELETE /api/v1/products/{id}` - Soft delete (sets is_active=False)
+
+**Product Types:**
+- **RAW**: Raw materials with specific fields (raw_material_code, specific_gravity, usage_cost, etc.)
+- **WIP**: Work-in-progress products created during batch production
+- **FINISHED**: Finished goods with formula references
 
 **Features:**
-- Full CRUD operations
-- Filtering by status (A/S/R/M), group, search term
-- Validation of group references
-- Conflict detection for duplicate codes
-- Pagination (skip, limit)
+- Full CRUD operations for all product types
+- Filtering by product_type (RAW, WIP, FINISHED)
+- Type-specific fields included in responses
+- Unified inventory tracking across all types
 
-**Response:**
-- 41 fields from QB `RcdFmtmsrmat` structure
-- Costs, SG, SOH tracking, hazards, dates
-- Optional fields handled with `None`
-
-**Testing:**
+**Example Requests:**
 ```powershell
-# List materials
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/raw-materials/?limit=5" -Method GET
+# List all raw materials
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?product_type=RAW&limit=10" -Method GET
 
-# Get groups
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/raw-materials/groups" -Method GET
+# List all WIP products
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?product_type=WIP" -Method GET
 
-# Search
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/raw-materials/?search=WATER" -Method GET
+# List all finished goods
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?product_type=FINISHED" -Method GET
+
+# Search across all types
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?query=WATER" -Method GET
 ```
+
+**Legacy Raw Materials API:**
+The legacy `/api/v1/raw-materials/` endpoints may still exist for backward compatibility but should be migrated to use the unified products API.
 
 ## Next Steps
 

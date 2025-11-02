@@ -83,7 +83,9 @@ def register_formulas_callbacks(app, make_api_request):
          Output("formula-lines-table", "data"),
          Output("formula-lines-table", "columns"),
          Output("formula-total-lines", "children"),
-         Output("formula-total-qty", "children")],
+         Output("formula-total-kg", "children"),
+         Output("formula-total-lt", "children"),
+         Output("formula-total-sg", "children")],
         [Input("formula-master-table", "selected_rows")],
         [State("formula-master-table", "data")]
     )
@@ -93,7 +95,7 @@ def register_formulas_callbacks(app, make_api_request):
             return (
                 "Select a formula...",
                 "-", "-", "-", "-",
-                [], [], "0", "0.000 kg"
+                [], [], "0", "0.000 kg", "0.000 Lt", "-"
             )
         
         formula = data[selected_rows[0]]
@@ -103,7 +105,7 @@ def register_formulas_callbacks(app, make_api_request):
             return (
                 "Select a formula...",
                 "-", "-", "-", "-",
-                [], [], "0", "0.000 kg"
+                [], [], "0", "0.000 kg", "0.000 Lt", "-"
             )
         
         # Fetch formula details from API
@@ -116,7 +118,7 @@ def register_formulas_callbacks(app, make_api_request):
                 str(formula.get("version", "-")),
                 formula.get("product_name", "-"),
                 formula.get("is_active", "-"),
-                [], [], "0", "0.000 kg"
+                [], [], "0", "0.000 kg", "0.000 Lt", "-"
             )
         
         formula_data = response
@@ -124,26 +126,46 @@ def register_formulas_callbacks(app, make_api_request):
         # Get formula lines
         lines_data = formula_data.get("lines", [])
         formatted_lines = []
-        total_qty = 0.0
+        total_kg = 0.0
+        total_lt = 0.0
         
         for line in lines_data:
-            qty = float(line.get("quantity_kg", 0))
-            total_qty += qty
-            unit = line.get("unit", "kg")
+            qty_kg = float(line.get("quantity_kg", 0))
+            density = line.get("ingredient_density_kg_per_l")
+            
+            # quantity_kg is always stored in kg (canonical)
+            kg_display = qty_kg
+            lt_display = 0.0
+            
+            # Calculate Lt from kg using density
+            if density and density > 0:
+                lt_display = qty_kg / float(density)
+            
+            total_kg += kg_display
+            if lt_display > 0:
+                total_lt += lt_display
+            
             formatted_lines.append({
                 "sequence": line.get("sequence", ""),
                 "ingredient_name": line.get("ingredient_name", ""),
-                "quantity": f"{qty:.3f}",
-                "unit": unit,
+                "quantity_kg": f"{kg_display:.3f}",
+                "quantity_lt": f"{lt_display:.3f}" if lt_display > 0 else "-",
+                "density": f"{density:.6f}" if density else "-",
                 "notes": line.get("notes", "")
             })
+        
+        # Calculate formula SG: total_mass / total_volume
+        formula_sg = 0.0
+        if total_lt > 0:
+            formula_sg = total_kg / total_lt
         
         # Create columns for lines table
         lines_columns = [
             {"name": "Seq", "id": "sequence"},
             {"name": "Ingredient", "id": "ingredient_name"},
-            {"name": "Quantity", "id": "quantity", "type": "numeric", "format": {"specifier": ".3f"}},
-            {"name": "Unit", "id": "unit"},
+            {"name": "Qty (kg)", "id": "quantity_kg", "type": "numeric", "format": {"specifier": ".3f"}},
+            {"name": "Qty (Lt)", "id": "quantity_lt", "type": "numeric", "format": {"specifier": ".3f"}},
+            {"name": "SG", "id": "density", "type": "numeric", "format": {"specifier": ".6f"}},
             {"name": "Notes", "id": "notes"},
         ]
         
@@ -156,7 +178,9 @@ def register_formulas_callbacks(app, make_api_request):
             formatted_lines,
             lines_columns,
             str(len(formatted_lines)),
-            f"{total_qty:.3f} kg"
+            f"{total_kg:.3f} kg",
+            f"{total_lt:.3f} Lt" if total_lt > 0 else "-",
+            f"{formula_sg:.6f}" if formula_sg > 0 else "-"
         )
     
     # Open formula editor modal

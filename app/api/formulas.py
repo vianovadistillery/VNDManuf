@@ -9,7 +9,6 @@ from sqlalchemy import select
 
 from app.adapters.db import get_db
 from app.adapters.db.models import Formula, FormulaLine, Product
-from app.adapters.db.qb_models import RawMaterial
 from app.api.dto import ErrorResponse
 from app.error_handlers import BusinessRuleViolation
 
@@ -37,6 +36,7 @@ class FormulaLineResponse(BaseModel):
     unit: Optional[str] = None  # Display unit (kg, g, L, mL, etc.)
     
     ingredient_name: Optional[str] = None
+    ingredient_density_kg_per_l: Optional[float] = None  # Product density for conversions
 
 
 class FormulaCreate(BaseModel):
@@ -66,8 +66,8 @@ class FormulaResponse(BaseModel):
 
 def formula_to_response(f: Formula, db: Session) -> FormulaResponse:
     """Convert Formula model to response DTO."""
-    # Load lines with raw material relationship
-    stmt = select(FormulaLine).options(joinedload(FormulaLine.raw_material)).where(FormulaLine.formula_id == f.id).order_by(FormulaLine.sequence)
+    # Load lines with product relationship
+    stmt = select(FormulaLine).options(joinedload(FormulaLine.product)).where(FormulaLine.formula_id == f.id).order_by(FormulaLine.sequence)
     lines = db.execute(stmt).scalars().unique().all()
     
     product = db.get(Product, f.product_id)
@@ -91,7 +91,8 @@ def formula_to_response(f: Formula, db: Session) -> FormulaResponse:
                 sequence=line.sequence,
                 notes=line.notes,
                 unit=line.unit,
-                ingredient_name=f"{line.raw_material.desc1} {line.raw_material.desc2}".strip() if line.raw_material else None
+                ingredient_name=line.product.name if line.product else None,
+                ingredient_density_kg_per_l=float(line.product.density_kg_per_l) if line.product and line.product.density_kg_per_l else None
             )
             for line in lines
         ]
@@ -218,12 +219,12 @@ async def create_formula(
     
     # Create lines
     for line_data in formula_data.lines:
-        # Validate raw material exists
-        raw_material = db.get(RawMaterial, line_data.raw_material_id)
-        if not raw_material:
+        # Validate product exists
+        product = db.get(Product, line_data.raw_material_id)
+        if not product:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Raw material {line_data.raw_material_id} not found"
+                detail=f"Product {line_data.raw_material_id} not found"
             )
         
         line = FormulaLine(
@@ -354,12 +355,12 @@ async def replace_formula_lines(
     # Add new lines
     import uuid
     for line_data in lines_data:
-        # Validate raw material exists
-        raw_material = db.get(RawMaterial, line_data.raw_material_id)
-        if not raw_material:
+        # Validate product exists
+        product = db.get(Product, line_data.raw_material_id)
+        if not product:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Raw material {line_data.raw_material_id} not found"
+                detail=f"Product {line_data.raw_material_id} not found"
             )
         
         line = FormulaLine(

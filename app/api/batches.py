@@ -18,6 +18,7 @@ from app.api.dto import (
 )
 from app.domain.rules import fifo_issue, validate_non_negative_lot
 from app.reports.batch_ticket import generate_batch_ticket_text
+from app.services.batching import BatchingService
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
@@ -186,7 +187,8 @@ async def finish_batch(
     finish_data: BatchFinishRequest,
     db: Session = Depends(get_db)
 ):
-    """Finish a batch (change status to COMPLETED)."""
+    """Finish a batch (create FG or WIP lot and mark as COMPLETED)."""
+    # Validate batch exists
     batch = db.get(Batch, batch_id)
     if not batch:
         raise HTTPException(
@@ -194,52 +196,30 @@ async def finish_batch(
             detail="Batch not found"
         )
     
-    if batch.status not in ["IN_PROGRESS"]:
+    # Use BatchingService to finish the batch
+    try:
+        service = BatchingService(db)
+        finished_batch = service.finish_batch(
+            batch_id=batch_id,
+            qty_fg_kg=finish_data.qty_fg_kg,
+            notes=finish_data.notes,
+            create_wip=finish_data.create_wip,
+            wip_product_id=finish_data.wip_product_id
+        )
+        db.commit()
+        db.refresh(finished_batch)
+        return batch_to_response(finished_batch)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Cannot finish batch with status '{batch.status}'"
+            detail=str(e)
         )
-    
-    # Check if batch has components
-    if not batch.components:
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Cannot finish batch without components"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to finish batch: {str(e)}"
         )
-    
-    # Process FIFO issues for all components
-    for component in batch.components:
-        lot = db.get(InventoryLot, component.lot_id)
-        if not lot:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Inventory lot {component.lot_id} not found"
-            )
-        
-        # Check if lot still has sufficient quantity
-        if lot.quantity_kg < component.quantity_kg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Insufficient stock: lot {lot.lot_code} has {lot.quantity_kg} kg, required {component.quantity_kg} kg"
-            )
-        
-        # Reduce lot quantity
-        lot.quantity_kg -= component.quantity_kg
-        
-        # Validate lot is not negative (unless admin override)
-        validate_non_negative_lot(lot, override=False)
-    
-    # Update batch status
-    batch.status = "COMPLETED"
-    batch.completed_at = datetime.utcnow()
-    
-    if finish_data.notes:
-        batch.notes = (batch.notes or "") + f"\nFinish notes: {finish_data.notes}"
-    
-    db.commit()
-    db.refresh(batch)
-    
-    return batch_to_response(batch)
 
 
 @router.get("/{batch_id}/print", response_model=PrintResponse)

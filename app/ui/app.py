@@ -1,6 +1,6 @@
 """Dash UI application for TPManuf Modern System."""
 import dash
-from dash import dcc, html, Input, Output, State, callback_context, dash_table
+from dash import dcc, html, Input, Output, State, callback_context, dash_table, no_update
 import dash_bootstrap_components as dbc
 import requests
 import json
@@ -29,13 +29,12 @@ reports_page = pages_old.reports_page
 
 from .pages_enhanced import products_page_enhanced
 from .products_callbacks import register_product_callbacks
-from .raw_materials_callbacks import register_raw_materials_callbacks
 from .formulas_callbacks import register_formulas_callbacks
 from .suppliers_callbacks import register_suppliers_callbacks
+from .contacts_callbacks import register_contacts_callbacks
 
 # Import new page modules from pages/ subdirectory (the directory)
 from . import pages as pages_module
-from .pages.raw_materials_page import RawMaterialsPage
 from .pages.formulas_page import FormulasPage
 from .pages.batch_processing_page import BatchProcessingPage
 from .pages.batch_reports_page import BatchReportsPage
@@ -43,6 +42,8 @@ from .pages.rm_reports_page import RmReportsPage
 from .pages.stocktake_page import StocktakePage
 from .pages.condition_types_page import ConditionTypesPage
 from .pages.suppliers_page import SuppliersPage
+from .pages.contacts_page import ContactsPage
+from .units_callbacks import register_units_callbacks
 # Xero integration temporarily disabled - will re-enable later
 # from .pages.accounting_integration_page import accounting_integration_page
 
@@ -82,10 +83,10 @@ app.layout = dbc.Container([
                 active_tab="products",
                 children=[
                     dbc.Tab(label="Products", tab_id="products"),
-                    dbc.Tab(label="Raw Materials", tab_id="raw-materials"),
                     dbc.Tab(label="Formulas", tab_id="formulas"),
                     dbc.Tab(label="Batch Processing", tab_id="batch-processing"),
                     dbc.Tab(label="Suppliers", tab_id="suppliers"),
+                    dbc.Tab(label="Contacts", tab_id="contacts"),
                     dbc.Tab(label="Inventory", tab_id="inventory"),
                     dbc.Tab(label="Pricing", tab_id="pricing"),
                     dbc.Tab(label="Packaging", tab_id="packaging"),
@@ -94,6 +95,7 @@ app.layout = dbc.Container([
                     dbc.Tab(label="RM Reports", tab_id="rm-reports"),
                     dbc.Tab(label="Stocktake", tab_id="stocktake"),
                     dbc.Tab(label="Conditions", tab_id="conditions"),
+                    dbc.Tab(label="Settings", tab_id="settings"),
                     dbc.Tab(label="Reports", tab_id="reports"),
                     # Xero integration temporarily disabled - will re-enable later
                     # dbc.Tab(label="Accounting", tab_id="accounting"),
@@ -244,6 +246,12 @@ Sample invoice content for demonstration purposes."""
             {"id": "2", "code": "SUP002", "name": "Global Materials Ltd", "contact_person": "Jane Doe", "email": "jane@global.com", "phone": "555-0202", "address": "456 Oak Ave", "is_active": True, "created_at": "2024-01-16T09:30:00"},
             {"id": "3", "code": "SUP003", "name": "Industrial Supplies", "contact_person": "Bob Johnson", "email": "bob@industrial.com", "phone": "555-0303", "address": "789 Pine Rd", "is_active": True, "created_at": "2024-01-17T10:00:00"}
         ]
+    elif endpoint == "/contacts/":
+        return [
+            {"id": "1", "code": "CONT001", "name": "Acme Chemicals", "contact_person": "John Smith", "email": "john@acme.com", "phone": "555-0101", "address": "123 Main St", "is_customer": False, "is_supplier": True, "is_other": False, "tax_rate": 10.0, "xero_contact_id": None, "is_active": True, "created_at": "2024-01-15T08:00:00"},
+            {"id": "2", "code": "CONT002", "name": "Paint Distributors Inc", "contact_person": "Jane Customer", "email": "jane@paintdist.com", "phone": "555-0202", "address": "456 Oak Ave", "is_customer": True, "is_supplier": False, "is_other": False, "tax_rate": 10.0, "xero_contact_id": None, "is_active": True, "created_at": "2024-01-16T09:30:00"},
+            {"id": "3", "code": "CONT003", "name": "Global Materials Ltd", "contact_person": "Bob Johnson", "email": "bob@global.com", "phone": "555-0303", "address": "789 Pine Rd", "is_customer": False, "is_supplier": True, "is_other": False, "tax_rate": 10.0, "xero_contact_id": None, "is_active": True, "created_at": "2024-01-17T10:00:00"}
+        ]
     else:
         return {"error": f"No sample data available for {endpoint}"}
 
@@ -292,11 +300,6 @@ def render_tab_content(active_tab):
         layout = products_page_enhanced.get_layout()
         print("Products layout created")  # Debug print
         return layout
-    elif active_tab == "raw-materials":
-        from .pages.raw_materials_page import RawMaterialsPage
-        layout = RawMaterialsPage.get_layout()
-        print("Raw Materials layout created")  # Debug print
-        return layout
     elif active_tab == "formulas":
         layout = FormulasPage.get_layout()
         print("Formulas layout created")  # Debug print
@@ -341,9 +344,18 @@ def render_tab_content(active_tab):
         layout = SuppliersPage.get_layout()
         print("Suppliers layout created")  # Debug print
         return layout
+    elif active_tab == "contacts":
+        layout = ContactsPage.get_layout()
+        print("Contacts layout created")  # Debug print
+        return layout
     elif active_tab == "conditions":
         layout = ConditionTypesPage.get_layout()
         print("Conditions layout created")  # Debug print
+        return layout
+    elif active_tab == "settings":
+        from .pages.settings_page import SettingsPage
+        layout = SettingsPage.get_layout()
+        print("Settings layout created")  # Debug print
         return layout
     elif active_tab == "reports":
         layout = reports_page.get_layout()
@@ -356,41 +368,211 @@ def render_tab_content(active_tab):
         return html.Div("Select a tab to view content")
 
 
-# Products page callbacks - Initial table data load
+# Products page callbacks - Initial table data load and filter
 @app.callback(
     Output("products-table", "data"),
-    [Input("main-tabs", "active_tab")],
-    prevent_initial_call=False
+    [Input("main-tabs", "active_tab"),
+     Input("products-refresh", "n_clicks")],
+    [State("filter-raw", "value"),
+     State("filter-wip", "value"),
+     State("filter-finished", "value")],
+    prevent_initial_call=True
 )
-def load_products_table(active_tab):
-    """Load products table when products tab is activated."""
-    if active_tab == "products":
-        response = make_api_request("GET", "/products/")
-        
-        if "error" in response:
-            return []
-        
-        # API returns a list directly
-        products = response if isinstance(response, list) else response.get("products", [])
-        
-        if products:
-            # Flatten nested fields for DataTable display
-            for product in products:
-                if "variants" in product and isinstance(product["variants"], list):
-                    variant_names = [v.get("variant_name", v.get("variant_code", "")) for v in product["variants"] if isinstance(v, dict)]
-                    product["variants"] = ", ".join(variant_names) if variant_names else "None"
-                if "created_at" in product:
-                    product["created_at"] = str(product["created_at"]) if product["created_at"] else ""
-                if "updated_at" in product:
-                    product["updated_at"] = str(product["updated_at"]) if product["updated_at"] else ""
-            
-            df = pd.DataFrame(products)
-            scalar_cols = [col for col in df.columns if not df[col].apply(lambda x: isinstance(x, (list, dict))).any()]
-            df = df[scalar_cols] if scalar_cols else df
-            
-            return df.to_dict("records")
+def load_products_table(active_tab, refresh_clicks, filter_raw, filter_wip, filter_finished):
+    """Load products table when products tab is activated or refresh is clicked."""
+    if active_tab != "products":
+        return no_update
     
-    return []
+    print(f"[load_products_table] active_tab={active_tab}, filters: raw={filter_raw}, wip={filter_wip}, finished={filter_finished}")
+    
+    try:
+        # Build filter query - handle None values gracefully
+        product_types = []
+        if filter_raw is True:
+            product_types.append("RAW")
+        if filter_wip is True:
+            product_types.append("WIP")
+        if filter_finished is True:
+            product_types.append("FINISHED")
+        
+        # Default to all types if no filters selected
+        if not product_types:
+            product_types = ["RAW", "WIP", "FINISHED"]
+        
+        print(f"[load_products_table] Fetching products for types: {product_types}")
+        
+        # Fetch products with filters
+        all_products = []
+        for ptype in product_types:
+            try:
+                response = make_api_request("GET", "/products/", data={"product_type": ptype})
+                print(f"[load_products_table] Response for {ptype}: type={type(response).__name__}")
+                
+                if isinstance(response, list):
+                    print(f"[load_products_table] Got {len(response)} products as list for {ptype}")
+                    all_products.extend(response)
+                elif isinstance(response, dict):
+                    if "error" in response:
+                        print(f"[load_products_table] Error: {response.get('error')}")
+                    elif "products" in response:
+                        print(f"[load_products_table] Got {len(response['products'])} products from dict for {ptype}")
+                        all_products.extend(response["products"])
+                    else:
+                        print(f"[load_products_table] Unexpected dict keys: {list(response.keys())}")
+            except Exception as e:
+                print(f"[load_products_table] Error fetching {ptype}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
+        
+        # If still no products, try fetching all
+        if not all_products:
+            print("[load_products_table] No products with filters, trying all...")
+            try:
+                response = make_api_request("GET", "/products/")
+                if isinstance(response, list):
+                    all_products = response
+                elif isinstance(response, dict) and "products" in response:
+                    all_products = response["products"]
+            except Exception as e:
+                print(f"[load_products_table] Error fetching all: {e}")
+        
+        print(f"[load_products_table] Total products: {len(all_products)}")
+        
+        # Remove duplicates
+        seen_ids = set()
+        unique_products = []
+        for product in all_products:
+            if not isinstance(product, dict):
+                continue
+            prod_id = product.get("id")
+            if prod_id and prod_id not in seen_ids:
+                seen_ids.add(prod_id)
+                unique_products.append(product)
+        
+        print(f"[load_products_table] Unique products: {len(unique_products)}")
+        
+        # Flatten nested fields
+        for product in unique_products:
+            # Convert variants list to string
+            if "variants" in product and isinstance(product["variants"], list):
+                variant_names = [
+                    v.get("variant_name") or v.get("variant_code", "") 
+                    for v in product["variants"] 
+                    if isinstance(v, dict)
+                ]
+                product["variants"] = ", ".join(variant_names) if variant_names else None
+            # Convert datetime objects to strings
+            for date_field in ["created_at", "updated_at"]:
+                if date_field in product and product[date_field]:
+                    product[date_field] = str(product[date_field])
+        
+        # Prepare DataFrame
+        if unique_products:
+            try:
+                df = pd.DataFrame(unique_products)
+                # Filter out columns with lists/dicts
+                scalar_cols = []
+                for col in df.columns:
+                    if not df[col].apply(lambda x: isinstance(x, (list, dict))).any():
+                        scalar_cols.append(col)
+                
+                if scalar_cols:
+                    df = df[scalar_cols]
+                    result = df.to_dict("records")
+                    print(f"[load_products_table] Returning {len(result)} records")
+                    return result
+                else:
+                    print("[load_products_table] No scalar columns found, returning as-is")
+                    return unique_products
+            except Exception as e:
+                print(f"[load_products_table] DataFrame error: {e}")
+                import traceback
+                traceback.print_exc()
+                return unique_products
+        
+        print("[load_products_table] No products to return")
+        return []
+    except Exception as e:
+        print(f"[load_products_table] Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+# Separate callback for filter changes
+@app.callback(
+    Output("products-table", "data", allow_duplicate=True),
+    [Input("filter-raw", "value"),
+     Input("filter-wip", "value"),
+     Input("filter-finished", "value")],
+    [State("main-tabs", "active_tab")],
+    prevent_initial_call=True
+)
+def update_products_on_filter_change(filter_raw, filter_wip, filter_finished, active_tab):
+    """Update products table when filters change (only if products tab is active)."""
+    if active_tab != "products":
+        return no_update
+    
+    # Reuse the same logic as the main callback
+    try:
+        product_types = []
+        if filter_raw:
+            product_types.append("RAW")
+        if filter_wip:
+            product_types.append("WIP")
+        if filter_finished:
+            product_types.append("FINISHED")
+        
+        if not product_types:
+            product_types = ["RAW", "WIP", "FINISHED"]
+        
+        all_products = []
+        for ptype in product_types:
+            try:
+                response = make_api_request("GET", "/products/", data={"product_type": ptype})
+                if isinstance(response, list):
+                    all_products.extend(response)
+                elif isinstance(response, dict) and "products" in response:
+                    all_products.extend(response["products"])
+            except Exception as e:
+                print(f"Error fetching products for type {ptype}: {e}")
+                continue
+        
+        # Remove duplicates
+        seen_ids = set()
+        unique_products = []
+        for product in all_products:
+            if isinstance(product, dict):
+                prod_id = product.get("id")
+                if prod_id and prod_id not in seen_ids:
+                    seen_ids.add(prod_id)
+                    unique_products.append(product)
+        
+        # Flatten nested fields
+        for product in unique_products:
+            if "variants" in product and isinstance(product["variants"], list):
+                variant_names = [v.get("variant_name", v.get("variant_code", "")) for v in product["variants"] if isinstance(v, dict)]
+                product["variants"] = ", ".join(variant_names) if variant_names else "None"
+            if "created_at" in product:
+                product["created_at"] = str(product["created_at"]) if product["created_at"] else ""
+            if "updated_at" in product:
+                product["updated_at"] = str(product["updated_at"]) if product["updated_at"] else ""
+        
+        if unique_products:
+            try:
+                df = pd.DataFrame(unique_products)
+                scalar_cols = [col for col in df.columns if not df[col].apply(lambda x: isinstance(x, (list, dict))).any()]
+                df = df[scalar_cols] if scalar_cols else df
+                return df.to_dict("records")
+            except Exception as e:
+                print(f"Error creating DataFrame: {e}")
+                return unique_products
+        
+        return []
+    except Exception as e:
+        print(f"Error updating products on filter change: {e}")
+        return []
 
 
 # Batches page callbacks
@@ -695,9 +877,10 @@ def generate_report(n_clicks, report_type, start_date, end_date):
 
 # Register CRUD callbacks
 register_product_callbacks(app, make_api_request)
-register_raw_materials_callbacks(app, make_api_request)
 register_formulas_callbacks(app, make_api_request)
 register_suppliers_callbacks(app, make_api_request)
+register_contacts_callbacks(app, make_api_request)
+register_units_callbacks(app, make_api_request)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth
