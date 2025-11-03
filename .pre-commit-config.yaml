@@ -11,12 +11,12 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         types: [python]
-        stages: [commit]  # Only auto-fix on commit, not on push
+        stages: [pre-commit]  # Only auto-fix on commit, not on push
 
       # Formatter - only runs on commit to avoid push failures
       - id: ruff-format
         types: [python]
-        stages: [commit]  # Only format on commit, not on push
+        stages: [pre-commit]  # Only format on commit, not on push
 
   # Black for code formatting (backup/alternative) - only on commit
   - repo: https://github.com/psf/black
@@ -25,7 +25,7 @@ repos:
       - id: black
         language_version: python3.12
         args: [--line-length=88]
-        stages: [commit]  # Only format on commit, not on push
+        stages: [pre-commit]  # Only format on commit, not on push
 
   # isort for import sorting - only on commit
   - repo: https://github.com/pycqa/isort
@@ -33,7 +33,7 @@ repos:
     hooks:
       - id: isort
         args: [--profile=black, --line-length=88]
-        stages: [commit]  # Only format on commit, not on push
+        stages: [pre-commit]  # Only format on commit, not on push
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -41,9 +41,9 @@ repos:
     hooks:
       # Basic checks
       - id: trailing-whitespace
-        stages: [commit]  # Only fix on commit, not on push
+        stages: [pre-commit]  # Only fix on commit, not on push
       - id: end-of-file-fixer
-        stages: [commit]  # Only fix on commit, not on push
+        stages: [pre-commit]  # Only fix on commit, not on push
       - id: check-yaml
       - id: check-toml
       - id: check-json
@@ -65,7 +65,7 @@ repos:
       # File checks
       - id: mixed-line-ending
         args: [--fix=lf]
-        stages: [commit]  # Only fix on commit, not on push
+        stages: [pre-commit]  # Only fix on commit, not on push
       - id: check-case-conflict
       - id: check-merge-conflict
 
