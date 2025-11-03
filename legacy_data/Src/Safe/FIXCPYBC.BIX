@@ -1,0 +1,110 @@
+'$INCLUDE: '\tpmanuf\src\msbatch.INC'
+'$INCLUDE: '\tpmanuf\src\msbatchh.INC'
+CLOSE #26
+IF 1 = 0 THEN
+OPEN "batch83.hst" FOR OUTPUT SHARED AS #83 LEN = 128
+OPEN "batch84.hst" FOR OUTPUT SHARED AS #84 LEN = 128
+OPEN "batch85.hst" FOR OUTPUT SHARED AS #85 LEN = 128
+OPEN "batch86.hst" FOR OUTPUT SHARED AS #86 LEN = 128
+OPEN "batch87.hst" FOR OUTPUT SHARED AS #87 LEN = 128
+OPEN "batch88.hst" FOR OUTPUT SHARED AS #88 LEN = 128
+OPEN "batch89.hst" FOR OUTPUT SHARED AS #89 LEN = 128
+OPEN "batch90.hst" FOR OUTPUT SHARED AS #90 LEN = 128
+OPEN "batch91.hst" FOR OUTPUT SHARED AS #91 LEN = 128
+OPEN "batch92.hst" FOR OUTPUT SHARED AS #92 LEN = 128
+OPEN "batch93.hst" FOR OUTPUT SHARED AS #93 LEN = 128
+OPEN "batch94.hst" FOR OUTPUT SHARED AS #94 LEN = 128
+END IF
+CLOSE
+'$INCLUDE: 'c:\tpmanuf\xsrc\msbchbk.INC'
+CLOSE
+OPEN "MSBTCH.MSF" FOR RANDOM SHARED AS #26 LEN = 59
+OPEN "batch83.hst" FOR RANDOM SHARED AS #83 LEN = 128
+OPEN "batch84.hst" FOR RANDOM SHARED AS #84 LEN = 128
+OPEN "batch85.hst" FOR RANDOM SHARED AS #85 LEN = 128
+OPEN "batch86.hst" FOR RANDOM SHARED AS #86 LEN = 128
+OPEN "batch87.hst" FOR RANDOM SHARED AS #87 LEN = 128
+OPEN "batch88.hst" FOR RANDOM SHARED AS #88 LEN = 128
+OPEN "batch89.hst" FOR RANDOM SHARED AS #89 LEN = 128
+OPEN "batch90.hst" FOR RANDOM SHARED AS #90 LEN = 128
+OPEN "batch91.hst" FOR RANDOM SHARED AS #91 LEN = 128
+OPEN "batch92.hst" FOR RANDOM SHARED AS #92 LEN = 128
+OPEN "batch93.hst" FOR RANDOM SHARED AS #93 LEN = 128
+OPEN "batch94.hst" FOR RANDOM SHARED AS #94 LEN = 128
+CLS
+file% = 84
+batchh.year = "84"
+file% = 94
+batchh.year = "94"
+rec83% = 0: rec84% = 0: rec85% = 0: rec86% = 0: rec87% = 0: rec88% = 0: rec89% = 0
+rec90% = 0: rec91% = 0: rec92% = 0: rec93% = 0: rec94% = 0:
+
+	rec% = 1
+	GET #26, rec%, msbtchbk
+	DO WHILE NOT EOF(26)
+	batchh.bno = CVI(msbtchbk.bno)
+	wrk$ = RIGHT$("000" + MID$(STR$(CVI(msbtchbk.bfno)), 2), 3)
+	batchh.form = wrk$ + msbtchbk.bccost
+	batchh.revision = CVI(msbtchbk.brev)
+	batchh.SorW = UCASE$(msbtchbk.btype)
+	batchh.class = CVI(msbtchbk.bclass)
+	batchh.yld = CVI(msbtchbk.byld)
+	batchh.ayld = CVI(msbtchbk.bayld)
+	batchh.date = msbtchbk.bdate
+	batchh.name = msbtchbk.bdesc
+
+
+	  '  cvs(msbtchbk.bvisl)
+	  '  cvs(msbtchbk.bvish)
+	  '  cvs(msbtchbk.bavis)
+	batchh.Resinvar = 0
+	batchh.Solventvar = 0
+	batchh.Thickenervar = 0
+	batchh.Rheomodifier = 0
+	batchh.Stainer1var = 0
+	batchh.Stainer2var = 0
+	batchh.Stainer3var = 0
+	batchh.Filler = SPACE$(99)
+
+'    IF rec% = 575 THEN file% = file% + 1: batchh.year = "85"
+'    IF rec% = 1677 THEN file% = file% + 1: batchh.year = "86"
+'    IF rec% = 3019 THEN file% = file% + 1: batchh.year = "87"
+'    IF rec% = 4283 THEN file% = file% + 1: batchh.year = "88"
+'    IF rec% = 5269 THEN file% = file% + 1: batchh.year = "89"
+'    IF rec% = 6231 THEN file% = file% + 1: batchh.year = "90"
+'    IF rec% = 7033 THEN file% = file% + 1: batchh.year = "91"
+'    IF rec% = 7683 THEN file% = file% + 1: batchh.year = "92"
+'    IF rec% = 8400 THEN file% = file% + 1: batchh.year = "93"
+'
+	PRINT USING "####  ##,### &   &"; rec%; CVI(msbtchbk.bno$); msbtchbk.bdate$; batchh.year$
+	SELECT CASE file%
+	CASE 83: rec83% = rec83% + 1: PUT #83, rec83%, batchh
+	CASE 84: rec84% = rec84% + 1: PUT #84, rec84%, batchh
+	CASE 85: rec85% = rec85% + 1: PUT #85, rec85%, batchh
+	CASE 86: rec86% = rec86% + 1: PUT #86, rec86%, batchh
+	CASE 87: rec87% = rec87% + 1: PUT #87, rec87%, batchh
+	CASE 88: rec88% = rec88% + 1: PUT #88, rec88%, batchh
+	CASE 89: rec89% = rec89% + 1: PUT #89, rec89%, batchh
+	CASE 90: rec90% = rec90% + 1: PUT #90, rec90%, batchh
+	CASE 91: rec91% = rec91% + 1: PUT #91, rec91%, batchh
+	CASE 92: rec92% = rec92% + 1: PUT #92, rec92%, batchh
+	CASE 93: rec93% = rec93% + 1: PUT #93, rec93%, batchh
+	CASE 94: rec94% = rec94% + 1: PUT #94, rec94%, batchh
+	CASE ELSE: STOP'Ah fuck!
+	END SELECT
+
+	IF batchh.year <> prev.batchh.year$ THEN
+		prev.batchh.year$ = batchh.year$
+		SOUND 800, 1
+		PRINT USING "####  ##,### &   &"; rec%; CVI(msbtchbk.bno$); msbtchbk.bdate$; batchh.year$
+		'x$ = INPUT$(1)
+		END IF
+	IF batchh.date$ <= "  /  /   " THEN STOP
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #26, , msbtchbk: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END

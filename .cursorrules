@@ -1,0 +1,134 @@
+
+# Cursor Rules for TPManuf Modernisation
+# Purpose: Guide Cursor's code generation, refactors, and task execution for this repository.
+# Scope: Entire repo. Treat this file as authoritative unless brief.md explicitly overrides.
+
+[goals]
+- Migrate QuickBASIC TPManuf to Python 3.12 with FastAPI (+ Dash UI) and SQLAlchemy/Alembic.
+- Preserve legacy behaviour while improving data integrity, observability, and testability.
+- Achieve text-parity with legacy print artifacts (.PRN batch tickets, .INS invoices) via golden tests.
+- Store quantities canonically in kg; handle L ⇄ kg via density; store ABV as % (v/v).
+- Everything reproducible with: `make setup`, `make migrate`, `make run`.
+- Keep CI green (lint + tests). Golden tests may be temporarily xfail only until implemented, but remove xfail once renderers are ready.
+
+[tech_stack]
+- Python 3.12, FastAPI (API), Dash (UI), SQLAlchemy + Alembic (DB), Pydantic, Jinja2 (reports)
+- Dev DB: SQLite; Prod: Postgres
+- Tests: pytest
+- Tooling: ruff/black, pre-commit, GitHub Actions
+
+[project_structure]
+- app/api: FastAPI routers
+- app/ui: Dash app (modular pages]
+- app/services: application services (stateless where possible)
+- app/domain: dataclasses/pydantic models, rules (units, FIFO, conversions)
+- app/adapters: db (SQLAlchemy session/models), legacy_io (fixed-width parsers, YAML specs)
+- app/reports: text renderers (batch tickets, invoices) later PDF
+- db/alembic: migrations
+- scripts: audit, migration, dev run
+- tests/golden: golden tests for print artifacts and other golden outputs
+- fixtures/print: legacy .PRN and .INS files
+- docs/legacy: mapping CSV and notes
+- brief.md: architectural source of truth (authoritative schema & requirements)
+
+[authoritative_sources]
+- Schema & behaviour: brief.md (v1.1)
+- Units/ABV rules: brief.md §5
+- Golden test fixtures: fixtures/print/*
+- Mapping specs produced by scripts/legacy_audit.py
+
+[general_guidelines]
+- Prefer pure functions for domain rules; inject IO at edges.
+- Keep service functions small and composable; avoid global state.
+- Use dependency injection for DB sessions in FastAPI.
+- Validate inputs with Pydantic models; return typed responses.
+- Add logging with structured fields: ts, level, user, request_id, entity, entity_id.
+- Rounding: quantities 3 dp, money 2 dp (bankers’ rounding at commit).
+- Never silently coerce units—explicit conversions only.
+- Write idempotent migrations; use natural keys to upsert during legacy import.
+- Preserve legacy codes (SKU, batch, invoice) as dedicated columns.
+
+[database_rules]
+- SQLAlchemy models mirror DDL implied by brief.md—products, variants, formulas/lines, inventory_lot/txn, work_order/line, batch/component, qc_result, supplier/po/po_line, customer/so/so_line, invoice/invoice_line, price_list/price_list_item, customer_price, pack_unit, pack_conversion.
+- Primary keys: UUID (v7 if available; otherwise uuid4).
+- Unique constraints and FK relationships as in brief.
+- Alembic migrations must be generated and upgraded in CI.
+- Indexes for hot paths: product(sku), inventory_lot(product_id, lot_code), inventory_txn(lot_id, ts), work_order(code), batch(work_order_id, code), invoice(code), pricing lookups.
+
+[units_and_conversions]
+- Canonical quantity storage is kg.
+- For inputs in L, convert to kg using product density (kg/L). Persist the density on product records where applicable.
+- ABV stored as % v/v; when mass is needed, compute via density of the solution or product density. Keep both ABV and mass in DB.
+- Provide helper in domain.rules: `to_kg(qty, uom, density)` and `to_liters(qty_kg, density)`.
+
+[fifo_and_costing]
+- Implement FIFO issue logic in domain.rules with tests (property-based where feasible).
+- Enforce non-negative lots unless `override=True` (role: Admin), with audit note.
+
+[pricing_rules]
+- Resolution order: customer_price → price_list_item → error.
+- Prices are ex-GST; apply tax_rate per line (default 10% unless overridden).
+- APIs: /pricing/resolve to return unit_price_ex_tax, tax_rate, and resolution source.
+
+[packaging_rules]
+- Pack units: CAN, 4PK, CTN seeded.
+- Conversions are multiplicative and product-specific where required (pack_conversion table).
+- Provide service `packing.convert(product_id, qty, from_unit, to_unit)` with error on missing path.
+
+[invoicing_rules]
+- Invoice lines reflect shipped quantities (or SO confirmation as interim).
+- /invoices/{id}/print?format=text|pdf returns text (for golden tests) and later PDF.
+- Generate codes like INV-######## preserving legacy numbering where available.
+
+[reports_and_golden_tests]
+- Implement text renderers first to stabilise content for golden comparisons.
+- Use tests/golden/print_normalizer.py to normalize legacy and generated outputs.
+- Replace pytest xfail markers with passing assertions once implemented.
+- Keep formatting-driven differences out of business logic (separate template from calc).
+
+[api_guidelines]
+- Use RESTful routes; return 201 on create, 404 for missing ids, 409 for conflicts.
+- Validation errors return 422 with field-wise messages.
+- Include pagination for list endpoints; support `query` filters for name/code fields.
+- Provide OpenAPI docs at /docs.
+
+[ui_guidelines]
+- Dash pages for Products/Formulas, Inventory, WOs/Batches(+QC), Purchasing, Sales, Pricing, Packaging, Invoices, Reports.
+- Keep server callbacks thin; call services for logic.
+
+[error_handling]
+- Throw explicit domain exceptions: ValidationError, NotFound, ConflictError, RuleViolation, IOError.
+- Retry transient DB errors (exponential backoff <= 3 attempts). Never retry domain violations.
+
+[security]
+- Local JWT auth with roles: Operator, Planner, Admin.
+- Protect stock adjustments and overrides behind Admin.
+- Never log secrets; scrub PII where applicable.
+
+[developer_workflow]
+- Before generating code, read brief.md and this file.
+- When adding features: write/extend tests first (especially for domain.rules).
+- When making schema changes: create Alembic migration; keep models and migrations in sync; update brief.md if contract changes.
+
+[tasks_for_cursor_initial]
+- Read brief.md, generate SQLAlchemy models + initial Alembic migration for all tables.
+- Implement domain.rules units conversions and FIFO with tests.
+- Implement services: pricing, packing, invoicing (M2.5 scope).
+- Implement text renderers for batch tickets and invoices; make golden tests pass; then remove xfail marks.
+- Wire minimal FastAPI routers for the above services and a simple Dash placeholder page for navigation.
+
+[commit_style]
+- Commit messages: conventional commits (feat:, fix:, refactor:, test:, docs:, chore:).
+- Include brief rationale in body; reference modules/files touched.
+- No generated lockfiles unless using poetry/uv explicitly.
+
+[done_definition]
+- All tests pass locally and in CI.
+- Golden tests pass for both fixtures.
+- Lint/format clean (ruff/black).
+- `make setup && make migrate && make run` works on a clean checkout.
+
+[anti_goals]
+- Do not generate PDF renderers before text renderers are stable and golden tests pass.
+- Do not introduce additional frameworks (ORMs, API layers) beyond the agreed stack without updating brief.md.
+- Do not bypass migrations by creating tables ad-hoc.

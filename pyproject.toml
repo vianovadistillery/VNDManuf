@@ -1,0 +1,41 @@
+
+[project]
+name = "tpmanuf-modern"
+version = "0.1.0"
+description = "Modernisation of TPManuf (QuickBASIC) to Python FastAPI + Dash"
+readme = "brief.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "sqlalchemy",
+  "alembic",
+  "pydantic",
+  "jinja2",
+  "dash",
+  "python-dotenv",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 88
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # Let black handle line length
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts and migrations need to modify sys.path, so imports can't be at top
+"scripts/*.py" = ["E402"]
+"db/alembic/versions/*.py" = ["E402", "E722"]
+"db/alembic/env.py" = ["E402"]
+"legacy_data/Src/*.py" = ["E"]
+"scripts/legacy_audit.py" = ["E722", "F841"]
+"scripts/migrate_acstk.py" = ["E722"]
+"scripts/run_post_migration_verification.py" = ["E722"]
+# Allow unused variables in tests for readability
+"tests/*.py" = ["F841", "E402", "E712"]
+"scripts/test_*.py" = ["E402", "E722", "F841", "E712"]
+"scripts/*_test.py" = ["E402", "E722", "F841", "E712"]

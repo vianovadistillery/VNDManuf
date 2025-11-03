@@ -1,0 +1,38 @@
+	'$INCLUDE: '.\SRC\msbatchx.INC'
+	CALL setup("Extend MSBATCH.MSF")
+	rec% = 1
+	GET #57, rec%, batch
+	DO WHILE NOT EOF(57)
+	batchx.bno% = batch.bno%
+	batchx.year$ = batch.year$
+	batchx.form$ = batch.form$
+	batchx.revision% = batch.revision%
+	batchx.SorW$ = batch.SorW$
+	batchx.class% = batch.class%
+	batchx.yld = batch.yld
+	batchx.ayld = batch.ayld
+	batchx.date$ = batch.date$
+	batchx.name$ = batch.name$
+	batchx.Resinvar = batch.Resinvar
+	batchx.Solventvar = batch.Solventvar
+	batchx.Thickenervar = batch.Thickenervar
+	batchx.Rheomodifier = batch.Rheomodifier
+	batchx.Stainer1var = batch.Stainer1var
+	batchx.Stainer2var = batch.Stainer2var
+	batchx.Stainer3var = batch.Stainer3var
+	batchx.hord% = batch.hord%
+	batchx.thisbatch$ = batch.thisbatch$
+	batchx.perltr = batch.perltr
+	batchx.Filler$ = batch.Filler$
+
+	PUT #58, rec%, batchx
+
+
+	IF rec% MOD 10 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #57, , batch: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END

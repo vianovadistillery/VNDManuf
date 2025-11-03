@@ -1,0 +1,62 @@
+	'$INCLUDE: '.\SRC\msrmatx.INC'
+	CALL setup("Extend MSRMAT.MSF")
+	rec% = 1
+	GET #38, rec%, msrmat
+	DO WHILE NOT EOF(38)
+		msrmatx.no% = msrmat.no%
+		msrmatx.Desc1$ = msrmat.Desc1$
+		msrmatx.Desc2$ = msrmat.Desc2$
+		msrmatx.purqty% = msrmat.purqty%
+		msrmatx.Search$ = msrmat.Search$
+		msrmatx.Sg = msrmat.Sg
+		msrmatx.PurCost = msrmat.PurCost
+		msrmatx.PurUnit = msrmat.PurUnit
+		msrmatx.UseCost = msrmat.UseCost
+		msrmatx.UseUnit = msrmat.UseUnit
+		msrmatx.DealCost = msrmat.DealCost
+		msrmatx.SupUnit$ = msrmat.SupUnit$
+		msrmatx.Group% = msrmat.Group%
+		msrmatx.Active$ = msrmat.Active$
+		msrmatx.Volsolid = msrmat.Volsolid
+		msrmatx.Solidsg = msrmat.Solidsg
+		msrmatx.Wtsolid = msrmat.Wtsolid
+		msrmatx.Notes$ = msrmat.Notes$
+		msrmatx.soh = msrmat.soh
+		msrmatx.Osoh = msrmat.Osoh
+		msrmatx.Date$ = msrmat.Date$
+		msrmatx.hazard$ = msrmat.hazard$
+		msrmatx.cond$ = msrmat.cond$
+		msrmatx.altno%(1) = msrmat.altno%(1)
+		msrmatx.altno%(2) = msrmat.altno%(2)
+		msrmatx.altno%(3) = msrmat.altno%(3)
+		msrmatx.altno%(4) = msrmat.altno%(4)
+		msrmatx.altno%(5) = msrmat.altno%(5)
+		msrmatx.msdsflag$ = msrmat.msdsflag$
+		msrmatx.searchs$ = msrmat.searchs$
+		msrmatx.soo% = msrmat.soo%
+
+		msrmatx.sip = 0
+		msrmatx.sohv = 0
+		msrmatx.restock = 0
+		msrmatx.used = 0
+		msrmatx.ean13 = 0
+		msrmatx.filler$ = SPACE$(72)
+
+
+
+
+
+
+
+
+	PUT #88, rec%, msrmatx
+
+
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #38, , msrmat: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END

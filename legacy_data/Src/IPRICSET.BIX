@@ -1,0 +1,51 @@
+DECLARE SUB calcbulk (form$)
+DECLARE SUB clrrcdfmt ()
+DECLARE SUB cvt.tnt (tnt$, tnt%, tntf$)
+DECLARE SUB export (rec%)
+DECLARE FUNCTION perc! (code$)
+DECLARE SUB Recalc ()
+DECLARE SUB Recallmgn (skipask$, override.dots$)
+DECLARE SUB round.long (in#, CUTOFF!)
+DECLARE SUB searchindex (keyin$, chi%, found%)
+'.dc - Complete
+'$INCLUDE: '.\src\iprice.inc'
+
+main:
+	 H1$ = "S E T   I N D I V I D U A L   P R I C E S"
+	 CALL setup(H1$)
+
+'>>>>>            M A I N L I N E
+
+	COLOR 7, 0
+	LOCATE 24, 1: PRINT "ศ"; STRING$(78, "อ"); "ผ";
+	COLOR 0, 3
+	LOCATE 25, 1: PRINT SPACE$(80);
+	LOCATE 25, 1: PRINT "F1-Exit F2-U/Menu F3-Price F4-Del F6-Bwse F7-Mgn F8-Ins F9-Rep. F10-Chg. ";
+	PRINT CHR$(24); CHR$(25); "-Move";
+	COLOR 2, 0
+480
+	COLOR 7, 0: LOCATE 2, 23: PRINT "ต                              ฦอออออ": COLOR 2
+	LOCATE 2, 25: PRINT "Control...> ";
+	LOCATE 2, 45: PRINT "(*-Ext.)";
+	p$ = ""
+
+
+swp% = 1
+iplast% = LOF(4) / LEN(iprice)
+FOR rec% = 1 TO 30
+	iprice.no% = rec%
+	iprice.item% = 1020 + rec% * swp%
+	iprice.search$ = "PAWBD"
+	iprice.iprice = 100
+	iprice.date$ = "20121229"
+	iprice.notes$ = "Test data for PAWBD..."
+	iprice.filler$ = SPACE$(90)
+	LOCATE 5, 20: PRINT rec%
+	PUT #4, rec%, iprice
+	swp% = swp% * -1
+NEXT
+
+CLOSE
+
+
+END

@@ -1,0 +1,23 @@
+typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\tntdetx.INC'
+
+rec& = 1
+last& = LOF(65) / (32)
+
+FOR rec& = 1 TO last&
+
+GET #65, rec&, tntdet
+	tntdetx.tnt& = tntdet.tnt%
+	tntdetx.rmat% = tntdet.rmat%
+	tntdetx.qty = tntdet.qty
+	tntdetx.cmt% = tntdet.cmt%
+	tntdetx.cmtqty = tntdet.cmtqty
+	tntdetx.ltkg$ = "D"
+	tntdetx.tfiller$ = SPACE$(5)
+
+PUT #66, rec&, tntdetx
+LOCATE 10, 40: PRINT rec&
+
+NEXT
+
+END

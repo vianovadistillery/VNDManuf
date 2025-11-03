@@ -1,0 +1,20 @@
+'>>>>>>- OPENING BALANACE FILE -<<<<
+IF asclobal$ <> "" THEN
+	OPEN asclobal$ FOR RANDOM SHARED AS #60 LEN = 48
+	END IF
+
+TYPE RcdFmtclobal
+	rec AS INTEGER
+	mth AS STRING * 4
+	cust AS STRING * 5
+	ocur AS SINGLE
+	o30 AS SINGLE
+	o60 AS SINGLE
+	o90 AS SINGLE
+	cur AS SINGLE
+	c30 AS SINGLE
+	c60 AS SINGLE
+	c90 AS SINGLE
+	filler AS STRING * 5
+END TYPE
+DIM SHARED clobal AS RcdFmtclobal

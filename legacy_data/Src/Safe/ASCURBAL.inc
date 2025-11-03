@@ -1,0 +1,18 @@
+'>>>>>>- CURRENT BALANACE FILE -<<<<
+OPEN "ascurbal.ASF" FOR RANDOM SHARED AS #67 LEN = 48
+
+TYPE RcdFmtcurbal
+	rec AS INTEGER
+	mth AS STRING * 4
+	cust AS STRING * 5
+	ocur AS SINGLE
+	o30 AS SINGLE
+	o60 AS SINGLE
+	o90 AS SINGLE
+	cur AS SINGLE
+	c30 AS SINGLE
+	c60 AS SINGLE
+	c90 AS SINGLE
+	filler AS STRING * 5
+END TYPE
+DIM SHARED curbal AS RcdFmtcurbal

@@ -1,0 +1,169 @@
+DECLARE SUB load.index (rebuild%)
+DECLARE SUB qsort (in$(), in%(), n%, ok%)
+DECLARE SUB getdet (rec%)
+'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
+	RESET
+	typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\tnthedx.INC'
+	'$INCLUDE: '\tpmanuf\src\tnthed.INC'
+	'$INCLUDE: '\tpmanuf\src\tntdet.INC'
+	'$INCLUDE: '\tpmanuf\src\forhed.INC'
+	'$INCLUDE: '\tpmanuf\src\fordet.inc'
+	'$INCLUDE: 'd:\shit\msformh.inc'
+	'$INCLUDE: 'd:\shit\msform.inc'
+	DIM SHARED rec31%, rec32%, rec64%, rec65%
+	DIM SHARED ch.hedx%, ch.hed%, ch.det%
+	DIM SHARED who$(3)
+	ch.hed% = 64
+	ch.hedx% = 53
+	who$(1) = "wagon"
+	who$(2) = "spartan"
+	who$(3) = "bristol"
+FOR who% = 1 TO 3
+	who$ = who$(who%)
+
+	rec65% = 0
+	CLOSE #32
+	CLOSE #64
+	OPEN "d:\tpmanuf\" + who$ + "\forhed.asf" FOR RANDOM SHARED AS #64 LEN = 160
+	OPEN "d:\tpmanuf\" + who$ + "\msformh.msf" FOR RANDOM SHARED AS #32 LEN = 64
+
+	CLOSE #31
+	CLOSE #65
+	OPEN "d:\tpmanuf\" + who$ + "\fordet.asf" FOR RANDOM SHARED AS #65 LEN = 32
+	OPEN "d:\tpmanuf\" + who$ + "\msform.msf" FOR RANDOM SHARED AS #31 LEN = 13
+
+	CLOSE #53
+	OPEN "d:\tpmanuf\" + who$ + "\forhedx.asf" FOR RANDOM SHARED AS #53 LEN = 5994
+START:
+	CALL setup("FILE MAINTENANCE")
+	rec64% = 0
+	rec32% = 1
+	GET #32, rec32%, msformh
+	DO WHILE NOT EOF(32)
+	IF CVI(msformh.form) > 0 THEN
+	PRINT rec32%, CVI(msformh.form), msformh.fcost, msformh.fdesc
+
+
+	tnthed.tnt = 0
+	wrk% = CVI(msformh.form)
+	wrk$ = RIGHT$("000" + LTRIM$(STR$(wrk%)), 3)
+	tnthed.tnta = wrk$ + msformh.fcost$
+	tnthed.revision = CVI(msformh.frev)
+	tnthed.name = msformh.fdesc$
+	tnthed.desc = msformh.fdesc$
+	tnthed.cust = "     "
+	tnthed.SorW = msformh.ftype
+	tnthed.class = CVI(msformh.fclass)
+	tnthed.SorW = "S"
+	tnthed.class = 15
+	tnthed.yield = CVS(msformh.fyld)
+	tnthed.ltr = 0
+	tnthed.kg = 0
+	tnthed.visc1h = CVS(msformh.fvish)
+	tnthed.visc1l = CVS(msformh.fvisl)
+	tnthed.visc2h = 0
+	tnthed.visc2l = 0
+	tnthed.alccost = 0
+	tnthed.rawcost = 0
+	tnthed.filter = CVI(msformh.ffilter)
+	tnthed.grind = CVS(msformh.fgrind)
+	tnthed.ph = 0
+	tnthed.sg = CVI(msformh.fwpg) / 1000
+	tnthed.Vsol = 0
+	tnthed.Wsol = 0
+	tnthed.pvc = 0
+	tnthed.pbr = 0
+	tnthed.gloss = 0
+	tnthed.Hazard = "A"
+	tnthed.date = "96/01/01"
+
+	rec64% = rec64% + 1
+	tnthed.tnt = rec64%
+	PUT #64, rec64%, tnthed
+	rel% = CVI(msformh.frel$)
+	CALL getdet(rel%)
+	END IF
+
+	x$ = INKEY$
+	GET #32, , msformh: rec32% = rec32% + 1
+	LOOP
+
+CALL load.index(-1)
+NEXT
+
+SUB getdet (rec%)
+
+'--- Detail
+	maxformseq% = 38
+	startrec% = rec% * maxformseq% - maxformseq% + 1
+	FOR rec31% = startrec% TO startrec% + maxformseq% - 1
+	GET #31, rec31%, msform
+	IF CVI(msform.formdet) > 0 THEN
+	wrk% = CVI(msform.formdet)
+	wrk$ = RIGHT$("000" + LTRIM$(STR$(wrk%)), 3) + msform.costdet$
+	wrkqty! = CVS(msform.fq)
+	IF wrkqty! < .001 THEN wrkqty! = 0
+	PRINT rec31%; ","; wrk$; ","; CVI(msform.fk); ","; wrkqty!; ","; CVI(msform.fc); ","; CVI(msform.fd)
+
+
+	tntdet.tnt = 0
+	tntdet.rmat = CVI(msform.fk)
+	tntdet.qty = wrkqty!
+	tntdet.cmt = CVI(msform.fc)
+	tntdet.cmtqty = CVI(msform.fd)
+
+
+
+	rec65% = rec65% + 1
+	tntdet.tnt = rec65%
+	PUT #65, rec65%, tntdet
+	END IF
+
+	NEXT
+
+
+END SUB
+
+SUB load.index (rebuild%)
+	IF NOT rebuild% THEN GOTO loadonly
+	maxtnt% = 999
+	DIM in$(maxtnt%), in%(maxtnt%)
+	rec% = 1
+	GET #ch.hed%, rec%, tnthed
+	DO WHILE NOT EOF(ch.hed%)
+		in$(rec%) = tnthed.tnta$: in%(rec%) = rec%
+		IF tnthed.tnt% <> rec% THEN in$(rec%) = "~~~~": in%(rec%) = 0
+		IF MID$(tnthed.tnta$, 1, 3) < "000" THEN in$(rec%) = "~~~~": in%(rec%) = 0
+
+		'>> - Wheel on screen
+		chr% = rec% MOD 4: chrlist$ = "|/-\"
+		char$ = MID$(chrlist$, chr% + 1, 1)
+		COLOR 7, 0: LOCATE 24, 78: PRINT char$; : COLOR 2, 0
+		GET #ch.hed%, , tnthed: rec% = rec% + 1
+		LOOP
+
+	s% = rec%
+	FOR rec% = s% TO maxtnt%
+		in$(rec%) = "~~~~": in%(rec%) = 0
+		NEXT
+
+
+	n% = maxtnt%
+	CALL qsort(in$(), in%(), n%, ok%)
+
+	FOR rec% = 1 TO maxtnt%
+		tnthedx.tnta$(rec%) = in$(rec%)
+		tnthedx.rrn%(rec%) = in%(rec%)
+		NEXT
+
+	PUT #ch.hedx%, 1, tnthedx
+
+loadonly:
+	GET #ch.hedx%, 1, tnthedx
+
+END SUB
+
+SUB qsort (in$(), in%(), n%, ok%) STATIC
+'$INCLUDE: '\tpmanuf\src\QSORT.bi'
+END SUB

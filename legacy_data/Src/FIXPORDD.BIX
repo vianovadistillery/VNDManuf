@@ -1,0 +1,18 @@
+	typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\porddet.INC'
+
+	rec% = 1
+	GET #49, rec%, orddet
+	DO WHILE NOT EOF(49)
+		orddet.dpicked% = 0
+		PUT #49, rec%, orddet
+
+
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #49, , orddet: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END

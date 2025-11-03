@@ -1,0 +1,77 @@
+DECLARE SUB loadandSort (n%, maxrmat%)
+'****************************************************************************
+'>> M S U P D 0 4 - Sort RMAT file
+'NOTE: Cant sort in memory (see MSBLD01)
+'****************************************************************************
+	'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
+	apgm$ = "MSMENU"
+	''$INCLUDE: '\tpmanuf\src\pgmerr.inc'
+	db.or.cr$ = "CR"
+	typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\MSRMat.INC'
+	'$INCLUDE: '\tpmanuf\src\MSMISC.INC'
+
+	GET #36, 1, msmisc
+	maxrmat% = CVI(msmisc.max3$)
+'  maxrmat% = 4100'??
+	DIM SHARED k%(maxrmat%)
+
+200
+	CALL setup("SORT RAW MATERIAL FILE")
+	COLOR 0, 3: LOCATE 25, 4: PRINT "F1-Exit"; : COLOR 2, 0
+
+	'LOCATE 19, 28: PRINT "Option..> "; CHR$(FNH);
+	'CALL inpnew(a$, 2!, updwn%, "13,59" + ALT$): GOSUB ALT
+	'IF updwn% = 59 THEN CLOSE : CALL EXITPGM(apgm$): CHAIN apgm$
+
+	CALL loadandSort(n%, maxrmat%)'* Sort all
+
+DOLIST:
+
+	FOR i% = 1 TO n%
+		GET #38, k%(i%), msrmat
+		COLOR 2, 0
+		PRINT k%(i%), msrmat.search$, msrmat.desc1$
+
+	NEXT
+
+	GOTO 200
+
+SUB loadandSort (n%, maxrmat%)
+	DIM r$(maxrmat%), h%(15)
+
+	PRINT : LOCATE 18, 25: PRINT "Loading records for sort....": LOCATE 1, 1
+	'>>-------- load sort
+	n% = 0
+	FOR i% = 1 TO maxrmat%
+	GET #38, i%, msrmat
+	IF msrmat.no% = i% THEN
+		b$ = STR$(i%): MID$(b$, 1, 1) = "0"
+		b$ = "00000" + b$: b$ = RIGHT$(b$, 5)
+		n% = n% + 1
+		r$(n%) = msrmat.search$ + msrmat.desc1$ + b$
+		k%(n%) = i%
+		END IF
+	NEXT
+	LOCATE 18, 25: PRINT USING "##,### records loaded for printing."; n%
+	ii% = 0
+	h%(1) = 1
+	FOR i% = 2 TO 15
+	h%(i%) = 3 * h%(i% - 1) + 1: IF h%(i%) >= n% THEN 1050
+	NEXT i%
+1050 T% = i% - 2: IF T% < 1 THEN T% = 1
+	FOR s% = T% TO 1 STEP -1
+	h% = h%(s%)
+	FOR j% = h% + 1 TO n%
+	r$ = r$(j%): k% = k%(j%)
+	FOR i% = j% - h% TO 1 STEP -h%
+		 IF r$ >= r$(i%) THEN ii% = i%: i% = 0: GOTO 1130
+		 k%(i% + h%) = k%(i%): r$(i% + h%) = r$(i%)
+1130 NEXT'********** i
+	IF ii% > 0 THEN i% = ii%: ii% = 0
+	k%(i% + h%) = k%: r$(i% + h%) = r$
+	 NEXT'********** j
+	 NEXT'********** S
+xsort:
+
+END SUB

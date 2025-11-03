@@ -1,0 +1,511 @@
+DECLARE SUB chgprinter (file$)
+DECLARE SUB browse (s%)
+DECLARE SUB listpage (s%, e%)
+	'Production label program
+'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
+	pgm$ = "menutp"
+	db.or.cr$ = "CR"
+''$INCLUDE: '\tpmanuf\src\pgmerr.inc'
+	CALL setup("LABEL PRINT PROGRAM")
+	CLOSE
+	typefields% = -1
+		'$INCLUDE: '\tpmanuf\src\sup.INC'
+		'$INCLUDE: '\tpmanuf\src\supX.INC'
+		'$INCLUDE: '\tpmanuf\src\CUS.INC'
+		'$INCLUDE: '\tpmanuf\src\CUSX.INC'
+		OPEN "labels.lbl" FOR RANDOM SHARED AS #1 LEN = 128
+		OPEN "supX.sup" FOR RANDOM SHARED AS #3 LEN = 7
+	FIELD #1, 2 AS LBNO$, 18 AS LBA$, 36 AS LBB$, 2 AS LBSUPLR$
+	FIELD #3, 4 AS WCDE$, 1 AS WTYP$, 2 AS WRRN$
+	COLOR 0, 3: LOCATE 25, 2: PRINT "F1-Exit  F2-Back  F3-Align  F4-Swap printer  F6-Browse  F9-Accept  F10-Change"; : COLOR 2, 0
+	maxsup% = 1000
+	CONST maxlabels% = 999
+	pfile$ = "LPT1:"
+	CALL chgprinter(pfile$)
+	'//////////////
+	DO
+goa: LOCATE 3, 14: PRINT "Enter label number...> "; CHR$(fnh);
+	x$ = ""
+	CALL inpnew(x$, 4!, updwn%, "13,59,62,64,67-68" + alt$): GOSUB alt
+	SELECT CASE updwn%
+	CASE 59: CLOSE : call exitpgm(pgm$):CHAIN pgm$
+	CASE 13:
+		old% = LBNO%
+		LBNO% = VAL(x$)
+		IF LBNO% = 0 THEN LBNO% = old% + 1
+		IF LBNO% < 1 OR LBNO% > maxlabels% THEN GOTO goa
+		GET #1, LBNO%
+		IF CVI(LBNO$) <> LBNO% THEN GOSUB clearrec
+		a$ = LBA$
+		b$ = LBB$
+		LBSUPLR% = CVI(LBSUPLR$)
+		GOSUB dsply
+	CASE 62: 'CMD:4 - Swap printer
+		CALL chgprinter(pfile$)
+	CASE 64: 'CMD:6 - Browse LABELS
+			CALL browse(s%)
+			GET #1, s%
+			LBNO% = s%
+			a$ = LBA$
+			b$ = LBB$
+			LBSUPLR% = CVI(LBSUPLR$)
+			GOSUB dsply
+	CASE 67: 'CMD:9 - Accept
+		  GOSUB enterprint
+	CASE 68: ' CMD 10
+		x$ = STR$(LBSUPLR%)
+getsup:
+		LOCATE 4, 14: PRINT "Supplier...........> "; CHR$(fnh);
+		CALL inpnew(x$, 4!, updwn%, "13,59,61,64,68" + alt$): GOSUB alt
+		IF updwn% = 59 THEN GOTO goa
+		IF updwn% = 64 THEN
+				PCOPY 0, 2
+				GOSUB browsesup
+				PCOPY 2, 0
+				GOTO getsup
+				END IF
+		LBSUPLR% = VAL(x$)
+		IF LBSUPLR% = 0 THEN
+			LSET LBNO$ = MKI$(0)
+			PUT #1, LBNO%
+			GOTO goa
+			END IF
+		IF LBSUPLR% < 1 OR LBSUPLR% > maxsup% THEN GOTO getsup
+		GET #44, LBSUPLR%, sup
+		GOSUB loadlabel
+		GOSUB dsply
+		GOSUB enterprint
+	CASE ELSE
+	END SELECT
+	LOOP
+	'//////////////
+dsply:
+	GOSUB loadlabel
+	LOCATE 3, 50: PRINT USING "LABEL......>####"; LBNO%
+	LOCATE 4, 14: PRINT USING "Supplier...........>####     "; LBSUPLR%;
+	LOCATE 5, 14: PRINT USING "FIRST LINE .............>\                \<"; a$
+	LOCATE 6, 14: PRINT USING "SECOND LINE....>\                                  \<"; b$
+	LOCATE 7, 14: PRINT USING "THIRD LINE.....>\                                  \<"; c$
+	LOCATE 8, 14: PRINT USING "FOURTH LINE....>\                                  \<"; d$
+	LOCATE 9, 14: PRINT USING "FIFTH LINE.....>\                                  \<"; e$
+	LOCATE 10, 14: PRINT USING "SIXTH LINE.....>\                                  \<"; f$
+	LOCATE 13, 14: PRINT "SEVENTH LINE...>      NETT CONTENTS        (LT,ML)  <"
+	LOCATE 15, 30: PRINT "ENTER BATCH NUMBER...>"
+	LOCATE 17, 30: PRINT "ENTER LABELS REQ'D...>"
+	RETURN
+	'//////////////
+loadlabel:
+	IF LBSUPLR% < 1 OR LBSUPLR% > maxsup% THEN
+		a$ = "": b$ = "": c$ = "": d$ = ""
+		e$ = "": f$ = "": g$ = "": h$ = ""
+	ELSE
+		GET #44, LBSUPLR%, sup
+		c$ = "   " + sup.sname$
+		d$ = "   " + sup.saddr$
+		e$ = "   " + sup.suburb$ + "      " + sup.spcode$
+		IF sup.sacode$ <> "   " AND sup.sacode$ <> STRING$(3, 0) THEN
+			f$ = "   Telephone........(" + sup.sacode$ + ") " + sup.sphone$
+		ELSE
+			f$ = "   Telephone............" + sup.sphone$
+			END IF
+	END IF
+RETURN
+	'//////////////
+clearrec:
+	LSET LBNO$ = MKI$(LBNO%)
+	LSET LBSUPLR$ = MKI$(0)
+	LSET LBA$ = SPACE$(99)
+	LSET LBA$ = SPACE$(99)
+	LSET LBB$ = SPACE$(99)
+RETURN
+	'//////////////
+enterprint:
+	GOSUB dsply
+	IF updwn% = 67 THEN GOTO inp7 '>> cmd9. Accept.
+inp1: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = a$
+	LOCATE 5, 39
+	CALL inpnew(in$, 118!, updwn%, "13,59-61,72,80")
+	a$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp1
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN a$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp1
+		END IF
+	IF updwn% = 72 THEN GOTO inp1
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp1
+	'//////////////
+inp2: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = b$
+	LOCATE 6, 30
+	CALL inpnew(in$, 136!, updwn%, "13,59,62,64,67-68")
+	b$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp1
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN b$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp2
+		END IF
+	IF updwn% = 72 THEN GOTO inp1
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp2
+	'//////////////
+inp3: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = c$
+	LOCATE 7, 30
+	CALL inpnew(in$, 136!, updwn%, "13,59,62,64,67-68")
+	c$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp2
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN c$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp3
+		END IF
+	IF updwn% = 72 THEN GOTO inp2
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp3
+	'//////////////
+	LOCATE 8, 14: PRINT "FOURTH LINE....>                                    <"
+inp4: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = d$
+	LOCATE 8, 30
+	CALL inpnew(in$, 136!, updwn%, "13,59,62,64,67-68")
+	d$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp3
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN d$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp4
+		END IF
+	IF updwn% = 72 THEN GOTO inp3
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp4
+	'//////////////
+inp5: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = e$
+	LOCATE 8, 30
+	CALL inpnew(in$, 136!, updwn%, "13,59,62,64,67-68")
+	e$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp4
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN e$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp5
+		END IF
+	IF updwn% = 72 THEN GOTO inp4
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp5
+	'//////////////
+inp6: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = f$
+	LOCATE 10, 30
+	CALL inpnew(in$, 136!, updwn%, "13,59,62,64,67-68")
+	f$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp5
+	IF updwn% = 61 THEN
+		l% = (xmax - flin - 1) / 2
+		IF flin < xmax THEN f$ = LEFT$(SPACE$(l%) + in$, xmax)
+		GOTO inp6
+		END IF
+	IF updwn% = 72 THEN GOTO inp5
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp6
+	'//////////////  Qty in LT or ML
+inp7: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	LOCATE 21, 30: COLOR 14, 0: PRINT "F10 - Label advance.": COLOR 2, 0
+	in$ = STR$(nc%): in$ = RIGHT$(in$, LEN(in$) - 1)
+	LOCATE 13, 50: CALL inpnew(in$, 3!, updwn%, "ALL"): updwn% = updwn%
+	nc% = VAL(in$)
+	LOCATE 21, 30: PRINT CHR$(fne)'>> Erase message
+	IF updwn% = 13 THEN updwn% = 0
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp6
+	IF updwn% = 68 THEN '>> Label advance
+		OPEN pfile$ FOR RANDOM SHARED AS #99
+		FOR i% = 1 TO 12: PRINT #99, : NEXT
+		CLOSE #99
+		GOTO inp7
+		END IF
+	IF updwn% = 72 THEN GOTO inp6
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp7
+	'////////////// TYPE
+inp8: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = MID$(type$, 1, 2)
+	LOCATE 13, 55
+	CALL inpnew(in$, 102!, updwn%, "13,59,62,64,67-68")
+	type$ = MID$(in$, 1, 2)
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp6
+	IF updwn% = 72 THEN GOTO inp6
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp8
+        type$=ucase$(type$)
+	IF type$ <> "ML" AND type$ <> "LT" GOTO inp8
+	'//////////////  batch number
+inp9: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = bn$
+	LOCATE 15, 52
+	CALL inpnew(in$, 105!, updwn%, "13,59,62,64,67-68")
+	bn$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp8
+	IF updwn% = 72 THEN GOTO inp8
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp9
+	'//////////////
+inp10: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	LOCATE 19, 21: PRINT SPACE$(50)
+	in$ = STR$(k%): in$ = RIGHT$(in$, LEN(in$) - 1): disold = 1
+	LOCATE 17, 52
+	CALL inpnew(in$, 103!, updwn%, "13,59,62,64,67-68")
+	k% = VAL(in$)
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp9
+	IF updwn% = 72 THEN GOTO inp9
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp10
+	'//////////////
+	LOCATE 19, 30: PRINT "PRINT LABELS...(Y/N).>"; k$; SPACE$(20)
+inp11: fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
+	in$ = k$
+	LOCATE 19, 52
+	CALL inpnew(in$, 101!, updwn%, "13,59,62,64,67-68")
+	k$ = in$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp10
+	IF updwn% = 62 THEN CALL chgprinter(pfile$): GOTO inp11
+	IF updwn% = 72 THEN GOTO inp10
+	IF updwn% = 80 THEN updwn% = 0
+	IF updwn% <> 0 THEN GOTO inp11
+	IF k$ = "y" THEN k$ = "Y"
+	IF k$ = "n" THEN k$ = "N"
+	IF k$ <> "Y" AND k$ <> "N" THEN GOTO inp11
+	IF k$ <> "Y" THEN GOTO inp9
+	GOSUB doprint
+	GOTO inp7
+continue:
+	LSET LBA$ = a$
+	LSET LBB$ = b$
+	LSET LBSUPLR$ = MKI$(LBSUPLR%)
+	PUT #1, LBNO%
+RETURN
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>PRINT ROUTINE
+	'////////////////////////////////////////////////////////////////////////
+doprint:
+	OPEN pfile$ FOR RANDOM SHARED AS #99
+	k = k% / 2: i% = k% / 2
+	IF k <> i% THEN k% = k% + 1
+FOR n% = 1 TO k% STEP 2
+	LOCATE 19, 21: PRINT USING "Printing label ### out of ###            "; n%; k%
+	PRINT #99, USING "!&   &!"; CHR$(14); a$; a$; CHR$(20)
+	PRINT #99, STRING$(36, "-"); TAB(42); STRING$(36, "-")
+	PRINT #99, USING "\                                  \"; b$;
+	PRINT #99, TAB(42); USING "\                                  \"; b$
+	PRINT #99, USING "\                                  \"; c$;
+	PRINT #99, TAB(42); USING "\                                  \"; c$
+	PRINT #99, USING "\                                  \"; d$;
+	PRINT #99, TAB(42); USING "\                                  \"; d$
+	PRINT #99, USING "\                                  \"; e$;
+	PRINT #99, TAB(42); USING "\                                  \"; e$
+	PRINT #99, USING "\                                  \"; f$;
+	PRINT #99, TAB(42); USING "\                                  \"; f$
+	PRINT #99, USING "\                                  \"; g$;
+	PRINT #99, TAB(42); USING "\                                  \"; g$
+	PRINT #99, USING "Batch Number   ..............  \   \"; bn$;
+	PRINT #99, TAB(42); USING "Batch Number   ..............  \   \"; bn$
+	IF type$ = "LT" THEN
+		PRINT #99, USING "     NETT CONTENTS #### LITRES      "; nc%;
+		PRINT #99, TAB(42); USING "     NETT CONTENTS #### LITRES      "; nc%
+		ELSE
+		PRINT #99, USING "     NETT CONTENTS #### ML          "; nc%;
+		PRINT #99, TAB(42); USING "     NETT CONTENTS #### ML          "; nc%
+		END IF
+	PRINT #99,
+	PRINT #99,
+	NEXT
+	CLOSE #99
+	RETURN
+	'//////////////////////////////////////////////////////
+	'>>>>> B R O W S E    M S W H O    F I L E
+	'//////////////////////////////////////////////////////
+browsesup:
+	CALL setup("BROWSE CREDITORS ON FILES")
+	COLOR 0, 3: LOCATE 25, 4: PRINT SPACE$(71);
+	COLOR 0, 3: LOCATE 25, 4: PRINT "F1-Exit"; : LOCATE 25, 71: PRINT CHR$(24); CHR$(25); "-Move";
+	COLOR 2, 0: LOCATE 3, 1
+	PRINT "No. Supplier/Customer name         Contact              Telephone     SEARCH"
+	s% = p'* S% holds the record number to edit on return from browse
+	in$ = STR$(p): GOTO 2580'LIST FIRST PAGE
+	'>>>>> Get next record to browse from
+2540 COLOR 2: LOCATE 2, 24: PRINT "Start browse from..> ";
+	 in$ = "Y"
+	 LOCATE 2, 44:
+	 in$ = MID$(STR$(e%), 2)
+	 CALL inpnew(in$, 105!, updwn%, "13,59,60,73,81")
+	 IF updwn% = 59 THEN in$ = MID$(STR$(s%), 2): pass% = -1: updwn% = 0: GOTO bret
+	 IF updwn% = 81 THEN in$ = ""'Next Page
+	 IF updwn% = 73 THEN ' Prev page
+			i% = skey - 17: IF i% < 1 OR i% > maxsup% THEN i% = 1
+			GET #3, i%: in$ = "    ": LSET in$ = supx.WCDE$
+			IF in$ = "~~~~" THEN in$ = "    "
+			END IF
+	 '>>>>> Hit return
+	 IF LEN(in$) = 0 THEN in$ = STR$(e%)
+2580 '>>>>> L I S T   A   P A G E
+	 b% = VAL(in$)
+	 IF b% > 0 THEN
+			 IF b% < 1 OR b% > maxsup% THEN COLOR 14: LOCATE 2, 52: PRINT "Supplier number out of Range": COLOR 2: GOTO 2540
+			 GET #44, b%, sup
+			 in$ = sup.search$
+			 END IF
+	 'Search the index for strings
+	 skey$ = "    ": LSET skey$ = in$
+	 GOSUB binsearch'Search index
+	 b% = CVI(supx.WRRN$)
+	 IF b% < 1 OR b% > maxsup% THEN b% = 1
+	 rec2% = b%
+	 LOCATE 2, 50: PRINT SPACE$(30);
+	 s% = 0: n% = 0
+	 GET #44, rec2%, sup
+	LOCATE 5, 2: missed% = 0
+	 WHILE n% < 17
+		 sno% = CVI(sup.sno$)
+		 IF sup.sdate$ = STRING$(8, CHR$(0)) THEN LSET sup.sdate$ = SPACE$(8)
+		   IF sup.sdate$ <> SPACE$(8) THEN
+				IF s% = 0 THEN s% = rec2%'* Set to first record on screen for return
+				LOCATE , 2
+				PRINT USING "### & & (&) &   &&"; sno%; sup.sname$; sup.scont$; sup.sacode$; sup.sphone$; sup.search$; sup.stype$
+				n% = n% + 1
+				END IF
+		  GET #3
+		  rec2% = CVI(supx.WRRN$)
+		  IF rec2% > 0 AND rec2% <= maxsup% THEN
+			GET #44, rec2%, sup
+		  ELSE
+			FOR i% = n% + 1 TO 17: LOCATE , 2: PRINT CHR$(fne): NEXT
+			n% = 32766: FOR i% = 1 TO 50: x$ = INKEY$: NEXT
+		  END IF
+2800      WEND
+	 e% = rec2%
+	'*
+	 LOCATE 2, 57: PRINT USING "Return with record:####"; s%
+	GOTO 2540'* Get next record to browse from
+bret: RETURN
+	'////////////////////////////////////////////////////////////////////////
+	'\\\\\ Lookup index file. Passed skey$. Returns SKEY, 0 if not found. \\\\\
+	'////////////////////////////////////////////////////////////////////////
+binsearch:
+	skey = 0: skey1 = 0: found% = 0
+	IF skey$ = "    " THEN skey1 = 0: GOTO xsearch
+	s% = 0: e% = maxsup%
+searchagn:
+	p% = (e% - s%) / 2 + s%
+	GET #3, p%
+	IF CVI(supx.WRRN$) = 0 THEN LSET supx.WCDE$ = STRING$(99, CHR$(255))
+	IF supx.WCDE$ = skey$ THEN skey = p%: skey1 = p%: found% = -1: GOTO xsearch
+	IF e% - s% = 1 THEN skey = 0: skey1 = s%: GOTO xsearch
+	IF supx.WCDE$ < skey$ THEN s% = p%: GOTO searchagn
+	IF supx.WCDE$ > skey$ THEN e% = p%: GOTO searchagn
+xsearch: RETURN
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>   BROWSE LABEL FILE
+	'////////////////////////////////////////////////////////////////////////
+SUB browse (s%) STATIC
+	FIELD #1, 2 AS LBNO$, 18 AS LBA$, 36 AS LBB$, 2 AS LBSUPLR$
+	PCOPY 0, 2
+	COLOR 8, 3
+	CALL box(1, 2, 80, 3, 0, 0, 0)
+	CALL box(1, 4, 80, 23, 7, 0, 2)
+	COLOR 4, 3: LOCATE 1, 20: PRINT "   BROWSE LABELS ON FILE   "
+	COLOR 0, 3: LOCATE 25, 4: PRINT SPACE$(71);
+	COLOR 0, 3: LOCATE 25, 2: PRINT "  F1-Exit"; : LOCATE 25, 71: PRINT CHR$(24); CHR$(25); "-Move ";
+	COLOR 6, 0: LOCATE 3, 1: PRINT "  No.    Label heading.": COLOR 2, 0
+	CALL listpage(s%, e%)
+DO
+	'>>>>> Get next record to browse from
+	COLOR 2: LOCATE 2, 24: PRINT "Start browse from..> ";
+	LOCATE 2, 44
+	in$ = STR$(e%)
+	CALL inpnew(in$, 5!, updwn%, "13,59,73,81")
+	SELECT CASE updwn%
+	CASE 59: EXIT DO
+	CASE 81: in$ = ""'Next Page
+	CASE 73:
+		' Prev page
+		n% = 0
+		DO UNTIL n% = 17 OR s% <= 1
+			s% = s% - 1
+			GET #1, s%
+			LBNO% = CVI(LBNO$)
+			IF LBNO% = s% THEN n% = n% + 1
+			LOOP
+	CASE ELSE
+	s% = VAL(in$)
+	END SELECT
+	CALL listpage(s%, e%)
+	LOOP
+	PCOPY 2, 0
+END SUB
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>   DISPLAY PRINTER FILE TYPE
+	'////////////////////////////////////////////////////////////////////////
+SUB chgprinter (file$) STATIC
+	IF file$ = "LPT1:" THEN
+		file$ = "LPT3:"
+		ELSE
+		file$ = "LPT1:"
+		END IF
+	COLOR 7, 4: LOCATE 3, 72: PRINT " "; file$; " ": COLOR 2, 0
+	END SUB
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>> L I S T   A   P A G E
+	'////////////////////////////////////////////////////////////////////////
+SUB listpage (s%, e%) STATIC
+	'>> RETURNS
+	'>> S% - First record on screen
+	'>> E% - Last record on screen
+	'>>
+	CONST pagelen% = 17
+	lastrec% = LOF(1) / 58
+	FIELD #1, 2 AS LBNO$, 18 AS LBA$, 36 AS LBB$, 2 AS LBSUPLR$
+	IF s% < 1 OR s% > lastrec% THEN s% = 1
+	missed% = 0: start% = s%: n% = 0
+	LOCATE 5, 2
+	GET #1, s%
+	DO WHILE NOT EOF(1) AND n% < pagelen%
+		LBNO% = CVI(LBNO$)
+		IF LBNO% <> s% THEN
+			missed% = missed% + 1
+			IF missed% > 100 THEN EXIT DO
+		ELSE
+			LOCATE , 2
+			sno% = CVI(LBSUPLR$)
+			IF sno% > 0 AND sno% < 9999 THEN
+				GET #44, sno%, sup
+				END IF
+			PRINT USING "#### &    #### &"; LBNO%; LBA$; sno%; sup.sname$
+			n% = n% + 1
+			e% = s%
+			END IF
+		GET #1
+		s% = s% + 1
+		LOOP
+	FOR i% = 1 TO pagelen% - n%: LOCATE , 2: PRINT CHR$(fne): NEXT
+	FOR i% = 1 TO 50: x$ = INKEY$: NEXT
+	LOCATE 2, 57: PRINT USING "Return with record:####"; start%
+	s% = start%
+END SUB
+

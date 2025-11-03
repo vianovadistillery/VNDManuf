@@ -1,0 +1,255 @@
+DECLARE SUB chgprinter (file$)
+DECLARE SUB browse (s%)
+DECLARE SUB listpage (s%, e%)
+	'General label program
+'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
+	DIM LB$(3)
+	pgm$ = "menutp"
+	CALL setup("GENERAL LABEL PRINT")
+	CLOSE
+
+	OPEN "LBLSTIK.MSF" FOR RANDOM AS #1 LEN = 92
+	FIELD #1, 2 AS LBNO$, 18 AS LB$(1), 36 AS LB$(2), 36 AS LB$(3)
+
+	COLOR 8, 3: LOCATE 24, 1: PRINT " F1-Exit  F2-Back  F3-Align  F4-Swap printer  F6-Browse  F9-Accept  F10-Change": COLOR 2, 0
+	p$ = "Y"
+	pfile$ = "LPT3:"
+	CALL chgprinter(pfile$)
+	CONST maxlabels% = 200
+	'//////////////
+	DO
+goa: LOCATE 3, 14: PRINT "Enter label number...> "; CHR$(fnh);
+	x$ = "": CALL inpnew(x$, 4!, updwn%, "13,59,61-62,64,67-68")
+	SELECT CASE updwn%
+	CASE 59: CLOSE : call exitpgm(pgm$):CHAIN pgm$
+	CASE 13:
+		old% = LBNO%
+		LBNO% = VAL(x$)
+		IF LBNO% = 0 THEN LBNO% = old% + 1
+		IF LBNO% < 1 OR LBNO% > maxlabels% THEN GOTO goa
+		GET #1, LBNO%
+		IF CVI(LBNO$) <> LBNO% THEN GOSUB clearrec
+		GOSUB dsply
+	CASE 61: 'CMD:3 - Advance one label on printer.
+		  LBNO% = 0
+		  GOSUB enterprint
+	CASE 62: 'CMD:4 - Swap printer
+		CALL chgprinter(pfile$)
+	CASE 64: 'CMD:6 - Browse LABELS
+			CALL browse(s%)
+			GET #1, s%
+			LBNO% = s%
+			GOSUB dsply
+	CASE 67: 'CMD:9 - Accept
+		  GOSUB enterprint
+	CASE 68: ' CMD 10
+		GOSUB dsply
+		GOSUB enterprint
+	CASE ELSE
+	END SELECT
+	LOOP
+	'//////////////
+dsply:
+	LOCATE 3, 50: PRINT USING "LABEL......>####"; LBNO%
+	LOCATE 5, 14: PRINT USING "FIRST LINE .............>\                \<"; LB$(1)
+	LOCATE 6, 14: PRINT USING "SECOND LINE....>\                                  \<"; LB$(2)
+	LOCATE 7, 14: PRINT USING "THIRD LINE.....>\                                  \<"; LB$(3)
+	LOCATE 17, 20: PRINT "NUMBER OF LABELS.....>             "
+	LOCATE 19, 20: PRINT "PRINT LABELS...(Y/N).>"; p$; SPACE$(20)
+	RETURN
+	'//////////////
+enterprint:
+	GOSUB dsply
+	IF updwn% = 67 THEN GOTO asknum'>> cmd9. Accept.
+	'//////////////  Top line input
+inp1:
+	LOCATE 5, 39
+	a$ = LB$(1)
+	CALL inpnew(a$, 118!, updwn%, "59-61,13")
+	LSET LB$(1) = a$
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp1
+	IF updwn% = 61 THEN
+		i% = 1: DO WHILE MID$(a$, i%, 1) = " ": i% = i% + 1: LOOP
+		a$ = MID$(a$, i%)
+		l% = LEN(a$): l2% = (18 - l%) / 2
+		a$ = SPACE$(l2%) + a$
+		LSET LB$(1) = a$
+		GOTO inp1
+		END IF
+	atline% = 2
+	'////////////// All the rest
+inp2to9:
+	DO
+		a$ = LB$(atline%)
+		LOCATE atline% + 4, 30
+		CALL inpnew(a$, 136!, updwn%, "59-61,13")
+		LSET LB$(atline%) = a$
+		IF updwn% = 59 THEN EXIT DO
+		IF updwn% = 60 THEN
+			atline% = atline% - 2
+			IF atline% < 1 THEN EXIT DO
+			END IF
+		IF updwn% = 61 THEN
+			i% = 1: DO WHILE MID$(a$, i%, 1) = " ": i% = i% + 1: LOOP
+			a$ = MID$(a$, i%)
+			l% = LEN(a$): l2% = (35 - l%) / 2
+			a$ = SPACE$(l2%) + a$
+			LSET LB$(atline%) = a$
+			atline% = atline% - 1
+			END IF
+		atline% = atline% + 1
+		LOOP UNTIL atline% > 3'4
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN GOTO inp1
+	'//////////////   Number of labels
+asknum:
+	LOCATE 21, 30: COLOR 14, 0: PRINT "F10 - Label advance.": COLOR 2, 0
+	LOCATE 17, 42
+	CALL inpnew(k$, 3!, updwn%, "59,60,62,68,13")
+	LOCATE 21, 30: PRINT CHR$(fne)
+	IF updwn% = 59 THEN GOTO continue
+	IF updwn% = 60 THEN atline% = 9: GOTO inp2to9
+	IF updwn% = 62 THEN CALL chgprinter(pfile$): GOTO asknum
+	IF updwn% = 68 THEN '>> Label advance
+		OPEN pfile$ FOR RANDOM AS #99
+		FOR i% = 1 TO 12: PRINT #99, : NEXT
+		CLOSE #99
+		GOTO asknum
+		END IF
+	'//////////////   Print or not?
+ask:
+	DO
+		LOCATE 19, 42
+		CALL inpnew(p$, 101!, updwn%, "59,60,62,13")
+		IF updwn% = 59 THEN GOTO continue
+		IF updwn% = 60 THEN k$ = "N": EXIT DO
+		IF updwn% = 62 THEN CALL chgprinter(pfile$)
+                p$=ucase$(p$)
+		LOOP UNTIL updwn% = 13 AND (p$ = "Y" OR p$ = "N")
+	IF p$ <> "Y" THEN GOTO asknum
+	GOSUB doprint
+continue:
+	PUT #1, LBNO%
+RETURN
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>PRINT ROUTINE
+	'////////////////////////////////////////////////////////////////////////
+doprint:
+	OPEN pfile$ FOR RANDOM AS #99
+	k% = VAL(k$)
+	k = k% / 2: i% = k% / 2
+	IF k <> i% THEN k% = k% + 1
+FOR n% = 1 TO k% STEP 2
+	LOCATE 19, 20: PRINT USING "Printing label ### out of ###            "; n%; k%
+	PRINT #99, USING "!&   &!"; CHR$(14); LB$(1); LB$(1); CHR$(20)
+	FOR atline% = 2 TO 3
+		PRINT #99, USING "\                                  \"; LB$(atline%);
+		PRINT #99, TAB(42); USING "\                                  \"; LB$(atline%)
+		NEXT
+	PRINT #99,
+	PRINT #99,
+	PRINT #99,
+	NEXT
+	CLOSE #99
+	RETURN
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>> CLEAR NEW RECORD
+	'////////////////////////////////////////////////////////////////////////
+clearrec:
+	LSET LBNO$ = MKI$(LBNO%)
+	FOR i% = 1 TO 2
+		LSET LB$(i%) = SPACE$(99)
+		NEXT
+	RETURN
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>   BROWSE LABEL FILE
+	'////////////////////////////////////////////////////////////////////////
+SUB browse (s%) STATIC
+	DIM LB$(3)
+	FIELD #1, 2 AS LBNO$, 18 AS LB$(1), 36 AS LB$(2), 36 AS LB$(3)
+	PCOPY 0, 2
+	COLOR 8, 3
+	CALL box(1, 2, 80, 3, 0, 0, 0)
+	CALL box(1, 4, 80, 22, 7, 0, 2)
+	COLOR 4, 3: LOCATE 1, 20: PRINT "   BROWSE LABELS ON FILE   "
+	btm$ = SPACE$(30) + "    F1-Return.     " + SPACE$(30)
+	COLOR 8, 3: LOCATE 24, 1: PRINT btm$
+	COLOR 6, 0: LOCATE 3, 1: PRINT "  No.    Label heading.": COLOR 2, 0
+	CALL listpage(s%, e%)
+DO
+	'>>>>> Get next record to browse from
+	COLOR 2: LOCATE 2, 24: PRINT "Start browse from..> ";
+	LOCATE 2, 44
+	in$ = STR$(e%)
+	CALL inpnew(in$, 5!, updwn%, "13,59,63-64")
+	SELECT CASE updwn%
+	CASE 59: EXIT DO
+	CASE 64: in$ = ""'Next Page
+	CASE 63:
+		' Prev page
+		n% = 0
+		DO UNTIL n% = 18 OR s% <= 1
+			s% = s% - 1
+			GET #1, s%
+			LBNO% = CVI(LBNO$)
+			IF LBNO% = s% THEN n% = n% + 1
+			LOOP
+	CASE ELSE
+	s% = VAL(in$)
+	END SELECT
+	CALL listpage(s%, e%)
+	LOOP
+	PCOPY 2, 0
+END SUB
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>>>>   DISPLAY PRINTER FILE TYPE
+	'////////////////////////////////////////////////////////////////////////
+SUB chgprinter (file$) STATIC
+	IF file$ = "LPT1:" THEN
+		file$ = "LPT3:"
+		ELSE
+		file$ = "LPT1:"
+		END IF
+	COLOR 7, 4: LOCATE 3, 72: PRINT " "; file$; " ": COLOR 2, 0
+	END SUB
+
+	'////////////////////////////////////////////////////////////////////////
+	'>>>>> L I S T   A   P A G E
+	'////////////////////////////////////////////////////////////////////////
+SUB listpage (s%, e%) STATIC
+	'>> RETURNS
+	'>> S% - First record on screen
+	'>> E% - Last record on screen
+	'>>
+	CONST pagelen% = 18
+	lastrec% = LOF(1) / 92
+	DIM LB$(3)
+	FIELD #1, 2 AS LBNO$, 18 AS LB$(1), 36 AS LB$(2), 36 AS LB$(3)
+	IF s% < 1 OR s% > lastrec% THEN s% = 1
+	missed% = 0: start% = s%: n% = 0
+	LOCATE 5, 2
+	GET #1, s%
+	DO WHILE NOT EOF(1) AND n% < pagelen%
+		LBNO% = CVI(LBNO$)
+		IF LBNO% <> s% THEN
+			missed% = missed% + 1
+			IF missed% > 100 THEN EXIT DO
+		ELSE
+			LOCATE , 2
+			PRINT USING "#### &"; LBNO%; LB$(1)
+			n% = n% + 1
+			e% = s%
+			END IF
+		GET #1
+		s% = s% + 1
+		LOOP
+	FOR i% = 1 TO pagelen% - n%: LOCATE , 2: PRINT CHR$(fne): NEXT
+	FOR i% = 1 TO 50: x$ = INKEY$: NEXT
+	LOCATE 2, 57: PRINT USING "Return with record:####"; start%
+	s% = start%
+END SUB
+
+

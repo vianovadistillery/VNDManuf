@@ -1,0 +1,23 @@
+typefields% = -1
+	'$INCLUDE: '\tpmanuf\src\WHOF.INC'
+	'$INCLUDE: '\tpmanuf\src\CUS.INC'
+	'$INCLUDE: '\tpmanuf\src\SUP.INC'
+	'$INCLUDE: '\tpmanuf\src\pickup.INC'
+rec% = 1
+last% = LOF(43) / LEN(cus)
+
+FOR rec% = 1 TO last%
+
+GET #43, rec%, cus
+
+ascii = ASC(cus.stype$)
+
+
+IF ascii = 0 THEN GOTO skip:
+			PRINT cus.search$ + cus.stype$
+			cus.sgl$ = MKS$(40000 + CVS(cus.sgl$))
+			PUT #43, rec%, cus
+skip:
+NEXT
+
+END

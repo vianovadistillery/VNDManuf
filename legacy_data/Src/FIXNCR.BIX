@@ -1,0 +1,110 @@
+typefields% = -1
+'$INCLUDE: '\tpmanuf\src\complnt.inc'
+'$INCLUDE: '\tpmanuf\src\nonconf.inc'
+TYPE RcdFmtwas
+	no AS INTEGER
+
+	Name AS STRING * 30
+	Addr AS STRING * 25
+	sub AS STRING * 20
+	pcode AS STRING * 4
+	phone AS STRING * 10
+	fax AS STRING * 10
+
+	cName AS STRING * 30
+	cAddr AS STRING * 25
+	csub AS STRING * 20
+	cpcode AS STRING * 4
+	cphone AS STRING * 10
+	cfax AS STRING * 10
+
+	opened AS STRING * 8
+	closed AS STRING * 8
+	type AS STRING * 10
+	product AS STRING * 10
+	colour AS STRING * 10
+	batch AS STRING * 10
+	report AS STRING * 10
+
+	text(1 TO 12) AS STRING * 78
+	filler AS STRING * 158
+END TYPE
+DIM SHARED was AS RcdFmtwas
+
+OPEN "complnt.old" FOR RANDOM SHARED AS #10 LEN = 1360
+OPEN "nonconf.old" FOR RANDOM SHARED AS #13 LEN = 1360
+
+rec% = 1
+GET #10, rec%, was
+DO WHILE NOT EOF(10)
+	complnt.no = was.no
+
+	complnt.Name = was.Name
+	complnt.Addr = was.Addr
+	complnt.sub = was.sub
+	complnt.pcode = was.pcode
+	complnt.phone = was.phone
+	complnt.fax = was.fax
+
+	complnt.cName = was.cName
+	complnt.cAddr = was.cAddr
+	complnt.csub = was.csub
+	complnt.cpcode = was.cpcode
+	complnt.cphone = was.cphone
+	complnt.cfax = was.cfax
+
+	complnt.opened = was.opened
+	complnt.closed = was.closed
+	complnt.type = was.type
+	complnt.product = was.product
+	complnt.colour = was.colour
+	complnt.batch = was.batch
+	complnt.report = was.report
+
+	FOR i% = 1 TO 12
+	complnt.text(i%) = was.text(i%)
+	NEXT
+	complnt.filler = was.filler
+
+	PUT #70, rec%, complnt
+	GET #10, , was: rec% = rec% + 1
+	LOOP
+
+'part ii
+rec% = 1
+GET #13, rec%, was
+DO WHILE NOT EOF(13)
+	complnt.no = was.no
+
+	complnt.Name = was.Name
+	complnt.Addr = was.Addr
+	complnt.sub = was.sub
+	complnt.pcode = was.pcode
+	complnt.phone = was.phone
+	complnt.fax = was.fax
+
+	complnt.cName = was.cName
+	complnt.cAddr = was.cAddr
+	complnt.csub = was.csub
+	complnt.cpcode = was.cpcode
+	complnt.cphone = was.cphone
+	complnt.cfax = was.cfax
+
+	complnt.opened = was.opened
+	complnt.closed = was.closed
+	complnt.type = was.type
+	complnt.product = was.product
+	complnt.colour = was.colour
+	complnt.batch = was.batch
+	complnt.report = was.report
+
+	FOR i% = 1 TO 12
+	complnt.text(i%) = was.text(i%)
+	NEXT
+	complnt.filler = was.filler
+
+	PUT #73, rec%, complnt
+	GET #13, , was: rec% = rec% + 1
+	LOOP
+
+CLOSE

@@ -1,0 +1,59 @@
+'////////////////////////////////////////////////////////////////////////
+'>> TNTHED
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+	typefields% = -1
+
+	'$INCLUDE: '\tpmanuf\src\tnthed.INC'
+	'$INCLUDE: '\tpmanuf\src\forhed.INC'
+
+CALL setup("Z E R O   T N T H E D")
+
+last% = LOF(64) / LEN(tnthed)
+rec% = 1
+OPEN "forhed.txt" FOR OUTPUT AS #99
+GET #64, rec%, tnthed
+DO WHILE rec% < last% + 1
+
+	LOCATE 10, 40: PRINT "Record..."; tnthed.tnt%
+
+	a$ = STR$(tnthed.tnt%)
+	b$ = tnthed.tnta$
+	c$ = STR$(tnthed.revision%)
+	d$ = tnthed.name$
+	e$ = tnthed.desc$
+	f$ = tnthed.cust$
+	g$ = tnthed.SorW$
+	h$ = STR$(tnthed.class%)
+	i$ = STR$(tnthed.yield)
+	j$ = STR$(tnthed.ltr)
+	k$ = STR$(tnthed.kg)
+	l$ = STR$(tnthed.visc1h)
+	m$ = STR$(tnthed.visc1l)
+	n$ = STR$(tnthed.visc2h)
+	o$ = STR$(tnthed.visc2l)
+	p$ = STR$(tnthed.alccost)
+	q$ = STR$(tnthed.rawcost)
+	r$ = STR$(tnthed.filter%)
+	s$ = STR$(tnthed.grind)
+	t$ = STR$(tnthed.ph)
+	u$ = STR$(tnthed.sg)
+	v$ = STR$(tnthed.Vsol)
+	w$ = STR$(tnthed.Wsol)
+	x$ = STR$(tnthed.pvc)
+	y$ = STR$(tnthed.pbr)
+	z$ = STR$(tnthed.gloss)
+	aa$ = tnthed.Hazard$
+	ab$ = tnthed.date$
+	ac$ = STR$(tnthed.asRmat%)
+	ad$ = tnthed.CostPer$
+
+	WRITE #99, a$, b$, c$, d$, e$, f$, g$, h$, i$, j$, k$, l$, m$, n$, o$, p$, q$, r$, s$, t$, u$, v$, w$, x$, y$, z$, aa$, ab$, ac$, ad$
+
+	rec% = rec% + 1
+
+	GET #64, rec%, tnthed
+LOOP
+
+END

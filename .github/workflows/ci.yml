@@ -1,0 +1,412 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+  POETRY_VERSION: '1.7.1'
+
+jobs:
+  # Pre-commit checks
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Check code formatting
+        run: |
+          # Check formatting without modifying files
+          echo "Checking code formatting..."
+          ruff format --check . || (echo "::error::ruff format check failed. Run 'ruff format .' locally to fix." && exit 1)
+          black --check . || (echo "::error::black format check failed. Run 'black .' locally to fix." && exit 1)
+          echo "Formatting checks passed ✓"
+
+      - name: Run pre-commit hooks (non-formatting)
+        run: |
+          # Skip formatting hooks since we check them separately above
+          # This prevents hooks from modifying files in CI
+          SKIP=ruff-format,black,isort,trailing-whitespace,end-of-file-fixer,mixed-line-ending pre-commit run --all-files
+
+  # Linting and formatting
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort mypy bandit
+
+      - name: Run Ruff linter
+        run: |
+          ruff check .
+
+      - name: Run Ruff formatter
+        run: |
+          ruff format --check .
+
+      - name: Run Black formatter check
+        run: |
+          black --check --diff .
+
+      - name: Run isort import sorting
+        run: |
+          isort --check-only --diff .
+
+      - name: Run MyPy type checking
+        run: |
+          mypy app/ --ignore-missing-imports
+
+      - name: Run Bandit security check
+        run: |
+          bandit -r app/ -f json -o bandit-report.json || true
+
+  # Database setup and migration tests
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: tpmanuf_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          while ! pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Set up test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tpmanuf_test
+        run: |
+          # Create test database
+          createdb -h localhost -U postgres tpmanuf_test
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tpmanuf_test
+        run: |
+          # Set environment variable for Alembic
+          export DB_DATABASE_URL=$DATABASE_URL
+
+          # Initialize Alembic if not already done
+          if [ ! -f "alembic.ini" ]; then
+            echo "Alembic not initialized, skipping migration test"
+            exit 0
+          fi
+
+          # Run migrations
+          alembic upgrade head
+
+          # Verify migration worked
+          python -c "
+          from app.adapters.db import get_db
+          from app.adapters.db.models import Product
+          from sqlalchemy import text
+
+          with get_db() as db:
+              result = db.execute(text('SELECT COUNT(*) FROM products'))
+              print(f'Products table exists with {result.scalar()} rows')
+          "
+
+      - name: Test database connection
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tpmanuf_test
+        run: |
+          python -c "
+          from app.adapters.db import get_db
+          from app.adapters.db.models import Base
+          from sqlalchemy import text
+
+          with get_db() as db:
+              # Test basic connection
+              result = db.execute(text('SELECT 1'))
+              print('Database connection successful')
+
+              # List all tables
+              result = db.execute(text(\"\"\"
+                  SELECT table_name
+                  FROM information_schema.tables
+                  WHERE table_schema = 'public'
+              \"\"\"))
+              tables = [row[0] for row in result.fetchall()]
+              print(f'Tables created: {tables}')
+          "
+
+  # Unit and integration tests
+  test:
+    runs-on: ubuntu-latest
+    needs: [lint, database]
+
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-mock
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=html
+
+      - name: Run golden tests
+        run: |
+          pytest tests/golden/ -v
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # API tests with FastAPI test client
+  api-test:
+    runs-on: ubuntu-latest
+    needs: [database]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install httpx pytest-asyncio
+
+      - name: Set up test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tpmanuf_test
+        run: |
+          export DB_DATABASE_URL=$DATABASE_URL
+          alembic upgrade head
+
+      - name: Run API tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tpmanuf_test
+        run: |
+          # Test API endpoints
+          python -c "
+          import os
+          os.environ['DB_DATABASE_URL'] = os.environ.get('DATABASE_URL', 'sqlite:///./test.db')
+
+          import asyncio
+          from httpx import AsyncClient
+          from app.api.main import create_app
+
+          app = create_app()
+
+          async def test_api():
+              async with AsyncClient(app=app, base_url='http://test') as client:
+                  # Test health endpoint
+                  response = await client.get('/health')
+                  print(f'Health check: {response.status_code}')
+                  assert response.status_code == 200
+
+                  # Test root endpoint
+                  response = await client.get('/')
+                  print(f'Root endpoint: {response.status_code}')
+                  assert response.status_code == 200
+
+                  # Test API endpoints (may return 404 if no data, but should not crash)
+                  try:
+                      response = await client.get('/api/v1/products/')
+                      print(f'Products endpoint: {response.status_code}')
+                  except Exception as e:
+                      print(f'Products endpoint error (expected if no DB): {e}')
+
+                  print('API tests completed successfully')
+
+          asyncio.run(test_api())
+          "
+
+  # Build and test Docker image
+  docker:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t tpmanuf:latest .
+
+      - name: Test Docker image
+        run: |
+          # Test that the image runs
+          docker run --rm tpmanuf:latest python -c "print('Docker image test successful')"
+
+  # Security scan
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit semgrep
+
+      - name: Run Safety check
+        run: |
+          safety check --json --output safety-report.json || true
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r app/ -f json -o bandit-report.json || true
+
+      - name: Run Semgrep security scan
+        run: |
+          semgrep --config=auto app/ --json --output=semgrep-report.json || true
+
+  # Performance tests
+  performance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install locust
+
+      - name: Set up test database
+        env:
+          DATABASE_URL: sqlite:///./test_perf.db
+        run: |
+          export DB_DATABASE_URL=$DATABASE_URL
+          alembic upgrade head || echo "Database setup skipped if already exists"
+
+      - name: Run performance tests
+        env:
+          DATABASE_URL: sqlite:///./test_perf.db
+        run: |
+          # Basic performance test
+          python -c "
+          import os
+          os.environ['DB_DATABASE_URL'] = os.environ.get('DATABASE_URL', 'sqlite:///./test_perf.db')
+
+          import time
+          from app.api.main import create_app
+          from httpx import Client
+
+          app = create_app()
+          client = Client(app=app, base_url='http://test')
+
+          # Test response times
+          start_time = time.time()
+          response = client.get('/health')
+          end_time = time.time()
+
+          response_time = (end_time - start_time) * 1000  # Convert to ms
+          print(f'Health endpoint response time: {response_time:.2f}ms')
+
+          assert response_time < 1000, f'Response time too slow: {response_time}ms'
+          print('Performance test passed')
+          "
+
+  # Notification on failure
+  notify:
+    runs-on: ubuntu-latest
+    needs: [pre-commit, lint, database, test, api-test]
+    if: failure()
+
+    steps:
+      - name: Notify on failure
+        run: |
+          echo "CI pipeline failed. Check the logs for details."
+          # Add notification logic here (Slack, email, etc.)

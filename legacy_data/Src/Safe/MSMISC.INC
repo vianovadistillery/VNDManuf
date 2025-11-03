@@ -1,0 +1,45 @@
+'///////////////////////////////////////////////////////////////////
+'>>>>>>>>>>>>>>>>>> MISCELLANEOUS CONTROL FILE <<<<<<<<<<<<<<<<<<<<<
+'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+OPEN "msmisc.msf" FOR RANDOM SHARED AS #36 LEN = 128
+
+TYPE RcdFmtmsmisc
+	qtyf AS STRING * 2
+	bchno AS STRING * 2
+	bchoff AS STRING * 2
+	cc AS STRING * 40
+	ccde AS STRING * 6
+	max1 AS STRING * 2
+	max2 AS STRING * 2
+	max3 AS STRING * 2
+	max4 AS STRING * 2
+	max5 AS STRING * 2
+	max6 AS STRING * 2
+	max7 AS STRING * 2
+	max8 AS STRING * 2
+	max9 AS STRING * 2
+	max10 AS STRING * 2
+	oldate AS STRING * 10
+	version AS STRING * 2
+	special AS STRING * 1
+	inside AS STRING * 1
+	bchist AS STRING * 2
+	trdisc AS STRING * 1
+	sysunt AS STRING * 2
+	sysnum AS STRING * 2
+	prthi AS STRING * 1
+	prtdb AS STRING * 1
+	prtsub AS STRING * 1
+	prtsup AS STRING * 1
+	prthi1 AS STRING * 1
+	DBmonth AS STRING * 4
+	CRmonth AS STRING * 4
+	cansidx AS INTEGER
+	labelidx AS INTEGER
+	labouridx AS INTEGER
+	filler AS STRING * 16
+END TYPE
+DIM SHARED msmisc AS RcdFmtmsmisc
+IF skipsec$ <> "Y" THEN
+	IF ENVIRON$("SO") <> "Y" THEN CLOSE : PRINT "You must sign on!": END
+END IF

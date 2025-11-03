@@ -1,0 +1,48 @@
+	'$INCLUDE: '\tpmanuf\src\fmhist.inc'
+	OPEN "fmhist.new" FOR OUTPUT SHARED AS #2 LEN = 62
+	CLOSE #2
+	OPEN "fmhist.new" FOR RANDOM SHARED AS #2 LEN = 62
+
+	TYPE RcdFmtfmhist2
+		form AS INTEGER
+		cost AS STRING * 1
+		rev AS INTEGER
+		seq AS INTEGER
+		rest AS STRING * 55
+	END TYPE
+	DIM SHARED fmhist2 AS RcdFmtfmhist2
+
+	CALL setup("COPY OLD BATCH HISTORY")
+	rec% = 1
+	GET #34, rec%, fmhist2
+	DO WHILE NOT EOF(34)
+	IF fmhist2.seq% = 1 THEN new.seq% = 1
+
+
+	fmhist2.seq% = new.seq%: new.seq% = new.seq% + 1
+	PUT #2, , fmhist2
+
+	IF fmhist2.seq% = 2 THEN
+		fmhist2.rest$ = SPACE$(55)
+		fmhist2.seq% = 3: PUT #2, , fmhist2
+		fmhist2.seq% = 4: PUT #2, , fmhist2
+		fmhist2.seq% = 5: PUT #2, , fmhist2
+		fmhist2.seq% = 6: PUT #2, , fmhist2
+		new.seq% = 7
+
+		END IF
+
+	'PRINT USING "###!-#  s:##   |-|"; fmhist2.form%; fmhist2.cost$; fmhist2.rev%; fmhist2.seq%
+	'wrk$ = STR$(fmhist2.form%) + fmhist2.cost$
+	'IF wrk$ <> sav.wrk$ THEN
+	'    x$ = INPUT$(1)
+	'    sav.wrk$ = wrk$
+	'    END IF
+	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
+	GET #34, , fmhist2: rec% = rec% + 1
+	LOOP
+
+
+ENDPGM:
+CLOSE
+END

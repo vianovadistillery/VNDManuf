@@ -1,0 +1,32 @@
+'////////////////////////////////////////////////////////////////////////
+'>> MSRMAT01
+'////////////////////////////////////////////////////////////////////////
+'.dc - Complete
+
+	typefields% = -1
+
+	'$INCLUDE: '\tpmanuf\src\acstk.INC'
+
+CALL setup("Z E R O   A C S T K")
+
+last% = LOF(3) / LEN(acstk)
+rec% = 1
+
+GET #3, rec%, acstk
+DO WHILE rec% < last% + 1
+
+	LOCATE 10, 40: PRINT "Record..."; acstk.no%
+	IF acstk.lid% = 8224 THEN acstk.lid% = 0
+	IF acstk.pbox% = 8224 THEN acstk.pbox% = 0
+	IF acstk.boxlbl% = 8224 THEN acstk.boxlbl% = 0
+
+
+
+	PUT #3, rec%, acstk
+
+	rec% = rec% + 1
+
+	GET #3, rec%, acstk
+LOOP
+
+END

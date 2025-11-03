@@ -1,0 +1,2 @@
+table,error,timestamp
+price_lists,type object 'PriceListItem' has no attribute 'pack_unit_code',2025-10-26T00:49:57.839584
