@@ -483,7 +483,7 @@ OPEN stdout$ FOR OUTPUT AS #99
 	NEXT
 	PRINT #99, STRING$(79, "Ä")
 	PRINT #99, CHR$(12);
-						 
+
 CLOSE #99
 GOTO x.print
 '////////////////////////////////////////////////////////////////////////////
@@ -572,4 +572,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 '$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

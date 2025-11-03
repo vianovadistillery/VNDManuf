@@ -21,4 +21,3 @@ TYPE RcdFmtExposure
 END TYPE
 DIM SHARED Exposure AS RcdFmtExposure
 IF LEN(Exposure) <> 1024 THEN STOP
-

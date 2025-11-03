@@ -25,9 +25,9 @@ DECLARE SUB load (max%)
 		IF start% < 1 THEN start% = 1
 		IF start% > max% - paglen% THEN start% = max% - paglen%
 		IF oldstart% <> start% THEN CALL dsply(start%, max%)
-														   
 
-		
+
+
 		rec% = start% + lin% - 1
 		IF rec% < 1 OR rec% > max% THEN rec% = 1
 
@@ -40,7 +40,7 @@ DECLARE SUB load (max%)
 		CALL inpnew(lin$(rec%), 4!, updwn%, "13,59-62,71,72-73,80-81" + ALT$): GOSUB ALT
 		MID$(lin$(rec%), 1, 4) = a$
 		IF updwn% <> 13 THEN GOTO cf99
-		
+
 
 		LOCATE lin% + 2, 7
 		a$ = MID$(lin$(rec%), 7, 8)
@@ -148,4 +148,3 @@ SUB save (max%) STATIC
 
 	CALL sndmsg("")
 END SUB
-

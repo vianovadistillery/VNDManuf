@@ -21,5 +21,3 @@ END TYPE
 
 DIM SHARED iprice AS RcdFmtIprice
 DIM SHARED iparray AS ArrayFmtIprice
-
-

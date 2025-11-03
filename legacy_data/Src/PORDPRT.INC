@@ -38,4 +38,3 @@ TYPE RcdFmtordprt
 
 END TYPE
 DIM SHARED ordprt AS RcdFmtordprt
-

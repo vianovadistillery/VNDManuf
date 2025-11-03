@@ -16,4 +16,3 @@ TYPE RcdFmtcurbal
 	filler AS STRING * 5
 END TYPE
 DIM SHARED curbal AS RcdFmtcurbal
-

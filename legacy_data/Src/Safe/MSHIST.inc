@@ -13,4 +13,3 @@ TYPE RcdFmtmshist
 	hc AS STRING * 22
 END TYPE
 DIM SHARED mshist AS RcdFmtmshist
-

@@ -63,7 +63,7 @@ COMMON SHARED qk$, keyl%, rep$
 	DIM SHARED extdisc!, inv.lt.printed!
 	DIM SHARED tender$
 	DIM SHARED invmsg1$, invmsg2$, invmsg3$, invmsg4$
-	
+
 	DIM SHARED auditfile$(15), naudit%, acstkf$
 	DIM SHARED ean$
 
@@ -462,7 +462,7 @@ SUB individualprices
 		iprec% = 1
 		adnew% = 0
 		bpos$ = STR$(1)
-		
+
 ipstart:
 		nextrec% = -1
 		REDIM ipa(0 TO 0) AS ArrayFmtIprice
@@ -472,7 +472,7 @@ ipstart:
 			IF nextrec% = -1 AND iprice.no% <> ip% THEN nextrec% = ip%
 			IF iprice.search$ = custin$ THEN
 				hasip% = -1
-				
+
 				'expand dynamic array ipa
 				REDIM PRESERVE ipa(LBOUND(ipa) TO UBOUND(ipa) + 1) AS ArrayFmtIprice
 				ipa(UBOUND(ipa)).no% = iprice.no%
@@ -493,7 +493,7 @@ ipstart:
 
 
 	 CALL setup("  I N D I V I D U A L   P R I C I N G")
-	 
+
 	 maxip% = LOF(4) / LEN(iprice)
 	 btype$ = "key "
 	 cbtm$ = " No.Stock description.                  Size  Code Distr. Indus. Trade. Count."
@@ -569,7 +569,7 @@ ipadd.size:
 			IF updwn% = 59 THEN GOTO ipadd.pass
 			ipsize$ = UCASE$(ipsize$)
 			a$ = "   ": LSET a$ = ipsize$: ipsize$ = a$
-		 
+
 		IF VAL(ipsize$) <> 0 THEN
 ipadd.search:
 			fromsizeoritem% = -1
@@ -620,7 +620,7 @@ anext3:
 			IF ind% > 0 AND ind% < maxacc% THEN GET #3, ind%, acstk
 			LOCATE 12, 13: PRINT USING "####"; ind%
 			LOCATE 12, 18: PRINT acstk.desc1$; " "; acstk.desc2$
-			
+
 			IF newsearch$ = "Y" THEN search.dir$ = CHR$(13)
 			END IF
 		'// If the first letter in the index changes cancel then search //
@@ -637,7 +637,7 @@ anext3:
 				GOTO anext3
 				END IF
 		IF search.dir$ <> CHR$(13) THEN GOTO ipadd.search 'AGAIN
-		
+
 			ditem% = ind%
 
 			'- Place the result of the search in the search key
@@ -646,7 +646,7 @@ anext3:
 			LOCATE 10, 35: PRINT USING "\                \"; search.key$
 			COLOR 2, 0
 
-		
+
 		ELSE
 ipadd.item:
 		'-STOCK NUMBER
@@ -670,7 +670,7 @@ ipadd.item:
 
 			ditem% = VAL(ipitem$)
 			IF ditem% < 1 OR ditem% > maxacc% THEN GOTO ipadd.item
-		
+
 END IF
 			FOR check% = 1 TO UBOUND(ipa)
 				IF ipa(check%).item% = ditem% THEN
@@ -716,7 +716,7 @@ END IF
 	CASE ELSE: 'All Other Codes Are Retail Price
 				price! = acstk.retail
 	END SELECT
-			
+
 
 			ipsize$ = acstk.size$
 			ipunit$ = acstk.unit$
@@ -757,13 +757,13 @@ ipadd.ip:
 
 ipadd.pass:
 		PCOPY 1, 0
-		
+
 	END IF
 
 	IF updwn% = 62 THEN '***** Delete
 		PCOPY 0, 1
 ipdelete:
-		
+
 		LOCATE 11, 2: COLOR 2, 0: PRINT "ÄÄÄÄÂÄÄÄÄÄÂÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄ"
 		LOCATE 12, 2:             PRINT "    ³     ³    ³                                                    ³         "
 		LOCATE 13, 2: COLOR 2, 0: PRINT "ÄÄÄÄÁÄÄÄÄÄÁÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄ"
@@ -861,7 +861,7 @@ pass.change:
 '>>--- L I S T   A   P A G E
 '///////////////////////////////////////////////////////////////////////////
 	'Given rec% as the first record
-	
+
 	IF ipa(iprec%).item% < 1 OR rec% > maxacc% THEN iprec% = 1
 	GET #3, ipa(iprec%).item%, acstk
 	lin% = 0: missed% = 0
@@ -968,7 +968,7 @@ rmc; acstk.gpr
 			LOCATE 4 + lin%, 2
 				GET #4, ipa(iprec%).no%, iprice
 				PRINT USING "####\                       \\        \!\ \\\ \      \ \                     \"; acstk.no%; acstk.desc1$; acstk.desc2$; bc$; acstk.size$; acstk.unit$; FNDYY$(iprice.date$); iprice.notes$
-			
+
 			COLOR 3, 0
 			LOCATE 4 + lin%, 2 + 46
 			PRINT USING "\      \"; FNDYY$(iprice.date$)
@@ -1013,4 +1013,3 @@ X.ipbrowse:
 
 
 END SUB
-

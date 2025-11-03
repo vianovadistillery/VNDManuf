@@ -113,4 +113,3 @@
 		  MID$(pword$, i%, 1) = RIGHT$(a$, 1)
 		  NEXT
 RETURN
-

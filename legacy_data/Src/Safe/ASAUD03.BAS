@@ -628,8 +628,8 @@ SUB dolist (n%, cs%, sno%, thissup$, dsplyit$, onauto$, updwn%, DB.OR.CR$, STDOU
 		Tot.DB@ = Tot.DB@ + DB@
 
 		'PRINT Tot.DB, Tot.CR; DB@, cr@, rrn%
-		
-						 
+
+
 		NEXT
 
 
@@ -698,7 +698,7 @@ SUB dsply.result (updwn%, onauto$, DB.OR.CR$) STATIC
 		CASE 80: dspfrom% = dspfrom% + 1: CALL dsplyfrom(dspfrom%)
 		END SELECT
 		LOOP UNTIL updwn% = 59 OR updwn% = 60
-			
+
 END SUB
 
 SUB dsplyfrom (dspfrom%) STATIC
@@ -720,7 +720,7 @@ SUB dsplyfrom (dspfrom%) STATIC
 		LOCATE i% + 3, 2: PRINT SPACE$(78)
 		END IF
 	NEXT
-		
+
 
 END SUB
 
@@ -1075,7 +1075,7 @@ SUB opn.bal (cf@) STATIC
 
 
 	cf@ = scur@ + s30@ + s60@ + s90@
-	
+
 	prtbuf$ = "SEP. $999,999.99(90)   $999,999.99(60)   $999,999.99(30)  $999,999.99(Cur)"
 				'123456789 123465789 123456789 123456789 123456789 123465789 1
 	MID$(prtbuf$, 6, 11) = format$(s90@, "$$##,###.##")
@@ -1141,7 +1141,7 @@ SUB opnbalfileupd (thisme$, s90@, s60@, s30@, scur@)
 		IF NOT debug% THEN
 			PUT #60, rec60%, clobal
 		END IF
-			
+
 		END IF
 
 	CLOSE #60: fileopn60% = 0
@@ -1202,7 +1202,7 @@ SUB print.it (islong%, STDOUT$) STATIC
 
 		tt% = INSTR(prtbuf$, "(90)")
 		IF rec% = 1 THEN tt% = -1
-		
+
 		IF tt% = 0 OR islong% = 0 THEN
 			PRINT #99, USING "&"; prtbuf$
 			lin% = lin% + 1
@@ -1468,7 +1468,7 @@ select.sort:
 	LOCATE 14, 25: PRINT "M O N T H    E N D    R O L L"
 	COLOR 2
 	updclobal$ = "N"
-	
+
 
 
 	GOTO cf2
@@ -1605,7 +1605,7 @@ cf53:
 		IF updwn% = 59 THEN checkauditok% = 0: GOTO cf51
 		'IF updwn% = 60 THEN checkauditok% = 0
 	END IF
-	
+
 	'>-Check for closing balance files
 	IF updwn% <> 68 THEN
 	asclobal$ = "DBCL" + pbeg$ + ".ASF"
@@ -1803,4 +1803,3 @@ x.spec.upd:
 	COLOR 0, 3: LOCATE 25, 4: PRINT "F1-Exit        F5-Quick print         F10-Update Closing balances"; : COLOR 2, 0
 
 END SUB
-

@@ -792,4 +792,3 @@ END SUB
 SUB upd.who (chaudit%, chcus%, upd%) STATIC
 '$INCLUDE: '\tpmanuf\src\updwho.bi'
 END SUB
-

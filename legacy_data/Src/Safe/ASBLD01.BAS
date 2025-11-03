@@ -175,4 +175,3 @@ LOCATE 22, 2: COLOR 14: PRINT USING "##,### errors found"; errcnt%: COLOR 2
 SLEEP 1
 
 END SUB
-

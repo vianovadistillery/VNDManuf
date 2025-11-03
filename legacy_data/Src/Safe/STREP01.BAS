@@ -141,7 +141,7 @@ RETURN
 heading:
 	 pag = pag + 1: lin = 0
 	 IF pag > 1 THEN PRINT #99, CHR$(12);
-	 
+
 	 IF opt% = 1 THEN head$ = "C O S T E D   S T O C K   L I S T "
 	 IF opt% = 2 THEN head$ = "A C T I V E   S T O C K T A K E   L I S T"
 	 IF opt% = 3 THEN head$ = "S U S P E N D E D   S T O C K T A K E   L I S T"
@@ -215,7 +215,7 @@ ENTER.COUNTS.0:
 		r% = r% + 1
 		IF r% < 1 OR r% >= maxrmat% THEN r% = 9999: EXIT DO
 	 LOOP
-	 
+
 	'***** If maxlines% records not found clear to end of screen
 	 FOR i% = n% + 1 TO maxlines%
 		LOCATE i% + 3, 2
@@ -347,4 +347,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

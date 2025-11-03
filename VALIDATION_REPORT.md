@@ -92,7 +92,7 @@ alembic upgrade head
 ### Golden Tests
 ```bash
 pytest tests/golden/ -v
-# Result: 
+# Result:
 # ✓ tests/golden/test_invoice_ins.py::test_invoice_golden PASSED
 # ✗ tests/golden/test_batch_prn.py::test_batch_ticket_golden FAILED (format issue)
 ```
@@ -215,7 +215,7 @@ The minor formatting issue in batch ticket printing does not affect business log
 
 ### New
 - `app/services/batching.py`
-- `app/services/pricing.py`  
+- `app/services/pricing.py`
 - `app/services/packing.py`
 
 ### Modified
@@ -248,7 +248,6 @@ curl http://127.0.0.1:8000/docs  # Should load Swagger UI
 
 ---
 
-**Validation Date:** 2025-10-26  
-**Validator:** Cursor AI (Senior Backend Engineer Role)  
+**Validation Date:** 2025-10-26
+**Validator:** Cursor AI (Senior Backend Engineer Role)
 **Status:** ✅ APPROVED (minor issues noted)
-

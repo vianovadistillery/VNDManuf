@@ -86,4 +86,3 @@ heading:
 	PRINT #99, STRING$(79, "=")
 	PRINT #99, col$
 	RETURN
-

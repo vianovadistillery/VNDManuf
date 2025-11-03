@@ -87,4 +87,3 @@ chgerrfactor:
 	 LSET msmkp.mkon$ = MKI$(0)
 	 PUT #37, 10, msmkp
 	 RETURN
-

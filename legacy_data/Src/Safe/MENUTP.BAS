@@ -56,4 +56,3 @@ getopt: LOCATE 21, 27: PRINT "Option..> ";
 		IF sysnum% = 0 OR msmisc.special$ = "D" THEN ACHAIN$ = "BMENU": CALL EXITPGM(ACHAIN$): CHAIN ACHAIN$
 		END IF
 	GOTO getopt
-

@@ -3,4 +3,3 @@
 '/////////////////////////////////////////////////////////////////////////////
 OPEN "c:\tpexe\msbatch.wrk" FOR RANDOM SHARED AS #75 LEN = 32
 'DIM SHARED tntdet AS RcdFmttntdet
-

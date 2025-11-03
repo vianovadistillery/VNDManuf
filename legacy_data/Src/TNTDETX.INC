@@ -30,4 +30,3 @@ DIM SHARED tntdet AS RcdFmttntdet
 DIM SHARED tntdetx AS RcdFmttntdetx
 DIM SHARED fordet AS RcdFmttntdet
 DIM SHARED fordetx AS RcdFmttntdetx
-

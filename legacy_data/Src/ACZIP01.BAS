@@ -21,7 +21,7 @@ DECLARE SUB clrrcdfmt ()
 	T$ = UCASE$(T$)
 	IF updwn% = 59 THEN T$ = "N"
 	IF T$ <> "Y" THEN CLOSE : GOTO endpgm
-	
+
 	BEEP
 	T$ = "N"
 	LOCATE 8, x - 8: PRINT "This program will destroy the links between"
@@ -124,7 +124,7 @@ filecompress:
 			'///////  clear out records /////
 			GOSUB addblanks
 			GET #3, rec%, acstk
-1420     
+1420
 			lin% = supcnt% MOD 15: LOCATE lin% + 7, 2
 			supcnt% = supcnt% + 1
 			PRINT USING "\                   \   \ \-\         \ &"; sup.sname$; "   "; sup.sphone$; sup.scont$; : LOCATE , 65: COLOR 14: PRINT "<--Writing ": COLOR 2
@@ -216,4 +216,3 @@ SUB clrrcdfmt
 		acstk.date = sp99$
 
 END SUB
-

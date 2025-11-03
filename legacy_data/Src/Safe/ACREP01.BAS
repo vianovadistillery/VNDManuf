@@ -184,7 +184,7 @@ do.list:
 	 '///////////////////////
 	 '>>>>> End L1-Processing
 	 '///////////////////////
-		
+
 		'>>>-- All Select must be here --------------------------------------
 		IF supa$ <> "*ALL*" AND supa$ <> acstk.suplr$ THEN GOTO nxtrec
 		ok% = 0
@@ -406,4 +406,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

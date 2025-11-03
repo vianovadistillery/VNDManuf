@@ -195,7 +195,7 @@ ELSE
 END IF
 
 
-	
+
 
 
 END SUB
@@ -664,7 +664,7 @@ RTRIM$(PICKUP.pname4$)
 			inv.lt.printed = inv.lt.printed + ltinv
 			GOSUB writeexternal
 			END IF
-		
+
 		'>>> Bottom of read equal loop <<<
 		dnext% = orddet.drrn%
 		LOOP
@@ -744,4 +744,3 @@ END SUB
 SUB upd.who (chaudit%, chcus%, upd%) STATIC
 '$INCLUDE: '\tpmanuf\src\updwho.bi'
 END SUB
-

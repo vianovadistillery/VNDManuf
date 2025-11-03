@@ -28,7 +28,7 @@ make run
 
 ## 2. System Overview
 
-TPManuf manages trade-paints manufacturing: formulations (recipes), colour variants, work orders, batch tickets, QC capture, inventory (FIFO), purchasing, despatch, **sales orders & pricing**, **packaging hierarchy (CAN→4PK→CTN)**, **invoicing**, and **assembly operations** (RAW → WIP → FINISHED). 
+TPManuf manages trade-paints manufacturing: formulations (recipes), colour variants, work orders, batch tickets, QC capture, inventory (FIFO), purchasing, despatch, **sales orders & pricing**, **packaging hierarchy (CAN→4PK→CTN)**, **invoicing**, and **assembly operations** (RAW → WIP → FINISHED).
 
 The system uses a **unified product model** that consolidates raw materials, work-in-progress (WIP), and finished goods into a single `products` table with a `product_type` field. This unified structure enables:
 
@@ -155,7 +155,7 @@ The product model has been unified to support **RAW**, **WIP**, and **FINISHED**
 
 ## 5. Units, Conversions, and ABV (Confirmed)
 
-- **Canonical storage**: mass in **kg**.  
+- **Canonical storage**: mass in **kg**.
 - **Liquids**: if ingested in **L**, convert to **kg** using `kg = L * density(kg/L)`.
 - **ABV %**: volume fraction; when mass is required, convert via density of the liquid (e.g., ethanol/water mixture or product density); store ABV as `%` field alongside mass.
 - **Rounding**: quantities to **3 dp**, money to **2 dp**; bankers’ rounding at commit.
@@ -199,7 +199,7 @@ UI pages: Dash tables/forms for all above, plus print preview. Product listing i
 - `fixtures/print/B060149.PRN` (batch ticket sample)
 - `fixtures/print/00086633.INS` (invoice sample)
 
-**Normalizer** strips legacy printer control codes and normalizes whitespace.  
+**Normalizer** strips legacy printer control codes and normalizes whitespace.
 Golden tests compare **normalized text** from new renderers to legacy fixtures.
 
 ---
@@ -220,8 +220,8 @@ Golden tests compare **normalized text** from new renderers to legacy fixtures.
 
 ## 11. Acceptance Checklist
 
-- [ ] Schema + migrations apply; migration script idempotent.  
-- [ ] All legacy files mapped (or deprecated) in `docs/legacy/legacy_mapping.csv`.  
-- [ ] Pricing, Packaging, Invoicing operational.  
-- [ ] Golden tests pass for batch ticket and invoice (text mode).  
+- [ ] Schema + migrations apply; migration script idempotent.
+- [ ] All legacy files mapped (or deprecated) in `docs/legacy/legacy_mapping.csv`.
+- [ ] Pricing, Packaging, Invoicing operational.
+- [ ] Golden tests pass for batch ticket and invoice (text mode).
 - [ ] Stock balances & valuation reconcile within ±0.1%.

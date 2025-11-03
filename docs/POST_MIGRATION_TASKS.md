@@ -15,8 +15,8 @@ This document outlines the remaining tasks after the unified products migration 
 ### 🔄 Pending Verification
 
 #### 1. Verify API Endpoints with Product Type Filtering
-**Status**: Pending  
-**Priority**: High  
+**Status**: Pending
+**Priority**: High
 **Estimated Time**: 30 minutes
 
 **Tasks**:
@@ -37,8 +37,8 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?product_type=FINIS
 ```
 
 #### 2. Test via API Using Swagger UI
-**Status**: Pending  
-**Priority**: High  
+**Status**: Pending
+**Priority**: High
 **Estimated Time**: 1 hour
 
 **Tasks**:
@@ -60,8 +60,8 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/products?product_type=FINIS
   - [ ] Verify inventory lots created
 
 #### 3. Test with Real Data
-**Status**: Pending  
-**Priority**: Medium  
+**Status**: Pending
+**Priority**: Medium
 **Estimated Time**: 1 hour
 
 **Tasks**:
@@ -87,8 +87,8 @@ python scripts/test_assembly_operations.py
 ```
 
 #### 4. Test Error Cases
-**Status**: Pending  
-**Priority**: Medium  
+**Status**: Pending
+**Priority**: Medium
 **Estimated Time**: 30 minutes
 
 **Tasks**:
@@ -116,8 +116,8 @@ except ValueError as e:
 ```
 
 #### 5. Integrate with Batch Production
-**Status**: Pending  
-**Priority**: High  
+**Status**: Pending
+**Priority**: High
 **Estimated Time**: 2 hours
 
 **Tasks**:
@@ -153,9 +153,9 @@ except ValueError as e:
 ## Future Cleanup Tasks
 
 ### 6. Clean Up Legacy Tables
-**Status**: Pending  
-**Priority**: Low  
-**Estimated Time**: 1 hour  
+**Status**: Pending
+**Priority**: Low
+**Estimated Time**: 1 hour
 **Timeline**: After 30-day verification period
 
 **Tasks**:
@@ -178,9 +178,9 @@ def upgrade():
 ```
 
 ### 7. Remove Legacy Columns
-**Status**: Pending  
-**Priority**: Low  
-**Estimated Time**: 1 hour  
+**Status**: Pending
+**Priority**: Low
+**Estimated Time**: 1 hour
 **Timeline**: After all code migrated and verified
 
 **Tasks**:
@@ -233,9 +233,9 @@ Before considering migration complete:
 
 Update this document as tasks are completed:
 
-**Last Updated**: 2025-10-31  
-**Completed**: 1/7 tasks  
-**In Progress**: 0/7 tasks  
+**Last Updated**: 2025-10-31
+**Completed**: 1/7 tasks
+**In Progress**: 0/7 tasks
 **Pending**: 6/7 tasks
 
 ---
@@ -246,4 +246,3 @@ Update this document as tasks are completed:
 - Backward compatibility maintained via `FormulaLine.raw_material` property
 - All migrations are idempotent and can be re-run safely
 - Backup created: `tpmanuf.db.backup_before_unified_migration`
-

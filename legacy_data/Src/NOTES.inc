@@ -10,6 +10,3 @@ TYPE RcdFmtNotes
     lf AS STRING * 1
 END TYPE
 DIM SHARED Notes AS RcdFmtNotes
-
-
-

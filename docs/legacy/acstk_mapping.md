@@ -141,4 +141,3 @@ PackUnit(
 4. Date fields are stored as "YYYYMMDD" strings.
 5. The `active` field uses 'Y'/'N' instead of boolean.
 6. Some fields are specific to the legacy business logic and don't map to modern schema.
-

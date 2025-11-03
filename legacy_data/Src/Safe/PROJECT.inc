@@ -16,4 +16,3 @@ TYPE RcdFmtproject
 END TYPE
 DIM SHARED project AS RcdFmtproject
 IF LEN(project) <> 1600 THEN STOP
-

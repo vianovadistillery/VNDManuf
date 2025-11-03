@@ -4,9 +4,9 @@
 
 **TPManuf** is a complete modernization of a QuickBASIC DOS-based manufacturing system for a paint/trade-paints factory. The system has been rebuilt using modern Python 3.12, FastAPI (REST API), and Dash (web UI) while maintaining full feature parity with the legacy system.
 
-**Project Status**: Phases 1-9 Complete; Phase 10 (Deployment) Pending  
-**Tech Stack**: Python 3.12, FastAPI, Dash, SQLAlchemy, Alembic, SQLite/PostgreSQL  
-**Current Version**: 1.0.0  
+**Project Status**: Phases 1-9 Complete; Phase 10 (Deployment) Pending
+**Tech Stack**: Python 3.12, FastAPI, Dash, SQLAlchemy, Alembic, SQLite/PostgreSQL
+**Current Version**: 1.0.0
 **Lines of Code**: ~15,000+ lines across 50+ Python files
 
 ---
@@ -344,7 +344,7 @@ DELETE /invoices/{id}                   # Delete invoice
 def to_kg(qty, uom, density=None):
     # Supports: kg, g, L, mL, oz, lb
     # Converts liquids using density (kg/L)
-    
+
 # Convert from kg to display unit
 def to_liters(qty_kg, density):
     # For liquids: convert kg to L
@@ -363,10 +363,10 @@ def reserve_materials(batch_id):
 ```python
 def calculate_theoretical_cost(formula_id):
     # Sum of (quantity × unit_cost) for all lines
-    
+
 def calculate_theoretical_yield(formula_id, batch_size_kg):
     # Total yield with SG corrections
-    
+
 def calculate_variance(batch_id):
     # (actual - theoretical) / theoretical × 100
 ```
@@ -759,10 +759,10 @@ python scripts/import_qb_data.py --dry-run
 
 ## 17. Contact & Support
 
-**Project**: TPManuf Modernisation  
-**Status**: Production Ready (Phase 10 pending)  
-**Version**: 1.0.0  
-**Author**: AI Assistant (Claude Sonnet 4.5)  
+**Project**: TPManuf Modernisation
+**Status**: Production Ready (Phase 10 pending)
+**Version**: 1.0.0
+**Author**: AI Assistant (Claude Sonnet 4.5)
 **Date**: December 2024
 
 For questions or issues, refer to:

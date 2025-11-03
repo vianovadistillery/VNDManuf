@@ -129,4 +129,3 @@ getopt: LOCATE 21, 27: PRINT "Option..> ";
 					CALL exitpgm(achain$): CHAIN achain$
 					END IF
 GOTO getopt
-

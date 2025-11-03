@@ -19,4 +19,3 @@ TYPE RcdFmtsizes
 	prcdst AS STRING * 4
 END TYPE
 DIM SHARED sizes AS RcdFmtsizes
-

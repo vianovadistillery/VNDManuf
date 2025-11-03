@@ -11,4 +11,3 @@ CASE "DEF..": ch.hedx% = 84: ch.hed% = 54: ch.det% = 55: Modedesc$ = "def.."
 CASE "GHI..": ch.hedx% = 84: ch.hed% = 54: ch.det% = 55: Modedesc$ = "ghi.."
 CASE ELSE: ch.hedx% = 63: ch.hed% = 64: ch.det% = 65: Modedesc$ = "A - F": mode$ = "A - F"
 END SELECT
-

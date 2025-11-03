@@ -9,9 +9,9 @@ Total .BIX files: 39
 ### MENUTP.BAS
 
 Options:
--  M A S T E R    D I R E C T O R Y 
+-  M A S T E R    D I R E C T O R Y
 - ==================================
-- Option..> 
+- Option..>
 
 Chains to: apgm, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, achain, ACHAIN, ACHAIN, ACHAIN
 
@@ -35,8 +35,8 @@ Options:
 - 12....Raw material stocktake.
 - 13....Condition types
 - 14....Set file system
-- Option..> 
-- Set.....> 
+- Option..>
+- Set.....>
 
 Chains to: apgm, ACHAIN, achain, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN
 
@@ -44,10 +44,10 @@ Chains to: apgm, ACHAIN, achain, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN,
 
 Options:
 - F1-Exit
--    C R E D I T O R S    S Y S T E M  
+-    C R E D I T O R S    S Y S T E M
 -  ====================================
 - 1....Creditors invoice entry.
-- Option..> 
+- Option..>
 
 Chains to: apgm, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain
 
@@ -55,10 +55,10 @@ Chains to: apgm, achain, achain, achain, achain, achain, achain, achain, achain,
 
 Options:
 - F1-Exit
--    D E B T O R S    S Y S T E M  
+-    D E B T O R S    S Y S T E M
 -  ================================
 - 1....Debtors invoice entry.
-- Option..> 
+- Option..>
 
 Chains to: apgm, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain, achain
 
@@ -66,9 +66,9 @@ Chains to: apgm, achain, achain, achain, achain, achain, achain, achain, achain,
 
 Options:
 - F1 - Return.
--   F I L E   M A I N T A I N A N C E  
+-   F I L E   M A I N T A I N A N C E
 - =====================================
-- Option..>  
+- Option..>
 - About to move the new ACSTK indecies
 - over the existing live files
 - Continue...(Y/N)..>
@@ -79,7 +79,7 @@ Chains to: apgm, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN, ACHAIN,
 
 Options:
 - F1-Exit
--  Q U A L I T Y    S Y S T E M 
+-  Q U A L I T Y    S Y S T E M
 - ==============================
 - 1.....Complaints..............
 - 2.....Exposure Panels.........
@@ -89,9 +89,8 @@ Options:
 - 6.....Extra 2.................
 - 91....Copy data to diskette...
 - 92....Copy data from diskette.
-- Option..> 
+- Option..>
 - Continue.(Y/N)..>
 - Continue.(Y/N)..>
 
 Chains to: apgm, achain, achain, achain, achain, achain, achain
-

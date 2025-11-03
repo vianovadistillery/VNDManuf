@@ -13,4 +13,3 @@ TYPE RcdFmttntdet
 	tfiller AS STRING * 15
 END TYPE
 DIM SHARED tntdet AS RcdFmttntdet
-

@@ -37,30 +37,30 @@ Sub main()
     Dim spObj As Object
     Dim MI As ContactItem
     Dim tmp As String
-    
+
     Set spObj = CreateObject("Outlook.Application")
-    
+
     Dim phonex As RcdFmtSearch
 
     Close #52
     Open "Z:\TPMANUF\phonex.who" For Random Shared As #52 Len = Len(phonex)
-   
+
 
     rec% = 1
     Get #52, rec%, phonex
 
     Do While Not EOF(52) And rec% < 999 '???
 
-        
+
         tmp$ = ""
         tmp$ = tmp$ & phonex.company$ & phonex.compnum
-        
+
         tmp$ = tmp$ & phonex.email
         tmp$ = tmp$ & phonex.key & phonex.name
         tmp$ = tmp$ & phonex.pstncc & phonex.sPhone & phonex.sPhone1
         tmp$ = tmp$ & phonex.type & phonex.www
         tmp$ = tmp$ + vbCrLf
-        
+
         For i = 1 To 6
         tmp$ = phonex.key
         tmp$ = tmp$ & "-->" & Str$(i)
@@ -73,7 +73,7 @@ Sub main()
         'MsgBox tmp$
 
         Next
-        
+
         phone1$ = Trim$(phonex.pstncc) & Trim$(phonex.sPhone$)
         phone2$ = Trim$(phonex.sPhone1$)
         phone3$ = Trim$(phonex.contactmobile$(1))
@@ -125,7 +125,7 @@ Sub main()
                     If phone3$ > "" And Mid$(phone3$, 1, 1) = "0" Then
                         phone3$ = "+61-" & Mid$(phone3$, 2)
                     End If
-                    
+
                     Set MI = spObj.CreateItem(olContactItem)
                     MI.LastName = RTrim$(phonex.ContactSurName(c%))
                     MI.FirstName = RTrim$(phonex.ContactFirstName(c%))
@@ -151,7 +151,7 @@ Sub main()
                 End If
 
             Next
-            
+
         End If
 
 

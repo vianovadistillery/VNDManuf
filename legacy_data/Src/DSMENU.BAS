@@ -181,4 +181,3 @@ SUB printpslip (updwn%)
 	PCOPY 1, 0
 
 END SUB
-

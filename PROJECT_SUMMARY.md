@@ -408,4 +408,3 @@ python scripts\import_qb_data.py              # Import
 - **Migration Plan**: `tpmanu.plan.md`
 - **Author**: AI Assistant (Claude Sonnet 4.5)
 - **Date**: 2024
-

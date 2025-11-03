@@ -5,7 +5,7 @@ DECLARE SUB qsort (in$(), in%(), n%, ok%)
 '>>>--- RAW MATERIAL REBUILD
 '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	CONST maxlines% = 20'19
-	
+
 	'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
 	apgm$ = "MSMENU"
 	''$INCLUDE: '\tpmanuf\src\pgmerr.INC'
@@ -109,7 +109,7 @@ LOAD.SORT:
 	'***** Read r/m file
 	LOCATE 20, 20: PRINT "Loading raw materials for sort.": LOCATE 1, 1
 	GET #38, 1, msrmat: rmx% = 0: wrk$ = "  ": wrk2$ = "  ": oldsup = 32767
-	
+
 	FOR i% = 1 TO maxrmat%
 		IF i% = msrmat.no THEN
 			 rmx% = rmx% + 1
@@ -194,7 +194,7 @@ DO.rec:
 				END IF
 				END IF
 			END IF
-								
+
 			GET #65, i&, tntdet
 			tntdet.rmat% = nno%
 			PUT #165, i&, tntdet
@@ -214,4 +214,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

@@ -15,4 +15,3 @@
 	'          KFLD       TNO$       2I  39  Tint number (High byte, Low byte)
 
 	OPEN "colchtx4.dat" FOR RANDOM SHARED AS #1 LEN = 78
-

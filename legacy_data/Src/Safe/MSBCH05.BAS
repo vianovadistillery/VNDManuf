@@ -33,7 +33,7 @@
 		END IF
 	GET #57, , batch: rec% = rec% + 1
 	LOOP
-	
+
 	'<<<<<<<<- Process formulas
 	LOCATE 10, 20: PRINT "Searching details of formula's.."
 	FOR formidx% = 1 TO n%
@@ -49,7 +49,7 @@
 	IF found% THEN
 		LOCATE 11, 20: PRINT USING "Found...\   \&"; tnthed.tnta$; tnthed.desc$
 		rec& = rec%
-	 
+
 		startrec& = rec& * maxformseq& - maxformseq& + 1
 		FOR drec& = startrec& TO startrec& + maxformseq&
 			GET #65, drec&, tntdet
@@ -108,4 +108,3 @@ HEADING:
 	PRINT #99, TAB(25); "NO.   DESCRIPTION        QUANTITY."
 	PRINT #99, STRING$(79, "-")
 RETURN
-

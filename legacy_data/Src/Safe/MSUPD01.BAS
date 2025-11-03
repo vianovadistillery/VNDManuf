@@ -161,7 +161,7 @@ dsply:
 	IF rec% < 1 OR rec% > maxrmat% GOTO x.dsply
 	GET #38, rec%, msrmat
 	FOR i% = 1 TO 5: altno%(i%) = msrmat.altno(i%): NEXT
-	
+
 	FOR i% = 1 TO 5
 		IF altno(i%) <= 0 OR altno(i%) > maxrmat% THEN
 		altno%(i%) = 0: altdesc$(i%) = SPACE$(99): altsearch$(i%) = SPACE$(99)
@@ -223,10 +223,10 @@ dsply:
 	LOCATE 11, t: PRINT "Hazard code........> "; : PRINT USING "!"; msrmat.hazard$
 	LOCATE 11, t + 48: PRINT USING "Barcode.......>#############"; msrmat.ean13
 	LOCATE 12, t: PRINT USING "Purchase Price ....> $####.## \\"; msrmat.purcost; msrmat.PurUnit$
-	
+
 	LOCATE 14, t: PRINT USING "Delivery Qty/Unit..>  ####.## \\"; msrmat.supqty!; msrmat.SupUnit$
 	LOCATE 15, t: PRINT USING "Formula Cost.......> $####.## \\"; msrmat.UseCost; msrmat.UseUnit$
-	
+
 	LOCATE 17, t: PRINT "Group..............> "; : PRINT USING "### &"; msrmat.Group%; msrmgp.rmgroup$
 	a$ = SPACE$(30): b$ = " "
 	IF msrmat.active$ = "A" THEN LSET aqq$ = " - ACTIVE         ": b$ = msrmat.active$
@@ -249,7 +249,7 @@ dsply:
 	'    COLOR 2, 0
 	'END IF
 
-	
+
 	COLOR 6, 0
 	LOCATE 3, t: PRINT "Updated:  ";
 	LOCATE 3, t + 48: PRINT "MYOB Account..> ";
@@ -275,11 +275,11 @@ dsply:
 	LOCATE 11, t: PRINT "Hazard code........> ";
 	LOCATE 11, t + 48: PRINT "Barcode.......>"
 	LOCATE 12, t: PRINT "Purchase Price ....> ";
-	
-	
+
+
 	LOCATE 14, t: PRINT "Delivery Qty/Unit..> ";
 	LOCATE 15, t: PRINT "Formula Cost.......> ";
-	
+
 	LOCATE 17, t: PRINT "Group..............> ";
 	LOCATE 18, t: PRINT "Activity...........> ";
 	LOCATE 19, t: PRINT "Notes..............> ";
@@ -325,7 +325,7 @@ change:
 	msrmat.searchs$ = UCASE$(msrmat.searchs$)
 	IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
 	IF updwn% = 60 THEN cmd8 = 0: GOTO 1070
-	
+
 
 1090
 	LOCATE 7, t1
@@ -346,7 +346,7 @@ change:
 	LOCATE 7, t1: PRINT msrmat.search$; " - "; MID$(sup.sname$, 1, 17)
 	'LOCATE 7, 59: COLOR 14: PRINT "                 ": COLOR 2
 1180
-	
+
 	LOCATE 3, t + 64
 	a$ = STR$(msrmat.Osoh)
 				CALL inpnew(a$, 5!, updwn%, "13,59-60")
@@ -401,14 +401,14 @@ change:
 	CALL sndmsg("F3=more details.")
 1194
 	COLOR 3
-	
+
 	hazardold$ = msrmat.hazard$
 	CALL hazard(msrmat.hazard$)
 	CALL hazard("#")
-	
+
 	COLOR 2
 
-	
+
 	LOCATE 11, t1
 	CALL inpnew(msrmat.hazard$, 101!, updwn%, "13,59-61")
 	msrmat.hazard$ = UCASE$(msrmat.hazard$)
@@ -435,7 +435,7 @@ change:
 		CALL hazard(msrmat.hazard$)
 		GOTO 1192
 		END IF
-	
+
 
 	LOCATE 22, 2: PRINT CHR$(FNE)
 	LOCATE 23, 2: PRINT CHR$(FNE)
@@ -514,7 +514,7 @@ change:
 	IF updwn% = 60 THEN cmd8 = 0: GOTO 1383
 	LOCATE 22, 2: PRINT CHR$(FNE)
 	LOCATE 23, 2: PRINT CHR$(FNE)
-	
+
 1400
 	COLOR 3
 	LOCATE 22, 2: PRINT "   KG - Kilo  LT - Litre  /M Thousand  MN - Mins  EQ - Equipmt  GM - Gram"
@@ -671,7 +671,7 @@ change:
 '    IF updwn% = 59 THEN cmd8 = 0: GOTO 2040
 '    IF updwn% = 60 THEN cmd8 = 0: GOTO 1996
 '    msrmat.msdsdate$ = FNDY$(a$)
-	
+
 
 2040
 	'* What was entered
@@ -773,7 +773,7 @@ multupd:
 DO UNTIL multi$ > ""
 	COLOR 2, 0
 	LOCATE 1, 1: CALL inpnew(a$, 0!, updwn%, "59-68,27")
-	
+
 	IF updwn% = 59 THEN multi$ = "..."
 	IF updwn% = 60 THEN multi$ = "S/G"
 	IF updwn% = 61 THEN multi$ = "W/S"
@@ -987,7 +987,7 @@ load38i:
 				ELSE
 					GET #38, , msrmat: rec% = rec% + 1
 				END IF
-				
+
 
 			LOOP
 
@@ -1531,7 +1531,7 @@ exchange.rmat.3:
 
 	COLOR 2, 0
 	LOCATE 3, 45: PRINT "Other Sets"
-	
+
 	FOR c% = 1 TO 8
 
 		file$ = c$(c%)
@@ -1639,14 +1639,14 @@ SUB Exchange.rmats (p%)
 	X$ = INPUT$(1)
 
 
-	
+
 
 
 
 
 EXIT SUB
 
-	
+
 dsply38fromExchange.rmats:
 IF dsplyfrom% < 1 THEN dsplyfrom% = 1
 IF dsplyfrom% > n% THEN dsplyfrom% = n%
@@ -1677,7 +1677,7 @@ END SUB
 SUB export
 
 OPEN ".\rmat.sro" FOR OUTPUT AS #98
-		
+
 		FOR i% = 1 TO (LOF(38) / LEN(msrmat))
 
 		GET #38, i%, msrmat
@@ -1719,8 +1719,8 @@ OPEN ".\rmat.sro" FOR OUTPUT AS #98
 		ah$ = STR$(msrmat.restock)
 		ai$ = STR$(msrmat.used)
 		aj$ = STR$(msrmat.ean13)
-		
-		
+
+
 		WRITE #98, a$, b$, c$, d$, e$, f$, g$, h$, i$, j$, k$, l$, m$, n$, o$, p$, q$, r$, s$, t$, u$, v$, w$, X$, y$, z$, aa$, ab$, ac$, ad$, ae$, af$, ag$, ah$, ai$, aj$
 		END IF
 NEXT
@@ -1996,4 +1996,3 @@ SUB zdeleteinact
 	IF updwn% = 59 THEN EXIT SUB
 
 END SUB
-

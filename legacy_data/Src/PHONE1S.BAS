@@ -38,7 +38,7 @@ DO
 	IF updwn% = 73 THEN a$ = "*PREV"
 	IF updwn% = 81 THEN a$ = "*NEXT"
 	'IF updwn% = 80 THEN CALL contacts: GOTO iterate
-	
+
 	CALL find.name(a$, opt%, ok%)
 	IF VAL(phonex.pstncc$) = 0 THEN
 		wrkpstncc$ = "    "
@@ -147,4 +147,3 @@ DO WHILE rec% <> old.rec%
 		GET #52, rec%, phonex
 		END IF
 END SUB
-

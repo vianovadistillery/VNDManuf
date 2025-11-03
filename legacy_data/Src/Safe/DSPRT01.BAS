@@ -131,4 +131,3 @@ get.num:
 			END IF
 		LOOP UNTIL VAL(num$) > 0
 RETURN
-

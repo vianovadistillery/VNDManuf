@@ -107,7 +107,7 @@ null4$ = CHR$(0) + CHR$(0) + CHR$(0) + CHR$(0)
 	 COLOR 0, 3
 	 LOCATE 25, 1: PRINT "F1F2 F3-Hist F4.. F5-Tsp. F6.. F7-Idx. F8-Cpy F9-Note F10.. F11-Phone F12-Credit";
 	 COLOR 2, 0
-	 
+
 	 SELECT CASE DB.OR.CR$
 	 CASE "DB": LOCATE 2, 24: PRINT "Enter customer number..>"; CHR$(FNH)
 	 CASE "CR": LOCATE 2, 24: PRINT "Enter creditor number..>"; CHR$(FNH)
@@ -280,7 +280,7 @@ cf2:
 	 IF updwn% = 59 THEN GOTO xchg3060
 	 IF updwn% = 60 THEN GOTO cf1
 
-	 
+
 cf3:
 	 a$ = STR$(s30)
 				 LOCATE 23, 39:  CALL inpnew(a$, -9.2, updwn%, "13,59,60")
@@ -295,7 +295,7 @@ cf4:
 	 LSET cus.scur$ = MKS$(VAL(a$)): scur = VAL(a$)
 	 IF updwn% = 59 THEN GOTO xchg3060
 	 IF updwn% = 60 THEN GOTO cf3
-	 
+
 xchg3060:
 	 COLOR 2
 	 Total = scur + s30 + s60 + s90
@@ -338,7 +338,7 @@ cfo3:
 	 LSET cus.opn60$ = MKS$(VAL(a$)): opn60 = VAL(a$)
 	 IF updwn% = 59 THEN GOTO xchg.opn
 	 IF updwn% = 60 THEN GOTO cfo2
-	 
+
 cfo4:
 	 a$ = STR$(opn30): a$ = LTRIM$(a$)
 				 LOCATE 21, 39:  CALL inpnew(a$, -9.2, updwn%, "13,59,60")
@@ -346,7 +346,7 @@ cfo4:
 	 LSET cus.opn30$ = MKS$(VAL(a$)): opn30 = VAL(a$)
 	 IF updwn% = 59 THEN GOTO xchg.opn
 	 IF updwn% = 60 THEN GOTO cfo3
-	 
+
 cfo5:
 	 a$ = STR$(opn0): a$ = LTRIM$(a$)
 				 LOCATE 21, 51:  CALL inpnew(a$, -9.2, updwn%, "13,59,60")
@@ -383,13 +383,13 @@ SUB allchgphone (rec%)
 	IF rec% = 0 THEN rec% = 1
 	GET #ch%, rec%, cus
 	DO WHILE NOT EOF(ch%)
-		
-		
+
+
 		dpage% = 2
 		CALL dsply(rec%, DB.OR.CR$, dpage%)
 		CALL rmvnull
 
-		
+
 		'Phone
 		IF RTRIM$(cus.ContactPhone$(1)) = "11-1111-1111" THEN cus.ContactPhone$(1) = cus.sphone$
 		IF RTRIM$(cus.ContactPhone$(1)) = "11-1111-1111" THEN cus.ContactPhone$(1) = "111-1111-1111"
@@ -443,7 +443,7 @@ SUB allchgphone (rec%)
 			cus.ContactMobile$(s%) = " " + cus.ContactMobile$(s%)
 		END IF
 
-		
+
 		IF VAL(MID$(cus.ContactMobile$(s%), 1, 4)) > 0 THEN
 		IF MID$(cus.ContactMobile$(s%), 5, 1) = " " THEN MID$(cus.ContactMobile$(s%), 5, 1) = "-"
 		IF MID$(cus.ContactMobile$(s%), 9, 1) = " " THEN MID$(cus.ContactMobile$(s%), 9, 1) = "-"
@@ -482,7 +482,7 @@ SUB allchgphone (rec%)
 		END IF
 
 		'>- Update and show it!!
-	
+
 		cus.sphone = cus.ContactPhone$(1)
 		cus.sphone1 = cus.ContactFax$(1)
 		cus.email$ = cus.Contactemail$(1)
@@ -496,9 +496,9 @@ SUB allchgphone (rec%)
 		X$ = INKEY$
 		IF X$ <> "" THEN updwn% = ASC(X$)
 		IF updwn% = 27 THEN EXIT SUB
-		
 
-		
+
+
 		GET #ch%, , cus: rec% = rec% + 1
 		LOOP
 
@@ -624,7 +624,7 @@ change:
 	LSET cus.sname$ = SPACE$(30):  LSET cus.spname$ = SPACE$(30)
 	LSET cus.saddr$ = SPACE$(20):  LSET cus.spcode$ = SPACE$(4)
 	LSET cus.saddr2$ = SPACE$(20)
-	
+
 	LSET cus.spsub$ = SPACE$(30)
 	'SET cus.sacode$ = SPACE$(3):
 	LSET cus.sphone$ = SPACE$(7)
@@ -660,7 +660,7 @@ IF dpage% = 2 THEN
 	CASE 7: LOCATE y% + 1, 62: CALL inpnew(cus.ContactMobile$(i%), 118!, updwn%, "13,59-60,61")
 	CASE ELSE: X% = 1
 	END SELECT
-	 
+
 	IF updwn% = 59 THEN EXIT DO
 	IF updwn% = 60 THEN X% = X% - 1: IF X% < 1 THEN i% = i% - 1: X% = 1
 	IF updwn% = 61 THEN
@@ -1314,7 +1314,7 @@ IF 1 = 0 THEN
 
 		maxwho% = 9999
 		IF rec% < 1 OR rec% > maxwho% THEN updwn% = 59: GOTO x.copy.rec.to
-		
+
 		SELECT CASE DB.OR.CR$
 		CASE "CR": chi% = 45: ch% = 44: apgm$ = "CSMENU"
 		CASE "DB": chi% = 23: ch% = 43: apgm$ = "DSMENU"
@@ -1511,8 +1511,8 @@ do.delete:
 			cus.ContactFax(6) = SPACE$(99)
 			cus.Contactemail(6) = SPACE$(99)
 		NEXT
-		
-		
+
+
 		PUT #ch%, rec%, cus
 
 
@@ -1629,7 +1629,7 @@ dsply: '
 		LOCATE 3, 15: PRINT sno%; "  ";
 		LOCATE 3, 31: PRINT sr$;
 		END IF
-	 
+
 	 LOCATE 3, 50: PRINT cus.stype$; " "; a$;
 	 LOCATE 3, 3: PRINT FNDYY$(cus.sdate$); " "; cus.Active$
 	 LOCATE 4, 15: PRINT cus.sname$;
@@ -1762,7 +1762,7 @@ IF dpage% = 2 THEN
 
 	 COLOR 12
 	 LOCATE 11, 2: PRINT " Contact/email-------------------------Title/Fax------------Phone/Mobile------"
-	 
+
 	 COLOR 2
 	 FOR i% = 1 TO 6
 	 LOCATE 11 + i% * 2 - 1, 2: PRINT USING " & & & &"; cus.ContactFirstName$(i%); cus.ContactSurName$(i%); cus.ContactTitle(i%); cus.ContactPhone$(i%);
@@ -1997,12 +1997,12 @@ SUB LogicalDelete (rec%, updwn%)
 	keyin$ = cus.search$ + cus.stype$
 
 	CLOSE #8
-	
+
 	 FOR auditf% = 1 TO naudirec%
 	 auditname$ = auditfile$(auditf%)
 	 OPEN auditname$ FOR RANDOM SHARED AS #8 LEN = 92
 
-	
+
 
 	rec8% = 1
 	GET #8, rec8%, Audit
@@ -2116,7 +2116,7 @@ SUB PCASE (ch1%, ch2%, DB.OR.CR$) STATIC
 
 					GET #ch%, , cus: rec% = rec% + 1
 				LOOP
-				
+
 			END IF
 
 			a$ = "N":
@@ -2412,4 +2412,3 @@ SUB trimfile (ok%)
 
 
 END SUB
-

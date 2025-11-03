@@ -40,7 +40,7 @@ DECLARE SUB searchindex (keyin$, chi%, found%)
 	'$INCLUDE: '.\SRC\forhed.INC'
 	'$INCLUDE: '.\SRC\forhedx.INC'
 	'$INCLUDE: '.\SRC\msrmat.INC'
-	
+
 	 'keyl% = 10: QK$ = SPACE$(keyl%)
 	DIM SHARED xx#(8, 5)
 	DIM SHARED sz$(100)
@@ -65,7 +65,7 @@ main:
 	 CALL setup(H1$)
 
 '>>>>>            M A I N L I N E
-	 
+
 	COLOR 7, 0
 	LOCATE 24, 1: PRINT "È"; STRING$(78, "Í"); "¼";
 	COLOR 0, 3
@@ -78,7 +78,7 @@ main:
 	LOCATE 2, 25: PRINT "Control...> ";
 	LOCATE 2, 45: PRINT "(*-Ext.)";
 	p$ = ""
-	
+
 
 
 alast% = LOF(3) / LEN(acstk)
@@ -239,7 +239,7 @@ costing:
 
 	wrkd$ = MID$(DATE$, 4, 2) + "/" + MID$(DATE$, 1, 2) + "/" + MID$(DATE$, 9, 2)
 	LSET acstk.date$ = FNDY$(wrkd$)
-	
+
 	PUT #3, rec%, acstk
 	CALL export(rec%)
 GOTO x.costing:
@@ -263,7 +263,7 @@ CC1: ' Packaging
 	IF msrmat.cond$ = "Y" THEN
 		acstk.pkge% = pkge%
 		pkge = msrmat.usecost
-	
+
 		CALL sndmsg("")
 	ELSE
 CC1Pass:
@@ -282,7 +282,7 @@ CC2: ' Label
 	IF label% = 0 THEN
 		 acstk.label% = label%
 		 label = 0
- 
+
 		 RETURN
 	END IF
 
@@ -320,7 +320,7 @@ CC3: ' Manufacturing Cost
 	IF msrmat.cond$ = "M" THEN
 		acstk.manu% = manu%
 		manu = msrmat.usecost
-	
+
 		CALL sndmsg("")
 	ELSE
 CC3Pass:
@@ -789,8 +789,8 @@ SUB Recalc STATIC
 	CALL round.long(xx#(2, 3), 2.5)
 	CALL round.long(xx#(2, 4), 2.5)
 	CALL round.long(xx#(2, 5), 2.5)
-	
-	
+
+
 	'>>----------------<<
 	'>>-- Third line --<<
 	'>>----------------<<
@@ -800,7 +800,7 @@ SUB Recalc STATIC
 	xx#(3, 3) = xx#(2, 3) * xx#(1, 1) / 100
 	xx#(3, 4) = xx#(2, 4) * xx#(1, 1) / 100
 	xx#(3, 5) = xx#(2, 5) * xx#(1, 1) / 100
-	
+
 	CALL round.long(xx#(3, 1), 2.5)
 	CALL round.long(xx#(3, 2), 2.5)
 	CALL round.long(xx#(3, 3), 2.5)
@@ -1076,7 +1076,7 @@ SUB trimfile (ok%)
 		acstk.distributor = 0
 		acstk.suplr4stdcost = SPACE$(5)
 		acstk.search4stdcost = SPACE$(10)
-		
+
 		'acstk.retail-tax = 0
 		'acstk.counter-tax = 0
 		'acstk.trade-tax = 0
@@ -1106,4 +1106,3 @@ SUB trimfile (ok%)
 	OPEN "acstk.acf" FOR RANDOM AS #3 LEN = LEN(acstk)
 
 END SUB
-

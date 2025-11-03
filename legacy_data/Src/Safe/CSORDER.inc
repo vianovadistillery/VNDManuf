@@ -11,4 +11,3 @@ TYPE RcdFmtcsorder
 	cr AS STRING * 1
 END TYPE
 DIM SHARED csorder AS RcdFmtcsorder
-

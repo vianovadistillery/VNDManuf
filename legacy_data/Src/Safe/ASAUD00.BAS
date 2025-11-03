@@ -153,7 +153,7 @@ start:
 	IF updwn% = 59 THEN GOTO ENDPGM
 	IF updwn% = 60 THEN GOTO start
 
-		
+
 	'>- Write keyed closing date to file
 	IF updclobal$ = "Y" THEN
 		pbeg0$ = pbeg$: pend0$ = pend$
@@ -629,7 +629,7 @@ SUB dolist (n%, cs%, sno%, thissup$, dsplyit$, onauto$, updwn%, DB.OR.CR$, STDOU
 
 		'PRINT Tot.DB, Tot.CR; db!, cr!, rrn%
 		'x$ = INPUT$(1)
-						 
+
 		NEXT
 
 
@@ -697,7 +697,7 @@ SUB dsply.result (updwn%, onauto$, DB.OR.CR$) STATIC
 		CASE 80: dspfrom% = dspfrom% + 1: CALL dsplyfrom(dspfrom%)
 		END SELECT
 		LOOP UNTIL updwn% = 59 OR updwn% = 60
-			
+
 END SUB
 
 SUB dsplyfrom (dspfrom%) STATIC
@@ -719,7 +719,7 @@ SUB dsplyfrom (dspfrom%) STATIC
 		LOCATE i% + 3, 2: PRINT SPACE$(78)
 		END IF
 	NEXT
-		
+
 
 END SUB
 
@@ -1043,7 +1043,7 @@ SUB opn.bal (cf!) STATIC
 	scur! = opncur!
 	stotal! = scur! + s30! + s60! + s90!
 	cf! = stotal!
-	
+
 	prtbuf$ = "September  $99,999.99(90)  $99,999.99(60)  $99,999.99(30)  $99,999.99(Cur)"
 				'123456789 123465789 123456789 123456789 123456789 123465789 1
 	MID$(prtbuf$, 12, 10) = format$(opn90, "$$#,###.##")
@@ -1114,7 +1114,7 @@ SUB print.it (islong%, STDOUT$) STATIC
 
 		tt% = INSTR(prtbuf$, "(90)")
 		IF rec% = 1 THEN tt% = -1
-		
+
 		IF tt% = 0 OR islong% = 0 THEN
 			PRINT #99, USING "&"; prtbuf$
 			lin% = lin% + 1
@@ -1635,4 +1635,3 @@ x.spec.upd:
 	COLOR 0, 3: LOCATE 25, 4: PRINT "F1-Exit        F5-Quick print         F10-Update Closing balances"; : COLOR 2, 0
 
 END SUB
-

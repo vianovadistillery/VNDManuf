@@ -5,7 +5,7 @@ DECLARE SUB qsort (in$(), in%(), n%, ok%)
 '>>>--- RAW MATERIAL REBUILD
 '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	CONST maxlines% = 20'19
-	
+
 	'$INCLUDE: '\tpmanuf\src\pgmhead.inc'
 	apgm$ = "MSMENU"
 	''$INCLUDE: '\tpmanuf\src\pgmerr.INC'
@@ -56,4 +56,3 @@ DO.IT:
 	PRINT "Merged:"; count%; " from "; who$
 
 RETURN
-

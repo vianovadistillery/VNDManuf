@@ -96,17 +96,17 @@ TYPE RcdFmtwho
 	abn AS STRING * 16
 	bankcde AS STRING * 3
 	bankacct AS STRING * 16
-	p2 AS SINGLE	
-	p3 AS SINGLE	
-	p4 AS SINGLE	
-	p5 AS SINGLE	
-	p6 AS SINGLE	
-	p7 AS SINGLE	
-	p8 AS SINGLE	
-	p9 AS SINGLE	
-	p10 AS SINGLE	
-	p11 AS SINGLE	
-	p12 AS SINGLE	
+	p2 AS SINGLE
+	p3 AS SINGLE
+	p4 AS SINGLE
+	p5 AS SINGLE
+	p6 AS SINGLE
+	p7 AS SINGLE
+	p8 AS SINGLE
+	p9 AS SINGLE
+	p10 AS SINGLE
+	p11 AS SINGLE
+	p12 AS SINGLE
 	filler5 AS STRING * 3
 
 END TYPE
@@ -154,7 +154,7 @@ TYPE RcdFmtWHOold
 	sterms AS STRING * 4
 	daysmax AS STRING * 2
 
-	
+
 	'Accounting
 	scur AS STRING * 4
 	s0 AS STRING * 4
@@ -201,7 +201,7 @@ TYPE RcdFmtWHOold
 	filler2 AS STRING * 1
 	filler4 AS STRING * 6
 	filler5 AS STRING * 166
-	
+
 END TYPE
 
 TYPE RcdFmtWHOnew
@@ -303,5 +303,3 @@ TYPE RcdFmtWHOnew
 	Contactemail(10) AS STRING * 40
 
 END TYPE
-
-

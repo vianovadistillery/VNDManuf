@@ -881,7 +881,7 @@ RETURN
 cf7:
 RETURN
 x.chglin:
-	
+
 END SUB
 
 SUB cvt.tnt (tnt$, tnt%, tntf$)
@@ -1057,16 +1057,16 @@ details.0:
 				 CALL dsply.line(rec&, lin%, first.seq%, 2)
 
 				seq% = first.seq% + lin% - 1
-				
+
 				LOCATE lin% + 3, 60
 				rmbno$ = rmbno$(seq%)
-				
+
 				CALL inpnew(rmbno$, 115!, updwn%, "13,59-60")
 
 				rmbno$(seq%) = rmbno$
-				
+
 				CALL dsply.line(rec&, lin%, first.seq%, 3)
-				
+
 
 		CASE 61: 'Insert a line
 				IF lin% < 19 THEN lin% = lin% + 1: current.lin% = lin%
@@ -1469,7 +1469,7 @@ SUB dsply.line (rec&, lin%, first.seq%, calc%) STATIC
 		MID$(prtbuf$, 42, 4) = format$(cmtqty!(seq%), "####")
 		END IF
 		END IF
-	
+
 
 	END IF
 
@@ -1569,7 +1569,7 @@ SUB dsplyLine (l%, d.elem%) STATIC
 				CASE ELSE
 			END SELECT
 
-			
+
 			ext! = VAL(in$(l%, 8))
 
 			'- On BO
@@ -2082,7 +2082,7 @@ detail.a:
 	IF rview% THEN
 		CALL inpnew(a$, 0, updwn%, "59")
 		IF updwn% = 59 THEN GOTO igacc02.x
-		
+
 	END IF
 
 	'--Get line entries
@@ -2331,9 +2331,9 @@ stockprint:
 				bulk! = VAL(acstk.size$) * fillcost / batch.rheomodifier
 			CASE ELSE: bulk! = 0
 		END SELECT
-												
+
 		bulk! = bulk! * pack%
-		
+
 			IF acstk.pkge% > 0 THEN
 				GET #38, acstk.pkge%, msrmat
 				pkge! = msrmat.usecost * pack%
@@ -2362,7 +2362,7 @@ stockprint:
 			SELECT CASE acstk.unit$
 			CASE "ML"
 				ltinv! = dlinvq% * size! / 1000
-				
+
 			'CASE ELSE: ltinv! = 0
 			END SELECT
 		END IF
@@ -2569,7 +2569,7 @@ SUB ReturntoStock (form$, thisltr!)
 	CALL sndmsg("Consuming Stock in Production of Batch " + form$)
 	atimer! = TIMER
 
-	
+
 	'Calcultate the multiplier for this batch size
 	'mult# = thisltr! / tnthed.yield!
 	 mult# = 1 'done already in work file?
@@ -2619,7 +2619,7 @@ END SUB
 SUB save.lines (rec26%, auto%) STATIC
 	 CALL setup("F I N A L I S E   F O R U M U L A   E N T R Y")
 	 COLOR 8, 3: LOCATE 25, 1: PRINT SPACE$(80); : COLOR 2, 0
-	 
+
 	 'set batch formula details
 	 GET #57, rec26%, batch
 
@@ -2645,7 +2645,7 @@ SUB save.lines (rec26%, auto%) STATIC
 	 LOCATE 14, 20: PRINT USING "Actual Cost..........>$$##,###.##"; batch.alccost!
 	 LOCATE 15, 20: PRINT USING "Actual PVC...........>     ###.##"; batch.qcpvc!
 	 LOCATE 16, 20: PRINT USING "Actual PBR...........>     ###.##"; batch.qcpbr!
-	 
+
 
 	 'Change info from above
 IF batch.flstk$ = "R" THEN
@@ -2692,7 +2692,7 @@ save.lines.input:
 	 '>-Transfer to raw material file.
 	 IF batch.asRmat > 0 AND batch.asRmat < maxrmat% AND batch.flstk$ = "R" THEN
 
-		
+
 		GET #38, batch.asRmat, msrmat
 			msrmat.sg = batch.rheomodifier!
 			msrmat.PurCost = batch.perltr!
@@ -2706,20 +2706,20 @@ save.lines.input:
 				 CASE "OZ": msrmat.soh = msrmat.soh + batch.solventvar / 28.413
 				 CASE ELSE: msrmat.soh = msrmat.soh + batch.solventvar
 			END SELECT
-				 
+
 			CALL calcusecost
 			msrmat.usecost = msrmat.usecost * (batch.solventvar / batch.ayld)
 		PUT #38, batch.asRmat, msrmat
-		
+
 	 END IF
 
 
 		PUT #57, rec26%, batch
-	
+
 	'>>>---- Open audit record file
 	rba$ = ".\export\B" + RTRIM$(LTRIM$(batch.thisbatch$)) + ".RBA"
 	OPEN rba$ FOR OUTPUT AS #97
-				
+
 	WRITE #97, "BA-ID", "Batch Record upon Completion"
 
 	'--------------> BAHED
@@ -2806,7 +2806,7 @@ save.lines.input:
 
 	CLOSE #97
 	CLOSE #96
-	
+
 
 	END IF
 
@@ -3029,4 +3029,3 @@ UpdateOrder:
 	PUT #48, hord%, ordhed
 
 END SUB
-

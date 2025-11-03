@@ -92,7 +92,7 @@ cf3:
 		IF selectrep$ = "*" THEN ok% = -1
 		IF selectrep$ = cus.rep$ THEN ok% = -1
 		IF opt% = 3 AND NOT spok% THEN ok% = 0
-		
+
 	prt.callfreq$ = RIGHT$("." + cus.callfreq$, 1)
 
 	IF ok% THEN
@@ -186,7 +186,7 @@ SUB oneperpage (Stdout$)
 	 PRINT #99, "Date/Active.: "; cus.sdate$; " "; cus.Active$
 	 PRINT #99, "              "; cus.sname$
 	 PRINT #99,
-	 
+
 	 PRINT #99, "Address.....: "; cus.saddr$
 	 PRINT #99, "Suburb......: "; cus.suburb$; " "; cus.spcode$
 	 PRINT #99, USING "............: ###"; VAL(cus.spname$)
@@ -217,7 +217,7 @@ SUB oneperpage (Stdout$)
 
 	 PRINT #99, " Contact/email-------------------------Title/Fax------------Phone/Mobile------"
 
-	 
+
 	 FOR i% = 1 TO 6
 	 IF cus.ContactFirstName$(i%) > SPACE$(30) THEN
 	 PRINT #99, USING " & & & &"; cus.ContactFirstName$(i%); cus.ContactSurName$(i%); cus.ContactTitle(i%); cus.ContactPhone$(i%)
@@ -239,4 +239,3 @@ END SUB
 SUB qsort (in$(), in%(), n%) STATIC
 '$INCLUDE: '\tpmanuf\src\qsort.bi'
 END SUB
-

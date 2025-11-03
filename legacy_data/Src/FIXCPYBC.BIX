@@ -92,7 +92,7 @@ rec90% = 0: rec91% = 0: rec92% = 0: rec93% = 0: rec94% = 0:
 	CASE 94: rec94% = rec94% + 1: PUT #94, rec94%, batchh
 	CASE ELSE: STOP'Ah fuck!
 	END SELECT
-		
+
 	IF batchh.year <> prev.batchh.year$ THEN
 		prev.batchh.year$ = batchh.year$
 		SOUND 800, 1
@@ -108,4 +108,3 @@ rec90% = 0: rec91% = 0: rec92% = 0: rec93% = 0: rec94% = 0:
 ENDPGM:
 CLOSE
 END
-

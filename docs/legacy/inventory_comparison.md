@@ -150,7 +150,7 @@ If you need to maintain compatibility with legacy queries, create SQL views:
 
 ```sql
 CREATE VIEW v_product_stock AS
-SELECT 
+SELECT
     p.id as product_id,
     p.sku,
     p.name,
@@ -163,4 +163,3 @@ GROUP BY p.id, p.sku, p.name, p.created_at;
 ```
 
 This provides legacy-compatible views while maintaining the normalized modern structure.
-

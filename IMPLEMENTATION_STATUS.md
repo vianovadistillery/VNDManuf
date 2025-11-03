@@ -143,7 +143,7 @@ python -m uvicorn app.api.main:app --reload
 
 **New Files:**
 - `app/services/batching.py` (complete implementation)
-- `app/services/pricing.py` (complete implementation)  
+- `app/services/pricing.py` (complete implementation)
 - `app/services/packing.py` (complete implementation)
 - `db/alembic/versions/262c7cd34fdd_add_batch_yield_fields.py` (migration)
 
@@ -157,4 +157,3 @@ python -m uvicorn app.api.main:app --reload
 - `app/services/batch_reporting.py` ✓ (reporting service exists)
 - `app/domain/rules.py` ✓ (FIFO, rounding, units)
 - `app/api/batches.py` ✓ (endpoints exist and functional)
-

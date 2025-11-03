@@ -11,4 +11,3 @@ TYPE RcdFmtcompany
 	codesc AS STRING * 40
 END TYPE
 DIM SHARED company AS RcdFmtcompany
-

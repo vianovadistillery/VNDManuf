@@ -55,7 +55,7 @@
 		IF DIR$("./SRC/FIMENU.BAS") > "" THEN CHAIN "Z:/TPMANUF/SRC/FIMENU"
 		END
 	END IF
-	
+
 	INPUT "New qtyf%", X$: b$ = "   ": LSET b$ = X$: b% = VAL(b$)
 	IF LEN(X$) > 0 THEN LSET QTYF$ = MKI$(b%)
 	INPUT "New bchno%", X$: b$ = "    ": LSET b$ = X$: b% = VAL(b$)
@@ -120,4 +120,3 @@
 			MID$(pword$, i%, 1) = RIGHT$(a$, 1)
 			NEXT
 RETURN
-

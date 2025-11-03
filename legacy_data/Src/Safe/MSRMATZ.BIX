@@ -30,5 +30,3 @@ DO WHILE rec% < last% + 1
 LOOP
 
 END
-
-

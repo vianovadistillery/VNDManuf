@@ -15,7 +15,7 @@ main:
 	 CALL setup(H1$)
 
 '>>>>>            M A I N L I N E
-	 
+
 	COLOR 7, 0
 	LOCATE 24, 1: PRINT "È"; STRING$(78, "Í"); "¼";
 	COLOR 0, 3
@@ -28,7 +28,7 @@ main:
 	LOCATE 2, 25: PRINT "Control...> ";
 	LOCATE 2, 45: PRINT "(*-Ext.)";
 	p$ = ""
-	
+
 
 swp% = 1
 iplast% = LOF(4) / LEN(iprice)
@@ -49,4 +49,3 @@ CLOSE
 
 
 END
-

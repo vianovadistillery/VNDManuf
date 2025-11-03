@@ -20,8 +20,7 @@ TYPE RcdFmtorddet
 	dlinvq AS STRING * 2
 	dBo AS STRING * 1 '
 	dotprice AS STRING * 1
-	dpicked AS INTEGER 
+	dpicked AS INTEGER
 	dfiller AS STRING * 6
 END TYPE
 DIM SHARED orddet AS RcdFmtorddet
-

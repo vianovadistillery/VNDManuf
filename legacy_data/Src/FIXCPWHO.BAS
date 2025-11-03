@@ -138,7 +138,7 @@ TYPE RcdFmtwhonewfmt
 	scont AS STRING * 40
 	sphone AS STRING * 18
 	sphone1 AS STRING * 18   ' Fax
-	
+
 
 	'Flags and cross ref..
 	taxe AS STRING * 10
@@ -359,9 +359,8 @@ SUB movedata
 		NEXT
 
 
-		
+
 	whonewfmt.ContactSurName(1) = who.scont
 	whonewfmt.ContactMobile(1) = who.mobile
 
 END SUB
-

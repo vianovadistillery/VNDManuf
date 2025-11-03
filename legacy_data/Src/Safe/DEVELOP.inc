@@ -24,4 +24,3 @@ TYPE RcdFmtdevelop
 	text(1 TO 14) AS STRING * 78
 END TYPE
 DIM SHARED complnt AS RcdFmtdevelop
-

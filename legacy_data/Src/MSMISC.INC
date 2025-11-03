@@ -43,5 +43,3 @@ DIM SHARED msmisc AS RcdFmtmsmisc
 IF skipsec$ <> "Y" THEN
 	IF ENVIRON$("SO") <> "Y" THEN CLOSE : PRINT "You must sign on!": END
 END IF
-
-

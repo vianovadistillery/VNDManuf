@@ -108,4 +108,3 @@ heading:
 	PRINT #99, STRING$(79, "-")
 	END IF
 RETURN
-

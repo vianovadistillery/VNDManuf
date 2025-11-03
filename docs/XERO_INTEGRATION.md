@@ -292,4 +292,3 @@ Xero API limit: 60 requests per minute per tenant
 - Models: `app/adapters/db/models.py`
 - Routes: `app/ui/app.py` (lines 699-725)
 - Migration: `db/alembic/versions/4425b7936d0b_add_xero_integration_tables.py`
-

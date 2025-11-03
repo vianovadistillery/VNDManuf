@@ -32,4 +32,3 @@ TYPE RcdFmtordhed
 	filler AS STRING * 62
 END TYPE
 DIM SHARED ordhed AS RcdFmtordhed
-

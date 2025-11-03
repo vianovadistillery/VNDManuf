@@ -25,7 +25,7 @@ DECLARE SUB load (max%)
 		IF start% < 1 THEN start% = 1
 		IF start% > max% - paglen% THEN start% = max% - paglen%
 		IF oldstart% <> start% THEN CALL dsply(start%, max%)
-														   
+
 
 		LOCATE lin% + 2, 2
 		rec% = start% + lin% - 1
@@ -126,4 +126,3 @@ SUB save (max%) STATIC
 
 	CALL sndmsg("")
 END SUB
-

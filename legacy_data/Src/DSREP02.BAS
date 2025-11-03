@@ -100,7 +100,7 @@ dolist:
 					PRINT #99, USING "  ###  &   &-####   ###,###   ###,###   ###,###    $$#,###.##  \       \  \          \"; hord%; cus.sname$; a$; suplr%; horgq; hinvq; hordq; hdollar; FNDYY$(ordhed.hdate$); FNDYY$(ordhed.hreford$)
 					lin% = lin% + 1
 				END IF
-			
+
 			END SELECT
 		END IF
 
@@ -146,4 +146,3 @@ heading:
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

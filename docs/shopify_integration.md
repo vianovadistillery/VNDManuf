@@ -16,4 +16,3 @@
 - Hourly job: compare VND `available_to_sell` vs Shopify; push corrections.
 
 > NOTE: `app/adapters/shopify_client.py` is stubbed. Implement real inventory adjustments (GraphQL `inventoryAdjustQuantity`) and store `inventory_item_id` mapping as needed.
-

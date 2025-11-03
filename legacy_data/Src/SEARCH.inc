@@ -16,4 +16,3 @@
     DIM SHARED namesearch AS RcdFmtSearch
 
     OPEN "phonex.who" FOR RANDOM AS #52 LEN = LEN(namesearch)
-

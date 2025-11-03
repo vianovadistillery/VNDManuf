@@ -228,4 +228,3 @@ prtlineRmat:
   RETURN
 xigarmat:
 'END SUB
-

@@ -386,7 +386,7 @@ SUB setact
 	PUT #50, rec%, pickup
 	GET #50, , pickup: rec% = rec% + 1
 	LOOP
-	
+
 
 
 	trec% = 1
@@ -395,7 +395,7 @@ SUB setact
 
 		IF CVI(cus.sno$) = trec% THEN
 			rec% = VAL(cus.spname)
-			
+
 			IF rec% >= 1 AND rec% < 999 THEN
 			GET #50, rec%, pickup
 				IF CVI(pickup.pno) = rec% THEN
@@ -409,9 +409,8 @@ SUB setact
 		GET #43, , cus: trec% = trec% + 1
 		LOOP
 		CALL sndmsg("Done.")
-		
+
 x.setact:
 
 
 END SUB
-

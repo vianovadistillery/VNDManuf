@@ -33,4 +33,3 @@ TYPE RcdFmtcomplnt
 END TYPE
 DIM SHARED complnt AS RcdFmtcomplnt
 IF LEN(complnt) <> 1360 THEN STOP
-

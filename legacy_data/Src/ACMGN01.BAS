@@ -96,7 +96,7 @@ chgmgn:     '>>>>> Change a margin
 	RETURN
 840 '>>>>> CHANGE TRADE DISCOUNT FLAG
 	LOCATE 24, 20: PRINT "Enter new discount code..>";
-	 
+
 	fgnd = 7: bgnd = 1: ofgnd = 2: obgnd = 8: oprt = 14
 	LOCATE 24, 46: CALL inpnew(in$, 101!, updwn%, "13,59,65,68")
 	IF updwn% = 59 THEN GOTO 440
@@ -115,4 +115,3 @@ chgmgn:     '>>>>> Change a margin
 	LSET msmisc.trdisc$ = a$
 	PUT #36, 1, msmisc
 	RETURN
-

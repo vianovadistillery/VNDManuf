@@ -31,4 +31,3 @@
 	IF kk% < 100 THEN PRINT USING "### \                    \"; kk%; c$;
 	IF kk% > 99 THEN PRINT SPACE$(79);
 	PRINT : NEXT
-

@@ -31,4 +31,3 @@ QSORT830:
 x.qsort:
         COLOR 7, 0: LOCATE 24, 78: PRINT "Í"; : COLOR 2, 0
 'END SUB
-

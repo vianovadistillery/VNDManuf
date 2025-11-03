@@ -76,4 +76,3 @@ SUB strip (a$)
 	NEXT
 
 END SUB
-

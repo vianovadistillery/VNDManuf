@@ -371,4 +371,3 @@ IF ml.oz <> 0 THEN
 	IF u% = u.oz% THEN u% = 0: y% = y% + 1
 	END IF
 END SUB
-

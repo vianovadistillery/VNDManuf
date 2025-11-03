@@ -1,11 +1,11 @@
 	'$INCLUDE: '\tpmanuf\src\pordhed.INC'
-	
+
 	rec% = 1
 	GET #48, rec%, ordhed
 	DO WHILE NOT EOF(48)
 	IF CVS(ordhed.hdollar$) = 0 THEN
 		'-Delete the HEADER file
-		
+
 		LSET ordhed.hord$ = MKI$(0)
 		LSET ordhed.hreford$ = SPACE$(99)
 		LSET ordhed.hsup$ = "     "
@@ -32,4 +32,3 @@
 ENDPGM:
 CLOSE
 END
-

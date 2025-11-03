@@ -29,7 +29,7 @@ main:
 	 ELSE
 	LOCATE 4, 27: PRINT CHR$(fne)
 	 END IF
-	 
+
 	'***** edit/display details
 	 rec = b%
 	 GET #42, rec, types
@@ -88,4 +88,3 @@ display:        '***** Display all records
 	 LOCATE 19, 10: PRINT " 'A' Code on Supplier switches Margin fields on."
 	 LOCATE 20, 10: PRINT " 'Z' Code on Customer switches Charge - to facility on."
 	 RETURN
-

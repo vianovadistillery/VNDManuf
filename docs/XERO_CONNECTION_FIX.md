@@ -65,7 +65,7 @@ python -c "from app.services.xero_oauth import get_auth_url; print(get_auth_url(
 
 ✅ Configuration correct:
 - CLIENT_ID is set
-- CLIENT_SECRET is set  
+- CLIENT_SECRET is set
 - REDIRECT_URI matches Xero app settings
 - Flask routes are registered
 - OAuth flow is implemented
@@ -79,4 +79,3 @@ To test if the button works:
 3. Click "Connect to Xero"
 4. You should be redirected to Xero login page
 5. After authorizing, you should be redirected back with a success message
-

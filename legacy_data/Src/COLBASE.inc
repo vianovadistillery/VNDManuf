@@ -14,4 +14,3 @@ TYPE RcdFmtcolbase
 	bperc AS STRING * 2
 END TYPE
 DIM SHARED colbase AS RcdFmtcolbase
-

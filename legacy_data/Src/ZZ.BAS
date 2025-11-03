@@ -14,4 +14,3 @@ RTRIM$(ordhed.hpname4$)
 
 writeexternal2:
 WRITE #97, "DIDET", dlinvq%, acstk.size$, acstk.unit$, ditem%, acstk.desc1$, acstk.desc2$, acstk.offspec$, acstk.prodtype$, dprice, dtax, ext!, acstk.totalcogs, (dprice / acstk.totalcogs - 1)
-

@@ -9,7 +9,7 @@
 	'$INCLUDE: '\tpmanuf\src\MSMISC.INC'
 	'$INCLUDE: '\tpmanuf\src\MSCLASS.INC'
 	DIM cl$(99)
-	
+
 '>>>>>>>>>>  WRITE THE SCREEN IE BORDERS,HEADINGS,HELPLINE
 cf1:
 	GET #36, 1, msmisc
@@ -77,4 +77,3 @@ SUB printing :
 	IF s% > 68 AND s% < 86 THEN LOCATE i% + 5, 54: PRINT USING " ### \     \"; s%; a$;
 	IF s% > 85 THEN LOCATE i% + 5, 67: PRINT USING " ### \      \"; s%; a$;
 END SUB
-

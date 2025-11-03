@@ -134,7 +134,7 @@ GET.TINT:
 	CALL sndmsg(msg$): msg$ = "":
 	'IF rec& < 1 OR rec& > maxtnt% THEN  ELSE COLOR 7, 0: LOCATE 24, 56: PRINT "Ê";
 	COLOR 2, 0
-																		 
+
 	IF mode$ = "Tints" THEN
 		COLOR 10, 0: LOCATE 3, 12: PRINT "Tinter................>"; : COLOR 2, 0: PRINT " "
 	ELSE
@@ -153,7 +153,7 @@ GET.TINT:
 FOR idx53% = 1 TO maxtnt% '??
 
 	CALL cvt.tnt(tnt$, tnt%, tntf$)
-	
+
 			auto% = 0
 			cost.or.ltrs$ = "Litres"
 			CALL load.lines(rec&)
@@ -937,7 +937,7 @@ cf15:
 	IF updwn% = 60 THEN GOTO cf14
 
 
-	
+
 
 x.change:
 	IF tnthed.tnt% <> rec& THEN rebuild.index% = -1
@@ -1006,7 +1006,7 @@ SUB Change.tanks (rec&, updwn%)
 
 		drec& = tankrrn&(lin%)
 		GET #ch.det%, drec&, tntdet
-		
+
 		IF tntdet.rmat% >= 1 AND tntdet.rmat% < 9999 THEN
 		GET #38, tntdet.rmat, msrmat
 		END IF
@@ -1037,7 +1037,7 @@ SUB Change.tanks (rec&, updwn%)
 			GET #38, tntdet.rmat, msrmat
 			rm.tanksize!(lin%) = msrmat.Wtsolid
 			PUT #ch.det%, drec&, tntdet
-			
+
 			END IF
 
 		LOOP UNTIL lin% > n%
@@ -1350,7 +1350,7 @@ SUB dsply.line (rec&, lin%, first.seq%, calc%) STATIC
 		MID$(prtbuf$, 42, 4) = format$(cmtqty!(seq%), "####")
 		END IF
 		END IF
-	
+
 
 	END IF
 
@@ -1655,7 +1655,7 @@ x99.history:
 	CASE "Tints": OPEN "tnhist.hst" FOR RANDOM SHARED AS #34 LEN = 62
 	CASE ELSE: OPEN MID$(mode$, 1, 2) + "hist.hst" FOR RANDOM SHARED AS #34 LEN = 62
 	END SELECT
-	
+
 		hstrec% = LOF(34) / 62
 
 		fmhisth1.form% = VAL(MID$(tnthed.tnta$, 1, 3))
@@ -1784,7 +1784,7 @@ SUB insert.recipe (idx53%, updwn%, tnt$) STATIC
 	xmode$ = mode$
 
 	fromtnta$ = tnthed.tnta$
-	
+
 insert.recipe.1:
 	COLOR 2, 0
 	LOCATE 8, 10: PRINT "This recipe is not on file."
@@ -2086,7 +2086,7 @@ SUB load.lines (rec&) STATIC
 	 qty!(first.seq%) = tntdet.qty!
 	 cmtno%(first.seq%) = tntdet.cmt%
 	 cmtqty!(first.seq%) = tntdet.cmtqty!
-							
+
 	'>- These are set in DSPLY.LINE
 	 desc$(first.seq%) = ""
 	 vpct!(first.seq%) = 0
@@ -2397,7 +2397,7 @@ SUB save.lines (rec&, auto%) STATIC
 	'>>----- S A V E -----<<
 	IF opt% = 2 THEN
 	startrec& = rec& * maxformseq% - maxformseq% + 1
-		
+
 	FOR seq% = 1 TO maxformseq%
 		drec& = startrec& + seq% - 1
 		tntdet.tnt& = drec&
@@ -2405,7 +2405,7 @@ SUB save.lines (rec&, auto%) STATIC
 		tntdet.qty! = qty!(seq%)
 		tntdet.cmt% = cmtno%(seq%)
 		tntdet.cmtqty! = cmtqty!(seq%)
-		
+
 		PUT #ch.det%, drec&, tntdet
 	 NEXT
 
@@ -2448,4 +2448,3 @@ END SUB
 SUB setchannel
 '$INCLUDE: '\tpmanuf\src\tntfiles.inc'
 END SUB
-

@@ -89,4 +89,3 @@ heading:
   PRINT #99, STRING$(131, "-")
   IF stdout$ = "CON" THEN X$ = INPUT$(1)
    RETURN
-

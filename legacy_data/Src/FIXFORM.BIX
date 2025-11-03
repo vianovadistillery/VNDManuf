@@ -167,4 +167,3 @@ END SUB
 SUB qsort (in$(), in%(), n%, ok%) STATIC
 '$INCLUDE: '\tpmanuf\src\QSORT.bi'
 END SUB
-

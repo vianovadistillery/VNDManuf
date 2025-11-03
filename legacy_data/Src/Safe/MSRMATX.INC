@@ -66,9 +66,9 @@
 		sip AS SINGLE
 		sohv AS SINGLE
 		restock AS SINGLE
-		used AS SINGLE 
+		used AS SINGLE
 		ean13 AS CURRENCY
-		filler as STRING * 72		
+		filler as STRING * 72
 	END TYPE
 
 

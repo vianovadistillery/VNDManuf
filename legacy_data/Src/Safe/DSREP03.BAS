@@ -215,4 +215,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

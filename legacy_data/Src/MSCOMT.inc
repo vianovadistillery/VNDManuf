@@ -17,4 +17,3 @@ TYPE RcdFmtmscomt2
 	spkno AS STRING * 2
 END TYPE
 DIM SHARED mscomt2 AS RcdFmtmscomt2
-

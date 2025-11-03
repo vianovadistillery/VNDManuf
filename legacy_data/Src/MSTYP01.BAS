@@ -28,7 +28,7 @@ main:
 	 ELSE
 	LOCATE 4, 26: PRINT CHR$(fne)
 	 END IF
-	 
+
 	'***** edit/display details
 	 rec = b%
 	 GET #56, rec, mtypes
@@ -84,4 +84,3 @@ display:        '***** Display all records
 	COLOR 2: PRINT mtypes.dftype$; " "; mtypes.dfdesc$; " ";
 	 NEXT
 RETURN
-

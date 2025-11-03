@@ -18,4 +18,3 @@ CASE ELSE:  OPEN "forhed.asf" FOR RANDOM SHARED AS #64 LEN = 160
 END SELECT
 
 'DIM SHARED tnthed AS RcdFmttnthed
-

@@ -93,7 +93,7 @@ cf2:
 	IF mth$ = "$$$$" THEN asclobal$ = "ASclobal.ASF"
 
 	OPEN asclobal$ FOR RANDOM SHARED AS #60 LEN = 48
-	
+
 	SELECT CASE cont$
 	CASE "C": chkonly% = -1: CALL doload(mth$, mthless1$, ok%, chkonly%)
 	CASE "L": chkonly% = 0: CALL doload(mth$, mthless1$, ok%, chkonly%)
@@ -373,4 +373,3 @@ SUB sub.one (mth$, mthless1$)
 	mthless1$ = mm$ + yy$
 
 END SUB
-

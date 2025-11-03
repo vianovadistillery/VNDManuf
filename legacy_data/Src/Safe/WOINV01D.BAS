@@ -367,7 +367,7 @@ exitmenu:
 	IF opt% = 0 THEN mode$ = "ord": sav% = -1
 	IF opt% = 1 THEN mode$ = "nil": sav% = 0
 	IF opt% = 2 THEN mode$ = "ord": sav% = -1
-	
+
 	IF mode$ = "b/o" THEN CALL add.bo.msg(updwn%)
 
 	IF sav% THEN
@@ -420,7 +420,7 @@ load.det:
 	GET #48, hord%, ordhed
 	invmsg1$ = ordhed.hnote1
 	invmsg2$ = ordhed.hnote2
-	
+
 	hinvq = CVS(ordhed.hinvq$)
 
 	nn% = -1: firstrec% = CVI(ordhed.hrrn$)
@@ -784,14 +784,14 @@ SUB addtext (edit%)
 			IF updwn% = 13 THEN l% = l% + 1
 		LOOP
 
-	
+
 		OPEN filename$ FOR OUTPUT AS #f
 		FOR i% = 1 TO 10
 			PRINT #f, txt$(i%)
 		NEXT
 		CLOSE #f
 	END IF
-		
+
 END SUB
 
 SUB cf8 (l%, d.elem%, newdata$)
@@ -1291,7 +1291,7 @@ dsply:
 	COLOR 6, 0
 	LOCATE 5, 41: PRINT "Deliver:"
 	COLOR 2, 0
-	
+
 	COLOR 6
 	SELECT CASE daysmax%
 	CASE 1: LOCATE 8, X0%: PRINT USING "Terms:## day for ##% discount. "; daysmax%; sterms
@@ -1704,7 +1704,7 @@ ON ERROR RESUME NEXT
 	DiscRate! = ordprt.hDiscRate
 	invmsg1$ = ordprt.hnote1
 	invmsg2$ = ordprt.hnote2
-	
+
 	'Shared
 	mode$ = ordprt.hMode
 	sno% = ordprt.gsno
@@ -1977,4 +1977,3 @@ update.order:
 	PUT #48, hord%, ordhed
 
 END SUB
-

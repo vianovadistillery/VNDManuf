@@ -22,7 +22,7 @@ TYPE RcdFmtbatch
 	Stainer1var AS SINGLE ' waste volume
 	Stainer2var AS SINGLE ' YIELD" %
 	Stainer3var AS SINGLE ' waste $
-	
+
 	'New Info
 	hord AS INTEGER
 	thisbatch AS STRING * 8
@@ -35,7 +35,7 @@ TYPE RcdFmtbatch
 	fltnt AS STRING * 1
 	flstk AS STRING * 1
 	flqc AS STRING * 1
-	
+
 	'tnthed
 	yield AS SINGLE
 	ltr AS SINGLE
@@ -58,7 +58,7 @@ TYPE RcdFmtbatch
 	Hazard AS STRING * 1
 	asRmat AS INTEGER
 	CostPer AS STRING * 2
-	
+
 	'QC
 	qcnote1 AS STRING * 25
 	qcnote2 AS STRING * 25
@@ -73,13 +73,12 @@ TYPE RcdFmtbatch
 	qcph AS SINGLE
 	qcgloss AS SINGLE
 	qcsg AS SINGLE
-	
+
 	priority AS INTEGER
 	tnt AS INTEGER
 	dateform AS STRING * 8
 	Filler AS STRING * 166
-	
+
 END TYPE
 
 DIM SHARED batch AS RcdFmtbatch
-

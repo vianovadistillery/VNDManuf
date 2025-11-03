@@ -72,7 +72,7 @@ TYPE RcdFmtacstkx
 	label AS INTEGER
 	manu AS INTEGER
 	active AS STRING * 1
-	
+
 	'Finalcial Description
 	taxinc AS STRING * 1
 	salestaxcde AS STRING * 1
@@ -81,7 +81,7 @@ TYPE RcdFmtacstkx
 	wholesalecost AS SINGLE
 	disccdeone AS STRING * 1
 	disccdetwo AS STRING * 1
-	
+
 	wholesalecde AS STRING * 1
 	retailcde AS STRING * 1
 	countercde AS STRING * 1
@@ -111,15 +111,14 @@ TYPE RcdFmtacstkx
 	soo AS INTEGER
 	sold AS INTEGER
 	date AS STRING * 8
-	
+
 	'Filler
 	bulk AS SINGLE
 	filler AS STRING * 75
-	
+
 END TYPE
 
 
 DIM SHARED acstk AS RcdFmtacstk
 DIM SHARED acstkx AS RcdFmtacstkx
 DIM SHARED acstk4cost AS RcdFmtacstk
-

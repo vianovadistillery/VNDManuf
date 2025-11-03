@@ -70,7 +70,7 @@ do.update:
 		GET #55, , tntdet: rec55& = rec55& + 1
 	LOOP
 
-	
+
 	'-> Check all the other sets
 	DIM c$(10)
 	c$(1) = "BRIdet.asf"
@@ -124,4 +124,3 @@ do.update:
 
 	'* End of update
 RETURN
-

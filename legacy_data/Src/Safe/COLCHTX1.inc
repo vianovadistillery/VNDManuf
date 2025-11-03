@@ -130,4 +130,3 @@ TYPE RcdFmtcolcard6
 	ccdesc AS STRING * 22
 END TYPE
 DIM SHARED colcard6 AS RcdFmtcolcard6
-

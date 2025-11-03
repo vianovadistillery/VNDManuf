@@ -18,5 +18,3 @@ DIM SHARED Extra AS RcdFmtExtra
 IF LEN(Extra) <> 3008 THEN STOP
 
 DIM SHARED Qextra1 AS RcdFmtExtra
-
-

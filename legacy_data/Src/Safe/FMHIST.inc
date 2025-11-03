@@ -50,5 +50,3 @@ DIM SHARED fmhisth1 AS RcdFmtfmhisth1  'Seq 1:  Header
 DIM SHARED fmhisth2 AS RcdFmtfmhisth2  'Seq 2:  Header (not used)
 DIM SHARED fmhisth3 AS RcdFmtfmhisth3  'Seq 3-6 Comments records
 DIM SHARED fmhistd1 AS RcdFmtfmhistd1  '7-nn    Details
-
-

@@ -19,8 +19,8 @@ DO WHILE rec% < last% + 1
 	IF acstk.lid% = 8224 THEN acstk.lid% = 0
 	IF acstk.pbox% = 8224 THEN acstk.pbox% = 0
 	IF acstk.boxlbl% = 8224 THEN acstk.boxlbl% = 0
-	
-	
+
+
 
 	PUT #3, rec%, acstk
 
@@ -30,5 +30,3 @@ DO WHILE rec% < last% + 1
 LOOP
 
 END
-
-

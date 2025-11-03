@@ -74,7 +74,7 @@ DECLARE SUB UpdateOrder (hord%, updwn%)
 	DIM SHARED orders%(1001), auditfile$(15)
 
 	keyl% = 20: qk$ = SPACE$(keyl%): rep$ = SPACE$(keyl% - 2)
-	
+
 	DATA 2,7,11,14,19,56,63,72
 	FOR i% = 1 TO 8: READ c%(i%): NEXT
 	RESET
@@ -546,7 +546,7 @@ cf1:
 		in$ = in$(l%, 7)
 		old.qty = VAL(in$(l%, 7))
 		CALL inpnew(in$, 204!, updwn%, "13,27,59-60,62-64,67,68,72-73,80-81")
-		
+
 	ELSE
 		CALL inpnew(in$, 204!, updwn%, "13,27,59-60,62-64,67,68,72-73,80-81")
 	END IF
@@ -576,7 +576,7 @@ cp1:
 		IF i% > 0 AND i% < maxacc% THEN
 			GET #38, i%, msrmat
 		END IF
-		
+
 		COLOR 6, 0
 		LOCATE 10, 5: PRINT USING "Company \     \   ->####  &              "; msrmat.search$; msrmat.no%; msrmat.Desc1$
 					LOCATE 12, 5: PRINT "Current File Price>"
@@ -631,7 +631,7 @@ cp1:
 				END IF
 			changeprice% = -1
 		END IF
-		
+
 		IF NOT changeprice% THEN
 						in$(l%, 16) = STR$(VAL(a$))
 						CALL rightprice(newprice!)
@@ -669,12 +669,12 @@ x.cp1:
 		invqty% = VAL(in$(l%, 7))
 		recqty% = VAL(in$(l%, 11))
 		m% = l%
-	
+
 		CALL loadLine(m%, 0, i%, ordqty%, invqty%, price!, unit!, recqty%)
 		CALL dsplyLine(l%, d.elem%)
 		TaxRate! = gst
 		CALL add.up.order(tot.ltact!, tot.ord!, tot.ext!)
-		
+
 		GOTO cf1
 	END IF
 
@@ -685,7 +685,7 @@ x.cp1:
 		PCOPY 1, 0
 		GOTO cf1
 	END IF
-	
+
 	IF updwn% = 67 THEN
 		mode$ = "inv"
 		FOR i% = 1 TO maxlines%
@@ -802,7 +802,7 @@ cf2UL:
 			in$(l%, 6) = ""
 			in$(l%, 7) = ""
 			in$(l%, 8) = ""
-			
+
 			GOTO cf1
 		END IF
 		CALL dsplyLine(l%, d.elem%)
@@ -1044,14 +1044,14 @@ invoiceentry:
 			LOCATE , 3: PRINT "  MYOB Account..........> "
 			LOCATE , 3: PRINT "  Notes.................> "
 			LOCATE , 3: PRINT "                        > "
-			
+
 		COLOR 2
 
 
 	'>>>> Set up static fields for raw material entry
 	'Get order information
 	GET #48, hord%, ordhed
-	
+
 	GET #44, sno%, sup
 
 	CALL add.up.order(tot.ltact!, tot.ord!, tot.ext!)
@@ -1070,7 +1070,7 @@ invoiceentry:
 	advalue = tot.ext!
 	adglacc$ = sup.sgl$
 	audit.adpaid$ = " "
-	
+
 
 
 
@@ -1454,7 +1454,7 @@ r1250: '/////////////////// document number
 		COLOR 2
 		CALL inpnew(in$, 110!, updwn%, "13,59,60,72,80")
 		LSET hdocket$ = in$
-		
+
 	 IF updwn% = 59 THEN GOTO x.rinp
 	 IF updwn% = 72 THEN updwn% = 60
 	 IF updwn% = 60 THEN GOTO r1180
@@ -1542,4 +1542,3 @@ SUB upd.who (chaudit%, chcus%, upd%) STATIC
 
 'PRINT #97, "AUD01", audit.adrec, audit.addate, "??"
 END SUB
-

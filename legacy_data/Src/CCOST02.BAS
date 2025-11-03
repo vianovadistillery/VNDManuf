@@ -219,7 +219,7 @@ cf1:
 	CALL BOX(2, 3, 79, 21, 0, 0, 0)
 
 get.can.costs99:
-	
+
 	FOR c% = 1 TO 11
 		idx% = c% '12 - c%
 		can.allcost!(idx%) = 0
@@ -393,4 +393,3 @@ FUNCTION searchrmatfor (sfor$, stype$)
 
 	searchrmatfor = found%
 END FUNCTION
-

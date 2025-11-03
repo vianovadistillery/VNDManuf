@@ -250,7 +250,7 @@ getordnum:
 		IF hord% = 0 THEN in$ = ""
 		LOCATE 24, 61
 		CALL inpnew(in$, 205!, updwn%, "13,59-60,64,67-68,72,73,80,81" + ALT$): GOSUB ALT
-																																					
+
 		IF custin$ <> "*" AND cash% AND in$ = "0" THEN updwn% = 68' emulate F10
 		IF custin$ <> "*" AND updwn% = 67 THEN cash% = -1: updwn% = 68
 		IF VAL(in$) > 999 THEN in$ = MID$(in$, 1, 3)
@@ -356,11 +356,11 @@ exitmenu:
 		LOCATE 6, 28: PRINT ""
 		LOCATE 7, 28: PRINT "1....Exit without update."
 		IF mode$ <> "rec" THEN LOCATE 8, 28: PRINT "2....Print purchase order."
-		
+
 		IF mode$ = "inv" THEN LOCATE 10, 28: PRINT "4....Invoice sekected goods."
 		'LOCATE 10, 28: PRINT "4....Invoice & backorder. "
 		IF mode$ <> "inv" AND recisoption% THEN LOCATE 11, 28: PRINT "5....Receive goods."
-		
+
 		LOCATE 13, 28: PRINT "6....Overtype price."
 		IF tot.ext = 0 THEN LOCATE 14, 28: PRINT "7....Recieve toll goods"
 		LOCATE 15, 28: PRINT "8....Enter message lines."
@@ -440,7 +440,7 @@ exitmenu:
 		PCOPY 1, 0
 		GOTO exitmenu
 	END IF
-	
+
 	IF opt% = 8 THEN
 			CALL addmessage(invmsg1$, invmsg2$, invmsg3$, invmsg4$)
 			GOTO exitmenu
@@ -477,14 +477,14 @@ exitmenu:
 	'/// Print and exit or delete ///
 		'- Only open the audit file when needed -<<
 		cashonly$ = "M": auditname$ = auditfile$(naudit%)
-		
+
 		GOSUB OPEN.AUDIT '#8
 
 
 		IF mode$ = "inv" THEN CALL prtinv(hord%, opt%, cash%, chginv#, chginv.rrn%, invnum#, invnumrec%, thissup$, norders%, OSCurrency$)
 		IF mode$ = "b/o" THEN CALL prtinv(hord%, opt%, cash%, chginv#, chginv.rrn%, invnum#, invnumrec%, thissup$, norders%, OSCurrency$)
 
-		
+
 
 		CLOSE #8
 
@@ -493,7 +493,7 @@ exitmenu:
 				IF mode$ = "b/o" THEN CALL prtpslip(hord%, opt%, discovr!)
 				IF mode$ = "ord" THEN CALL prtpslip(hord%, opt%, discovr!)
 		END IF
-		
+
 		'- Delete the order if it is fully invoiced
 
 		anyDelDone% = 0
@@ -532,7 +532,7 @@ exitmenu:
 		'END IF
 		'END IF
 		'END IF
-		
+
 mlend:
 	'- Change F1 to prevent the real mainline ending the program. <<
 	updwn% = 13
@@ -551,7 +551,7 @@ change.price0:
 								CALL inpnew(in$, 7.2, updwn%, "13,59")
 		in = VAL(in$)
 		ovrPrice = in
-		
+
 		TaxRate! = GST
 		CALL add.up.order(tot.ltact!, tot.ord!, tot.ext!)
 RETURN
@@ -667,7 +667,7 @@ load.det:
 	GET #48, hord%, ordhed
 	invmsg1$ = ordhed.hnote1
 	invmsg2$ = ordhed.hnote2
-	
+
 	hinvq = CVS(ordhed.hinvq$)
 	SELECT CASE ordhed.hstatus$
 		CASE "B": mode$ = "b/o"
@@ -676,7 +676,7 @@ load.det:
 		CASE "R": mode$ = "rec"
 		CASE ELSE: mode$ = "ord"
 	END SELECT
-	
+
 	nn% = -1: firstrec% = CVI(ordhed.hrrn$)
 	CALL linkedl(rrn%(), nn%, firstrec%, hord%, 49)
 
@@ -1044,10 +1044,10 @@ add.up.order:
 			temptotal = tot.allup
 			tot.gst! = temptotal * (TaxRate! / 100): CALL ROUND(tot.gst!, 2.5)
 			tot.allup = temptotal + tot.gst!
-			
+
 			cents! = tot.allup - FIX(tot.allup)
 			cents% = cents! * 100
-			
+
 			IF cents% MOD 5 = 0 THEN   'Until 5 Cent round
 			END IF
 	END IF
@@ -1065,7 +1065,7 @@ add.up.order:
 		temptotal = tot.allup! - tot.gst!
 		vdisc! = tot.ext! - (tot.allup! - tot.gst!)
 	END IF
-	
+
 	tot.allup = temptotal + tot.gst!
 	COLOR 2, 0
 	LOCATE 21, 2: PRINT USING "Ordered :###,###"; tot.ord!
@@ -1073,7 +1073,7 @@ add.up.order:
 	LOCATE 22, 2: PRINT USING "Actual  :###,###"; tot.ltact
 	LOCATE 22, 45: PRINT USING "Volume discount          $$#####.##"; vdisc
 	LOCATE 23, 45: PRINT USING "G.S.T                    $$#####.##"; tot.gst!
-	
+
 	COLOR 7, 0
 	LOCATE 24, 69: PRINT USING "µ$$#####.##º"; tot.allup; : COLOR 2, 0
 	COLOR 10, 0:
@@ -1242,7 +1242,7 @@ delOrder:
 			msrmat.soo = msrmat.soo - sooqty%
 			PUT #38, svrrn%, msrmat
 		END IF
-	
+
 	NEXT
 
 	clr% = 1
@@ -1276,7 +1276,7 @@ dsply:
 	COLOR 6, 0
 	LOCATE 5, 41: PRINT "Deliver:"
 	COLOR 2, 0
-	
+
 	COLOR 6
 	SELECT CASE daysmax%
 	CASE 1: LOCATE 8, X0%: PRINT USING "Terms:## day for ##% discount. "; daysmax%; sterms
@@ -1326,14 +1326,14 @@ SUB dsplyLine (l%, d.elem%) STATIC
 		qty% = VAL(in$(l%, 1))
 		IF qty% < 1 AND VAL(in$(l%, 7)) < 1 AND VAL(in$(l%, 11)) < 1 OR qty% > 9999 THEN
 			LOCATE ln%, 2
-			
+
 			PRINT "    ³      ³    ³                         ³        ³          ³    ³          "
 		ELSE
 			qty% = VAL(in$(l%, 1))
 			msrmat.supqty! = VAL(in$(l%, 2))
 			LSET msrmat.SupUnit$ = in$(l%, 3)
 			ano% = VAL(in$(l%, 4))
-			
+
 			LSET msrmat.Desc1$ = in$(l%, 5)
 			LSET msrmat.Desc2$ = MID$(in$(l%, 5), LEN(msrmat.Desc1$) + 2, 10)
 			newdata$ = "N": CALL cf8(l%, d.elem%, newdata$)
@@ -1357,7 +1357,7 @@ SUB dsplyLine (l%, d.elem%) STATIC
 				cond.red$ = ""
 			END IF
 			purqtydsply$ = ""
-			
+
 			SELECT CASE LEN(LTRIM$(RTRIM$(STR$(msrmat.supqty!))))
 				CASE 1: a$ = "³   " + LTRIM$(RTRIM$(STR$(msrmat.supqty!))) + msrmat.SupUnit$ + "³"
 				CASE 2: a$ = "³  " + LTRIM$(RTRIM$(STR$(msrmat.supqty!))) + msrmat.SupUnit$ + "³"
@@ -1384,7 +1384,7 @@ SUB dsplyLine (l%, d.elem%) STATIC
 			ELSE
 				COLOR 2
 				END IF
-			
+
 			'END IF
 			LOCATE ln%, 2: PRINT USING "####"; qty%
 			LOCATE ln%, 6: PRINT a$;
@@ -1412,14 +1412,14 @@ SUB dsplyLine (l%, d.elem%) STATIC
 			LOCATE ln%, 65: PRINT USING "\ \"; SPACE$(7);
 			END IF
 			COLOR 2
-			
+
 			IF testa > 0 AND testb <> 0 THEN
 				COLOR 14
 			ELSE
 				COLOR 2
 			END IF
 			LOCATE ln%, 69: PRINT C$;
-			
+
 			LOCATE ln%, 70: PRINT USING "###,###.##"; ext!
 		END IF
 		'put green lines in
@@ -1764,7 +1764,7 @@ loadLine:
 		in$(m%, 3) = msrmat.SupUnit$
 		in$(m%, 4) = STR$(ano%)
 		in$(m%, 5) = msrmat.Desc1$ + " " + masrmat.desc2$
-		
+
 		in$(m%, 6) = STR$(price!)' Price is set only the first time in since it cannot change
 		in$(m%, 7) = STR$(invqty%)
 		in$(m%, 8) = STR$(0)
@@ -1825,7 +1825,7 @@ ON ERROR RESUME NEXT
 	DiscRate! = ordprt.hDiscRate
 	invmsg1$ = ordprt.hnote1
 	invmsg2$ = ordprt.hnote2
-	
+
 	'Shared
 	mode$ = ordprt.hMode
 	sno% = ordprt.gsno
@@ -1859,7 +1859,7 @@ SUB prtpslip (hord%, opt%, discovr!)
 
 	CLOSE #99
 	IF RTRIM$(ordhed.hreford$) = "" THEN ordhed.hreford$ = MID$(DATE$, 4, 2) + MID$(DATE$, 1, 2) + sup.search$
-	
+
 	OPEN ".\export\" + MID$(ordhed.hreford$, 1, 8) + ".po" FOR OUTPUT SHARED AS #99
 
 	WRITE #99, "CI-ID", "Creditor Invoice"
@@ -1883,9 +1883,9 @@ RTRIM$(PICKUP.pname4$)'??
 		ditem% = CVI(orddet.ditem$)
 		dordq% = CVI(orddet.dordq$)
 		dprice = CVS(orddet.dprice$)
-			
+
 			dtax = CVS(orddet.dtax$)
-			
+
 
 		IF ditem% < 1 OR ditem% > maxacc% OR dordq% = 0 THEN
 		ELSE
@@ -1945,7 +1945,7 @@ END SUB
 
 SUB rightprice (price!) STATIC
 
-					
+
 	 '* Calculate supply cost from SG & cost price
 	ab$ = msrmat.SupUnit$ + "-" + msrmat.PurUnit$
 	SELECT CASE ab$
@@ -2125,9 +2125,9 @@ GET #49, rrn%(l%), orddet
 		'-Update the stock file (remove previous)
 
 
-	 
-	
-	
+
+
+
 		'stop changing stock file if mode nil
 		IF mode$ <> "nil" THEN
 
@@ -2156,7 +2156,7 @@ GET #49, rrn%(l%), orddet
 			'msrmat.sohv = asohv
 			msrmat.soh = asoh1
 			'msrmat.UseCost = msrmat.sohv / abs(msrmat.soh)
-			
+
 			PUT #38, ditem%, msrmat
 
 			END IF
@@ -2168,7 +2168,7 @@ GET #49, rrn%(l%), orddet
 			END IF
 
 
-			
+
 
 		END IF
 		'-End of updating the stock file
@@ -2202,9 +2202,8 @@ GET #49, rrn%(l%), orddet
 		CASE "nil": ordhed.hstatus$ = "R"
 		CASE ELSE: ordhed.hstatus$ = "O"
 	END SELECT
-	
+
 	PUT #48, hord%, ordhed
 	IF mode$ = "nil" THEN mode$ = "rec"
 	CLOSE #97
 END SUB
-

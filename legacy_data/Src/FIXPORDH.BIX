@@ -12,7 +12,7 @@
 	NEXT
 	IF ordhed.hsup$ = STRING$(5, CHR$(32)) THEN
 		'-Delete the HEADER file
-		
+
 		LSET ordhed.hord$ = MKI$(0)
 		LSET ordhed.hrrn$ = MKI$(0)
 		LSET ordhed.hfiller$ = SPACE$(2)
@@ -47,4 +47,3 @@
 ENDPGM:
 CLOSE
 END
-

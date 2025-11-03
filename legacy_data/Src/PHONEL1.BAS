@@ -121,4 +121,3 @@ HEADING:
 	PRINT #99, "   "; STRING$(72, "-")
 	PRINT #99, CHR$(15);
 RETURN
-

@@ -16,5 +16,3 @@ END TYPE
 DIM SHARED lbl AS RcdFmtlbl
 
     OPEN "PRODUCT.DAT" FOR RANDOM AS #1 LEN = LEN(lbl)
-
-

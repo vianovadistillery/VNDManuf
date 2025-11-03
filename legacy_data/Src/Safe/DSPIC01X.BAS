@@ -68,4 +68,3 @@ SUB qsort (r$(), k%(), n%) STATIC
 	 NEXT'* S
 x.qsort:
 END SUB
-

@@ -223,4 +223,3 @@ FOR i% = 1 TO LEN(lastname$)
 firstname$ = firstname$ + SPACE$(20): firstname$ = MID$(firstname$, 1, 20)
 lastname$ = lastname$ + SPACE$(20): lastname$ = MID$(lastname$, 1, 20)
 END SUB
-

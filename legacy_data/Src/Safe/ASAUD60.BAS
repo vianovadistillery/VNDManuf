@@ -76,7 +76,7 @@ START:
 	LOCATE 6, 25: PRINT "Checking.."; asclobal$
 
 	OPEN asclobal$ FOR RANDOM SHARED AS #60 LEN = 48
-	
+
 	chkonly% = -1
 	CALL doCHECK(mth$, mthless1$, ok%, chkonly%)
 
@@ -176,4 +176,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

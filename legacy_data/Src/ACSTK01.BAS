@@ -42,7 +42,7 @@ DECLARE SUB searchindex (keyin$, chi%, found%)
 	'$INCLUDE: '.\SRC\forhed.INC'
 	'$INCLUDE: '.\SRC\forhedx.INC'
 	'$INCLUDE: '.\SRC\msrmat.INC'
-	
+
 	 'keyl% = 10: QK$ = SPACE$(keyl%)
 	DIM SHARED xx#(8, 5)
 	DIM SHARED sz$(100)
@@ -420,13 +420,13 @@ RETURN
 
 	 CALL cvt.tnt(tnt$, tnt%, tntf$)
 	 CALL calcbulk(tnt$, bulk!, pkge!, lid!, label!, pbox!, boxlbl!, manu!)
-	 
+
 	 LOCATE fl% + 3, c1% + 5: PRINT USING " - \                              \"; tnthed.desc$
 RETURN
 
 Cf7A: '>>>>> suplr 4 std cost
 	 LOCATE fl% + 4, c1% + 1: CALL inpnew(acstk.suplr4stdcost, 105!, updwn%, "13,59,60")
-	 
+
 RETURN
 
 CF7B: '>>>>> search 4 std cost
@@ -452,7 +452,7 @@ RETURN
 cf10: '>>>>> D I S T R I B U T O R  D I S C O U N T  C O D E  <<<<<<
 	 LOCATE fl% + 8, c2%: CALL inpnew(acstk.distributorcde$, 101!, updwn%, "13,59,60,65")
 	 IF updwn% = 65 THEN CALL dsplymargin: GOTO cf10
-	 
+
 RETURN
 cf11: '>>>>> C O N T R A C T   C O D E  - 1 <<<<<<<
 	 LOCATE fl% + 8, c3%
@@ -530,7 +530,7 @@ cf20: '>> RETAIL
 			acstk.retail = retail!
 			acstk.retailcde$ = "."
 		END IF
-	
+
 	IF acstk.countercde$ <> "." THEN GOTO cf20x
 	END IF
 
@@ -854,9 +854,9 @@ SUB calcbulk (form$, bulk!, pkge!, lid!, label!, pbox!, boxlbl!, manu!)
 	END IF
 
 
-	
+
 		acstk.bulk = acstk.bulk * pack%
-	
+
 
 	'IF form$ = "000A" OR form$ = "    " THEN acstk.bulk = xx#(2, 1)
 
@@ -960,7 +960,7 @@ costing:
 
 	wrkd$ = MID$(DATE$, 4, 2) + "/" + MID$(DATE$, 1, 2) + "/" + MID$(DATE$, 9, 2)
 	LSET acstk.date$ = FNDY$(wrkd$)
-	
+
 	PUT #3, rec%, acstk
 	CALL export(rec%)
 GOTO x.costing:
@@ -985,7 +985,7 @@ CC1: ' Packaging (Can)
 	IF msrmat.cond$ = "Y" THEN
 		acstk.pkge% = pkge%
 		pkge! = msrmat.UseCost
-	
+
 		CALL sndmsg("")
 	ELSE
 CC1Pass:
@@ -1038,7 +1038,7 @@ CC2: ' Label
 		 label! = 0
 		 CALL calcbulk(acstk.form$, bulk!, pkge!, lid!, label!, pbox!, boxlbl!, manu!)
 		 RETURN
-		 
+
 	END IF
 
 	IF label% < 1 THEN GOTO CC2Pass
@@ -1138,7 +1138,7 @@ CC3: ' Manufacturing Cost
 	IF msrmat.cond$ = "M" OR msrmat.cond$ = "L" OR msrmat.cond$ = "Y" THEN
 		acstk.manu% = manu%
 		manu! = msrmat.UseCost
-	
+
 		CALL sndmsg("")
 	ELSE
 CC3Pass:
@@ -1263,7 +1263,7 @@ SUB dsply (rec%, rec4cost%, bulk!, pkge!, lid!, label!, pbox!, boxlbl!, manu!, f
 		ELSE
 			pkge! = 0
 		END IF
-		
+
 		LOCATE , xl%: PRINT USING "Supplier....> \   \ (####) \                            \ Pkge>####-$####.## "; acstk.suplr$; CVI(sup.sno$); sup.sname$; acstk.pkge%; pkge!
 	ELSE
 		LOCATE , xl%: PRINT USING "Supplier....> \   \ (####) \                            \ Pkge>####-$####.## "; " "; 0; " "; 0; 0
@@ -1274,7 +1274,7 @@ SUB dsply (rec%, rec4cost%, bulk!, pkge!, lid!, label!, pbox!, boxlbl!, manu!, f
 		ELSE
 			lid! = 0
 		END IF
-		
+
 		LOCATE , xl%: PRINT USING "Size........> \ \  Unit...> \\ Pack...> ###               Lid.>####-$####.## "; acstk.size$; acstk.unit$; acstk.pack%; acstk.lid%; lid!
 
 	'From forumla
@@ -1624,8 +1624,8 @@ SUB recalc STATIC
 	CALL round.long(xx#(2, 3), 2.5)
 	CALL round.long(xx#(2, 4), 2.5)
 	CALL round.long(xx#(2, 5), 2.5)
-	
-	
+
+
 	'>>----------------<<
 	'>>-- Third line --<<
 	'>>----------------<<
@@ -1635,7 +1635,7 @@ SUB recalc STATIC
 	xx#(3, 3) = xx#(2, 3) * xx#(1, 1) / 100
 	xx#(3, 4) = xx#(2, 4) * xx#(1, 1) / 100
 	xx#(3, 5) = xx#(2, 5) * xx#(1, 1) / 100
-	
+
 	CALL round.long(xx#(3, 1), 2.5)
 	CALL round.long(xx#(3, 2), 2.5)
 	CALL round.long(xx#(3, 3), 2.5)
@@ -2020,7 +2020,7 @@ PCOPY 0, 1
 	 LOCATE 17, 14: PRINT "Zero Sales>"
 	 LOCATE 18, 14: PRINT "Proceed...>"
 
-	 
+
 	 LOCATE 17, 25:
 	 X$ = "N"
 	 zerosales% = 0
@@ -2157,7 +2157,7 @@ SUB trimfile (ok%)
 		acstk.distributor = 0
 		acstk.suplr4stdcost = SPACE$(5)
 		acstk.search4stdcost = SPACE$(10)
-		
+
 		'acstk.retail-tax = 0
 		'acstk.counter-tax = 0
 		'acstk.trade-tax = 0
@@ -2187,4 +2187,3 @@ SUB trimfile (ok%)
 	OPEN "acstk.acf" FOR RANDOM AS #3 LEN = LEN(acstk)
 
 END SUB
-

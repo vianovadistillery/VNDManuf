@@ -11,4 +11,3 @@ TYPE RcdFmtacmgn
 	margin AS STRING * 4
 END TYPE
 DIM SHARED acmgn AS RcdFmtacmgn
-

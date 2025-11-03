@@ -14,7 +14,7 @@
 	'$INCLUDE: '\tpmanuf\src\supx.INC'
 	'$INCLUDE: '\tpmanuf\src\cusx.INC'
 	stdout$ = "C:\TPEXE\MSREP03.PRN"
-	
+
 	GET #36, 1, msmisc
 	maxsup% = CVI(msmisc.max1$): maxform% = CVI(msmisc.max2$): maxrmat% = CVI(msmisc.max3$)
 	IF SCREEN(1, 60) = 81 THEN maxrmat% = 100 ' "QBX" mode
@@ -72,7 +72,7 @@ DOLIST:
 	OPEN stdout$ FOR OUTPUT AS #99
 	WIDTH #99, 128
 	GOSUB heading
-	
+
 	FOR i% = 1 TO n
 	IF stdout$ <> "CON" THEN
 		LOCATE 20, 25: PRINT "Printing record "; i%; " out of "; n; CHR$(FNE)
@@ -129,7 +129,7 @@ Notes$
 		IF lin > 50 THEN PRINT #99, CHR$(12); : GOSUB heading
 	END IF
 
-	
+
 660 NEXT
 	PRINT #99, CHR$(12);
 	CLOSE #99
@@ -254,4 +254,3 @@ RETURN
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

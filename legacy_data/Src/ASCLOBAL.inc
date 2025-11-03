@@ -18,4 +18,3 @@ TYPE RcdFmtclobal
 	filler AS STRING * 5
 END TYPE
 DIM SHARED clobal AS RcdFmtclobal
-

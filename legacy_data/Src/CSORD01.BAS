@@ -279,7 +279,7 @@ SUB details (rec%, updwn%)
 	btm$ = "F1-Return.     F6-Browse      F9-Quick load                                 ."
 	COLOR 0, 3: LOCATE 25, 4: PRINT btm$; : COLOR 2, 0
 	IF rec% < 1 OR rec% > maxsup% THEN GOTO x.detail
-	
+
 
 	dstart% = 1: dend% = 18
 
@@ -639,4 +639,3 @@ searchagain:
 
 X.SEARCHINDEX:
 END SUB
-

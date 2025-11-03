@@ -48,7 +48,7 @@ DO WHILE rec% < last% + 1
 	ab$ = tnthed.date$
 	ac$ = STR$(tnthed.asRmat%)
 	ad$ = tnthed.CostPer$
-	
+
 	WRITE #99, a$, b$, c$, d$, e$, f$, g$, h$, i$, j$, k$, l$, m$, n$, o$, p$, q$, r$, s$, t$, u$, v$, w$, x$, y$, z$, aa$, ab$, ac$, ad$
 
 	rec% = rec% + 1
@@ -57,5 +57,3 @@ DO WHILE rec% < last% + 1
 LOOP
 
 END
-
-

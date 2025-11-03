@@ -166,7 +166,7 @@ ELSE
 END IF
 
 
-	
+
 
 
 END SUB
@@ -236,4 +236,3 @@ x.prtjobslip:
 
 
 END SUB
-

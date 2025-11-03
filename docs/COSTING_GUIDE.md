@@ -161,7 +161,7 @@ def post_receipt(item_id, qty_kg, unit_cost, lot_code, supplier_invoice_id=None)
     )
     db.add(lot)
     db.flush()
-    
+
     txn = InventoryTxn(
         lot_id=lot.id,
         transaction_type='RECEIPT',
@@ -173,7 +173,7 @@ def post_receipt(item_id, qty_kg, unit_cost, lot_code, supplier_invoice_id=None)
     )
     db.add(txn)
     db.commit()
-    
+
     return lot
 ```
 
@@ -185,25 +185,25 @@ def issue_to_wo(item_id, required_qty_kg, work_order_id):
     Issue inventory using FIFO, with fallbacks for missing costs.
     """
     product = db.get(Product, item_id)
-    
+
     # Get available lots (FIFO order)
     lots = db.query(InventoryLot)\
         .filter(InventoryLot.product_id == item_id, InventoryLot.quantity_kg > 0)\
         .order_by(InventoryLot.received_at)\
         .all()
-    
+
     issues = []
     remaining = required_qty_kg
-    
+
     for lot in lots:
         if remaining <= 0:
             break
-        
+
         issue_qty = min(remaining, lot.quantity_kg)
-        
+
         # Resolve cost: FIFO → standard → estimated
         cost_resolution = resolve_cost_for_lot(lot, product)
-        
+
         # Create issue transaction
         txn = InventoryTxn(
             lot_id=lot.id,
@@ -216,10 +216,10 @@ def issue_to_wo(item_id, required_qty_kg, work_order_id):
             estimate_reason=cost_resolution.estimate_reason
         )
         db.add(txn)
-        
+
         # Update lot
         lot.quantity_kg -= issue_qty
-        
+
         issues.append({
             'lot_id': lot.id,
             'qty': issue_qty,
@@ -228,12 +228,12 @@ def issue_to_wo(item_id, required_qty_kg, work_order_id):
             'has_estimate': cost_resolution.has_estimate,
             'txn_id': txn.id
         })
-        
+
         remaining -= issue_qty
-    
+
     if remaining > 0:
         raise ValueError(f"Insufficient stock: required {required_qty_kg}, available {required_qty_kg - remaining}")
-    
+
     db.commit()
     return issues
 ```
@@ -248,15 +248,15 @@ def produce_from_assembly(parent_item_id, parent_qty, consumed_issues):
     total_cost = Decimal("0")
     has_any_estimate = False
     estimate_sources = []
-    
+
     for issue in consumed_issues:
         total_cost += issue['qty'] * issue['unit_cost']
         if issue.get('has_estimate'):
             has_any_estimate = True
             estimate_sources.append(issue.get('estimate_reason', 'Component estimate'))
-    
+
     parent_unit_cost = total_cost / parent_qty if parent_qty > 0 else Decimal("0")
-    
+
     # Determine cost source
     if has_any_estimate:
         cost_source = 'estimated'
@@ -268,7 +268,7 @@ def produce_from_assembly(parent_item_id, parent_qty, consumed_issues):
     else:
         cost_source = 'standard'
         estimate_flag = False
-    
+
     # Create parent lot
     parent_lot = InventoryLot(
         product_id=parent_item_id,
@@ -280,7 +280,7 @@ def produce_from_assembly(parent_item_id, parent_qty, consumed_issues):
     )
     db.add(parent_lot)
     db.flush()
-    
+
     # Create produce transaction
     produce_txn = InventoryTxn(
         lot_id=parent_lot.id,
@@ -293,7 +293,7 @@ def produce_from_assembly(parent_item_id, parent_qty, consumed_issues):
         estimate_reason=estimate_reason
     )
     db.add(produce_txn)
-    
+
     # Link dependencies for revaluation propagation
     for issue in consumed_issues:
         dep = AssemblyCostDependency(
@@ -303,7 +303,7 @@ def produce_from_assembly(parent_item_id, parent_qty, consumed_issues):
             produced_txn_id=produce_txn.id
         )
         db.add(dep)
-    
+
     db.commit()
     return parent_lot
 ```
@@ -319,12 +319,12 @@ def revalue_lot(lot_id, new_unit_cost, reason, revalued_by, propagate=True):
     old_cost = lot.current_unit_cost or lot.original_unit_cost
     delta_per_unit = new_unit_cost - old_cost
     delta_extended = delta_per_unit * lot.quantity_kg
-    
+
     # Update lot
     if lot.original_unit_cost is None:
         lot.original_unit_cost = old_cost
     lot.current_unit_cost = new_unit_cost
-    
+
     # Create revaluation record
     reval = Revaluation(
         item_id=lot.product_id,
@@ -337,13 +337,13 @@ def revalue_lot(lot_id, new_unit_cost, reason, revalued_by, propagate=True):
     )
     db.add(reval)
     db.flush()
-    
+
     if propagate:
         # Find downstream assemblies
         dependencies = db.query(AssemblyCostDependency)\
             .filter(AssemblyCostDependency.consumed_lot_id == lot_id)\
             .all()
-        
+
         # Propagate revaluation
         for dep in dependencies:
             produced_lot = db.get(InventoryLot, dep.produced_lot_id)
@@ -354,10 +354,10 @@ def revalue_lot(lot_id, new_unit_cost, reason, revalued_by, propagate=True):
                     issue['qty'] * (new_unit_cost if issue['lot_id'] == lot_id else issue['unit_cost'])
                     for issue in consumed_issues
                 ) / produced_lot.quantity_kg if produced_lot.quantity_kg > 0 else Decimal("0")
-                
+
                 old_parent_cost = produced_lot.current_unit_cost
                 produced_lot.current_unit_cost = new_parent_cost
-                
+
                 # Create revaluation entry
                 reval_parent = Revaluation(
                     item_id=produced_lot.product_id,
@@ -370,7 +370,7 @@ def revalue_lot(lot_id, new_unit_cost, reason, revalued_by, propagate=True):
                     propagated_to_assemblies=True
                 )
                 db.add(reval_parent)
-    
+
     db.commit()
     return reval
 ```
@@ -383,10 +383,10 @@ def inspect_cogs(item_id, as_of_date=None, include_estimates=True):
     Inspect cost of goods with multi-level breakdown.
     """
     product = db.get(Product, item_id)
-    
+
     # Build BOM tree recursively
     tree = build_bom_tree(item_id, as_of_date, include_estimates)
-    
+
     return {
         'item_id': item_id,
         'sku': product.sku,
@@ -405,17 +405,17 @@ def build_bom_tree(item_id, as_of_date, include_estimates, level=0, visited=None
     """
     if visited is None:
         visited = set()
-    
+
     if item_id in visited:
         raise ValueError(f"Circular BOM detected")
     visited.add(item_id)
-    
+
     product = db.get(Product, item_id)
     assemblies = db.query(Assembly).filter(
         Assembly.parent_product_id == item_id,
         Assembly.is_active == True
     ).all()
-    
+
     if not assemblies:
         # Leaf node - get direct cost
         cost_info = get_item_cost(product, as_of_date)
@@ -431,12 +431,12 @@ def build_bom_tree(item_id, as_of_date, include_estimates, level=0, visited=None
             'estimate_reason': cost_info.get('estimate_reason'),
             'children': []
         }
-    
+
     # Parent node - roll up from children
     children = []
     total_cost = Decimal("0")
     has_any_estimate = False
-    
+
     for assembly in assemblies:
         child_tree = build_bom_tree(
             assembly.child_product_id,
@@ -445,22 +445,22 @@ def build_bom_tree(item_id, as_of_date, include_estimates, level=0, visited=None
             level + 1,
             set(visited)
         )
-        
+
         qty_needed = assembly.ratio * (Decimal("1") + assembly.loss_factor) / assembly.yield_factor
         child_extended = child_tree['unit_cost'] * qty_needed
-        
+
         children.append({
             **child_tree,
             'qty_per_parent': qty_needed,
             'extended_cost': child_extended
         })
-        
+
         total_cost += child_extended
         if child_tree['has_estimate']:
             has_any_estimate = True
-    
+
     visited.remove(item_id)
-    
+
     return {
         'level': level,
         'sku': product.sku,
@@ -483,21 +483,21 @@ def build_bom_tree(item_id, as_of_date, include_estimates, level=0, visited=None
 def test_data_integrity():
     """Verify ledger balances match on-hand quantities."""
     items = db.query(Product).filter(Product.is_tracked == True).all()
-    
+
     for item in items:
         # Sum ledger transactions
         ledger_sum = db.query(func.sum(InventoryTxn.quantity_kg))\
             .filter(InventoryTxn.lot.has(product_id=item.id))\
             .scalar() or Decimal("0")
-        
+
         # Sum lot quantities
         lot_sum = db.query(func.sum(InventoryLot.quantity_kg))\
             .filter(InventoryLot.product_id == item.id)\
             .scalar() or Decimal("0")
-        
+
         assert abs(ledger_sum - lot_sum) < Decimal("0.001"), \
             f"Ledger mismatch for {item.sku}: ledger={ledger_sum}, lots={lot_sum}"
-        
+
         # Check no negative lots (unless override)
         negative_lots = db.query(InventoryLot)\
             .filter(InventoryLot.product_id == item.id, InventoryLot.quantity_kg < 0)\
@@ -752,7 +752,7 @@ Returns formatted text tree with estimate flags and cost breakdowns.
 
 **Cause:** Deep recursion or missing indexes
 
-**Solution:** 
+**Solution:**
 - Add indexes on `assemblies.parent_product_id` and `assemblies.child_product_id`
 - Consider caching for frequently accessed BOMs
 - Limit recursion depth if needed
@@ -783,4 +783,3 @@ This costing system provides:
 - ✅ Clean audit trail for all cost changes
 
 The system is production-ready and fully tested. See `tests/test_costing.py` for comprehensive test coverage.
-

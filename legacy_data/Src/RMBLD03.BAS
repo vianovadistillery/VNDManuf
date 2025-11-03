@@ -94,7 +94,7 @@ DECLARE SUB searchindex (keyin$, chi%, found%)
 
 
 			size$ = LTRIM$(RTRIM$(STR$(msrmat.supqty!)))
-			
+
 			IF LEN(size$) = 1 THEN size$ = size$ + "      "
 			IF LEN(size$) = 2 THEN size$ = size$ + "     "
 			IF LEN(size$) = 3 THEN size$ = size$ + "    "
@@ -180,4 +180,3 @@ RETURN
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '.\SRC\searchx.bi'
 END SUB
-

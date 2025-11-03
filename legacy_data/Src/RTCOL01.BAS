@@ -830,4 +830,3 @@ SUB mls.iyj (Y%, u%, alpha$, mls%, u.oz%, ml.oz) STATIC
 	IF Y% = 1 THEN alpha$ = "Y"
 	IF u% > 0 THEN alpha$ = alpha$ + MID$(STR$(u%), 2)
 END SUB
-

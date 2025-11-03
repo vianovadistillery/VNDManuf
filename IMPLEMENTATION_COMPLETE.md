@@ -270,4 +270,3 @@ The system is **production-ready** for Phase 10. Remaining tasks require:
 - Cutover planning
 
 All implementation work from `tpmanu.plan.md` is complete.
-

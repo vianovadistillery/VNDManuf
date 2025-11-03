@@ -57,4 +57,3 @@ TYPE RcdFmttnthed
 END TYPE
 
 DIM SHARED tnthed AS RcdFmttnthed
-

@@ -26,7 +26,7 @@
 	batchx.Filler$ = batch.Filler$
 
 	PUT #58, rec%, batchx
-	
+
 
 	IF rec% MOD 10 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
 	GET #57, , batch: rec% = rec% + 1
@@ -36,4 +36,3 @@
 ENDPGM:
 CLOSE
 END
-

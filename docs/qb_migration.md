@@ -233,10 +233,10 @@ Run both systems concurrently for 1-2 weeks:
    ```powershell
    # Backup current database
    copy app.db app.db.backup
-   
+
    # Import latest QB data
    python scripts\import_qb_data.py
-   
+
    # Validate
    python scripts\check_qb_import.py
    ```
@@ -245,7 +245,7 @@ Run both systems concurrently for 1-2 weeks:
    ```powershell
    # Start API (background)
    .\scripts\dev.ps1 api
-   
+
    # Start UI (background)
    .\scripts\dev.ps1 ui
    ```
@@ -289,7 +289,7 @@ Run both systems concurrently for 1-2 weeks:
    - Stop new system servers
    - Restore QB system
    - Notify users to continue on QB
-   
+
 2. **Data Recovery**:
    - Export recent batches from new system
    - Manual entry into QB system
@@ -446,4 +446,3 @@ for lot in lots:
 - `yield_theoretical` (SINGLE)
 - `yield_actual` (SINGLE)
 - QC fields (SG, viscosity, pH, etc.)
-

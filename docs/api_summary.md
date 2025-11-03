@@ -169,4 +169,3 @@ python scripts/check_qb_import.py           # Verify
 - Character encoding: CP437 (IBM PC)
 - Little-endian byte order
 - Single precision float (4 bytes)
-

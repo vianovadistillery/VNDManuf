@@ -62,4 +62,3 @@ CLOSE
 
 CALL EXITPGM(apgm$)
 CHAIN apgm$
-

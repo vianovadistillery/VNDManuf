@@ -16,4 +16,3 @@ CASE ELSE:  OPEN "fordet.asf" FOR RANDOM SHARED AS #65 LEN = 32
 END SELECT
 
 'DIM SHARED tntdet AS RcdFmttntdet
-

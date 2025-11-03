@@ -31,7 +31,7 @@ DECLARE SUB upd.who (ch.audit%, ch.sup%, upd%)
 	DIM SHARED ss%
 	'stdout$ = "shit.sht"
 	ss% = 1'Screen start
-	
+
 
 	GET #36, 1, msmisc
 	maxcus% = CVI(msmisc.max7$)
@@ -152,7 +152,7 @@ bdsply70:
 			LOCATE lin% + 4, 2
 						'seq name                      -date-   -due---          ---        ----      xxx
 			PRINT USING "### \                       \ \      \ \      \         \        \ \        \"; project.no%; project.name$; FNDYY$(project.closed$); FNDYY$(project.duedate$); project.type$; project.report$
-			
+
 
 			IF project.closed$ < "19000101" THEN
 				LOCATE lin% + 4, 2 + 30
@@ -387,4 +387,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 '$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

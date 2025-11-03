@@ -17,7 +17,7 @@ height.in.tank.0:
 	 IF c = 0 THEN updwn% = 0: GOTO x.height.in.tank:
 
 	 '>-c=Total size, d= LT/MM
-	 
+
 	 IF c = 85 THEN d = .1157        '1118
 	 IF c = 219 THEN d = .2489    '2489
 	 IF c = 309 THEN d = .2896    '2893
@@ -56,4 +56,3 @@ height.in.tank.0:
 x.height.in.tank:
 
 'END SUB
-

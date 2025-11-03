@@ -46,7 +46,7 @@ DECLARE SUB upd.who (ch.audit%, ch.sup%, upd%)
 	END TYPE
 	DIM SHARED old AS RcdFmtOld
 	'CALL zcpyfmt
-	
+
 	GET #36, 1, msmisc
 	maxcus% = CVI(msmisc.max7$)
 
@@ -174,7 +174,7 @@ bdsply70:
 			LOCATE lin% + 4, 2
 						'seq name                      -date-   -due---          ---        ----      xxx
 			PRINT USING "### \                       \ \      \ \      \         \        \ \        \"; extra.no%; extra.name$; FNDYY$(extra.closed$); FNDYY$(extra.duedate$); extra.type$; extra.report$
-			
+
 
 			IF extra.closed$ < "19000101" THEN
 				LOCATE lin% + 4, 2 + 30
@@ -594,4 +594,3 @@ SUB zcpyfmt
 
 
 END SUB
-

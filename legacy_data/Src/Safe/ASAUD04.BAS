@@ -86,7 +86,7 @@ cf2:
 	'stdout$ = "CON": CLS '??
 	OPEN stdout$ FOR OUTPUT AS #99
 	WIDTH #99, 128
-				  
+
 	GOSUB do.list
 	CLOSE #60
 	CLOSE #99
@@ -134,7 +134,7 @@ do.list:
 			PRINT #99, USING "\   \ - \                            \ $$##,###.## $$##,###.## $$##,###.## $$##,###.## $$##,###.## \      \$$##,###.## \      \"; clobal.cust$; cus.sname$; clobal.ocur!; clobal.o30!; clobal.o60!; clobal.o90!; total#;  _
 FNDYY$(cus.addate$); cusvalue!; cus.addocnum$
 			lin% = lin% + 1
-			 
+
 			tot.o90! = tot.o90! + clobal.o90!
 			tot.o60! = tot.o60! + clobal.o60!
 			tot.o30! = tot.o30! + clobal.o30!
@@ -198,4 +198,3 @@ RETURN
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

@@ -23,7 +23,7 @@
     CALL box(x0%, y0%, 80, 21, 7, 0, 2)
     LOCATE y0%, 80: PRINT "¹";
     LOCATE 21, 80: PRINT "¹";
-    
+
     COLOR 2, 0
     SELECT CASE code$
     CASE "W": sel$ = "11,12,@"
@@ -71,7 +71,7 @@
                 LOCATE y0% + n%, x0% + 1
                 PRINT USING "\\ \                     \"; x$; haz$(i%)
             END IF
-            
+
             NEXT
 
         y0% = 2: x0% = 40
@@ -123,7 +123,7 @@
         PRINT CHR$(i%); ".";
         COLOR 5, 0
         PRINT LEFT$(sel$, LEN(sel$) - 2); " ";
-        
+
 
     NEXT
 
@@ -131,4 +131,3 @@
         END IF
 
 'END SUB
-

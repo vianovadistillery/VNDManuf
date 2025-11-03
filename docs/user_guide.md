@@ -244,4 +244,3 @@ Exports include all fields for backup or migration.
 - **API Documentation**: `http://127.0.0.1:8000/docs` (Swagger UI)
 - **Database Schema**: `docs/architecture.md`
 - **Migration Guide**: `docs/qb_migration.md`
-

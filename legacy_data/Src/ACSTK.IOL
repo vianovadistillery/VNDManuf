@@ -58,4 +58,3 @@ TYPE RcdFmtacstk
 END TYPE
 DIM SHARED acstk AS RcdFmtacstk
 DIM SHARED acstk4cost AS RcdFmtacstk
-

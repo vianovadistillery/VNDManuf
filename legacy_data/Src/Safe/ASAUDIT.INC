@@ -60,6 +60,3 @@ DIM SHARED Audit AS RcdFmtAudit
 RETURN
 
 X.OPEN.AUDIT:
-
-
-

@@ -12,4 +12,3 @@ TYPE RcdFmtmsmkp
 	mkon AS STRING * 2
 END TYPE
 DIM SHARED msmkp AS RcdFmtmsmkp
-

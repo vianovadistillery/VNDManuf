@@ -22,7 +22,7 @@ DIM SHARED ordhedn AS RcdFmtnew
 	OPEN "ordhed.old" FOR RANDOM AS #1 LEN = 128
 	OPEN "ordhed.acf" FOR OUTPUT AS #2: CLOSE #2
 	OPEN "ordhed.acf" FOR RANDOM AS #2 LEN = 256
-	
+
 	rec% = 1
 	GET #1, rec%, ordhedo
 	DO WHILE NOT EOF(1)
@@ -38,4 +38,3 @@ ENDPGM:
 CLOSE
 
 END
-

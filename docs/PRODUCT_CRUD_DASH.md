@@ -98,26 +98,26 @@ dbc.Modal([
                     dbc.Input(id="product-name", ...),
                     # ... etc
                 ], label="Basic Info", tab_id="basic"),
-                
+
                 dbc.Tab([
                     # Physical properties
                     dbc.Input(id="product-size", ...),
                     dbc.Input(id="product-base-unit", ...),
                     # ... etc
                 ], label="Physical", tab_id="physical"),
-                
+
                 dbc.Tab([
                     # Classifications
                     dbc.Input(id="product-dgflag", ...),
                     # ... etc
                 ], label="Classifications", tab_id="classifications"),
-                
+
                 dbc.Tab([
                     # Financial fields
                     dbc.Input(id="product-purcost", ...),
                     # ... etc
                 ], label="Financial", tab_id="financial"),
-                
+
                 dbc.Tab([
                     # Pricing codes
                     dbc.Input(id="product-wholesalecde", ...),
@@ -303,19 +303,19 @@ dbc.Accordion([
     dbc.AccordionItem([
         # Basic fields
     ], title="Basic Information"),
-    
+
     dbc.AccordionItem([
         # Physical fields
     ], title="Physical Properties"),
-    
+
     dbc.AccordionItem([
         # Classifications
     ], title="Classifications"),
-    
+
     dbc.AccordionItem([
         # Financial
     ], title="Financial Information"),
-    
+
     dbc.AccordionItem([
         # Pricing codes
     ], title="Pricing Codes"),
@@ -340,4 +340,3 @@ dbc.Accordion([
 - Edit/Delete Logic: 30 minutes
 - Testing: 30 minutes
 - **Total: 2.5-4 hours**
-

@@ -132,4 +132,3 @@ skip:
 NEXT
 	CLOSE #97
 END
-

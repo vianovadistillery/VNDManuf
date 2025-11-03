@@ -41,16 +41,16 @@
 		msrmatx.used = 0
 		msrmatx.ean13 = 0
 		msrmatx.filler$ = SPACE$(72)
-		
-		
-		
-		
+
+
+
+
 
 
 
 
 	PUT #88, rec%, msrmatx
-	
+
 
 	IF rec% MOD 100 = 0 THEN CALL sndmsg("Record:" + STR$(rec%))
 	GET #38, , msrmat: rec% = rec% + 1
@@ -60,4 +60,3 @@
 ENDPGM:
 CLOSE
 END
-

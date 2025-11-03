@@ -28,4 +28,3 @@ DECLARE SUB rightprice (price!, tax!)
 SUB browse.idx (firstonscreen%, ch1%, ch2%) STATIC
 '$INCLUDE: '\tpmanuf\src\browse01.bi'
 END SUB
-

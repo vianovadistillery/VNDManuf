@@ -78,4 +78,3 @@ getopt: LOCATE 22, 27: PRINT "Option..> ";
 	END IF
 
 	GOTO getopt
-

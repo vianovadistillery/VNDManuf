@@ -10,7 +10,7 @@ Added comprehensive fields to match TPManuf legacy system:
 - `ean13` - EAN-13 barcode
 - `supplier_id` - Link to suppliers table
 
-#### Physical Properties  
+#### Physical Properties
 - `size` - Size information
 - `base_unit` - Unit of measure (KG, LT, EA)
 - `pack` - Package quantity
@@ -108,4 +108,3 @@ print("Existing columns:", columns)
 ```
 
 Then modify the migration to only add missing columns.
-

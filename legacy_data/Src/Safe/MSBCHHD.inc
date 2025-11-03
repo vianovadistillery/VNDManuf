@@ -11,4 +11,3 @@ TYPE RcdFmtmsbchhd
 	bchhi AS STRING * 2
 END TYPE
 DIM SHARED msbchhd AS RcdFmtmsbchhd
-

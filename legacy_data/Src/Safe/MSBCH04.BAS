@@ -13,7 +13,7 @@
 	'$INCLUDE: '\tpmanuf\src\msbatch.INC'
 	'$INCLUDE: '\tpmanuf\src\msbatchh.INC'
 	OPEN stdout$ FOR OUTPUT AS #99
-	
+
 	DIM SHARED form%(999), act(999), thy(999), d$(999), nform%
 	DIM SHARED classid(100), CLASS(100), nclass%
 
@@ -97,7 +97,7 @@ BATCH.REP:
 	rec% = start.rec%
 	GET #26, rec%, batchh
 	DO WHILE NOT EOF(26)
-	
+
 	'* Decode the file
 	bno% = batchh.bno: bfno% = VAL(MID$(batchh.form, 1, 3)): brev% = batchh.revision
 	bclass% = batchh.CLASS: byld% = batchh.yld: bayld% = batchh.ayld
@@ -202,7 +202,7 @@ CLASS.REP:
 
 	GET #26, , batchh: rec% = rec% + 1
 	LOOP
-	 
+
 
 	 '* Now print it
 	 pag% = 0: lin% = 9999
@@ -313,5 +313,3 @@ PRODHEADING:
 	 PRINT #99, USING "No.  Formula  Description         Exp.Yld     Act.Yld   % Diff  !"; ""
 	 PRINT #99, STRING$(79, "-")
 RETURN
-
-

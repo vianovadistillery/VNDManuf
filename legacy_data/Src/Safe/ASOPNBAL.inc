@@ -18,4 +18,3 @@ TYPE RcdFmtopnbal
 	filler AS STRING * 5
 END TYPE
 DIM SHARED opnbal AS RcdFmtopnbal
-

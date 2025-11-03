@@ -77,7 +77,7 @@ SUB aerror (RETCODE%) STATIC
 	BDATA$(13) = ""
 	BDATA$(14) = ""
 
-	 
+
 	'General printer error routine
 	ok% = 0
 	FOR i% = 1 TO 10
@@ -1211,7 +1211,7 @@ SCRNSAVER:
 		IF x$ = "" AND TIME$ > "19:01:01" AND ABS(TIMER - scrn2!) > 901 THEN
 			x$ = CHR$(0) + CHR$(59): EXIT DO
 		END IF
-			 
+
 
 		LOCATE 25, i%: COLOR 14, 0: PRINT " ";
 		LOOP
@@ -1395,7 +1395,7 @@ DO
 			 astart! = anow!
 			 CALL setscreen(ok%)
 			 END IF
-		
+
 		x$ = INKEY$'<<<<< The input >>>>>
 		LOOP WHILE x$ = ""
 		COLOR 2, 0: LOCATE y%, x0%: PRINT mnuitem$;
@@ -1597,4 +1597,3 @@ SUB sndmsg (themsg$) STATIC
 	LOCATE y0%, x0%: COLOR 2, 0
 
 END SUB
-

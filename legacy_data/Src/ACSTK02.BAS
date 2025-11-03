@@ -41,7 +41,7 @@ DECLARE SUB setaudit (n%)
 	DIM SHARED tot.dg200%, tot.dg60%, tot.dg20%, tot.dg10%, tot.dg4%, tot.dg2%, tot.dg1%, tot.dg850%, tot.dg500%, tot.dg300%, tot.dg250%, tot.dglt!
 	DIM SHARED extdisc!, inv.lt.printed!
 	DIM SHARED tender$
-	
+
 	DIM SHARED qk$, keyl%, rep$
 	DIM SHARED auditfile$(15), naudit%, acstkf$
 	keyl% = 20: qk$ = SPACE$(keyl%): rep$ = SPACE$(keyl% - 2)
@@ -84,7 +84,7 @@ DECLARE SUB setaudit (n%)
 	CLOSE #8
 
 
-	
+
 	'Clear all but the invnum and invnumrec%
 	opt% = 0
 
@@ -109,7 +109,7 @@ det:
 	GOSUB detail
 	opt$ = " ": opt% = 0
 exitmenu:
-	
+
 	IF tot.torepack > 0 OR tot.ltact > 0 THEN
 		DO
 
@@ -135,7 +135,7 @@ exitmenu:
 
 		opt% = VAL(opt$)
 
-	
+
 		IF updwn% = 59 THEN opt% = 1
 		IF updwn% = 68 THEN opt% = 2
 		IF updwn% = 60 THEN opt% = 3
@@ -171,7 +171,7 @@ change.price0:
 								CALL inpnew(in$, 7.2, updwn%, "13,59")
 		in = VAL(in$)
 		ovrPrice = in
-		
+
 		TaxRate! = GST 'Use the constant
 		CALL add.up.repack(tot.ltact!, tot.torepack!, tot.ltact.taxable!, tot.dtax!, tot.ext!)
 RETURN
@@ -188,7 +188,7 @@ load.det:
 	tot.ltinv = 0      'Litres invoiced
 	tot.dollr = 0
 	tot.items& = 0
-	
+
 	hinvq = CVS(ordhed.hinvq$)
 
 	l% = maxlines%
@@ -246,7 +246,7 @@ detail.a:
 	l% = sav.l%
 	LOCATE , 2: COLOR 2, 0: PRINT "컴컴좔컴컴좔컴컨컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴좔컴컴컴좔컴컴컴좔컴컴컴컴"
 
-	
+
 	LOCATE 6, 2: COLOR 2, 0: PRINT "컴컴좔컴컴좔컴컨컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴좔컴컴컴좔컴컴컴좔컴컴컴컴"
 	LOCATE 7, 2: COLOR 6, 0: PRINT "Repack to.                                                                    "
 	LOCATE 8, 2: COLOR 2, 0: PRINT "컴컴쩡컴컴쩡컴컫컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴쩡컴컴컴쩡컴컴컴쩡컴컴컴컴"
@@ -362,12 +362,12 @@ add.up.repack:
 
 	'>>> Print out bottom line of the invoice <<<<
 	tot.allup = tot.ext - tot.toext
-	
+
 	COLOR 2, 0
 	LOCATE 21, 2: PRINT USING "Actual  :##,###                            Sub Total               $$######.##"; tot.torepack!; tot.ext
 	LOCATE 22, 2: PRINT USING "Repacked:##,###                                                               "; tot.ltact
 	LOCATE 23, 2: PRINT USING "         ##,###                                                               "; tot.ltact - tot.torepack
-	
+
 	COLOR 7, 0
 	LOCATE 24, 69: PRINT USING "�$$#####.##�"; tot.allup; : COLOR 2, 0
 	COLOR 10, 0:
@@ -680,7 +680,7 @@ dsply:
 	COLOR 6, 0
 	LOCATE 5, 41: PRINT "Deliver:"
 	COLOR 2, 0
-	
+
 	COLOR 6
 	SELECT CASE daysmax%
 	CASE 1: LOCATE 8, X0%: PRINT USING "Terms:## day for ##% discount. "; daysmax%; sterms
@@ -1014,4 +1014,3 @@ update.order:
 	NEXT
 
 END SUB
-

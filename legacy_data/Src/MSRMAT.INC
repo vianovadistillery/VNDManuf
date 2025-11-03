@@ -33,14 +33,13 @@
 		sip AS SINGLE
 		sohv AS SINGLE
 		restock AS SINGLE
-		used AS SINGLE 
+		used AS SINGLE
 		ean13 AS CURRENCY
 		lastpur AS STRING * 8
 		supqty AS SINGLE
-		filler as STRING * 60		
+		filler as STRING * 60
 	END TYPE
 
 	DIM SHARED msrmat AS RcdFmtmsrmat
-	
-	OPEN "MSRMNEW.MSF" FOR RANDOM SHARED AS #38 LEN = LEN(msrmat)
 
+	OPEN "MSRMNEW.MSF" FOR RANDOM SHARED AS #38 LEN = LEN(msrmat)

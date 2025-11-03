@@ -37,7 +37,7 @@ COMMON SHARED maxsup%, maxform%, maxrmat%, maxacc%, maxtypes, maxcus%, maxord%
 '////////////////////////////////////////////////////////////////////////
 '$INCLUDE: '\tpmanuf\src\pgmhead.inc'
 ''$INCLUDE: '\tpmanuf\src\pgmerr.inc'
-	
+
 	DIM SHARED auditfile$(15), naudit%, acstkf$
 
 	typefields% = -1
@@ -48,7 +48,7 @@ COMMON SHARED maxsup%, maxform%, maxrmat%, maxacc%, maxtypes, maxcus%, maxord%
 	parm2$ = ENVIRON$("PARM2$")
 	IF parm2$ = "PRE..." THEN acstkf$ = "PRE"
 
-	
+
 
 	'$INCLUDE: '\tpmanuf\src\whof.inc'
 	'$INCLUDE: '\tpmanuf\src\cusx.inc'
@@ -76,9 +76,8 @@ COMMON SHARED maxsup%, maxform%, maxrmat%, maxacc%, maxtypes, maxcus%, maxord%
 	'9=tax flag,10=ordqty%,11=Invqty,12=BoFlag,13=save qty
 	'14=Save item, 15=Overtyped price
 
-	
+
 
 SUB accbrowse (rec%) STATIC
 '$INCLUDE: '\tpmanuf\src\accbrow.bi'
 END SUB
-

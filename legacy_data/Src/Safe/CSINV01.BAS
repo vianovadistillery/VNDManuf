@@ -441,4 +441,3 @@ SUB stockcalc (stock!) STATIC
 	 CALL ROUND(msrmat.UseCost, 2.5)
 
 END SUB
-

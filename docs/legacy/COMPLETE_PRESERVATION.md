@@ -120,7 +120,7 @@ SELECT * FROM products WHERE sku = 'NWG-200';
 SELECT * FROM legacy_acstk_data WHERE legacy_search = 'NWG-200';
 
 -- Join for complete view
-SELECT p.*, l.* 
+SELECT p.*, l.*
 FROM products p
 JOIN legacy_acstk_data l ON p.id = l.product_id
 WHERE p.sku = 'NWG-200';
@@ -203,7 +203,7 @@ JOIN legacy_acstk_data l ON p.id = l.product_id
 WHERE l.legacy_search = 'NWG-200';
 
 -- Get all stock metrics
-SELECT 
+SELECT
     l.legacy_search as legacy_sku,
     p.sku as modern_sku,
     l.soh as legacy_stock_on_hand,
@@ -229,15 +229,15 @@ from app.adapters.db import get_db
 
 def get_complete_product_data(sku: str):
     db = next(get_db())
-    
+
     # Get modern product
     product = db.query(Product).filter(Product.sku == sku).first()
-    
+
     # Get ALL legacy fields
     legacy = db.query(LegacyAcstkData).filter(
         LegacyAcstkData.product_id == product.id
     ).first()
-    
+
     return {
         "modern": product,
         "legacy": legacy,
@@ -269,4 +269,3 @@ def get_complete_product_data(sku: str):
 ✅ **Complete migration** - Products, inventory, pricing, all tiers
 
 **Result**: You now have a complete, lossless migration preserving every piece of data from your original QuickBASIC system.
-

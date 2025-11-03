@@ -163,9 +163,9 @@ Based on brief.md updates, implement these endpoints:
 
 ## Migration Status
 
-✅ Migration created and applied successfully  
-✅ Database schema updated  
-✅ Models updated and relationships established  
+✅ Migration created and applied successfully
+✅ Database schema updated
+✅ Models updated and relationships established
 ✅ No linting errors
 
 ## Next Steps
@@ -176,4 +176,3 @@ Based on brief.md updates, implement these endpoints:
 4. Add service layer for assembly BOM aggregation
 5. Add costing calculations for theoretical vs actual assembly costs
 6. Implement primary assembly designation logic
-

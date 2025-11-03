@@ -15,4 +15,3 @@ TYPE RcdFmtmsclass
 	clyty AS STRING * 8
 END TYPE
 DIM SHARED msclass AS RcdFmtmsclass
-

@@ -862,7 +862,7 @@ SUMJRNLS.1:
 	 LOCATE , 8: PRINT USING "     DD - Debtors discount (calculate) $$#,###,###.##-"; tot.dd@
 	 LOCATE , 8: PRINT USING "     DJ - Debtors entry                $$#,###,###.##-"; tot.dj@
 	 LOCATE , 8: PRINT USING "     DT - Debtors G.S.T.               $$#,###,###.##-"; tot.dt@
-	 
+
 
 	 SELECT CASE opt%
 	 CASE 5
@@ -887,7 +887,7 @@ SUMJRNLS.1:
 	 PRINT "¹Supplier  (*=All)..>"; a$; "Ì";
 	 COLOR 2
 	 CALL prtbtm("F1-Exit,  F6=GL  F7=GST")
-	 
+
 	 DO
 		LOCATE 24, 26 + 21
 		CALL inpnew(supa$, 105!, updwn%, "13,59,64,65" + ALT$): GOSUB ALT
@@ -1317,7 +1317,7 @@ find.get:
 				IF INSTR("DI,DC,DP,DD,DT,DJ,PT,CI,CC,CP,CD,CT,CJ,CT,", RIGHT$(find$, 2) + ",") > 0 THEN
 					IF audit.adtype <> RIGHT$(find$, 2) THEN sel% = 0
 				END IF
-				
+
 			 ELSE
 				IF audit.adtax < VAL(MID$(find$, 2)) THEN sel% = -1
 			 END IF
@@ -1859,7 +1859,7 @@ FUNCTION MYOB$
 
 	NEXT
 
-																	 
+
 MYOB$ = ret$
 END FUNCTION
 
@@ -2016,4 +2016,3 @@ END SUB
 SUB upd.who (chaudit%, chcus%, upd%) STATIC
 '$INCLUDE: '\tpmanuf\src\updwho.bi'
 END SUB
-

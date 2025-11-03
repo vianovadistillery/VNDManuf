@@ -23,4 +23,3 @@
     DIM SHARED phonex AS RcdFmtSearch
 
     OPEN "phonex.who" FOR RANDOM SHARED AS #52 LEN = LEN(phonex)
-

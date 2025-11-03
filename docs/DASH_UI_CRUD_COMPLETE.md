@@ -242,4 +242,3 @@ Then:
 4. Select a row and click "Delete Selected" to delete
 
 All operations work with the full set of 24+ fields from TPManuf legacy system!
-

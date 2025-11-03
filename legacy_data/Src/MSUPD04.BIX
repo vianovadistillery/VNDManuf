@@ -10,7 +10,7 @@ DECLARE SUB loadandSort (n%, maxrmat%)
 	typefields% = -1
 	'$INCLUDE: '\tpmanuf\src\MSRMat.INC'
 	'$INCLUDE: '\tpmanuf\src\MSMISC.INC'
-	
+
 	GET #36, 1, msmisc
 	maxrmat% = CVI(msmisc.max3$)
 '  maxrmat% = 4100'??
@@ -27,12 +27,12 @@ DECLARE SUB loadandSort (n%, maxrmat%)
 	CALL loadandSort(n%, maxrmat%)'* Sort all
 
 DOLIST:
-	
+
 	FOR i% = 1 TO n%
 		GET #38, k%(i%), msrmat
 		COLOR 2, 0
 		PRINT k%(i%), msrmat.search$, msrmat.desc1$
-	
+
 	NEXT
 
 	GOTO 200
@@ -75,4 +75,3 @@ SUB loadandSort (n%, maxrmat%)
 xsort:
 
 END SUB
-

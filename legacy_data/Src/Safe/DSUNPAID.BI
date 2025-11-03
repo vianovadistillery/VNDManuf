@@ -60,7 +60,7 @@ Load.unpaid0:
             sel%(1) = rec%
             sel$(1) = "P"
             END IF
-        
+
         IF Audit.adpaid$ <> "P" OR show.all% THEN
         IF Audit.ADTYPE$ = "DI" OR Audit.ADTYPE$ = "DC" THEN
             LOCATE lin% + 5, 2
@@ -203,4 +203,3 @@ PCOPY 1, 0
 RETURN
 
 load.unpaid.summary99:
-

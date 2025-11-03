@@ -81,14 +81,14 @@ DECLARE FUNCTION format$ (VALUE!, definition$)
 
 	DATA 2,7,10,13,18,56,63,72
 	FOR i% = 1 TO 8: READ c%(i%): NEXT
-	
+
 
 '$INCLUDE: '\tpmanuf\src\pgmhead.inc'
 	apgm$ = "DSMENU"
 ''$INCLUDE: '\tpmanuf\src\pgmerr.inc'
- 
 
-	
+
+
 	acstkf$ = "..."
 	parm$ = ENVIRON$("PARM$")
 	IF VAL(parm$) > 0 THEN pass.getcust% = -1: custin$ = parm$: updwn% = 13
@@ -105,7 +105,7 @@ DECLARE FUNCTION format$ (VALUE!, definition$)
 		'$INCLUDE: '\tpmanuf\src\ordhed.inc'
 		'$INCLUDE: '\tpmanuf\src\orddet.inc'
 		'$INCLUDE: '\tpmanuf\src\ordprt.inc'
-		
+
 
 	SELECT CASE acstkf$
 	CASE "PRE": CALL index("OPEN ", ind%, "acstkx3.pre", 7, keyl%)
@@ -125,7 +125,7 @@ DECLARE FUNCTION format$ (VALUE!, definition$)
 		CALL mline
 	END IF
 
-	
+
 	'Clear all but the invnum and invnumrec%
 	hord% = 0: opt% = 0: Cash% = 0: tender$ = ""
 	chginv# = 0: chginv.rrn% = 0
@@ -301,7 +301,7 @@ cf8:
 			CASE ELSE: ltact = 0
 		END SELECT
 			 ext! = ext! * VAL(in$(L%, 16))
-	 
+
 	'ext! = qty! * price!
 	in$(L%, 8) = STR$(ext!)
 	IF old.ext! <> ext! THEN ext.has.changed% = -1
@@ -684,7 +684,7 @@ RETURN
 cf7:
 RETURN
 x.chglin:
-	
+
 END SUB
 
 SUB delOrder (hord%, n%, clr%, autodel$, thissup$, norders%)
@@ -774,7 +774,7 @@ dsply:
 	COLOR 6, 0
 	LOCATE 5, 41: PRINT "Deliver:"
 	COLOR 2, 0
-	
+
 	COLOR 6
 	SELECT CASE daysmax%
 	CASE 1: LOCATE 8, X0%: PRINT USING "Terms:## day for ##% discount. "; daysmax%; sterms
@@ -1109,7 +1109,7 @@ SUB mline
 	c%(6) = 56
 	c%(7) = 63
 	c%(8) = 72
-	
+
 s.mline:
 CLOSE #3
 CLOSE #48
@@ -1387,7 +1387,7 @@ igacc02.x:
 	CLOSE #3
 	CLOSE #43
 	CLOSE #49
- 
+
 
 END SUB
 
@@ -1625,4 +1625,3 @@ UpdateOrder:
 	PUT #48, hord%, ordhed
 
 END SUB
-

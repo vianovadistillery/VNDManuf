@@ -19,4 +19,3 @@ TYPE RcdFmtmshisth
 '    hlastdet AS INTEGER
 END TYPE
 DIM SHARED mshisth AS RcdFmtmshisth
-

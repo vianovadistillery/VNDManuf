@@ -38,4 +38,3 @@
 
     CALL sndmsg(msg$)
 'END SUB
-

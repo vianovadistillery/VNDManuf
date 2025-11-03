@@ -126,7 +126,7 @@ load38:
           'IF INSTR(msrmat.desc2, aselect$) > 0 THEN ok% = -1
 
           IF ok% AND xactive$ <> "*" AND msrmat.active$ <> xactive$ THEN ok% = 0
-          
+
           IF ok% THEN
               n% = n% + 1
               rrn38%(n%) = rec%
@@ -178,5 +178,3 @@ xbrowse38:
     IF browse38.result% < 1 THEN browse38.result% = 1
     IF browse38.result% > maxrmat% THEN browse38.result% = 1
 'END SUB
-
-

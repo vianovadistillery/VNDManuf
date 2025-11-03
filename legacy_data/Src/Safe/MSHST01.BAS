@@ -404,7 +404,7 @@ SUB dsplyform (hstrec%, updwn%)
 	btm$ = "F1-Exit  F2=Return"
 	maxlines% = 19
 	CALL prtbtm(btm$)
-	
+
 
 	prev.seq% = 0
 	GET #34, hstrec%, fmhistd1
@@ -828,4 +828,3 @@ END SUB
 SUB qsort (in$(), in%(), n%) STATIC
 '$INCLUDE: '\tpmanuf\src\qsort.bi'
 END SUB
-

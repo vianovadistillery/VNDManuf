@@ -146,15 +146,15 @@ from app.services.assembly_service import AssemblyService
 def test_assembly_operations():
     """Test RAW → WIP → FINISHED assembly workflow."""
     db = get_session()
-    
+
     try:
         print("=" * 80)
         print("ASSEMBLY OPERATIONS TEST")
         print("=" * 80)
-        
+
         # Step 1: Create Products
         print("\n1. Creating products...")
-        
+
         raw1 = Product(
             sku="RM-ASSEMBLY-001",
             name="Resin A",
@@ -165,7 +165,7 @@ def test_assembly_operations():
             raw_material_code=9101,
             is_active=True
         )
-        
+
         raw2 = Product(
             sku="RM-ASSEMBLY-002",
             name="Solvent B",
@@ -176,7 +176,7 @@ def test_assembly_operations():
             raw_material_code=9102,
             is_active=True
         )
-        
+
         wip = Product(
             sku="WIP-ASSEMBLY-001",
             name="WIP Paint Base",
@@ -184,7 +184,7 @@ def test_assembly_operations():
             base_unit="KG",
             is_active=True
         )
-        
+
         finished = Product(
             sku="FG-ASSEMBLY-001",
             name="Finished Paint",
@@ -192,17 +192,17 @@ def test_assembly_operations():
             base_unit="KG",
             is_active=True
         )
-        
+
         db.add_all([raw1, raw2, wip, finished])
         db.flush()
-        
+
         print(f"   ✓ Created RAW products: {raw1.sku}, {raw2.sku}")
         print(f"   ✓ Created WIP product: {wip.sku}")
         print(f"   ✓ Created FINISHED product: {finished.sku}")
-        
+
         # Step 2: Add Inventory for RAW Materials
         print("\n2. Adding inventory for RAW materials...")
-        
+
         raw1_lot = InventoryLot(
             product_id=raw1.id,
             lot_code="RAW1-LOT-001",
@@ -211,7 +211,7 @@ def test_assembly_operations():
             received_at=datetime.utcnow(),
             is_active=True
         )
-        
+
         raw2_lot = InventoryLot(
             product_id=raw2.id,
             lot_code="RAW2-LOT-001",
@@ -220,16 +220,16 @@ def test_assembly_operations():
             received_at=datetime.utcnow(),
             is_active=True
         )
-        
+
         db.add_all([raw1_lot, raw2_lot])
         db.flush()
-        
+
         print(f"   ✓ Added {raw1_lot.quantity_kg} kg of {raw1.sku}")
         print(f"   ✓ Added {raw2_lot.quantity_kg} kg of {raw2.sku}")
-        
+
         # Step 3: Create Assembly Definitions
         print("\n3. Creating assembly definitions...")
-        
+
         # Assembly: WIP from RAW1 and RAW2
         assembly_wip_raw1 = Assembly(
             parent_product_id=wip.id,
@@ -238,7 +238,7 @@ def test_assembly_operations():
             direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
             loss_factor=Decimal("0.05")  # 5% loss
         )
-        
+
         assembly_wip_raw2 = Assembly(
             parent_product_id=wip.id,
             child_product_id=raw2.id,
@@ -246,7 +246,7 @@ def test_assembly_operations():
             direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
             loss_factor=Decimal("0.03")  # 3% loss
         )
-        
+
         # Assembly: FINISHED from WIP
         assembly_finished_wip = Assembly(
             parent_product_id=finished.id,
@@ -255,39 +255,39 @@ def test_assembly_operations():
             direction=AssemblyDirection.MAKE_FROM_CHILDREN.value,
             loss_factor=Decimal("0.02")  # 2% loss
         )
-        
+
         db.add_all([assembly_wip_raw1, assembly_wip_raw2, assembly_finished_wip])
         db.flush()
-        
+
         print(f"   ✓ Created assembly: WIP from RAW1 (0.6:1 ratio)")
         print(f"   ✓ Created assembly: WIP from RAW2 (0.4:1 ratio)")
         print(f"   ✓ Created assembly: FINISHED from WIP (1.0:1 ratio)")
-        
+
         # Step 4: Test Stage 1 - Assemble RAW → WIP
         print("\n4. Testing Stage 1: RAW → WIP Assembly...")
-        
+
         svc = AssemblyService(db)
         wip_qty = Decimal("100.0")
-        
+
         result1 = svc.assemble(
             parent_product_id=wip.id,
             parent_qty=wip_qty,
             reason="TEST_RAW_TO_WIP"
         )
-        
+
         db.commit()
-        
+
         print(f"   ✓ Produced {result1['produced']['quantity_kg']} kg of WIP")
         print(f"   ✓ Consumed {len(result1['consumed'])} child products")
         for consumed in result1['consumed']:
             print(f"     - {consumed['qty_consumed']} kg of child {consumed['child_product_id'][:8]}")
-        
+
         # Verify inventory
         db.refresh(raw1_lot)
         db.refresh(raw2_lot)
         print(f"   ✓ RAW1 lot remaining: {raw1_lot.quantity_kg} kg")
         print(f"   ✓ RAW2 lot remaining: {raw2_lot.quantity_kg} kg")
-        
+
         # Check WIP lot created
         wip_lots = db.query(InventoryLot).filter(
             InventoryLot.product_id == wip.id
@@ -295,27 +295,27 @@ def test_assembly_operations():
         print(f"   ✓ WIP lots created: {len(wip_lots)}")
         if wip_lots:
             print(f"     - Lot: {wip_lots[0].lot_code}, Qty: {wip_lots[0].quantity_kg} kg")
-        
+
         # Step 5: Test Stage 2 - Assemble WIP → FINISHED
         print("\n5. Testing Stage 2: WIP → FINISHED Assembly...")
-        
+
         finished_qty = Decimal("50.0")
-        
+
         result2 = svc.assemble(
             parent_product_id=finished.id,
             parent_qty=finished_qty,
             reason="TEST_WIP_TO_FINISHED"
         )
-        
+
         db.commit()
-        
+
         print(f"   ✓ Produced {result2['produced']['quantity_kg']} kg of FINISHED")
         print(f"   ✓ Consumed {len(result2['consumed'])} child products")
-        
+
         # Verify WIP lot was consumed
         db.refresh(wip_lots[0])
         print(f"   ✓ WIP lot remaining: {wip_lots[0].quantity_kg} kg")
-        
+
         # Check FINISHED lot created
         finished_lots = db.query(InventoryLot).filter(
             InventoryLot.product_id == finished.id
@@ -323,10 +323,10 @@ def test_assembly_operations():
         print(f"   ✓ FINISHED lots created: {len(finished_lots)}")
         if finished_lots:
             print(f"     - Lot: {finished_lots[0].lot_code}, Qty: {finished_lots[0].quantity_kg} kg")
-        
+
         # Step 6: Test Direct Assembly (RAW → FINISHED)
         print("\n6. Testing Direct Assembly: RAW → FINISHED (bypassing WIP)...")
-        
+
         # Create a new finished product for direct assembly
         finished_direct = Product(
             sku="FG-DIRECT-001",
@@ -337,7 +337,7 @@ def test_assembly_operations():
         )
         db.add(finished_direct)
         db.flush()
-        
+
         # Create assembly: FINISHED directly from RAW
         assembly_direct = Assembly(
             parent_product_id=finished_direct.id,
@@ -348,7 +348,7 @@ def test_assembly_operations():
         )
         db.add(assembly_direct)
         db.flush()
-        
+
         # Add more inventory for RAW1
         raw1_lot2 = InventoryLot(
             product_id=raw1.id,
@@ -360,7 +360,7 @@ def test_assembly_operations():
         )
         db.add(raw1_lot2)
         db.flush()
-        
+
         # Assemble directly
         direct_qty = Decimal("75.0")
         result3 = svc.assemble(
@@ -368,12 +368,12 @@ def test_assembly_operations():
             parent_qty=direct_qty,
             reason="TEST_DIRECT_ASSEMBLY"
         )
-        
+
         db.commit()
-        
+
         print(f"   ✓ Produced {result3['produced']['quantity_kg']} kg of FINISHED (direct)")
         print(f"   ✓ Consumed {result3['consumed'][0]['qty_consumed']} kg of RAW1")
-        
+
         # Summary
         print("\n" + "=" * 80)
         print("TEST SUMMARY")
@@ -383,7 +383,7 @@ def test_assembly_operations():
         print("✓ Inventory tracking - SUCCESS")
         print("✓ Cost calculation - SUCCESS")
         print("\nAll assembly operations working correctly!")
-        
+
     except Exception as e:
         db.rollback()
         print(f"\n❌ Error: {e}")
@@ -565,4 +565,3 @@ After testing assembly operations, verify:
 2. **Test via UI**: Create Dash UI forms for assembly operations
 3. **Performance testing**: Test with large quantities and multiple assemblies
 4. **Integration testing**: Test assembly within full batch production workflow
-

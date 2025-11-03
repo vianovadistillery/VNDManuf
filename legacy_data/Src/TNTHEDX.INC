@@ -28,4 +28,3 @@ TYPE RcdFmttnthedx
 END TYPE
 
 DIM SHARED tnthedx AS RcdFmttnthedx
-

@@ -44,4 +44,3 @@ DECLARE SUB accbrowse (rec%)
 SUB accbrowse (rec%) STATIC
 '$INCLUDE: '\tpmanuf\src\accbrow.bi'
 END SUB
-

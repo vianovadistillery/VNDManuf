@@ -89,4 +89,3 @@ SUB setaudit (n%)
 '    cashonly$ = "M": auditname$ = auditfile$(naudit%)
 '$INCLUDE: '\tpmanuf\src\setaudit.bi'
 END SUB
-

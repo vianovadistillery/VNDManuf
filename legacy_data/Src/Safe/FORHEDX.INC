@@ -16,4 +16,3 @@ CASE ELSE:  OPEN "forhedx.asf" FOR RANDOM SHARED AS #63 LEN = 5994
 END SELECT
 
 'DIM SHARED tnthedx AS RcdFmttnthedx
-

@@ -23,4 +23,3 @@ TYPE RcdFmtMSbchBK
 	bavis AS STRING * 4
 END TYPE
 DIM SHARED MSbtchbk AS RcdFmtMSbchBK
-

@@ -25,4 +25,3 @@
 
     n% = n% + 1
     auditfile$(n%) = "ASAUDIT.ASF"
-

@@ -19,4 +19,3 @@ TYPE RcdFmtwhoext
 
 END TYPE
 DIM SHARED whoext AS RcdFmtwhoext
-

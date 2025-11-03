@@ -33,4 +33,3 @@ TYPE RcdFmttypes
 	x20 AS STRING * 1
 END TYPE
 DIM SHARED types AS RcdFmttypes
-

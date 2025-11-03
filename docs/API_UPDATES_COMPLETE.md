@@ -89,10 +89,10 @@ Soft deletes product (sets is_active=False)
 
 ## Status
 
-✅ API DTOs updated  
-✅ API endpoints updated  
-✅ Full CRUD support for all 24 new fields  
-⏳ Database migration needs fixing  
+✅ API DTOs updated
+✅ API endpoints updated
+✅ Full CRUD support for all 24 new fields
+⏳ Database migration needs fixing
 ⏳ Dash UI needs updating
 
 ## Migration Note
@@ -104,4 +104,3 @@ The migration for adding columns to the products table failed because some colum
 3. Modify migration to check for existing columns
 
 See `docs/PRODUCT_EXTENSION_SUMMARY.md` for details.
-

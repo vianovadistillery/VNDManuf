@@ -82,7 +82,7 @@ DECLARE FUNCTION format$ (VALUE!, definition$)
 	'$INCLUDE: '\tpmanuf\src\pgmhead.INC'
 	apgm$ = "msmenu"
 	'$ INCLUDE: '\tpmanuf\src\pgmerr.INC'
-	
+
 	'$INCLUDE: '\tpmanuf\src\acstk.INC'
 	CLOSE #3
 	'$INCLUDE: '\tpmanuf\src\msrmat.INC'
@@ -564,7 +564,7 @@ custombatch50:
 			rm.tankltmm!(drec%) = msrmat.Solidsg
 			PUT #75, drec%, tntdet
 		END IF
-			
+
 		LOOP UNTIL lin% > n%
 		IF updwn% = 59 THEN GOTO x.custombatch
 		GOTO custombatch50
@@ -643,7 +643,7 @@ custombatch.sched:
 		CALL inpnew(datereq$, 100!, updwn%, "13,60")
 		datereq$ = FNDY$(datereq$)
 		IF updwn% = 60 THEN GOTO custombatch50
-		
+
 	END IF
 
 custombatch.yn:
@@ -763,7 +763,7 @@ SUB doprint (rec&, thisbatch$, thisltr!, prt.batch%, prt.costs%, updwn%) STATIC
 		PUT #98, drec&, tntdet
 
 		GET #75, drec&, tntdet
-		
+
 		IF tntdet.tnt& <> drec% AND 1 = 0 THEN
 			tntdet.tnt& = 0
 			tntdet.rmat% = 0
@@ -941,7 +941,7 @@ SUB doprint (rec&, thisbatch$, thisltr!, prt.batch%, prt.costs%, updwn%) STATIC
 		PRINT #99, " From Top .0500 .0400 .0350 .0300 .0200 .0150 .0100 ***** ***** ***** ******** "
 	 END IF
 
-	
+
 	ELSE
 	PRINT #99, USING "ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄ!"; "Ù"
 	END IF
@@ -1277,4 +1277,3 @@ END SUB
 SUB setchannel
 '$INCLUDE: '\tpmanuf\src\tntfiles.INC'
 END SUB
-

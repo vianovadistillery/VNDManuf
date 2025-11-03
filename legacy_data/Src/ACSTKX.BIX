@@ -25,7 +25,7 @@
 	acstkx.wholesalecost = acstk.wholesalecost
 	acstkx.disccdeone$ = acstk.disccdeone$
 	acstkx.disccdetwo$ = acstk.disccdetwo$
-	
+
 	acstkx.wholesalecde$ = acstk.wholesalecde$
 	acstkx.retailcde$ = acstk.retailcde$
 	acstkx.countercde$ = acstk.countercde$
@@ -33,14 +33,14 @@
 	acstkx.contractcde$ = acstk.contractcde$
 	acstkx.industrialcde$ = acstk.industrialcde$
 	acstkx.distributorcde$ = acstk.distributorcde$
-			 
+
 	acstkx.retail = acstk.retail
 	acstkx.counter = acstk.counter
 	acstkx.trade = acstk.trade
 	acstkx.contract = acstk.contract
 	acstkx.industrial = acstk.industrial
 	acstkx.distributor = acstk.distributor
-												 
+
 	acstkx.suplr4stdcost$ = acstk.suplr4stdcost$
 	acstkx.search4stdcost$ = acstk.search4stdcost$
 
@@ -72,7 +72,7 @@ passed:
 	GET #3, , acstk: rec% = rec% + 1
 	LOOP
 
-	
+
 ENDPGM:
 CLOSE
 
@@ -80,7 +80,6 @@ CLOSE
 	SHELL "copy acstkx.acf acstk.acf"
 	SHELL "del acstkx.acf"
 	CALL sndmsg("Complete")
-	
+
 
 END
-

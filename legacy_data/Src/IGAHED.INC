@@ -27,7 +27,7 @@ TYPE RcdFmtordhed
 	hinitials AS STRING * 3
         hpname1 AS STRING * 30
         hpname2 AS STRING * 30
-        hpname3 AS STRING * 30	
+        hpname3 AS STRING * 30
         hpname4 AS STRING * 25
         hdeposit AS STRING * 4  ' total amount on deposit
         ldepnum AS STRING * 12

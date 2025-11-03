@@ -48,4 +48,3 @@ Remember to verify HMAC in production.
 ---
 
 **END OF CURSOR PROMPT**
-

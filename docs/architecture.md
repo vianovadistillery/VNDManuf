@@ -402,4 +402,3 @@ pytest tests/ --cov=app --cov-report=html
 - API documentation: `http://127.0.0.1:8000/docs`
 - User guide: `docs/user_guide.md`
 - Migration guide: `docs/qb_migration.md`
-

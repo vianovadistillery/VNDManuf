@@ -64,7 +64,7 @@ COMMON SHARED maxsup%, maxform%, maxrmat%, maxacc%, maxtypes, maxcus%, maxord%
 	DIM SHARED qk$, keyl%, rep$
 	DIM SHARED auditfile$(15), naudit%, acstkf$
 	DIM SHARED ean$
-	
+
 
 	keyl% = 20: qk$ = SPACE$(keyl%): rep$ = SPACE$(keyl% - 2)
 
@@ -415,7 +415,7 @@ exitmenu:
 	IF opt% = 9 THEN mode$ = "inv": sav% = -1: doc.type$ = "TAX CREDIT "
 	IF opt% = 9 AND cash% THEN mode$ = "inv": sav% = -1: doc.type$ = "TAX CREDIT ": formtype$ = "*PRE.PRINTED.2"
 	IF opt% = 10 THEN mode$ = "w/o": sav% = -1
-	
+
 	IF mode$ = "b/o" THEN CALL add.bo.msg(updwn%)
 
 	IF opt% = 33 THEN  'Export Order (No GST)
@@ -479,7 +479,7 @@ after.prtinv:
 		END IF
 		END IF
 
-		
+
 		IF NOT anyDelDone% THEN
 		IF NOT Blanket.order% THEN
 		IF tot.items& = 0 OR (cash% AND mode$ = "inv") OR (cash% AND mode$ = "b/o") THEN
@@ -520,7 +520,7 @@ change.price0:
 								CALL inpnew(in$, 7.2, updwn%, "13,59")
 		in = VAL(in$)
 		ovrPrice = in
-		
+
 		TaxRate! = GST
 		CALL add.up.order(tot.ltact!, tot.ord!, tot.ext!)
 RETURN
@@ -1419,7 +1419,7 @@ dsply:
 	COLOR 6, 0
 	LOCATE 5, 41: PRINT "Deliver:"
 	COLOR 2, 0
-	
+
 	COLOR 6
 	SELECT CASE daysmax%
 	CASE 1: LOCATE 8, X0%: PRINT USING "Terms:## day for ##% discount. "; daysmax%; sterms
@@ -1680,7 +1680,7 @@ END FUNCTION
 
 SUB get.order.vs (hord%, updwn%)
 		GET #48, hord%, ordhed
-		
+
 TX1:
 		a$ = ordhed.hreford$
 		LOCATE 23, 10: CALL inpnew(a$, 112!, updwn%, "13,59-60")
@@ -1926,7 +1926,7 @@ ON ERROR RESUME NEXT
 	DiscRate! = ordprt.hDiscRate
 	invmsg1$ = ordprt.hnote1
 	invmsg2$ = ordprt.hnote2
-	
+
 	'Shared
 	mode$ = ordprt.hMode
 	sno% = ordprt.gsno
@@ -1979,7 +1979,7 @@ prtinv:
 	ordprt.hNameOvertyped = cus.sname
 	ordprt.hAddrOvertyped = cus.saddr
 	ordprt.hSuburbOvertyped = cus.suburb
-	
+
 
 	'Global values
 	ordprt.gsno = sno%
@@ -2311,4 +2311,3 @@ UpdateOrder:
 	PUT #48, hord%, ordhed
 
 END SUB
-

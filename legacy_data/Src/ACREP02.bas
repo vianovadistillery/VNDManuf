@@ -118,7 +118,7 @@ mstkl:
 		  fetch = 1
 	   END IF
 	END IF     '***** End L1-Processing
-	
+
 	IF opt% = 1 AND acstk.soh% = 0 THEN GOTO m100
 	IF opt% = 2 AND acstk.active$ = "S" THEN GOTO m100
 	IF opt% = 3 AND acstk.active$ <> "S" THEN GOTO m100
@@ -149,7 +149,7 @@ mstkl:
 m100:
 	CALL index("READ ", ind%, qk$, 2, keyl%)
 	LOOP
-	
+
 
 	'>----
 	IF opt% = 2 OR opt% = 3 OR opt% = 4 OR opt% = 6 OR opt% = 7 THEN PRINT #99, CHR$(12); : RETURN
@@ -168,7 +168,7 @@ heading:
 	IF opt% = 4 THEN head$ = "S T O C K T A K E    L I S T"
 	IF opt% = 7 THEN head$ = "S A L E S    L I S T I N G"
 	IF opt% = 8 THEN head$ = "S A L E S    L I S T I N G"
-	
+
 	IF opt% = 1 THEN col$ = "Code   Product description                 Size  Box   S.O.H   G/Cost    Value "
 	IF opt% = 2 THEN col$ = "Code   Product description                 Size  Box           S.O.H     Count "
 	IF opt% = 3 THEN col$ = "Code   Product description                 Size  Box           S.O.H     Count "
@@ -193,7 +193,7 @@ m200:
 m250:
 	NEXT
 	RETURN
-	
+
 '>>>>>  Fetch print of supplier information
 m300:
 	PRINT #99, STRING$(79, "-")
@@ -363,4 +363,3 @@ prtline:
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

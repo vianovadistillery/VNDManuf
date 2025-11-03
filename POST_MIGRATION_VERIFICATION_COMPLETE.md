@@ -210,7 +210,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/batches/{batch_id}/finish" \
    ```bash
    # Start API server
    python -m uvicorn app.api.main:app --reload
-   
+
    # In another terminal
    python scripts/test_api_product_type_filtering.py
    ```
@@ -233,5 +233,3 @@ curl -X POST "http://127.0.0.1:8000/api/v1/batches/{batch_id}/finish" \
 - API tests require running server (handled gracefully if not available)
 - All database tests use existing session management
 - Error cases properly test both API and service layers
-
-

@@ -21,4 +21,3 @@ LOCATE 10, 40: PRINT rec&
 NEXT
 
 END
-

@@ -98,4 +98,3 @@ heading:
 	PRINT #99, "Batch  Formula   Description                       Yield     A/Yld     Date   "
 	PRINT #99, STRING$(79, "-")
 RETURN
-

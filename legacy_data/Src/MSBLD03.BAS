@@ -217,7 +217,7 @@ DECLARE SUB searchindex (keyin$, chi%, found%)
 
 	l% = l% + 1
 	LOCATE 5 + l%, 10: PRINT "Done."
-	
+
 	CLOSE
 	shellc$ = "copy " + "msrmnew.msf " + "*.old"
 	SHELL shellc$
@@ -242,7 +242,7 @@ SUB buildrmat (startrrn%, gap%)
 	ind% = 0: a$ = "  ": l% = 2
 	st$ = SPACE$(25): hldst$ = SPACE$(25)
 	svSeach$ = "~~~~~"
-	
+
 	cpyto% = 0
 
 	FOR j% = 1 TO startrrn% - 1
@@ -516,4 +516,3 @@ END SUB
 SUB searchindex (keyin$, chi%, found%) STATIC
 	'$INCLUDE: '\tpmanuf\src\searchx.bi'
 END SUB
-

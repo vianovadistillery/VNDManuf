@@ -115,7 +115,7 @@ with get_session() as db:
     )
     db.add(fg)
     db.flush()
-    
+
     # Create inventory record
     fg_inv = FinishedGoodInventory(fg_id=fg.id, soh=Decimal("0"))
     db.add(fg_inv)
@@ -242,7 +242,7 @@ from sqlalchemy import text
 def get_raw_stock_derived(session, material_id):
     """Get derived stock from ledger."""
     result = session.execute(text("""
-        SELECT 
+        SELECT
             material_id,
             COALESCE(SUM(CASE WHEN direction='IN' THEN qty ELSE -qty END), 0) as qty_net
         FROM inventory_movements
@@ -255,7 +255,7 @@ def get_raw_stock_derived(session, material_id):
 def get_fg_stock_derived(session, fg_id):
     """Get derived stock from ledger."""
     result = session.execute(text("""
-        SELECT 
+        SELECT
             fg_id,
             COALESCE(SUM(CASE WHEN direction='IN' THEN qty ELSE -qty END), 0) as qty_net
         FROM inventory_movements
@@ -272,4 +272,3 @@ def get_fg_stock_derived(session, fg_id):
 - `inventory_movements.item_id` is a string UUID that references either products or finished_goods based on `item_type`
 - Batch status tracking separate from batch completion time
 - Relationships use appropriate cascade deletes for data integrity
-

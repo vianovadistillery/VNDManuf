@@ -96,7 +96,7 @@ XERO_SCOPES=offline_access accounting.contacts accounting.transactions
 ## Code References
 
 - OAuth: `app/services/xero_oauth.py`
-- Integration: `app/services/xero_integration.py`  
+- Integration: `app/services/xero_integration.py`
 - Mappings: `app/services/xero_mappings.py`
 - UI Page: `app/ui/pages/accounting_integration_page.py`
 - Routes: `app/ui/app.py` (lines 699-725)
@@ -119,4 +119,3 @@ XERO_SCOPES=offline_access accounting.contacts accounting.transactions
 ✅ Documentation created
 
 Ready for testing with a Xero demo company.
-

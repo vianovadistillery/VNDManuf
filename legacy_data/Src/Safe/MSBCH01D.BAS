@@ -124,7 +124,7 @@ COMMON SHARED cmtno%(), cmtqty!(), desc$(), rmbno$()
 	CLOSE #55
 
 
-	
+
 	keyl% = 20: qk$ = SPACE$(keyl%): rep$ = SPACE$(keyl% - 2)
 	CALL index("OPEN ", ind%, "acstkx3.acf", 7, keyl%)
 	OPEN "C:\TPEXE\acstk.WRK" FOR RANDOM SHARED AS #4 LEN = 16
@@ -152,7 +152,7 @@ start:
 	IF rec26% > 0 AND rec26% < 9999 THEN
 		CALL dsply(rec26%)
 	END IF
-	
+
 get.batch:
 	CALL sndmsg(msg$): msg$ = ""
 	COLOR 2, 0:
@@ -516,7 +516,7 @@ cf1a: '***** Notes 1
 	LOCATE 20, 54
 				CALL inpnew(batch.qcnote1$, 125!, updwn%, "13,59")
 	IF updwn% = 59 THEN GOTO x.change
-	
+
 cf1b: '***** Notes 2
 	LOCATE 21, 54
 				CALL inpnew(batch.qcnote2$, 125!, updwn%, "13,59,60")
@@ -536,7 +536,7 @@ cf1d: '***** Notes 4
 	IF updwn% = 60 THEN GOTO cf1c
 
 cf2a:    '***** Volume Solids
-	
+
 	LOCATE 14, 41: a$ = STR$(batch.qcvsol!)
 				CALL inpnew(a$, 5.2, updwn%, "13,59-60")
 	batch.qcvsol! = VAL(a$)
@@ -552,7 +552,7 @@ cf2b:    '***** Weight Solids
 	IF updwn% = 59 THEN GOTO x.change
 	IF updwn% = 60 THEN GOTO cf2a
 	LOCATE 15, 41: PRINT USING "###.##%"; batch.qcwsol!
-	
+
 cf3a:    '***** Viscocity 1
 	LOCATE 18, 42: a$ = STR$(batch.qcvisc1!)
 	IF batch.visc1l! < 15 THEN
@@ -561,7 +561,7 @@ cf3a:    '***** Viscocity 1
 			 CALL inpnew(a$, 104!, updwn%, "13,59-60")
 	END IF
 	batch.qcvisc1! = VAL(a$)
-	
+
 	IF updwn% = 59 THEN GOTO x.change
 	IF updwn% = 60 THEN GOTO cf2b
 
@@ -577,7 +577,7 @@ cf4:    '***** pH
 	LOCATE 20, 42: a$ = STR$(batch.qcph!)
 	CALL inpnew(a$, 3.1, updwn%, "13,59-60")
 	batch.qcph! = VAL(a$)
-	
+
 	IF updwn% = 59 THEN GOTO x.change
 	IF updwn% = 60 THEN GOTO cf3b
 cf5:
@@ -644,8 +644,8 @@ x.change:
 			CASE ELSE
 			 GOTO x.change
 		END SELECT
-		
-	
+
+
 		IF batch.yld! > 0 THEN
 			thisbatch$ = batch.year$ + "0000"
 			b$ = MID$(STR$(rec26%), 2)
@@ -655,7 +655,7 @@ x.change:
 				CALL killa(thisbatch$)
 			END IF
 		END IF
-	
+
 
 END SUB
 
@@ -695,7 +695,7 @@ SUB dsply (rec26%)
 			 LOCATE 21, 53: PRINT ">                         <"
 			 LOCATE 22, 53: PRINT ">                         <"
 			 LOCATE 23, 53: PRINT ">                         <"
-	
+
 	COLOR 2, 0
 	LOCATE 5, 2:
 	LOCATE 5, 5: PRINT USING "Batch number.......: \       \ "; batch.thisbatch$
@@ -706,7 +706,7 @@ SUB dsply (rec26%)
 	LOCATE 6, 60: PRINT "Stock.:"
 	LOCATE 7, 60: PRINT "Q.C...:"
 
-	
+
 	SELECT CASE batch.fltnt$
 		CASE "P"
 			COLOR 14: af$ = "Pending  "
@@ -766,7 +766,7 @@ SUB dsply (rec26%)
 	LOCATE 21, 5: PRINT USING "S.G................:  #.### kg/L      #.### kg/L"; batch.ph!; batch.qcph!
 	LOCATE 22, 5: PRINT USING "Gloss Level (min)..: ##              ##       "; batch.gloss!; batch.qcgloss!
 	LOCATE 23, 5: PRINT USING "Filter.............>### Grind (min).>###"; batch.filter%; batch.grind!
-	
+
 	LOCATE 20, 54: PRINT batch.qcnote1$
 	LOCATE 21, 54: PRINT batch.qcnote2$
 	LOCATE 22, 54: PRINT batch.qcnote3$
@@ -778,7 +778,7 @@ SUB dsply (rec26%)
 	LOCATE 17, 57: PRINT USING "Manufacture.>\        \"; FNDYY$(batch.dateman$)
 	LOCATE 18, 57: PRINT USING "Operator....>\ \"; batch.manby$
 
-	
+
 
 	batchltr! = batch.ayld!
 	perltr! = batch.perltr!
@@ -915,4 +915,3 @@ LOOP
 
 
 END SUB
-

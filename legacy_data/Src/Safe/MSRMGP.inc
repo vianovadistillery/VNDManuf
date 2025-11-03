@@ -9,4 +9,3 @@ TYPE RcdFmtmsrmgp
 	filler AS STRING * 37
 END TYPE
 DIM SHARED msrmgp AS RcdFmtmsrmgp
-

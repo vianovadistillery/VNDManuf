@@ -24,4 +24,3 @@ TYPE RcdFmtorddet
 	dfiller AS STRING * 6
 END TYPE
 DIM SHARED orddet AS RcdFmtorddet
-

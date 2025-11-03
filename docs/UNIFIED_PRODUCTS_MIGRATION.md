@@ -54,7 +54,7 @@ The `products` table now includes:
    ```bash
    # SQLite
    cp tpmanuf.db tpmanuf.db.backup
-   
+
    # PostgreSQL
    pg_dump tpmanuf > tpmanuf_backup.sql
    ```
@@ -205,7 +205,7 @@ If migration issues occur:
    ```bash
    # SQLite
    cp tpmanuf.db.backup tpmanuf.db
-   
+
    # PostgreSQL
    psql tpmanuf < tpmanuf_backup.sql
    ```
@@ -250,5 +250,3 @@ For migration issues or questions:
 - Check `scripts/validate_migration.py` output
 - Review `db/alembic/versions/9472b39d71be_unified_products_migration.py`
 - Check `product_migration_map` table for ID mappings
-
-

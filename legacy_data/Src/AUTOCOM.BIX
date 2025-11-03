@@ -70,14 +70,14 @@
 			a% = SCREEN(13, i% + 6)
 			MID$(sev$, i%, 1) = CHR$(a%)
 			NEXT
-		
+
 		a$ = "00000"
 		FOR i% = 1 TO 5
 			a% = SCREEN(13, i%)
 			MID$(a$, i%, 1) = CHR$(a%)
 			NEXT
 		IF sev$ <> "Severe" THEN a$ = "00099"
-		
+
 		LOCATE 13, 23: PRINT USING "   Program reads error code as###"; VAL(a$)
 		ok% = 0: IF VAL(a$) = 0 THEN ok% = -1
 		IF ok% THEN
@@ -124,4 +124,3 @@ part2:
 ENDPGM:
 	CLOSE
 END
-

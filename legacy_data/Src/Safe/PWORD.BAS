@@ -81,4 +81,3 @@
 	CLOSE :
 	CALL EXITPGM(pgmerr$)
 	CHAIN pgmerr$
-
