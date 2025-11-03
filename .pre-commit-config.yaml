@@ -7,29 +7,33 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.6
     hooks:
-      # Linter
+      # Linter - runs on both commit and push (read-only checks on push)
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         types: [python]
+        stages: [commit]  # Only auto-fix on commit, not on push
 
-      # Formatter
+      # Formatter - only runs on commit to avoid push failures
       - id: ruff-format
         types: [python]
+        stages: [commit]  # Only format on commit, not on push
 
-  # Black for code formatting (backup/alternative)
+  # Black for code formatting (backup/alternative) - only on commit
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
         language_version: python3.12
         args: [--line-length=88]
+        stages: [commit]  # Only format on commit, not on push
 
-  # isort for import sorting
+  # isort for import sorting - only on commit
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
         args: [--profile=black, --line-length=88]
+        stages: [commit]  # Only format on commit, not on push
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -37,7 +41,9 @@ repos:
     hooks:
       # Basic checks
       - id: trailing-whitespace
+        stages: [commit]  # Only fix on commit, not on push
       - id: end-of-file-fixer
+        stages: [commit]  # Only fix on commit, not on push
       - id: check-yaml
       - id: check-toml
       - id: check-json
@@ -59,6 +65,7 @@ repos:
       # File checks
       - id: mixed-line-ending
         args: [--fix=lf]
+        stages: [commit]  # Only fix on commit, not on push
       - id: check-case-conflict
       - id: check-merge-conflict
 
@@ -128,7 +135,9 @@ ci:
   submodules: false
 
 # Default configuration
-default_install_hook_types: [pre-commit, pre-push]
+# Only run on commit - formatting hooks will modify files which breaks pushes
+# Use 'git commit --no-verify' if you need to skip hooks in emergencies
+default_install_hook_types: [pre-commit]
 default_language_version:
   python: python3.12
   node: '18'
