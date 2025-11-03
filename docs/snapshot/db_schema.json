@@ -1,0 +1,5746 @@
+{
+  "metadata": {
+    "database_path": "./tpmanuf.db",
+    "snapshot_date": "2025-11-03T20:55:33.055874",
+    "total_tables": 48
+  },
+  "tables": {
+    "alembic_version": {
+      "columns": [
+        {
+          "name": "version_num",
+          "type": "VARCHAR(32)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_alembic_version_1",
+          "unique": true,
+          "columns": [
+            "version_num"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE alembic_version (\n\tversion_num VARCHAR(32) NOT NULL, \n\tCONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)\n)"
+    },
+    "assemblies": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "parent_product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "effective_from",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "effective_to",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": "'1'",
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": "'1'",
+          "primary_key": false
+        },
+        {
+          "name": "yield_factor",
+          "type": "NUMERIC(6, 4)",
+          "notnull": false,
+          "default": "'1.0'",
+          "primary_key": false
+        },
+        {
+          "name": "is_primary",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "VARCHAR(255)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "assembly_code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "assembly_name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_assemblies_parent",
+          "unique": false,
+          "columns": [
+            "parent_product_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_assemblies_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE \"assemblies\" (\n\tid VARCHAR(36) NOT NULL, \n\tparent_product_id VARCHAR(36) NOT NULL, \n\teffective_from DATETIME, \n\teffective_to DATETIME, \n\tversion INTEGER DEFAULT '1', \n\tis_active BOOLEAN DEFAULT '1', \n\tyield_factor NUMERIC(6, 4) DEFAULT '1.0', \n\tis_primary BOOLEAN DEFAULT '0' NOT NULL, \n\tnotes VARCHAR(255), \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tassembly_code VARCHAR(50) NOT NULL, \n\tassembly_name VARCHAR(200) NOT NULL, \n\tCONSTRAINT pk_assemblies PRIMARY KEY (id)\n)"
+    },
+    "assembly_cost_dependencies": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "consumed_lot_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "produced_lot_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "consumed_txn_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "produced_txn_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "dependency_ts",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_dep_produced_txn",
+          "unique": false,
+          "columns": [
+            "produced_txn_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_dep_consumed_txn",
+          "unique": false,
+          "columns": [
+            "consumed_txn_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_dep_produced",
+          "unique": false,
+          "columns": [
+            "produced_lot_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_dep_consumed",
+          "unique": false,
+          "columns": [
+            "consumed_lot_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_assembly_cost_dependencies_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "inventory_txns",
+          "to_table": "produced_txn_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "inventory_txns",
+          "to_table": "consumed_txn_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 2,
+          "sequence": 0,
+          "from_column": "inventory_lots",
+          "to_table": "produced_lot_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 3,
+          "sequence": 0,
+          "from_column": "inventory_lots",
+          "to_table": "consumed_lot_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE assembly_cost_dependencies (\n\tid VARCHAR(36) NOT NULL, \n\tconsumed_lot_id VARCHAR(36) NOT NULL, \n\tproduced_lot_id VARCHAR(36) NOT NULL, \n\tconsumed_txn_id VARCHAR(36) NOT NULL, \n\tproduced_txn_id VARCHAR(36) NOT NULL, \n\tdependency_ts DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, \n\tCONSTRAINT pk_assembly_cost_dependencies PRIMARY KEY (id), \n\tCONSTRAINT fk_dep_consumed_lot FOREIGN KEY(consumed_lot_id) REFERENCES inventory_lots (id), \n\tCONSTRAINT fk_dep_produced_lot FOREIGN KEY(produced_lot_id) REFERENCES inventory_lots (id), \n\tCONSTRAINT fk_dep_consumed_txn FOREIGN KEY(consumed_txn_id) REFERENCES inventory_txns (id), \n\tCONSTRAINT fk_dep_produced_txn FOREIGN KEY(produced_txn_id) REFERENCES inventory_txns (id)\n)"
+    },
+    "assembly_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "assembly_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "component_product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_energy_or_overhead",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_assembly_line_assembly",
+          "unique": false,
+          "columns": [
+            "assembly_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_assembly_lines_2",
+          "unique": true,
+          "columns": [
+            "assembly_id",
+            "sequence"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_assembly_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "component_product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "assemblies",
+          "to_table": "assembly_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE assembly_lines (\n\tid VARCHAR(36) NOT NULL, \n\tassembly_id VARCHAR(36) NOT NULL, \n\tcomponent_product_id VARCHAR(36) NOT NULL, \n\tquantity NUMERIC(12, 3) NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tunit VARCHAR(10), \n\tis_energy_or_overhead BOOLEAN, \n\tnotes TEXT, \n\tCONSTRAINT pk_assembly_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_assembly_lines__assembly_id__assemblies FOREIGN KEY(assembly_id) REFERENCES assemblies (id), \n\tCONSTRAINT fk_assembly_lines__component_product_id__products FOREIGN KEY(component_product_id) REFERENCES products (id), \n\tCONSTRAINT uq_assembly_line_sequence UNIQUE (assembly_id, sequence)\n)"
+    },
+    "batch_components": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "batch_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ingredient_product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "lot_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_batch_components_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "inventory_lots",
+          "to_table": "lot_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "ingredient_product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 2,
+          "sequence": 0,
+          "from_column": "batches",
+          "to_table": "batch_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE batch_components (\n\tid VARCHAR(36) NOT NULL, \n\tbatch_id VARCHAR(36) NOT NULL, \n\tingredient_product_id VARCHAR(36) NOT NULL, \n\tlot_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_cost NUMERIC(10, 2), \n\tCONSTRAINT pk_batch_components PRIMARY KEY (id), \n\tCONSTRAINT fk_batch_components__batch_id__batches FOREIGN KEY(batch_id) REFERENCES batches (id), \n\tCONSTRAINT fk_batch_components__ingredient_product_id__products FOREIGN KEY(ingredient_product_id) REFERENCES products (id), \n\tCONSTRAINT fk_batch_components__lot_id__inventory_lots FOREIGN KEY(lot_id) REFERENCES inventory_lots (id)\n)"
+    },
+    "batch_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "batch_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "material_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "qty_theoretical",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "qty_actual",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "cost_at_time",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_batch_line_batch",
+          "unique": false,
+          "columns": [
+            "batch_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_batch_lines_2",
+          "unique": true,
+          "columns": [
+            "batch_id",
+            "material_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_batch_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "material_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "batches",
+          "to_table": "batch_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "ddl": "CREATE TABLE batch_lines (\n\tid VARCHAR(36) NOT NULL, \n\tbatch_id VARCHAR(36) NOT NULL, \n\tmaterial_id VARCHAR(36) NOT NULL, \n\trole VARCHAR(50), \n\tqty_theoretical NUMERIC(12, 3) NOT NULL, \n\tqty_actual NUMERIC(12, 3), \n\tunit VARCHAR(10) NOT NULL, \n\tcost_at_time NUMERIC(10, 2), \n\tCONSTRAINT pk_batch_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_batch_lines__batch_id__batches FOREIGN KEY(batch_id) REFERENCES batches (id) ON DELETE CASCADE, \n\tCONSTRAINT fk_batch_lines__material_id__products FOREIGN KEY(material_id) REFERENCES products (id), \n\tCONSTRAINT uq_batch_line UNIQUE (batch_id, material_id)\n)"
+    },
+    "batches": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "work_order_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "batch_code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "completed_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "batch_status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "yield_actual",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "yield_litres",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "variance_percent",
+          "type": "NUMERIC(5, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_batch_wo_code",
+          "unique": false,
+          "columns": [
+            "work_order_id",
+            "batch_code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_batches_2",
+          "unique": true,
+          "columns": [
+            "work_order_id",
+            "batch_code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_batches_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "work_orders",
+          "to_table": "work_order_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE batches (\n\tid VARCHAR(36) NOT NULL, \n\twork_order_id VARCHAR(36) NOT NULL, \n\tbatch_code VARCHAR(50) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tstatus VARCHAR(20), \n\tstarted_at DATETIME, \n\tcompleted_at DATETIME, \n\tnotes TEXT, batch_status VARCHAR(20), yield_actual NUMERIC(12, 3), yield_litres NUMERIC(12, 3), variance_percent NUMERIC(5, 2), \n\tCONSTRAINT pk_batches PRIMARY KEY (id), \n\tCONSTRAINT fk_batches__work_order_id__work_orders FOREIGN KEY(work_order_id) REFERENCES work_orders (id), \n\tCONSTRAINT uq_batch_code UNIQUE (work_order_id, batch_code)\n)"
+    },
+    "condition_types": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(1)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "extended_desc",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_condition_type_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_condition_types_2",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_condition_types_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE condition_types (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(1) NOT NULL, \n\tdescription VARCHAR(100) NOT NULL, \n\textended_desc TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_condition_types PRIMARY KEY (id), \n\tCONSTRAINT uq_condition_types__code UNIQUE (code)\n)"
+    },
+    "contacts": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contact_person",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(200)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_customer",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "is_supplier",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "is_other",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "xero_contact_id",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_sync",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": "'1'",
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_contacts_is_supplier",
+          "unique": false,
+          "columns": [
+            "is_supplier"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_contacts_is_customer",
+          "unique": false,
+          "columns": [
+            "is_customer"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_contact_type",
+          "unique": false,
+          "columns": [
+            "is_customer",
+            "is_supplier",
+            "is_other"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_contact_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_contacts_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE contacts (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\tcontact_person VARCHAR(100), \n\temail VARCHAR(200), \n\tphone VARCHAR(50), \n\taddress TEXT, \n\tis_customer BOOLEAN DEFAULT '0' NOT NULL, \n\tis_supplier BOOLEAN DEFAULT '0' NOT NULL, \n\tis_other BOOLEAN DEFAULT '0' NOT NULL, \n\ttax_rate NUMERIC(5, 2), \n\txero_contact_id VARCHAR(100), \n\tlast_sync DATETIME, \n\tis_active BOOLEAN DEFAULT '1', \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tCONSTRAINT pk_contacts PRIMARY KEY (id)\n)"
+    },
+    "customer_prices": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_price_ex_tax",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "effective_date",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_customer_prices_2",
+          "unique": true,
+          "columns": [
+            "customer_id",
+            "product_id",
+            "effective_date"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_customer_prices_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "customers",
+          "to_table": "customer_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE customer_prices (\n\tid VARCHAR(36) NOT NULL, \n\tcustomer_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tunit_price_ex_tax NUMERIC(10, 2) NOT NULL, \n\teffective_date DATETIME NOT NULL, \n\texpiry_date DATETIME, \n\tCONSTRAINT pk_customer_prices PRIMARY KEY (id), \n\tCONSTRAINT fk_customer_prices__customer_id__customers FOREIGN KEY(customer_id) REFERENCES customers (id), \n\tCONSTRAINT fk_customer_prices__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT uq_customer_price_date UNIQUE (customer_id, product_id, effective_date)\n)"
+    },
+    "customers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contact_person",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(200)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "xero_contact_id",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_sync",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_customer_code",
+          "unique": false,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_customers_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_customers_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE customers (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\tcontact_person VARCHAR(100), \n\temail VARCHAR(200), \n\tphone VARCHAR(50), \n\taddress TEXT, \n\ttax_rate NUMERIC(5, 2), \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, xero_contact_id VARCHAR(100), last_sync DATETIME, \n\tCONSTRAINT pk_customers PRIMARY KEY (id)\n)"
+    },
+    "datasets": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_dataset_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_datasets_2",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_datasets_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE datasets (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(3) NOT NULL, \n\tname VARCHAR(50) NOT NULL, \n\tdescription TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_datasets PRIMARY KEY (id), \n\tCONSTRAINT uq_datasets__code UNIQUE (code)\n)"
+    },
+    "excise_rates": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "date_active_from",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rate_per_l_abv",
+          "type": "NUMERIC(10, 4)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_excise_rates_date_active_from",
+          "unique": false,
+          "columns": [
+            "date_active_from"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_excise_rates_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE excise_rates (\n\tid VARCHAR(36) NOT NULL, \n\tdate_active_from DATETIME NOT NULL, \n\trate_per_l_abv NUMERIC(10, 4) NOT NULL, \n\tdescription TEXT, \n\tis_active BOOLEAN NOT NULL, \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tCONSTRAINT pk_excise_rates PRIMARY KEY (id)\n)"
+    },
+    "finished_goods_inventory": {
+      "columns": [
+        {
+          "name": "fg_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "soh",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_finished_goods_inventory_1",
+          "unique": true,
+          "columns": [
+            "fg_id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "finished_goods",
+          "to_table": "fg_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "ddl": "CREATE TABLE finished_goods_inventory (\n\tfg_id VARCHAR(36) NOT NULL, \n\tsoh NUMERIC(12, 3) NOT NULL, \n\tCONSTRAINT pk_finished_goods_inventory PRIMARY KEY (fg_id), \n\tCONSTRAINT fk_finished_goods_inventory__fg_id__finished_goods FOREIGN KEY(fg_id) REFERENCES finished_goods (id) ON DELETE CASCADE\n)"
+    },
+    "formula_classes": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ytd_amounts",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_formula_class_name",
+          "unique": false,
+          "columns": [
+            "name"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_formula_classes_2",
+          "unique": true,
+          "columns": [
+            "name"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_formula_classes_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE formula_classes (\n\tid VARCHAR(36) NOT NULL, \n\tname VARCHAR(100) NOT NULL, \n\tdescription TEXT, \n\tytd_amounts TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_formula_classes PRIMARY KEY (id), \n\tCONSTRAINT uq_formula_classes__name UNIQUE (name)\n)"
+    },
+    "formula_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "formula_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_formula_lines_2",
+          "unique": true,
+          "columns": [
+            "formula_id",
+            "sequence"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_formula_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "formulas",
+          "to_table": "formula_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE \"formula_lines\" (\n\tid VARCHAR(36) NOT NULL, \n\tformula_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tnotes TEXT, \n\tunit VARCHAR(10), \n\tproduct_id VARCHAR(36), \n\tCONSTRAINT pk_formula_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_formula_lines__formula_id__formulas FOREIGN KEY(formula_id) REFERENCES formulas (id), \n\tCONSTRAINT uq_formula_line_sequence UNIQUE (formula_id, sequence)\n)"
+    },
+    "formulas": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "formula_code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "formula_name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_archived",
+          "type": "BOOLEAN",
+          "notnull": true,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "archived_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "instructions",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_formulas_2",
+          "unique": true,
+          "columns": [
+            "product_id",
+            "formula_code",
+            "version"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_formulas_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE formulas (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tformula_code VARCHAR(50) NOT NULL, \n\tformula_name VARCHAR(200) NOT NULL, \n\tversion INTEGER, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, notes TEXT, is_archived BOOLEAN DEFAULT '0' NOT NULL, archived_at DATETIME, instructions TEXT, \n\tCONSTRAINT pk_formulas PRIMARY KEY (id), \n\tCONSTRAINT fk_formulas__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT uq_formula_version UNIQUE (product_id, formula_code, version)\n)"
+    },
+    "inventory_lots": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "lot_code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "original_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "current_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_lot_product_code",
+          "unique": false,
+          "columns": [
+            "product_id",
+            "lot_code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_inventory_lots_2",
+          "unique": true,
+          "columns": [
+            "product_id",
+            "lot_code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_inventory_lots_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE inventory_lots (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tlot_code VARCHAR(50) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_cost NUMERIC(10, 2), \n\treceived_at DATETIME, \n\texpires_at DATETIME, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, original_unit_cost NUMERIC(10, 2), current_unit_cost NUMERIC(10, 2), \n\tCONSTRAINT pk_inventory_lots PRIMARY KEY (id), \n\tCONSTRAINT fk_inventory_lots__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT uq_lot_code UNIQUE (product_id, lot_code)\n)"
+    },
+    "inventory_movements": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "ts",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "date",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "qty",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "direction",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "source_batch_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "note",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_movements_batch",
+          "unique": false,
+          "columns": [
+            "source_batch_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_movements_date",
+          "unique": false,
+          "columns": [
+            "date"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_inventory_movements_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "batches",
+          "to_table": "source_batch_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE \"inventory_movements\" (\n\tid VARCHAR(36) NOT NULL, \n\tts DATETIME NOT NULL, \n\tdate VARCHAR(10) NOT NULL, \n\tqty NUMERIC(12, 3) NOT NULL, \n\tunit VARCHAR(10) NOT NULL, \n\tdirection VARCHAR(10) NOT NULL, \n\tsource_batch_id VARCHAR(36), \n\tnote TEXT, \n\tproduct_id VARCHAR(36), \n\tCONSTRAINT pk_inventory_movements PRIMARY KEY (id), \n\tCONSTRAINT fk_inventory_movements__source_batch_id__batches FOREIGN KEY(source_batch_id) REFERENCES batches (id)\n)"
+    },
+    "inventory_reservations": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "qty_canonical",
+          "type": "NUMERIC(18, 6)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR(16)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "reference_id",
+          "type": "VARCHAR(128)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "notnull": true,
+          "default": "'ACTIVE'",
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_inventory_reservations_product",
+          "unique": false,
+          "columns": [
+            "product_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_inventory_reservations_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE inventory_reservations (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tqty_canonical NUMERIC(18, 6) NOT NULL, \n\tsource VARCHAR(16) NOT NULL, \n\treference_id VARCHAR(128), \n\tstatus VARCHAR(16) DEFAULT 'ACTIVE' NOT NULL, \n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, \n\tupdated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, \n\tCONSTRAINT pk_inventory_reservations PRIMARY KEY (id)\n)"
+    },
+    "inventory_txns": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "lot_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "transaction_type",
+          "type": "VARCHAR(20)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "reference_type",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "reference_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_by",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "cost_source",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "extended_cost",
+          "type": "NUMERIC(12, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "estimate_flag",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": "'0'",
+          "primary_key": false
+        },
+        {
+          "name": "estimate_reason",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_txn_lot_ts",
+          "unique": false,
+          "columns": [
+            "lot_id",
+            "created_at"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_inventory_txns_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "inventory_lots",
+          "to_table": "lot_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE inventory_txns (\n\tid VARCHAR(36) NOT NULL, \n\tlot_id VARCHAR(36) NOT NULL, \n\ttransaction_type VARCHAR(20) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_cost NUMERIC(10, 2), \n\treference_type VARCHAR(50), \n\treference_id VARCHAR(36), \n\tnotes TEXT, \n\tcreated_at DATETIME, \n\tcreated_by VARCHAR(100), cost_source VARCHAR(20), extended_cost NUMERIC(12, 2), estimate_flag BOOLEAN DEFAULT '0', estimate_reason TEXT, \n\tCONSTRAINT pk_inventory_txns PRIMARY KEY (id), \n\tCONSTRAINT fk_inventory_txns__lot_id__inventory_lots FOREIGN KEY(lot_id) REFERENCES inventory_lots (id)\n)"
+    },
+    "invoice_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "invoice_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_price_ex_tax",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "line_total_ex_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "line_total_inc_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_invoice_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "invoices",
+          "to_table": "invoice_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE invoice_lines (\n\tid VARCHAR(36) NOT NULL, \n\tinvoice_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_price_ex_tax NUMERIC(10, 2) NOT NULL, \n\ttax_rate NUMERIC(5, 2) NOT NULL, \n\tline_total_ex_tax NUMERIC(12, 2) NOT NULL, \n\tline_total_inc_tax NUMERIC(12, 2) NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tCONSTRAINT pk_invoice_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_invoice_lines__invoice_id__invoices FOREIGN KEY(invoice_id) REFERENCES invoices (id), \n\tCONSTRAINT fk_invoice_lines__product_id__products FOREIGN KEY(product_id) REFERENCES products (id)\n)"
+    },
+    "invoices": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sales_order_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "invoice_number",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "invoice_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "subtotal_ex_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "total_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "total_inc_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_invoices_invoice_number",
+          "unique": true,
+          "columns": [
+            "invoice_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_invoice_code",
+          "unique": false,
+          "columns": [
+            "invoice_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_invoices_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "sales_orders",
+          "to_table": "sales_order_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "customers",
+          "to_table": "customer_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE invoices (\n\tid VARCHAR(36) NOT NULL, \n\tcustomer_id VARCHAR(36) NOT NULL, \n\tsales_order_id VARCHAR(36), \n\tinvoice_number VARCHAR(50) NOT NULL, \n\tinvoice_date DATETIME, \n\tdue_date DATETIME, \n\tstatus VARCHAR(20), \n\tsubtotal_ex_tax NUMERIC(12, 2) NOT NULL, \n\ttotal_tax NUMERIC(12, 2) NOT NULL, \n\ttotal_inc_tax NUMERIC(12, 2) NOT NULL, \n\tnotes TEXT, \n\tCONSTRAINT pk_invoices PRIMARY KEY (id), \n\tCONSTRAINT fk_invoices__customer_id__customers FOREIGN KEY(customer_id) REFERENCES customers (id), \n\tCONSTRAINT fk_invoices__sales_order_id__sales_orders FOREIGN KEY(sales_order_id) REFERENCES sales_orders (id)\n)"
+    },
+    "legacy_acstk_data": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_no",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_search",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ean13",
+          "type": "NUMERIC(18, 4)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "desc1",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "desc2",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_suplr",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "size",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_unit",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pack",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "dgflag",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "form",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pkge",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "label",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "manu",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_active",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "taxinc",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "salestaxcde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purcost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purtax",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesalecost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "disccdeone",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "disccdetwo",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesalecde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retailcde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "countercde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tradecde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contractcde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrialcde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributorcde",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retail",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "counter",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "trade",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contract",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrial",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributor",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "suplr4stdcost",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "search4stdcost",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "cogs",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "gpc",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rmc",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "gpr",
+          "type": "NUMERIC(10, 4)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "soh",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sohv",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sip",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "soo",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sold",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_date",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "bulk",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "lid",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pbox",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "boxlbl",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "imported_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_legacy_acstk_data_product_id",
+          "unique": false,
+          "columns": [
+            "product_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_legacy_acstk_data_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE legacy_acstk_data (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tlegacy_no INTEGER, \n\tlegacy_search VARCHAR(50), \n\tean13 NUMERIC(18, 4), \n\tdesc1 VARCHAR(50), \n\tdesc2 VARCHAR(20), \n\tlegacy_suplr VARCHAR(10), \n\tsize VARCHAR(10), \n\tlegacy_unit VARCHAR(10), \n\tpack INTEGER, \n\tdgflag VARCHAR(1), \n\tform VARCHAR(10), \n\tpkge INTEGER, \n\tlabel INTEGER, \n\tmanu INTEGER, \n\tlegacy_active VARCHAR(1), \n\ttaxinc VARCHAR(1), \n\tsalestaxcde VARCHAR(1), \n\tpurcost NUMERIC(10, 2), \n\tpurtax NUMERIC(10, 2), \n\twholesalecost NUMERIC(10, 2), \n\tdisccdeone VARCHAR(1), \n\tdisccdetwo VARCHAR(1), \n\twholesalecde VARCHAR(1), \n\tretailcde VARCHAR(1), \n\tcountercde VARCHAR(1), \n\ttradecde VARCHAR(1), \n\tcontractcde VARCHAR(1), \n\tindustrialcde VARCHAR(1), \n\tdistributorcde VARCHAR(1), \n\tretail NUMERIC(10, 2), \n\tcounter NUMERIC(10, 2), \n\ttrade NUMERIC(10, 2), \n\tcontract NUMERIC(10, 2), \n\tindustrial NUMERIC(10, 2), \n\tdistributor NUMERIC(10, 2), \n\tsuplr4stdcost VARCHAR(10), \n\tsearch4stdcost VARCHAR(50), \n\tcogs NUMERIC(10, 2), \n\tgpc NUMERIC(10, 2), \n\trmc NUMERIC(10, 2), \n\tgpr NUMERIC(10, 4), \n\tsoh INTEGER, \n\tsohv NUMERIC(10, 2), \n\tsip INTEGER, \n\tsoo INTEGER, \n\tsold INTEGER, \n\tlegacy_date VARCHAR(10), \n\tbulk NUMERIC(10, 2), \n\tlid INTEGER, \n\tpbox INTEGER, \n\tboxlbl INTEGER, \n\timported_at DATETIME, \n\tnotes TEXT, \n\tCONSTRAINT pk_legacy_acstk_data PRIMARY KEY (id), \n\tCONSTRAINT fk_legacy_acstk_data__product_id__products FOREIGN KEY(product_id) REFERENCES products (id)\n)"
+    },
+    "manufacturing_config": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "qtyf",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "bchno_width",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "bch_offset",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "company_name",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "site_code",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max1",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max2",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max3",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max4",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max5",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max6",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max7",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max8",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max9",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags1",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags2",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags3",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags4",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags5",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags6",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags7",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "flags8",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep1",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep2",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep3",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep4",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep5",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "rep6",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "print_hi1",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "db_month_raw",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "cr_month_raw",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "cans_idx",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "label_idx",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "labour_idx",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_manufacturing_config_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE manufacturing_config (\n\tid VARCHAR(36) NOT NULL, \n\tqtyf VARCHAR(10), \n\tbchno_width VARCHAR(10), \n\tbch_offset VARCHAR(10), \n\tcompany_name VARCHAR(50), \n\tsite_code VARCHAR(10), \n\tmax1 NUMERIC(10, 2), \n\tmax2 NUMERIC(10, 2), \n\tmax3 NUMERIC(10, 2), \n\tmax4 NUMERIC(10, 2), \n\tmax5 NUMERIC(10, 2), \n\tmax6 NUMERIC(10, 2), \n\tmax7 NUMERIC(10, 2), \n\tmax8 NUMERIC(10, 2), \n\tmax9 NUMERIC(10, 2), \n\tflags1 VARCHAR(10), \n\tflags2 VARCHAR(10), \n\tflags3 VARCHAR(10), \n\tflags4 VARCHAR(10), \n\tflags5 VARCHAR(10), \n\tflags6 VARCHAR(10), \n\tflags7 VARCHAR(10), \n\tflags8 VARCHAR(10), \n\trep1 VARCHAR(10), \n\trep2 VARCHAR(10), \n\trep3 VARCHAR(10), \n\trep4 VARCHAR(10), \n\trep5 VARCHAR(10), \n\trep6 VARCHAR(10), \n\tprint_hi1 VARCHAR(10), \n\tdb_month_raw VARCHAR(10), \n\tcr_month_raw VARCHAR(10), \n\tcans_idx INTEGER, \n\tlabel_idx INTEGER, \n\tlabour_idx INTEGER, \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tCONSTRAINT pk_manufacturing_config PRIMARY KEY (id)\n)"
+    },
+    "markups": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "enabled_flag",
+          "type": "VARCHAR(1)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_markup_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_markups_2",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_markups_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE markups (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(10) NOT NULL, \n\tname VARCHAR(100) NOT NULL, \n\tdescription TEXT, \n\tenabled_flag VARCHAR(1), \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_markups PRIMARY KEY (id), \n\tCONSTRAINT uq_markups__code UNIQUE (code)\n)"
+    },
+    "pack_conversions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "from_unit_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "to_unit_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "conversion_factor",
+          "type": "NUMERIC(12, 6)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_pack_conversions_2",
+          "unique": true,
+          "columns": [
+            "product_id",
+            "from_unit_id",
+            "to_unit_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_pack_conversions_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "pack_units",
+          "to_table": "to_unit_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 2,
+          "sequence": 0,
+          "from_column": "pack_units",
+          "to_table": "from_unit_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE pack_conversions (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tfrom_unit_id VARCHAR(36) NOT NULL, \n\tto_unit_id VARCHAR(36) NOT NULL, \n\tconversion_factor NUMERIC(12, 6) NOT NULL, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_pack_conversions PRIMARY KEY (id), \n\tCONSTRAINT fk_pack_conversions__from_unit_id__pack_units FOREIGN KEY(from_unit_id) REFERENCES pack_units (id), \n\tCONSTRAINT fk_pack_conversions__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT fk_pack_conversions__to_unit_id__pack_units FOREIGN KEY(to_unit_id) REFERENCES pack_units (id), \n\tCONSTRAINT uq_pack_conversion UNIQUE (product_id, from_unit_id, to_unit_id)\n)"
+    },
+    "pack_units": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(20)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_pack_unit_code",
+          "unique": false,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_pack_units_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_pack_units_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE pack_units (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(20) NOT NULL, \n\tname VARCHAR(100) NOT NULL, \n\tdescription TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_pack_units PRIMARY KEY (id)\n)"
+    },
+    "po_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "purchase_order_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "line_total",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_po_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "purchase_orders",
+          "to_table": "purchase_order_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE po_lines (\n\tid VARCHAR(36) NOT NULL, \n\tpurchase_order_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_price NUMERIC(10, 2) NOT NULL, \n\tline_total NUMERIC(12, 2) NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tCONSTRAINT pk_po_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_po_lines__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT fk_po_lines__purchase_order_id__purchase_orders FOREIGN KEY(purchase_order_id) REFERENCES purchase_orders (id)\n)"
+    },
+    "price_list_items": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "price_list_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_price_ex_tax",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "effective_date",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_price_list_items_2",
+          "unique": true,
+          "columns": [
+            "price_list_id",
+            "product_id",
+            "effective_date"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_price_list_items_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "price_lists",
+          "to_table": "price_list_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE price_list_items (\n\tid VARCHAR(36) NOT NULL, \n\tprice_list_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tunit_price_ex_tax NUMERIC(10, 2) NOT NULL, \n\teffective_date DATETIME NOT NULL, \n\texpiry_date DATETIME, \n\tCONSTRAINT pk_price_list_items PRIMARY KEY (id), \n\tCONSTRAINT fk_price_list_items__price_list_id__price_lists FOREIGN KEY(price_list_id) REFERENCES price_lists (id), \n\tCONSTRAINT fk_price_list_items__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT uq_price_item_date UNIQUE (price_list_id, product_id, effective_date)\n)"
+    },
+    "price_lists": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "effective_date",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_price_list_code",
+          "unique": false,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_price_lists_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_price_lists_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE price_lists (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\teffective_date DATETIME NOT NULL, \n\texpiry_date DATETIME, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_price_lists PRIMARY KEY (id)\n)"
+    },
+    "product_channel_links": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "channel",
+          "type": "VARCHAR(32)",
+          "notnull": true,
+          "default": "'shopify'",
+          "primary_key": false
+        },
+        {
+          "name": "shopify_product_id",
+          "type": "VARCHAR(64)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "shopify_variant_id",
+          "type": "VARCHAR(64)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "shopify_location_id",
+          "type": "VARCHAR(64)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_product_channel_links_product",
+          "unique": false,
+          "columns": [
+            "product_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_product_channel_links_2",
+          "unique": true,
+          "columns": [
+            "product_id",
+            "channel"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_product_channel_links_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE product_channel_links (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tchannel VARCHAR(32) DEFAULT 'shopify' NOT NULL, \n\tshopify_product_id VARCHAR(64), \n\tshopify_variant_id VARCHAR(64), \n\tshopify_location_id VARCHAR(64), \n\tCONSTRAINT pk_product_channel_links PRIMARY KEY (id), \n\tCONSTRAINT uq_product_channel UNIQUE (product_id, channel)\n)"
+    },
+    "product_migration_map": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "legacy_table",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "legacy_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "migrated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_migration_map_legacy",
+          "unique": false,
+          "columns": [
+            "legacy_table",
+            "legacy_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_product_migration_map_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE product_migration_map (\n\tid VARCHAR(36) NOT NULL, \n\tlegacy_table VARCHAR(50) NOT NULL, \n\tlegacy_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tmigrated_at DATETIME, \n\tCONSTRAINT pk_product_migration_map PRIMARY KEY (id)\n)"
+    },
+    "product_variants": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "variant_code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "variant_name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_product_variants_2",
+          "unique": true,
+          "columns": [
+            "product_id",
+            "variant_code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_product_variants_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE product_variants (\n\tid VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tvariant_code VARCHAR(50) NOT NULL, \n\tvariant_name VARCHAR(200) NOT NULL, \n\tdescription TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_product_variants PRIMARY KEY (id), \n\tCONSTRAINT fk_product_variants__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT uq_product_variant_code UNIQUE (product_id, variant_code)\n)"
+    },
+    "products": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sku",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "density_kg_per_l",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "abv_percent",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ean13",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "size",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "base_unit",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pack",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "dgflag",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "form",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pkge",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "label",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "manu",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "taxinc",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "salestaxcde",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purcost",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purtax",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesalecost",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "disccdeone",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "disccdetwo",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "xero_item_id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_sync",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "raw_material_group_id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "raw_material_code",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "raw_material_search_key",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "raw_material_search_ext",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "specific_gravity",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "vol_solid",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "solid_sg",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wt_solid",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "usage_unit",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "usage_cost",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "restock_level",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "used_ytd",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "hazard",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "condition",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "msds_flag",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "altno1",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "altno2",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "altno3",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "altno4",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "altno5",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_movement_date",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_purchase_date",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ean13_raw",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "xero_account",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "formula_id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "formula_revision",
+          "type": "INT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_unit_id",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_volume",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_archived",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "archived_at",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_tracked",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sellable",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "standard_cost",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "estimated_cost",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "estimate_reason",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "estimated_by",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "estimated_at",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesalecde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retailcde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "countercde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tradecde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contractcde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrialcde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributorcde",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retail_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retail_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "retail_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesale_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesale_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "wholesale_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributor_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributor_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "distributor_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "counter_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "counter_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "counter_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "trade_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "trade_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "trade_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contract_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contract_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contract_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrial_price_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrial_price_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "industrial_excise",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_tax_included",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "usage_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "usage_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "usage_tax_included",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_purchase",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_sell",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_assemble",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "manufactured_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "manufactured_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "manufactured_tax_included",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "purchase_tax_included_bool",
+          "type": "",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_products_is_assemble",
+          "unique": false,
+          "columns": [
+            "is_assemble"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_products_is_sell",
+          "unique": false,
+          "columns": [
+            "is_sell"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_products_is_purchase",
+          "unique": false,
+          "columns": [
+            "is_purchase"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE \"products\"(\n  id TEXT,\n  sku TEXT,\n  name TEXT,\n  description TEXT,\n  density_kg_per_l NUM,\n  abv_percent NUM,\n  is_active NUM,\n  created_at NUM,\n  updated_at NUM,\n  ean13 TEXT,\n  supplier_id TEXT,\n  size TEXT,\n  base_unit TEXT,\n  pack INT,\n  dgflag TEXT,\n  form TEXT,\n  pkge INT,\n  label INT,\n  manu INT,\n  taxinc TEXT,\n  salestaxcde TEXT,\n  purcost NUM,\n  purtax NUM,\n  wholesalecost NUM,\n  disccdeone TEXT,\n  disccdetwo TEXT,\n  xero_item_id TEXT,\n  last_sync NUM,\n  product_type TEXT,\n  raw_material_group_id TEXT,\n  raw_material_code INT,\n  raw_material_search_key TEXT,\n  raw_material_search_ext TEXT,\n  specific_gravity NUM,\n  vol_solid NUM,\n  solid_sg NUM,\n  wt_solid NUM,\n  usage_unit TEXT,\n  usage_cost NUM,\n  restock_level NUM,\n  used_ytd NUM,\n  hazard TEXT,\n  condition TEXT,\n  msds_flag TEXT,\n  altno1 INT,\n  altno2 INT,\n  altno3 INT,\n  altno4 INT,\n  altno5 INT,\n  last_movement_date TEXT,\n  last_purchase_date TEXT,\n  ean13_raw NUM,\n  xero_account TEXT,\n  formula_id TEXT,\n  formula_revision INT,\n  purchase_unit_id TEXT,\n  purchase_volume NUM,\n  is_archived NUM,\n  archived_at NUM,\n  is_tracked NUM,\n  sellable NUM,\n  standard_cost NUM,\n  estimated_cost NUM,\n  estimate_reason TEXT,\n  estimated_by TEXT,\n  estimated_at NUM,\n  wholesalecde NUM,\n  retailcde NUM,\n  countercde NUM,\n  tradecde NUM,\n  contractcde NUM,\n  industrialcde NUM,\n  distributorcde NUM,\n  retail_price_inc_gst NUM,\n  retail_price_ex_gst NUM,\n  retail_excise NUM,\n  wholesale_price_inc_gst NUM,\n  wholesale_price_ex_gst NUM,\n  wholesale_excise NUM,\n  distributor_price_inc_gst NUM,\n  distributor_price_ex_gst NUM,\n  distributor_excise NUM,\n  counter_price_inc_gst NUM,\n  counter_price_ex_gst NUM,\n  counter_excise NUM,\n  trade_price_inc_gst NUM,\n  trade_price_ex_gst NUM,\n  trade_excise NUM,\n  contract_price_inc_gst NUM,\n  contract_price_ex_gst NUM,\n  contract_excise NUM,\n  industrial_price_inc_gst NUM,\n  industrial_price_ex_gst NUM,\n  industrial_excise NUM,\n  purchase_cost_inc_gst NUM,\n  purchase_cost_ex_gst NUM,\n  purchase_tax_included TEXT,\n  usage_cost_inc_gst NUM,\n  usage_cost_ex_gst NUM,\n  usage_tax_included TEXT,\n  is_purchase NUM,\n  is_sell NUM,\n  is_assemble NUM,\n  manufactured_cost_inc_gst NUM,\n  manufactured_cost_ex_gst NUM,\n  manufactured_tax_included TEXT,\n  purchase_tax_included_bool\n)"
+    },
+    "purchase_orders": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "supplier_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "po_number",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "order_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expected_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "received_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_purchase_order_po_number",
+          "unique": false,
+          "columns": [
+            "po_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_purchase_orders_po_number",
+          "unique": true,
+          "columns": [
+            "po_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_purchase_orders_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "suppliers",
+          "to_table": "supplier_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE purchase_orders (\n\tid VARCHAR(36) NOT NULL, \n\tsupplier_id VARCHAR(36) NOT NULL, \n\tpo_number VARCHAR(50) NOT NULL, \n\tstatus VARCHAR(20), \n\torder_date DATETIME, \n\texpected_date DATETIME, \n\treceived_date DATETIME, \n\tnotes TEXT, \n\tCONSTRAINT pk_purchase_orders PRIMARY KEY (id), \n\tCONSTRAINT fk_purchase_orders__supplier_id__suppliers FOREIGN KEY(supplier_id) REFERENCES suppliers (id)\n)"
+    },
+    "qc_results": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "batch_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "test_name",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "test_value",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "test_unit",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "pass_fail",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tested_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tested_by",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "test_definition_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_qc_results_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "batches",
+          "to_table": "batch_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE qc_results (\n\tid VARCHAR(36) NOT NULL, \n\tbatch_id VARCHAR(36) NOT NULL, \n\ttest_name VARCHAR(100) NOT NULL, \n\ttest_value NUMERIC(12, 3), \n\ttest_unit VARCHAR(20), \n\tpass_fail BOOLEAN, \n\ttested_at DATETIME, \n\ttested_by VARCHAR(100), \n\tnotes TEXT, test_definition_id VARCHAR(36), \n\tCONSTRAINT pk_qc_results PRIMARY KEY (id), \n\tCONSTRAINT fk_qc_results__batch_id__batches FOREIGN KEY(batch_id) REFERENCES batches (id)\n)"
+    },
+    "quality_test_definitions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "test_type",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "min_value",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "max_value",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "target_value",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_quality_test_definitions_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_quality_test_definitions_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE quality_test_definitions (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\tdescription TEXT, \n\ttest_type VARCHAR(50), \n\tunit VARCHAR(20), \n\tmin_value NUMERIC(12, 3), \n\tmax_value NUMERIC(12, 3), \n\ttarget_value NUMERIC(12, 3), \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tCONSTRAINT pk_quality_test_definitions PRIMARY KEY (id)\n)"
+    },
+    "raw_material_groups": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(10)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_rm_group_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_raw_material_groups_2",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_raw_material_groups_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE raw_material_groups (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(10) NOT NULL, \n\tname VARCHAR(100) NOT NULL, \n\tdescription TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_raw_material_groups PRIMARY KEY (id), \n\tCONSTRAINT uq_raw_material_groups__code UNIQUE (code)\n)"
+    },
+    "raw_material_suppliers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "raw_material_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_primary",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "min_qty",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "lead_time_days",
+          "type": "INTEGER",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_rm_supplier_supplier",
+          "unique": false,
+          "columns": [
+            "supplier_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_rm_supplier_material",
+          "unique": false,
+          "columns": [
+            "raw_material_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_raw_material_suppliers_2",
+          "unique": true,
+          "columns": [
+            "raw_material_id",
+            "supplier_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_raw_material_suppliers_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "suppliers",
+          "to_table": "supplier_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "raw_materials",
+          "to_table": "raw_material_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE raw_material_suppliers (\n\tid VARCHAR(36) NOT NULL, \n\traw_material_id VARCHAR(36) NOT NULL, \n\tsupplier_id VARCHAR(36) NOT NULL, \n\tis_primary BOOLEAN, \n\tmin_qty NUMERIC(12, 3), \n\tlead_time_days INTEGER, \n\tnotes TEXT, \n\tcreated_at DATETIME, \n\tCONSTRAINT pk_raw_material_suppliers PRIMARY KEY (id), \n\tCONSTRAINT fk_raw_material_suppliers__raw_material_id__raw_materials FOREIGN KEY(raw_material_id) REFERENCES raw_materials (id), \n\tCONSTRAINT fk_raw_material_suppliers__supplier_id__suppliers FOREIGN KEY(supplier_id) REFERENCES suppliers (id), \n\tCONSTRAINT uq_rm_supplier UNIQUE (raw_material_id, supplier_id)\n)"
+    },
+    "revaluations": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "item_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "lot_id",
+          "type": "VARCHAR(36)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "old_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "new_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "delta_extended_cost",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "revalued_by",
+          "type": "VARCHAR(100)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "revalued_at",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "propagated_to_assemblies",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": "'0'",
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_reval_lot",
+          "unique": false,
+          "columns": [
+            "lot_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_reval_item_ts",
+          "unique": false,
+          "columns": [
+            "item_id",
+            "revalued_at"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_revaluations_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "inventory_lots",
+          "to_table": "lot_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "item_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE revaluations (\n\tid VARCHAR(36) NOT NULL, \n\titem_id VARCHAR(36) NOT NULL, \n\tlot_id VARCHAR(36), \n\told_unit_cost NUMERIC(10, 2) NOT NULL, \n\tnew_unit_cost NUMERIC(10, 2) NOT NULL, \n\tdelta_extended_cost NUMERIC(12, 2) NOT NULL, \n\treason TEXT NOT NULL, \n\trevalued_by VARCHAR(100) NOT NULL, \n\trevalued_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, \n\tpropagated_to_assemblies BOOLEAN DEFAULT '0', \n\tCONSTRAINT pk_revaluations PRIMARY KEY (id), \n\tCONSTRAINT fk_reval_item FOREIGN KEY(item_id) REFERENCES products (id), \n\tCONSTRAINT fk_reval_lot FOREIGN KEY(lot_id) REFERENCES inventory_lots (id)\n)"
+    },
+    "sales_orders": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "so_number",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "order_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "requested_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "shipped_date",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_sales_order_so_number",
+          "unique": false,
+          "columns": [
+            "so_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_sales_orders_so_number",
+          "unique": true,
+          "columns": [
+            "so_number"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_sales_orders_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "customers",
+          "to_table": "customer_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE sales_orders (\n\tid VARCHAR(36) NOT NULL, \n\tcustomer_id VARCHAR(36) NOT NULL, \n\tso_number VARCHAR(50) NOT NULL, \n\tstatus VARCHAR(20), \n\torder_date DATETIME, \n\trequested_date DATETIME, \n\tshipped_date DATETIME, \n\tnotes TEXT, \n\tCONSTRAINT pk_sales_orders PRIMARY KEY (id), \n\tCONSTRAINT fk_sales_orders__customer_id__customers FOREIGN KEY(customer_id) REFERENCES customers (id)\n)"
+    },
+    "so_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "sales_order_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "unit_price_ex_tax",
+          "type": "NUMERIC(10, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "line_total_ex_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "line_total_inc_tax",
+          "type": "NUMERIC(12, 2)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_so_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "sales_orders",
+          "to_table": "sales_order_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE so_lines (\n\tid VARCHAR(36) NOT NULL, \n\tsales_order_id VARCHAR(36) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tunit_price_ex_tax NUMERIC(10, 2) NOT NULL, \n\ttax_rate NUMERIC(5, 2) NOT NULL, \n\tline_total_ex_tax NUMERIC(12, 2) NOT NULL, \n\tline_total_inc_tax NUMERIC(12, 2) NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tCONSTRAINT pk_so_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_so_lines__product_id__products FOREIGN KEY(product_id) REFERENCES products (id), \n\tCONSTRAINT fk_so_lines__sales_order_id__sales_orders FOREIGN KEY(sales_order_id) REFERENCES sales_orders (id)\n)"
+    },
+    "suppliers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "contact_person",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(200)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "xero_contact_id",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "last_sync",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_supplier_code",
+          "unique": false,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_suppliers_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_suppliers_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE suppliers (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\tcontact_person VARCHAR(100), \n\temail VARCHAR(200), \n\tphone VARCHAR(50), \n\taddress TEXT, \n\tis_active BOOLEAN, \n\tcreated_at DATETIME, xero_contact_id VARCHAR(100), last_sync DATETIME, \n\tCONSTRAINT pk_suppliers PRIMARY KEY (id)\n)"
+    },
+    "work_order_lines": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "work_order_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "ingredient_product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "required_quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "allocated_quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_work_order_lines_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "work_orders",
+          "to_table": "work_order_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "ingredient_product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE work_order_lines (\n\tid VARCHAR(36) NOT NULL, \n\twork_order_id VARCHAR(36) NOT NULL, \n\tingredient_product_id VARCHAR(36) NOT NULL, \n\trequired_quantity_kg NUMERIC(12, 3) NOT NULL, \n\tallocated_quantity_kg NUMERIC(12, 3), \n\tsequence INTEGER NOT NULL, \n\tCONSTRAINT pk_work_order_lines PRIMARY KEY (id), \n\tCONSTRAINT fk_work_order_lines__ingredient_product_id__products FOREIGN KEY(ingredient_product_id) REFERENCES products (id), \n\tCONSTRAINT fk_work_order_lines__work_order_id__work_orders FOREIGN KEY(work_order_id) REFERENCES work_orders (id)\n)"
+    },
+    "work_orders": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(50)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "formula_id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "quantity_kg",
+          "type": "NUMERIC(12, 3)",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "released_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "completed_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_work_order_code",
+          "unique": false,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_work_orders_code",
+          "unique": true,
+          "columns": [
+            "code"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_work_orders_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "from_column": "products",
+          "to_table": "product_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "from_column": "formulas",
+          "to_table": "formula_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "ddl": "CREATE TABLE work_orders (\n\tid VARCHAR(36) NOT NULL, \n\tcode VARCHAR(50) NOT NULL, \n\tproduct_id VARCHAR(36) NOT NULL, \n\tformula_id VARCHAR(36) NOT NULL, \n\tquantity_kg NUMERIC(12, 3) NOT NULL, \n\tstatus VARCHAR(20), \n\tcreated_at DATETIME, \n\treleased_at DATETIME, \n\tcompleted_at DATETIME, \n\tnotes TEXT, \n\tCONSTRAINT pk_work_orders PRIMARY KEY (id), \n\tCONSTRAINT fk_work_orders__formula_id__formulas FOREIGN KEY(formula_id) REFERENCES formulas (id), \n\tCONSTRAINT fk_work_orders__product_id__products FOREIGN KEY(product_id) REFERENCES products (id)\n)"
+    },
+    "xero_sync_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "ts",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "object_type",
+          "type": "VARCHAR(50)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "object_id",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "direction",
+          "type": "VARCHAR(10)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_sync_log_ts",
+          "unique": false,
+          "columns": [
+            "ts"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "ix_sync_log_object",
+          "unique": false,
+          "columns": [
+            "object_type",
+            "object_id"
+          ],
+          "is_primary": true
+        },
+        {
+          "name": "sqlite_autoindex_xero_sync_log_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE xero_sync_log (\n\tid VARCHAR(36) NOT NULL, \n\tts DATETIME NOT NULL, \n\tobject_type VARCHAR(50), \n\tobject_id VARCHAR(100), \n\tdirection VARCHAR(10), \n\tstatus VARCHAR(20), \n\tmessage TEXT, \n\tCONSTRAINT pk_xero_sync_log PRIMARY KEY (id)\n)"
+    },
+    "xero_tokens": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "notnull": true,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "access_token",
+          "type": "TEXT",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "refresh_token",
+          "type": "TEXT",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "notnull": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "tenant_id",
+          "type": "VARCHAR(100)",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false,
+          "default": null,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_xero_tokens_1",
+          "unique": true,
+          "columns": [
+            "id"
+          ],
+          "is_primary": true
+        }
+      ],
+      "foreign_keys": [],
+      "ddl": "CREATE TABLE xero_tokens (\n\tid VARCHAR(36) NOT NULL, \n\taccess_token TEXT NOT NULL, \n\trefresh_token TEXT NOT NULL, \n\texpires_at DATETIME NOT NULL, \n\ttenant_id VARCHAR(100), \n\tcreated_at DATETIME, \n\tupdated_at DATETIME, \n\tCONSTRAINT pk_xero_tokens PRIMARY KEY (id)\n)"
+    }
+  },
+  "alembic_versions": [
+    "79b57e831916",
+    "0afdf02085a6",
+    "67a21e84ab61"
+  ]
+}

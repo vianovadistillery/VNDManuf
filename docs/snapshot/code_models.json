@@ -1,0 +1,5422 @@
+{
+  "metadata": {
+    "snapshot_date": "2025-11-03T20:56:34.307355",
+    "total_models": 45
+  },
+  "models": {
+    "batches": {
+      "class_name": "Batch",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "batches",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F552D40>",
+            "primary_key": true
+          },
+          {
+            "name": "work_order_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "batch_code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "DRAFT",
+            "primary_key": false
+          },
+          {
+            "name": "started_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "completed_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "batch_status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "planned",
+            "primary_key": false
+          },
+          {
+            "name": "yield_actual",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "yield_litres",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "variance_percent",
+            "type": "NUMERIC(5, 2)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_batch_wo_code",
+            "unique": false,
+            "columns": [
+              "work_order_id",
+              "batch_code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_batches",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "uq_batch_code",
+            "type": "UniqueConstraint",
+            "columns": [
+              "work_order_id",
+              "batch_code"
+            ]
+          },
+          {
+            "name": "fk_batches__work_order_id__work_orders",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "work_order_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "work_order",
+            "target": "WorkOrder",
+            "target_table": "work_orders",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "components",
+            "target": "BatchComponent",
+            "target_table": "batch_components",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "qc_results",
+            "target": "QcResult",
+            "target_table": "qc_results",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "batch_lines",
+            "target": "BatchLine",
+            "target_table": "batch_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "batch_components": {
+      "class_name": "BatchComponent",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "batch_components",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F578680>",
+            "primary_key": true
+          },
+          {
+            "name": "batch_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "ingredient_product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "lot_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_batch_components__batch_id__batches",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "batch_id"
+            ]
+          },
+          {
+            "name": "fk_batch_components__lot_id__inventory_lots",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "lot_id"
+            ]
+          },
+          {
+            "name": "pk_batch_components",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_batch_components__ingredient_product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "ingredient_product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "batch",
+            "target": "Batch",
+            "target_table": "batches",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "ingredient_product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lot",
+            "target": "InventoryLot",
+            "target_table": "inventory_lots",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "batch_lines": {
+      "class_name": "BatchLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "batch_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F59C220>",
+            "primary_key": true
+          },
+          {
+            "name": "batch_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "material_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "role",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "qty_theoretical",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "qty_actual",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "unit",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "cost_at_time",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_batch_line_batch",
+            "unique": false,
+            "columns": [
+              "batch_id"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_batch_lines__batch_id__batches",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "batch_id"
+            ]
+          },
+          {
+            "name": "pk_batch_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_batch_lines__material_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "material_id"
+            ]
+          },
+          {
+            "name": "uq_batch_line",
+            "type": "UniqueConstraint",
+            "columns": [
+              "batch_id",
+              "material_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "batch",
+            "target": "Batch",
+            "target_table": "batches",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "material",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "contacts": {
+      "class_name": "Contact",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "contacts",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5BC680>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "contact_person",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(200)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "phone",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "address",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_customer",
+            "type": "BOOLEAN",
+            "nullable": false,
+            "default": "False",
+            "primary_key": false
+          },
+          {
+            "name": "is_supplier",
+            "type": "BOOLEAN",
+            "nullable": false,
+            "default": "False",
+            "primary_key": false
+          },
+          {
+            "name": "is_other",
+            "type": "BOOLEAN",
+            "nullable": false,
+            "default": "False",
+            "primary_key": false
+          },
+          {
+            "name": "tax_rate",
+            "type": "NUMERIC(5, 2)",
+            "nullable": true,
+            "default": "10.0",
+            "primary_key": false
+          },
+          {
+            "name": "xero_contact_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_sync",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5BCD60>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5BCE00>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_contact_type",
+            "unique": false,
+            "columns": [
+              "is_customer",
+              "is_supplier",
+              "is_other"
+            ]
+          },
+          {
+            "name": "ix_contacts_is_supplier",
+            "unique": false,
+            "columns": [
+              "is_supplier"
+            ]
+          },
+          {
+            "name": "ix_contacts_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_contacts_is_customer",
+            "unique": false,
+            "columns": [
+              "is_customer"
+            ]
+          },
+          {
+            "name": "ix_contact_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_contacts",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "customers": {
+      "class_name": "Customer",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "customers",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5EE520>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "contact_person",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(200)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "phone",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "address",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "tax_rate",
+            "type": "NUMERIC(5, 2)",
+            "nullable": true,
+            "default": "10.0",
+            "primary_key": false
+          },
+          {
+            "name": "xero_contact_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_sync",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5EE700>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_customer_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_customers_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_customers",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "sales_orders",
+            "target": "SalesOrder",
+            "target_table": "sales_orders",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "invoices",
+            "target": "Invoice",
+            "target_table": "invoices",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "customer_prices",
+            "target": "CustomerPrice",
+            "target_table": "customer_prices",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "customer_prices": {
+      "class_name": "CustomerPrice",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "customer_prices",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F63BCE0>",
+            "primary_key": true
+          },
+          {
+            "name": "customer_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_price_ex_tax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "effective_date",
+            "type": "DATETIME",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "expiry_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "uq_customer_price_date",
+            "type": "UniqueConstraint",
+            "columns": [
+              "customer_id",
+              "product_id",
+              "effective_date"
+            ]
+          },
+          {
+            "name": "fk_customer_prices__customer_id__customers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "customer_id"
+            ]
+          },
+          {
+            "name": "pk_customer_prices",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_customer_prices__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "customer",
+            "target": "Customer",
+            "target_table": "customers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "excise_rates": {
+      "class_name": "ExciseRate",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "excise_rates",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6BE0C0>",
+            "primary_key": true
+          },
+          {
+            "name": "date_active_from",
+            "type": "DATETIME",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "rate_per_l_abv",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": false,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6BE2A0>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6BE340>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_excise_rate_active",
+            "unique": false,
+            "columns": [
+              "is_active",
+              "date_active_from"
+            ]
+          },
+          {
+            "name": "ix_excise_rates_date_active_from",
+            "unique": false,
+            "columns": [
+              "date_active_from"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "uq_excise_rate_date",
+            "type": "UniqueConstraint",
+            "columns": [
+              "date_active_from"
+            ]
+          },
+          {
+            "name": "pk_excise_rates",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "finished_goods": {
+      "class_name": "FinishedGood",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "finished_goods",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F579C60>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "base_unit",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "default": "LT",
+            "primary_key": false
+          },
+          {
+            "name": "formula_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "formula_revision",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F579F80>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F57A020>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_finished_goods_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_finished_goods",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_finished_goods__formula_id__formulas",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "formula_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "inventory",
+            "target": "FinishedGoodInventory",
+            "target_table": "finished_goods_inventory",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "finished_goods_inventory": {
+      "class_name": "FinishedGoodInventory",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "finished_goods_inventory",
+        "columns": [
+          {
+            "name": "fg_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": true
+          },
+          {
+            "name": "soh",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "default": "0",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_finished_goods_inventory",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "fg_id"
+            ]
+          },
+          {
+            "name": "fk_finished_goods_inventory__fg_id__finished_goods",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "fg_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "finished_good",
+            "target": "FinishedGood",
+            "target_table": "finished_goods",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "formulas": {
+      "class_name": "Formula",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "formulas",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F4FE480>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "formula_code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "formula_name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "version",
+            "type": "INTEGER",
+            "nullable": true,
+            "default": "1",
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F4FE840>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F4FE980>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "uq_formula_version",
+            "type": "UniqueConstraint",
+            "columns": [
+              "product_id",
+              "formula_code",
+              "version"
+            ]
+          },
+          {
+            "name": "fk_formulas__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_formulas",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lines",
+            "target": "FormulaLine",
+            "target_table": "formula_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "formula_lines": {
+      "class_name": "FormulaLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "formula_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F4FFBA0>",
+            "primary_key": true
+          },
+          {
+            "name": "formula_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "unit",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_formula_lines__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_formula_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_formula_lines__formula_id__formulas",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "formula_id"
+            ]
+          },
+          {
+            "name": "uq_formula_line_sequence",
+            "type": "UniqueConstraint",
+            "columns": [
+              "formula_id",
+              "sequence"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "formula",
+            "target": "Formula",
+            "target_table": "formulas",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "inventory_lots": {
+      "class_name": "InventoryLot",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "inventory_lots",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F51D300>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "lot_code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "received_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F51D580>",
+            "primary_key": false
+          },
+          {
+            "name": "expires_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F51D800>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_lot_product_code",
+            "unique": false,
+            "columns": [
+              "product_id",
+              "lot_code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_inventory_lots",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "uq_lot_code",
+            "type": "UniqueConstraint",
+            "columns": [
+              "product_id",
+              "lot_code"
+            ]
+          },
+          {
+            "name": "fk_inventory_lots__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "transactions",
+            "target": "InventoryTxn",
+            "target_table": "inventory_txns",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "inventory_movements": {
+      "class_name": "InventoryMovement",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "inventory_movements",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F59D9E0>",
+            "primary_key": true
+          },
+          {
+            "name": "ts",
+            "type": "DATETIME",
+            "nullable": false,
+            "default": "<function datetime.utcnow at 0x000002584F59DA80>",
+            "primary_key": false
+          },
+          {
+            "name": "date",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "qty",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "direction",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "source_batch_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "note",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_movements_batch",
+            "unique": false,
+            "columns": [
+              "source_batch_id"
+            ]
+          },
+          {
+            "name": "ix_movements_date",
+            "unique": false,
+            "columns": [
+              "date"
+            ]
+          },
+          {
+            "name": "ix_movements_product",
+            "unique": false,
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_inventory_movements",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_inventory_movements__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "fk_inventory_movements__source_batch_id__batches",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "source_batch_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "batch",
+            "target": "Batch",
+            "target_table": "batches",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "inventory_txns": {
+      "class_name": "InventoryTxn",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "inventory_txns",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F51EB60>",
+            "primary_key": true
+          },
+          {
+            "name": "lot_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "transaction_type",
+            "type": "VARCHAR(20)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "reference_type",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "reference_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F51EE80>",
+            "primary_key": false
+          },
+          {
+            "name": "created_by",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_txn_lot_ts",
+            "unique": false,
+            "columns": [
+              "lot_id",
+              "created_at"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_inventory_txns",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_inventory_txns__lot_id__inventory_lots",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "lot_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "lot",
+            "target": "InventoryLot",
+            "target_table": "inventory_lots",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "invoices": {
+      "class_name": "Invoice",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "invoices",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F61A840>",
+            "primary_key": true
+          },
+          {
+            "name": "customer_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "sales_order_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "invoice_number",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "invoice_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F61AB60>",
+            "primary_key": false
+          },
+          {
+            "name": "due_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "DRAFT",
+            "primary_key": false
+          },
+          {
+            "name": "subtotal_ex_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "total_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "total_inc_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_invoices_invoice_number",
+            "unique": true,
+            "columns": [
+              "invoice_number"
+            ]
+          },
+          {
+            "name": "ix_invoice_code",
+            "unique": false,
+            "columns": [
+              "invoice_number"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_invoices",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_invoices__sales_order_id__sales_orders",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "sales_order_id"
+            ]
+          },
+          {
+            "name": "fk_invoices__customer_id__customers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "customer_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "customer",
+            "target": "Customer",
+            "target_table": "customers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "sales_order",
+            "target": "SalesOrder",
+            "target_table": "sales_orders",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lines",
+            "target": "InvoiceLine",
+            "target_table": "invoice_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "invoice_lines": {
+      "class_name": "InvoiceLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "invoice_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F638220>",
+            "primary_key": true
+          },
+          {
+            "name": "invoice_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_price_ex_tax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "tax_rate",
+            "type": "NUMERIC(5, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "line_total_ex_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "line_total_inc_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_invoice_lines__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_invoice_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_invoice_lines__invoice_id__invoices",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "invoice_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "invoice",
+            "target": "Invoice",
+            "target_table": "invoices",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "legacy_acstk_data": {
+      "class_name": "LegacyAcstkData",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "legacy_acstk_data",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F68D120>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_no",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_search",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "ean13",
+            "type": "NUMERIC(18, 4)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "desc1",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "desc2",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_suplr",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "size",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_unit",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pack",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "dgflag",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "form",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pkge",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "label",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "manu",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_active",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "taxinc",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "salestaxcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purcost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purtax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "wholesalecost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "disccdeone",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "disccdetwo",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "wholesalecde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "retailcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "countercde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "tradecde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "contractcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "industrialcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "distributorcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "retail",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "counter",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "trade",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "contract",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "industrial",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "distributor",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "suplr4stdcost",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "search4stdcost",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "cogs",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "gpc",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rmc",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "gpr",
+            "type": "NUMERIC(10, 4)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "soh",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sohv",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sip",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "soo",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sold",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "legacy_date",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "bulk",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "lid",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pbox",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "boxlbl",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "imported_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F68D300>",
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_legacy_acstk_data_product_id",
+            "unique": false,
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_legacy_acstk_data__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_legacy_acstk_data",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "pack_conversions": {
+      "class_name": "PackConversion",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "pack_conversions",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6637E0>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "from_unit_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "to_unit_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "conversion_factor",
+            "type": "NUMERIC(12, 6)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F663D80>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_pack_conversions__to_unit_id__pack_units",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "to_unit_id"
+            ]
+          },
+          {
+            "name": "pk_pack_conversions",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "uq_pack_conversion",
+            "type": "UniqueConstraint",
+            "columns": [
+              "product_id",
+              "from_unit_id",
+              "to_unit_id"
+            ]
+          },
+          {
+            "name": "fk_pack_conversions__from_unit_id__pack_units",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "from_unit_id"
+            ]
+          },
+          {
+            "name": "fk_pack_conversions__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "from_unit",
+            "target": "PackUnit",
+            "target_table": "pack_units",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "to_unit",
+            "target": "PackUnit",
+            "target_table": "pack_units",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "pack_units": {
+      "class_name": "PackUnit",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "pack_units",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F661080>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(20)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F661260>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_pack_unit_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_pack_units_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_pack_units",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "conversions_from",
+            "target": "PackConversion",
+            "target_table": "pack_conversions",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "conversions_to",
+            "target": "PackConversion",
+            "target_table": "pack_conversions",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "po_lines": {
+      "class_name": "PoLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "po_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5ED120>",
+            "primary_key": true
+          },
+          {
+            "name": "purchase_order_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_price",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "line_total",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_po_lines__purchase_order_id__purchase_orders",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "purchase_order_id"
+            ]
+          },
+          {
+            "name": "fk_po_lines__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_po_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "purchase_order",
+            "target": "PurchaseOrder",
+            "target_table": "purchase_orders",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "price_lists": {
+      "class_name": "PriceList",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "price_lists",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F639760>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "effective_date",
+            "type": "DATETIME",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "expiry_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F639940>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_price_list_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_price_lists_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_price_lists",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "items",
+            "target": "PriceListItem",
+            "target_table": "price_list_items",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "price_list_items": {
+      "class_name": "PriceListItem",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "price_list_items",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F63A980>",
+            "primary_key": true
+          },
+          {
+            "name": "price_list_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_price_ex_tax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "effective_date",
+            "type": "DATETIME",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "expiry_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_price_list_items",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "uq_price_item_date",
+            "type": "UniqueConstraint",
+            "columns": [
+              "price_list_id",
+              "product_id",
+              "effective_date"
+            ]
+          },
+          {
+            "name": "fk_price_list_items__price_list_id__price_lists",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "price_list_id"
+            ]
+          },
+          {
+            "name": "fk_price_list_items__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "price_list",
+            "target": "PriceList",
+            "target_table": "price_lists",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "products": {
+      "class_name": "Product",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "products",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F4B0CC0>",
+            "primary_key": true
+          },
+          {
+            "name": "sku",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "ean13",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "supplier_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "xero_item_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_sync",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "size",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "base_unit",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pack",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "density_kg_per_l",
+            "type": "NUMERIC(10, 6)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "abv_percent",
+            "type": "NUMERIC(5, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "dgflag",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "form",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pkge",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "label",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "manu",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "taxinc",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "salestaxcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purcost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purtax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "wholesalecost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "disccdeone",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "disccdetwo",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "wholesalecde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "retailcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "countercde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "tradecde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "contractcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "industrialcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "distributorcde",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F4B1120>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F4B11C0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_products_sku",
+            "unique": true,
+            "columns": [
+              "sku"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_products__supplier_id__suppliers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "supplier_id"
+            ]
+          },
+          {
+            "name": "pk_products",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "supplier",
+            "target": "Supplier",
+            "target_table": "suppliers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "variants",
+            "target": "ProductVariant",
+            "target_table": "product_variants",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "formulas",
+            "target": "Formula",
+            "target_table": "formulas",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "inventory_lots",
+            "target": "InventoryLot",
+            "target_table": "inventory_lots",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "pack_conversions",
+            "target": "PackConversion",
+            "target_table": "pack_conversions",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "price_list_items",
+            "target": "PriceListItem",
+            "target_table": "price_list_items",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "customer_prices",
+            "target": "CustomerPrice",
+            "target_table": "customer_prices",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "product_variants": {
+      "class_name": "ProductVariant",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "product_variants",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F4FD120>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "variant_code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "variant_name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F4FD440>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_product_variants",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_product_variants__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "uq_product_variant_code",
+            "type": "UniqueConstraint",
+            "columns": [
+              "product_id",
+              "variant_code"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "purchase_orders": {
+      "class_name": "PurchaseOrder",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "purchase_orders",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5BFC40>",
+            "primary_key": true
+          },
+          {
+            "name": "supplier_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "po_number",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "DRAFT",
+            "primary_key": false
+          },
+          {
+            "name": "order_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5BFE20>",
+            "primary_key": false
+          },
+          {
+            "name": "expected_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "received_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_purchase_orders_po_number",
+            "unique": true,
+            "columns": [
+              "po_number"
+            ]
+          },
+          {
+            "name": "ix_purchase_order_po_number",
+            "unique": false,
+            "columns": [
+              "po_number"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_purchase_orders",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_purchase_orders__supplier_id__suppliers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "supplier_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "supplier",
+            "target": "Supplier",
+            "target_table": "suppliers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lines",
+            "target": "PoLine",
+            "target_table": "po_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "qc_results": {
+      "class_name": "QcResult",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "qc_results",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F59F240>",
+            "primary_key": true
+          },
+          {
+            "name": "batch_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "test_name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "test_value",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "test_unit",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "pass_fail",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "tested_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F59F560>",
+            "primary_key": false
+          },
+          {
+            "name": "tested_by",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_qc_results",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_qc_results__batch_id__batches",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "batch_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "batch",
+            "target": "Batch",
+            "target_table": "batches",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "sales_orders": {
+      "class_name": "SalesOrder",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "sales_orders",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5EFCE0>",
+            "primary_key": true
+          },
+          {
+            "name": "customer_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "so_number",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "DRAFT",
+            "primary_key": false
+          },
+          {
+            "name": "order_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5EFEC0>",
+            "primary_key": false
+          },
+          {
+            "name": "requested_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "shipped_date",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_sales_order_so_number",
+            "unique": false,
+            "columns": [
+              "so_number"
+            ]
+          },
+          {
+            "name": "ix_sales_orders_so_number",
+            "unique": true,
+            "columns": [
+              "so_number"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_sales_orders__customer_id__customers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "customer_id"
+            ]
+          },
+          {
+            "name": "pk_sales_orders",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "customer",
+            "target": "Customer",
+            "target_table": "customers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lines",
+            "target": "SoLine",
+            "target_table": "so_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "invoices",
+            "target": "Invoice",
+            "target_table": "invoices",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "so_lines": {
+      "class_name": "SoLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "so_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F619300>",
+            "primary_key": true
+          },
+          {
+            "name": "sales_order_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "unit_price_ex_tax",
+            "type": "NUMERIC(10, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "tax_rate",
+            "type": "NUMERIC(5, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "line_total_ex_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "line_total_inc_tax",
+            "type": "NUMERIC(12, 2)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_so_lines__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_so_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_so_lines__sales_order_id__sales_orders",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "sales_order_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "sales_order",
+            "target": "SalesOrder",
+            "target_table": "sales_orders",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "suppliers": {
+      "class_name": "Supplier",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "suppliers",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5BE660>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "default": "<function Supplier.<lambda> at 0x000002584F5BE7A0>",
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(200)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "contact_person",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(200)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "phone",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "address",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "xero_contact_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_sync",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5BE980>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_supplier_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_suppliers_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_suppliers",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "purchase_orders",
+            "target": "PurchaseOrder",
+            "target_table": "purchase_orders",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "units": {
+      "class_name": "Unit",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "units",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F662340>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(20)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "symbol",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "unit_type",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "conversion_formula",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F662520>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6625C0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_units_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_unit_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_unit_type",
+            "unique": false,
+            "columns": [
+              "unit_type"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_units",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "work_orders": {
+      "class_name": "WorkOrder",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "work_orders",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F51FF60>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "formula_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "default": "DRAFT",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F5502C0>",
+            "primary_key": false
+          },
+          {
+            "name": "released_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "completed_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_work_orders_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_work_order_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_work_orders__formula_id__formulas",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "formula_id"
+            ]
+          },
+          {
+            "name": "fk_work_orders__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_work_orders",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "formula",
+            "target": "Formula",
+            "target_table": "formulas",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "lines",
+            "target": "WorkOrderLine",
+            "target_table": "work_order_lines",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          },
+          {
+            "name": "batches",
+            "target": "Batch",
+            "target_table": "batches",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "work_order_lines": {
+      "class_name": "WorkOrderLine",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "work_order_lines",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F5519E0>",
+            "primary_key": true
+          },
+          {
+            "name": "work_order_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "ingredient_product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "required_quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "allocated_quantity_kg",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "default": "0",
+            "primary_key": false
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_work_order_lines",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_work_order_lines__ingredient_product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "ingredient_product_id"
+            ]
+          },
+          {
+            "name": "fk_work_order_lines__work_order_id__work_orders",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "work_order_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "work_order",
+            "target": "WorkOrder",
+            "target_table": "work_orders",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "ingredient_product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "xero_sync_log": {
+      "class_name": "XeroSyncLog",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "xero_sync_log",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6BD120>",
+            "primary_key": true
+          },
+          {
+            "name": "ts",
+            "type": "DATETIME",
+            "nullable": false,
+            "default": "<function datetime.utcnow at 0x000002584F6BD1C0>",
+            "primary_key": false
+          },
+          {
+            "name": "object_type",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "object_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "direction",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(20)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "message",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_sync_log_object",
+            "unique": false,
+            "columns": [
+              "object_type",
+              "object_id"
+            ]
+          },
+          {
+            "name": "ix_sync_log_ts",
+            "unique": false,
+            "columns": [
+              "ts"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_xero_sync_log",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "xero_tokens": {
+      "class_name": "XeroToken",
+      "module": "app.adapters.db.models",
+      "table_info": {
+        "table_name": "xero_tokens",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6BC180>",
+            "primary_key": true
+          },
+          {
+            "name": "access_token",
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "refresh_token",
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "expires_at",
+            "type": "DATETIME",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "tenant_id",
+            "type": "VARCHAR(100)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6BC220>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6BC2C0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_xero_tokens",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "assemblies": {
+      "class_name": "Assembly",
+      "module": "app.adapters.db.models_assemblies_shopify",
+      "table_info": {
+        "table_name": "assemblies",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6BF380>",
+            "primary_key": true
+          },
+          {
+            "name": "parent_product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "child_product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "ratio",
+            "type": "NUMERIC(18, 6)",
+            "nullable": false,
+            "default": "1",
+            "primary_key": false
+          },
+          {
+            "name": "direction",
+            "type": "VARCHAR(32)",
+            "nullable": false,
+            "default": "MAKE_FROM_CHILDREN",
+            "primary_key": false
+          },
+          {
+            "name": "loss_factor",
+            "type": "NUMERIC(6, 4)",
+            "nullable": false,
+            "default": "0",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_assemblies__parent_product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "parent_product_id"
+            ]
+          },
+          {
+            "name": "pk_assemblies",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "fk_assemblies__child_product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "child_product_id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "parent_product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "child_product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "inventory_reservations": {
+      "class_name": "InventoryReservation",
+      "module": "app.adapters.db.models_assemblies_shopify",
+      "table_info": {
+        "table_name": "inventory_reservations",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6E1800>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "qty_canonical",
+            "type": "NUMERIC(18, 6)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "source",
+            "type": "VARCHAR(16)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "reference_id",
+            "type": "VARCHAR(128)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(16)",
+            "nullable": false,
+            "default": "ACTIVE",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": false,
+            "default": "<function datetime.utcnow at 0x000002584F6E19E0>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": false,
+            "default": "<function datetime.utcnow at 0x000002584F6E1A80>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_inventory_reservations__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_inventory_reservations",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "product_channel_links": {
+      "class_name": "ProductChannelLink",
+      "module": "app.adapters.db.models_assemblies_shopify",
+      "table_info": {
+        "table_name": "product_channel_links",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6E0720>",
+            "primary_key": true
+          },
+          {
+            "name": "product_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "channel",
+            "type": "VARCHAR(32)",
+            "nullable": false,
+            "default": "shopify",
+            "primary_key": false
+          },
+          {
+            "name": "shopify_product_id",
+            "type": "VARCHAR(64)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "shopify_variant_id",
+            "type": "VARCHAR(64)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "shopify_location_id",
+            "type": "VARCHAR(64)",
+            "nullable": true,
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "uq_product_channel",
+            "type": "UniqueConstraint",
+            "columns": [
+              "product_id",
+              "channel"
+            ]
+          },
+          {
+            "name": "fk_product_channel_links__product_id__products",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "product_id"
+            ]
+          },
+          {
+            "name": "pk_product_channel_links",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "product",
+            "target": "Product",
+            "target_table": "products",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    },
+    "condition_types": {
+      "class_name": "ConditionType",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "condition_types",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F73E3E0>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(1)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "extended_desc",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F73E5C0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_condition_type_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_condition_types_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_condition_types",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "datasets": {
+      "class_name": "Dataset",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "datasets",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F73F420>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(3)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F73F600>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_dataset_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_datasets_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_datasets",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "formula_classes": {
+      "class_name": "FormulaClass",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "formula_classes",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F73C220>",
+            "primary_key": true
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "ytd_amounts",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F73C400>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_formula_class_name",
+            "unique": false,
+            "columns": [
+              "name"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_formula_classes",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          },
+          {
+            "name": "uq_formula_classes__name",
+            "type": "UniqueConstraint",
+            "columns": [
+              "name"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "manufacturing_config": {
+      "class_name": "ManufacturingConfig",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "manufacturing_config",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F7684A0>",
+            "primary_key": true
+          },
+          {
+            "name": "qtyf",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "bchno_width",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "bch_offset",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "company_name",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "site_code",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max1",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max2",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max3",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max4",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max5",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max6",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max7",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max8",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "max9",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags1",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags2",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags3",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags4",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags5",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags6",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags7",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "flags8",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep1",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep2",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep3",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep4",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep5",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "rep6",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "print_hi1",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "db_month_raw",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "cr_month_raw",
+            "type": "VARCHAR(10)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "cans_idx",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "label_idx",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "labour_idx",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F768540>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F7685E0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_manufacturing_config",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "markups": {
+      "class_name": "Markup",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "markups",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F73D300>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "enabled_flag",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F73D4E0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_markups_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_markup_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_markups",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "raw_materials": {
+      "class_name": "RawMaterial",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "raw_materials",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6E3CE0>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "desc1",
+            "type": "VARCHAR(25)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "desc2",
+            "type": "VARCHAR(25)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "search_key",
+            "type": "VARCHAR(5)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "search_ext",
+            "type": "VARCHAR(8)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sg",
+            "type": "NUMERIC(10, 6)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "vol_solid",
+            "type": "NUMERIC(10, 6)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "solid_sg",
+            "type": "NUMERIC(10, 6)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "wt_solid",
+            "type": "NUMERIC(10, 6)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purqty",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purchase_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "purchase_unit",
+            "type": "VARCHAR(2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "deal_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sup_unit",
+            "type": "VARCHAR(2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "sup_qty",
+            "type": "NUMERIC(10, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "usage_cost",
+            "type": "NUMERIC(10, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "usage_unit",
+            "type": "VARCHAR(2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "group_id",
+            "type": "VARCHAR(36)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "active_flag",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "soh",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "opening_soh",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "soh_value",
+            "type": "NUMERIC(12, 2)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "so_on_order",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "so_in_process",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "restock_level",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "used_ytd",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "hazard",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "condition",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "msds_flag",
+            "type": "VARCHAR(1)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "altno1",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "altno2",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "altno3",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "altno4",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "altno5",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_movement_date",
+            "type": "VARCHAR(8)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "last_purchase_date",
+            "type": "VARCHAR(8)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "VARCHAR(25)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "ean13",
+            "type": "NUMERIC(18, 4)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "xero_account",
+            "type": "VARCHAR(50)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6E3EC0>",
+            "primary_key": false
+          },
+          {
+            "name": "updated_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6E3F60>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_raw_material_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_raw_material_active",
+            "unique": false,
+            "columns": [
+              "active_flag"
+            ]
+          },
+          {
+            "name": "ix_raw_materials_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_raw_material_desc1",
+            "unique": false,
+            "columns": [
+              "desc1"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_raw_materials__group_id__raw_material_groups",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "group_id"
+            ]
+          },
+          {
+            "name": "pk_raw_materials",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "group",
+            "target": "RawMaterialGroup",
+            "target_table": "raw_material_groups",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "suppliers",
+            "target": "RawMaterialSupplier",
+            "target_table": "raw_material_suppliers",
+            "direction": "RelationshipDirection.ONETOMANY",
+            "uselist": true
+          }
+        ]
+      }
+    },
+    "raw_material_groups": {
+      "class_name": "RawMaterialGroup",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "raw_material_groups",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F6E2CA0>",
+            "primary_key": true
+          },
+          {
+            "name": "code",
+            "type": "VARCHAR(10)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(100)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "is_active",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "True",
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F6E2E80>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_rm_group_code",
+            "unique": false,
+            "columns": [
+              "code"
+            ]
+          },
+          {
+            "name": "ix_raw_material_groups_code",
+            "unique": true,
+            "columns": [
+              "code"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "pk_raw_material_groups",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    },
+    "raw_material_suppliers": {
+      "class_name": "RawMaterialSupplier",
+      "module": "app.adapters.db.qb_models",
+      "table_info": {
+        "table_name": "raw_material_suppliers",
+        "columns": [
+          {
+            "name": "id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "default": "<function uuid_column.<locals>.<lambda> at 0x000002584F712980>",
+            "primary_key": true
+          },
+          {
+            "name": "raw_material_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "supplier_id",
+            "type": "VARCHAR(36)",
+            "nullable": false,
+            "primary_key": false
+          },
+          {
+            "name": "is_primary",
+            "type": "BOOLEAN",
+            "nullable": true,
+            "default": "False",
+            "primary_key": false
+          },
+          {
+            "name": "min_qty",
+            "type": "NUMERIC(12, 3)",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "lead_time_days",
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false
+          },
+          {
+            "name": "created_at",
+            "type": "DATETIME",
+            "nullable": true,
+            "default": "<function datetime.utcnow at 0x000002584F712DE0>",
+            "primary_key": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_rm_supplier_supplier",
+            "unique": false,
+            "columns": [
+              "supplier_id"
+            ]
+          },
+          {
+            "name": "ix_rm_supplier_material",
+            "unique": false,
+            "columns": [
+              "raw_material_id"
+            ]
+          }
+        ],
+        "foreign_keys": [],
+        "constraints": [
+          {
+            "name": "fk_raw_material_suppliers__raw_material_id__raw_materials",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "raw_material_id"
+            ]
+          },
+          {
+            "name": "fk_raw_material_suppliers__supplier_id__suppliers",
+            "type": "ForeignKeyConstraint",
+            "columns": [
+              "supplier_id"
+            ]
+          },
+          {
+            "name": "uq_rm_supplier",
+            "type": "UniqueConstraint",
+            "columns": [
+              "raw_material_id",
+              "supplier_id"
+            ]
+          },
+          {
+            "name": "pk_raw_material_suppliers",
+            "type": "PrimaryKeyConstraint",
+            "columns": [
+              "id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "name": "raw_material",
+            "target": "RawMaterial",
+            "target_table": "raw_materials",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          },
+          {
+            "name": "supplier",
+            "target": "Supplier",
+            "target_table": "suppliers",
+            "direction": "RelationshipDirection.MANYTOONE",
+            "uselist": false
+          }
+        ]
+      }
+    }
+  }
+}

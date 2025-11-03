@@ -1,0 +1,829 @@
+{
+  "metadata": {
+    "analysis_date": "2025-11-03T20:55:33.055874",
+    "database_tables": 47,
+    "code_tables": 45
+  },
+  "tables_in_db_not_in_code": [
+    "assembly_cost_dependencies",
+    "assembly_lines",
+    "product_migration_map",
+    "quality_test_definitions",
+    "revaluations"
+  ],
+  "tables_in_code_not_in_db": [
+    "finished_goods",
+    "raw_materials",
+    "units"
+  ],
+  "table_differences": {
+    "assemblies": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "effective_from",
+          "type": "DATETIME",
+          "notnull": false
+        },
+        {
+          "name": "notes",
+          "type": "VARCHAR(255)",
+          "notnull": false
+        },
+        {
+          "name": "yield_factor",
+          "type": "NUMERIC(6, 4)",
+          "notnull": false
+        },
+        {
+          "name": "is_primary",
+          "type": "BOOLEAN",
+          "notnull": true
+        },
+        {
+          "name": "effective_to",
+          "type": "DATETIME",
+          "notnull": false
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notnull": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "notnull": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "notnull": false
+        },
+        {
+          "name": "assembly_code",
+          "type": "VARCHAR(50)",
+          "notnull": true
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "notnull": false
+        },
+        {
+          "name": "assembly_name",
+          "type": "VARCHAR(200)",
+          "notnull": true
+        }
+      ],
+      "columns_in_code_not_in_db": [
+        {
+          "name": "loss_factor",
+          "type": "NUMERIC(6, 4)"
+        },
+        {
+          "name": "ratio",
+          "type": "NUMERIC(18, 6)"
+        },
+        {
+          "name": "child_product_id",
+          "type": "VARCHAR(36)"
+        },
+        {
+          "name": "direction",
+          "type": "VARCHAR(32)"
+        }
+      ],
+      "column_differences": {}
+    },
+    "formula_lines": {
+      "columns_in_db_not_in_code": [],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {
+        "product_id": [
+          {
+            "field": "nullable",
+            "database": true,
+            "code": false
+          }
+        ]
+      }
+    },
+    "formulas": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "archived_at",
+          "type": "DATETIME",
+          "notnull": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "instructions",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "is_archived",
+          "type": "BOOLEAN",
+          "notnull": true
+        }
+      ],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {}
+    },
+    "inventory_lots": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "current_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false
+        },
+        {
+          "name": "original_unit_cost",
+          "type": "NUMERIC(10, 2)",
+          "notnull": false
+        }
+      ],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {}
+    },
+    "inventory_movements": {
+      "columns_in_db_not_in_code": [],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {
+        "product_id": [
+          {
+            "field": "nullable",
+            "database": true,
+            "code": false
+          }
+        ]
+      }
+    },
+    "inventory_txns": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "estimate_flag",
+          "type": "BOOLEAN",
+          "notnull": false
+        },
+        {
+          "name": "cost_source",
+          "type": "VARCHAR(20)",
+          "notnull": false
+        },
+        {
+          "name": "estimate_reason",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "extended_cost",
+          "type": "NUMERIC(12, 2)",
+          "notnull": false
+        }
+      ],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {}
+    },
+    "products": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "wholesale_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "altno5",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "distributor_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "raw_material_search_ext",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "raw_material_group_id",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "distributor_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "contract_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "wholesale_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "counter_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "used_ytd",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "estimated_by",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "formula_revision",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "purchase_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "is_sell",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "last_purchase_date",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "distributor_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "wholesale_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "wt_solid",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "ean13_raw",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "trade_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "is_archived",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "raw_material_code",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "retail_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "retail_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "counter_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "counter_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "restock_level",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "vol_solid",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "industrial_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "usage_tax_included",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "estimated_at",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "usage_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "altno3",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "last_movement_date",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "archived_at",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "trade_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "msds_flag",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "hazard",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "standard_cost",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "usage_unit",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "xero_account",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "estimated_cost",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "altno4",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "purchase_tax_included",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "usage_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "manufactured_cost_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "industrial_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "is_assemble",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "is_tracked",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "purchase_tax_included_bool",
+          "type": "",
+          "notnull": false
+        },
+        {
+          "name": "formula_id",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "manufactured_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "manufactured_tax_included",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "purchase_cost_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "contract_price_ex_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "contract_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "raw_material_search_key",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "sellable",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "specific_gravity",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "usage_cost",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "trade_excise",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "purchase_unit_id",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "altno2",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "purchase_volume",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "altno1",
+          "type": "INT",
+          "notnull": false
+        },
+        {
+          "name": "industrial_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "estimate_reason",
+          "type": "TEXT",
+          "notnull": false
+        },
+        {
+          "name": "is_purchase",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "retail_price_inc_gst",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "solid_sg",
+          "type": "NUM",
+          "notnull": false
+        },
+        {
+          "name": "condition",
+          "type": "TEXT",
+          "notnull": false
+        }
+      ],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {
+        "wholesalecde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "abv_percent": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "NUMERIC(5, 2)"
+          }
+        ],
+        "created_at": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "DATETIME"
+          }
+        ],
+        "contractcde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "is_active": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "BOOLEAN"
+          }
+        ],
+        "supplier_id": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(36)"
+          }
+        ],
+        "disccdetwo": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "updated_at": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "DATETIME"
+          }
+        ],
+        "salestaxcde": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "xero_item_id": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(100)"
+          }
+        ],
+        "density_kg_per_l": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "NUMERIC(10, 6)"
+          }
+        ],
+        "taxinc": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "retailcde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "ean13": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(20)"
+          }
+        ],
+        "industrialcde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "distributorcde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "tradecde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "manu": [
+          {
+            "field": "type",
+            "database": "INT",
+            "code": "INTEGER"
+          }
+        ],
+        "name": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(200)"
+          },
+          {
+            "field": "nullable",
+            "database": true,
+            "code": false
+          }
+        ],
+        "pack": [
+          {
+            "field": "type",
+            "database": "INT",
+            "code": "INTEGER"
+          }
+        ],
+        "wholesalecost": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "NUMERIC(10, 2)"
+          }
+        ],
+        "id": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(36)"
+          },
+          {
+            "field": "nullable",
+            "database": true,
+            "code": false
+          },
+          {
+            "field": "primary_key",
+            "database": false,
+            "code": true
+          }
+        ],
+        "last_sync": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "DATETIME"
+          }
+        ],
+        "dgflag": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "disccdeone": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "size": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(10)"
+          }
+        ],
+        "sku": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(50)"
+          },
+          {
+            "field": "nullable",
+            "database": true,
+            "code": false
+          }
+        ],
+        "countercde": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "VARCHAR(1)"
+          }
+        ],
+        "form": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(10)"
+          }
+        ],
+        "label": [
+          {
+            "field": "type",
+            "database": "INT",
+            "code": "INTEGER"
+          }
+        ],
+        "pkge": [
+          {
+            "field": "type",
+            "database": "INT",
+            "code": "INTEGER"
+          }
+        ],
+        "purtax": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "NUMERIC(10, 2)"
+          }
+        ],
+        "base_unit": [
+          {
+            "field": "type",
+            "database": "TEXT",
+            "code": "VARCHAR(10)"
+          }
+        ],
+        "purcost": [
+          {
+            "field": "type",
+            "database": "NUM",
+            "code": "NUMERIC(10, 2)"
+          }
+        ]
+      }
+    },
+    "qc_results": {
+      "columns_in_db_not_in_code": [
+        {
+          "name": "test_definition_id",
+          "type": "VARCHAR(36)",
+          "notnull": false
+        }
+      ],
+      "columns_in_code_not_in_db": [],
+      "column_differences": {}
+    }
+  }
+}

@@ -1,0 +1,327 @@
+{
+  "metadata": {
+    "analysis_date": "2025-11-03T20:57:19.472892",
+    "database_path": "tpmanuf.db",
+    "migrations_dir": "db\\alembic\\versions"
+  },
+  "applied_versions": [
+    "79b57e831916",
+    "0afdf02085a6",
+    "67a21e84ab61"
+  ],
+  "available_migrations": 30,
+  "migration_files": {
+    "4dc19ba2cc10": {
+      "file": "0001_initial.py",
+      "description": "Initial migration with all tables\n\nRevision ID: 4dc19ba2cc10\nRevises: 659ee0e68777\nCreate Date: 2025-10-26 11:05:06.934564",
+      "down_revision": "659ee0e68777",
+      "create_date": "2025-10-26 11:05:06.934564",
+      "is_applied": false
+    },
+    "01ad7dcb5179": {
+      "file": "01ad7dcb5179_add_finished_goods_and_movements.py",
+      "description": "add_finished_goods_and_movements\n\nRevision ID: 01ad7dcb5179\nRevises: 7c82aa02b929\nCreate Date: 2025-10-26 17:29:52.266811",
+      "down_revision": "7c82aa02b929",
+      "create_date": "2025-10-26 17:29:52.266811",
+      "is_applied": false
+    },
+    "0afdf02085a6": {
+      "file": "0afdf02085a6_add_quality_test_definitions_and_extend_.py",
+      "description": "add_quality_test_definitions_and_extend_workorders\n\nRevision ID: 0afdf02085a6\nRevises: 4c76f70220c2\nCreate Date: 2025-11-02 20:31:25.535835",
+      "down_revision": "4c76f70220c2",
+      "create_date": "2025-11-02 20:31:25.535835",
+      "is_applied": true
+    },
+    "1647ea8a022a": {
+      "file": "1647ea8a022a_add_xero_id_to_suppliers.py",
+      "description": "add_xero_id_to_suppliers\n\nRevision ID: 1647ea8a022a\nRevises: 7fe22ea20cea\nCreate Date: 2025-10-26 20:40:04.167615",
+      "down_revision": "7fe22ea20cea",
+      "create_date": "2025-10-26 20:40:04.167615",
+      "is_applied": false
+    },
+    "262c7cd34fdd": {
+      "file": "262c7cd34fdd_add_batch_yield_fields.py",
+      "description": "add_batch_yield_fields\n\nRevision ID: 262c7cd34fdd\nRevises: 96ed8d252874\nCreate Date: 2025-10-26 23:14:10.503294",
+      "down_revision": "96ed8d252874",
+      "create_date": "2025-10-26 23:14:10.503294",
+      "is_applied": false
+    },
+    "2b0eead645b5": {
+      "file": "2b0eead645b5_add_costing_fields_and_tables.py",
+      "description": "add_costing_fields_and_tables\n\nRevision ID: 2b0eead645b5\nRevises: add_archiving_fields\nCreate Date: 2025-11-02 09:47:15.346830",
+      "down_revision": "add_archiving_fields",
+      "create_date": "2025-11-02 09:47:15.346830",
+      "is_applied": false
+    },
+    "421ee5dcec13": {
+      "file": "421ee5dcec13_add_notes_to_formulas.py",
+      "description": "add_notes_to_formulas\n\nRevision ID: 421ee5dcec13\nRevises: d3b114a15ca4\nCreate Date: 2025-11-02 08:59:38.388364",
+      "down_revision": "d3b114a15ca4",
+      "create_date": "2025-11-02 08:59:38.388364",
+      "is_applied": false
+    },
+    "4c76f70220c2": {
+      "file": "4c76f70220c2_add_product_type_flags_and_manufactured_.py",
+      "description": "add_product_type_flags_and_manufactured_cost_fields\n\nRevision ID: 4c76f70220c2\nRevises: a527ff0cfbcd\nCreate Date: 2025-11-02 18:50:16.692994",
+      "down_revision": "a527ff0cfbcd",
+      "create_date": "2025-11-02 18:50:16.692994",
+      "is_applied": false
+    },
+    "4e5525d232e0": {
+      "file": "4e5525d232e0_add_raw_material_suppliers_junction_.py",
+      "description": "add_raw_material_suppliers_junction_table\n\nRevision ID: 4e5525d232e0\nRevises: adb7b8daaa40\nCreate Date: 2025-10-26 21:35:16.392621",
+      "down_revision": "adb7b8daaa40",
+      "create_date": "2025-10-26 21:35:16.392621",
+      "is_applied": false
+    },
+    "5809474d8078": {
+      "file": "5809474d8078_add_unified_contacts_table.py",
+      "description": "add_unified_contacts_table\n\nRevision ID: 5809474d8078\nRevises: 94253da44e13\nCreate Date: 2025-11-01 08:22:22.274514",
+      "down_revision": "94253da44e13",
+      "create_date": "2025-11-01 08:22:22.274514",
+      "is_applied": false
+    },
+    "59998e0da549": {
+      "file": "59998e0da549_rename_ingredient_product_id_to_raw_.py",
+      "description": "rename_ingredient_product_id_to_raw_material_id_in_formula_lines\n\nRevision ID: 59998e0da549\nRevises: 4e5525d232e0\nCreate Date: 2025-10-26 21:44:43.704899",
+      "down_revision": "4e5525d232e0",
+      "create_date": "2025-10-26 21:44:43.704899",
+      "is_applied": false
+    },
+    "659ee0e68777": {
+      "file": "659ee0e68777_initial_migration_with_all_tables.py",
+      "description": "Initial migration with all tables\n\nRevision ID: 659ee0e68777\nRevises:\nCreate Date: 2025-10-26 10:40:02.304767",
+      "down_revision": null,
+      "create_date": "2025-10-26 10:40:02.304767",
+      "is_applied": false
+    },
+    "67a21e84ab61": {
+      "file": "67a21e84ab61_restructure_assemblies_to_header_lines.py",
+      "description": "restructure_assemblies_to_header_lines\n\nRevision ID: 67a21e84ab61\nRevises: 0afdf02085a6\nCreate Date: 2025-11-02 21:05:34.249982",
+      "down_revision": "0afdf02085a6",
+      "create_date": "2025-11-02 21:05:34.249982",
+      "is_applied": true
+    },
+    "74980f3155d7": {
+      "file": "74980f3155d7_extend_product_with_all_fields.py",
+      "description": "extend_product_with_all_fields\n\nRevision ID: 74980f3155d7\nRevises: 01ad7dcb5179\nCreate Date: 2025-10-26 17:31:24.946929",
+      "down_revision": "01ad7dcb5179",
+      "create_date": "2025-10-26 17:31:24.946929",
+      "is_applied": false
+    },
+    "788e64e924f6": {
+      "file": "788e64e924f6_change_price_columns_to_numeric.py",
+      "description": "change_price_columns_to_numeric\n\nRevision ID: 788e64e924f6\nRevises: 2b0eead645b5\nCreate Date: 2025-11-02 14:48:29.735987",
+      "down_revision": "2b0eead645b5",
+      "create_date": "2025-11-02 14:48:29.735987",
+      "is_applied": false
+    },
+    "79b57e831916": {
+      "file": "79b57e831916_update_product_capabilities_and_add_.py",
+      "description": "update_product_capabilities_and_add_missing_fields\n\nRevision ID: 79b57e831916\nRevises: 4c76f70220c2\nCreate Date: 2025-11-03 03:08:01.634098",
+      "down_revision": "4c76f70220c2",
+      "create_date": "2025-11-03 03:08:01.634098",
+      "is_applied": true
+    },
+    "7b36008a8a95": {
+      "file": "7b36008a8a95_merge_excise_and_product_updates.py",
+      "description": "merge_excise_and_product_updates\n\nRevision ID: 7b36008a8a95\nRevises: 67a21e84ab61, 79b57e831916\nCreate Date: 2025-11-03 16:25:09.709287",
+      "down_revision": null,
+      "create_date": "2025-11-03 16:25:09.709287",
+      "is_applied": false
+    },
+    "7c82aa02b929": {
+      "file": "7c82aa02b929_add_legacy_acstk_data_table.py",
+      "description": "add_legacy_acstk_data_table\n\nRevision ID: 7c82aa02b929\nRevises: 4dc19ba2cc10\nCreate Date: 2025-10-26 17:17:06.263947",
+      "down_revision": "4dc19ba2cc10",
+      "create_date": "2025-10-26 17:17:06.263947",
+      "is_applied": false
+    },
+    "7fe22ea20cea": {
+      "file": "7fe22ea20cea_add_xero_account_field_to_raw_materials.py",
+      "description": "Add xero_account field to raw_materials\n\nRevision ID: 7fe22ea20cea\nRevises: b7a47f197d45\nCreate Date: 2025-10-26 20:34:27.057517",
+      "down_revision": "b7a47f197d45",
+      "create_date": "2025-10-26 20:34:27.057517",
+      "is_applied": false
+    },
+    "93795fe8208b": {
+      "file": "93795fe8208b_add_units_and_purchase_fields.py",
+      "description": "add_units_and_purchase_fields\n\nRevision ID: 93795fe8208b\nRevises: 5809474d8078\nCreate Date: 2025-11-01 08:49:32.028234",
+      "down_revision": "5809474d8078",
+      "create_date": "2025-11-01 08:49:32.028234",
+      "is_applied": false
+    },
+    "94253da44e13": {
+      "file": "94253da44e13_remove_legacy_columns.py",
+      "description": "remove_legacy_columns\n\nRevision ID: 94253da44e13\nRevises: e4a5484fc3f6\nCreate Date: 2025-10-31 12:00:00.000000",
+      "down_revision": "e4a5484fc3f6",
+      "create_date": "2025-10-31 12:00:00.000000",
+      "is_applied": false
+    },
+    "9472b39d71be": {
+      "file": "9472b39d71be_unified_products_migration.py",
+      "description": "unified_products_migration\n\nRevision ID: 9472b39d71be\nRevises: 262c7cd34fdd\nCreate Date: 2025-10-31 11:00:15.079313",
+      "down_revision": "262c7cd34fdd",
+      "create_date": "2025-10-31 11:00:15.079313",
+      "is_applied": false
+    },
+    "96ed8d252874": {
+      "file": "96ed8d252874_merge_assemblies_and_formula_lines_.py",
+      "description": "merge assemblies and formula lines branches\n\nRevision ID: 96ed8d252874\nRevises: rev_assemblies_shopify, 9f6478e8a1dd\nCreate Date: 2025-10-26 23:09:24.235368",
+      "down_revision": null,
+      "create_date": "2025-10-26 23:09:24.235368",
+      "is_applied": false
+    },
+    "9f6478e8a1dd": {
+      "file": "9f6478e8a1dd_add_unit_field_to_formula_lines.py",
+      "description": "add_unit_field_to_formula_lines\n\nRevision ID: 9f6478e8a1dd\nRevises: 59998e0da549\nCreate Date: 2025-10-26 21:47:53.807174",
+      "down_revision": "59998e0da549",
+      "create_date": "2025-10-26 21:47:53.807174",
+      "is_applied": false
+    },
+    "a527ff0cfbcd": {
+      "file": "a527ff0cfbcd_add_usage_cost_and_tax_included_fields.py",
+      "description": "add_usage_cost_and_tax_included_fields\n\nRevision ID: a527ff0cfbcd\nRevises: bf78b64511f2\nCreate Date: 2025-11-02 16:39:13.787079",
+      "down_revision": "bf78b64511f2",
+      "create_date": "2025-11-02 16:39:13.787079",
+      "is_applied": false
+    },
+    "adb7b8daaa40": {
+      "file": "adb7b8daaa40_add_xero_tables_simple.py",
+      "description": "add_xero_tables_simple\n\nRevision ID: adb7b8daaa40\nRevises: 1647ea8a022a\nCreate Date: 2025-10-26 21:02:04.912748",
+      "down_revision": "1647ea8a022a",
+      "create_date": "2025-10-26 21:02:04.912748",
+      "is_applied": false
+    },
+    "b7a47f197d45": {
+      "file": "b7a47f197d45_add_qb_models_for_raw_materials_.py",
+      "description": "add_qb_models_for_raw_materials_formulas_batches\n\nRevision ID: b7a47f197d45\nRevises: 74980f3155d7\nCreate Date: 2025-10-26 18:01:23.986240",
+      "down_revision": "74980f3155d7",
+      "create_date": "2025-10-26 18:01:23.986240",
+      "is_applied": false
+    },
+    "bf78b64511f2": {
+      "file": "bf78b64511f2_add_excise_rates_table_and_product_.py",
+      "description": "add_excise_rates_table_and_product_pricing_fields\n\nRevision ID: bf78b64511f2\nRevises: 788e64e924f6\nCreate Date: 2025-11-02 15:09:18.021047",
+      "down_revision": "788e64e924f6",
+      "create_date": "2025-11-02 15:09:18.021047",
+      "is_applied": false
+    },
+    "d3b114a15ca4": {
+      "file": "d3b114a15ca4_add_purchase_volume_to_products.py",
+      "description": "add_purchase_volume_to_products\n\nRevision ID: d3b114a15ca4\nRevises: 93795fe8208b\nCreate Date: 2025-11-01 12:19:32.222813",
+      "down_revision": "93795fe8208b",
+      "create_date": "2025-11-01 12:19:32.222813",
+      "is_applied": false
+    },
+    "e4a5484fc3f6": {
+      "file": "e4a5484fc3f6_cleanup_legacy_tables.py",
+      "description": "cleanup_legacy_tables\n\nRevision ID: e4a5484fc3f6\nRevises: 9472b39d71be\nCreate Date: 2025-10-31 12:00:00.000000",
+      "down_revision": "9472b39d71be",
+      "create_date": "2025-10-31 12:00:00.000000",
+      "is_applied": false
+    }
+  },
+  "heads": [
+    "96ed8d252874",
+    "add_archiving_fields",
+    "7b36008a8a95",
+    "659ee0e68777"
+  ],
+  "roots": [
+    "659ee0e68777",
+    "7b36008a8a95",
+    "96ed8d252874"
+  ],
+  "issues": [
+    {
+      "type": "unapplied_migrations",
+      "count": 27,
+      "revisions": [
+        "01ad7dcb5179",
+        "1647ea8a022a",
+        "262c7cd34fdd",
+        "2b0eead645b5",
+        "421ee5dcec13",
+        "4c76f70220c2",
+        "4dc19ba2cc10",
+        "4e5525d232e0",
+        "5809474d8078",
+        "59998e0da549",
+        "659ee0e68777",
+        "74980f3155d7",
+        "788e64e924f6",
+        "7b36008a8a95",
+        "7c82aa02b929",
+        "7fe22ea20cea",
+        "93795fe8208b",
+        "94253da44e13",
+        "9472b39d71be",
+        "96ed8d252874",
+        "9f6478e8a1dd",
+        "a527ff0cfbcd",
+        "adb7b8daaa40",
+        "b7a47f197d45",
+        "bf78b64511f2",
+        "d3b114a15ca4",
+        "e4a5484fc3f6"
+      ]
+    },
+    {
+      "type": "multiple_heads",
+      "count": 4,
+      "heads": [
+        "96ed8d252874",
+        "add_archiving_fields",
+        "7b36008a8a95",
+        "659ee0e68777"
+      ],
+      "message": "Database has multiple migration heads - indicates branching or conflicts"
+    },
+    {
+      "type": "applied_not_on_head_path",
+      "revision": "79b57e831916",
+      "message": "Applied revision 79b57e831916 may not be on path to current head"
+    },
+    {
+      "type": "applied_not_on_head_path",
+      "revision": "0afdf02085a6",
+      "message": "Applied revision 0afdf02085a6 may not be on path to current head"
+    },
+    {
+      "type": "applied_not_on_head_path",
+      "revision": "67a21e84ab61",
+      "message": "Applied revision 67a21e84ab61 may not be on path to current head"
+    }
+  ],
+  "applied_paths": {
+    "79b57e831916": [
+      "add_archiving_fields",
+      "2b0eead645b5",
+      "788e64e924f6",
+      "bf78b64511f2",
+      "a527ff0cfbcd",
+      "4c76f70220c2",
+      "79b57e831916"
+    ],
+    "0afdf02085a6": [
+      "add_archiving_fields",
+      "2b0eead645b5",
+      "788e64e924f6",
+      "bf78b64511f2",
+      "a527ff0cfbcd",
+      "4c76f70220c2",
+      "0afdf02085a6"
+    ],
+    "67a21e84ab61": [
+      "add_archiving_fields",
+      "2b0eead645b5",
+      "788e64e924f6",
+      "bf78b64511f2",
+      "a527ff0cfbcd",
+      "4c76f70220c2",
+      "0afdf02085a6",
+      "67a21e84ab61"
+    ]
+  }
+}
