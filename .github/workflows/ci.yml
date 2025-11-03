@@ -28,9 +28,18 @@ jobs:
         run: |
           pip install pre-commit
 
-      - name: Run pre-commit
+      - name: Check formatting
         run: |
-          pre-commit run --all-files
+          # Check formatting without modifying files
+          ruff format --check . || (echo "::error::Code formatting issues found. Run 'ruff format .' locally to fix." && exit 1)
+          black --check . || (echo "::error::Code formatting issues found. Run 'black .' locally to fix." && exit 1)
+
+      - name: Run pre-commit (non-formatting checks)
+        run: |
+          # Run pre-commit hooks for non-formatting checks
+          pre-commit run --all-files --hook-stage manual || true
+          # Skip formatting hooks since we check them separately
+          SKIP=ruff-format,black pre-commit run --all-files
 
   # Linting and formatting
   lint:
