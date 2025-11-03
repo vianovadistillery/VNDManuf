@@ -1,9 +1,9 @@
-
 import re
 
 ESC = r"\x1b"
 CTRL = r"[\x00-\x1F\x7F]"
 CSI = rf"{ESC}\[[0-?]*[ -/]*[@-~]"
+
 
 def normalize_legacy_print(s: str) -> str:
     s = re.sub(CSI, "", s)

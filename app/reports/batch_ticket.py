@@ -1,6 +1,7 @@
 """Batch ticket text renderer for legacy format compatibility."""
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
 
 from app.services.batch_reporting import get_batch_data_for_reporting
@@ -11,7 +12,7 @@ def generate_batch_ticket_text(batch_code: str, db: Optional[Session] = None) ->
     if db is None:
         # For golden tests, return the exact hardcoded format
         return render_batch_ticket_hardcoded(batch_code)
-    
+
     # For real usage, fetch data from database
     batch_data = get_batch_data_for_reporting(batch_code, db)
     if batch_data:
@@ -23,7 +24,7 @@ def generate_batch_ticket_text(batch_code: str, db: Optional[Session] = None) ->
 
 def render_batch_ticket_hardcoded(batch_code: str) -> str:
     """Render batch ticket in legacy format (hardcoded for golden tests)."""
-    
+
     lines = [
         "         T R A D E P A I N T S          ",
         "",
@@ -86,18 +87,18 @@ def render_batch_ticket_hardcoded(batch_code: str) -> str:
         "└────────────────────┴─────────────────┴───────────────────────┴──────────────┘",
         " From Top .0500 .0400 .0350 .0300 .0200 .0150 .0100 ***** ***** ***** ******** ",
     ]
-    
+
     return "\n".join(lines)
 
 
 def render_batch_ticket_from_data(batch_data: Dict[str, Any]) -> str:
     """Render batch ticket from database data."""
-    batch = batch_data['batch']
-    product = batch_data['product']
-    formula = batch_data['formula']
-    components = batch_data['components']
-    qc_results = batch_data['qc_results']
-    
+    batch = batch_data["batch"]
+    product = batch_data["product"]
+    formula = batch_data["formula"]
+    components = batch_data["components"]
+    qc_results = batch_data["qc_results"]
+
     # Header
     lines = [
         "         T R A D E P A I N T S          ",
@@ -109,54 +110,76 @@ def render_batch_ticket_from_data(batch_data: Dict[str, Any]) -> str:
         "│ COMPONENT              │ LITRE │HAZ│ KILO  │CHECK│ INSTRUCTIONS             │",
         "└────────────────────────┴───────┴───┴───────┴─────┴──────────────────────────┘",
     ]
-    
+
     # Process steps and components
-    lines.extend([
-        "**** VACUUM MIXER TANK..#                                TANK #-->_____________",
-        "RECORD GROSS TANK WEIGHT.|       | A |      1|     |     WEIGHT.->_____________",
-        "CONTENTS BATCH NUMBER--->|       | A |      1|     |     BATCH #->_____________",
-        "",
-    ])
-    
+    lines.extend(
+        [
+            "**** VACUUM MIXER TANK..#                                TANK #-->_____________",
+            "RECORD GROSS TANK WEIGHT.|       | A |      1|     |     WEIGHT.->_____________",
+            "CONTENTS BATCH NUMBER--->|       | A |      1|     |     BATCH #->_____________",
+            "",
+        ]
+    )
+
     # Add components
     for component in components:
-        ingredient_name = component.ingredient_product.name if component.ingredient_product else "UNKNOWN"
+        ingredient_name = (
+            component.ingredient_product.name
+            if component.ingredient_product
+            else "UNKNOWN"
+        )
         quantity = component.quantity_kg
-        hazard_code = "R" if "TOLUOL" in ingredient_name else "B" if "TINUVIN" in ingredient_name else "W" if "POLYBUTENE" in ingredient_name else ""
-        
+        hazard_code = (
+            "R"
+            if "TOLUOL" in ingredient_name
+            else "B"
+            if "TINUVIN" in ingredient_name
+            else "W"
+            if "POLYBUTENE" in ingredient_name
+            else ""
+        )
+
         # Format ingredient name to fit the column width
         ingredient_display = ingredient_name[:25].ljust(25)
-        
-        lines.append(f"{ingredient_display}|       | {hazard_code:1} |{quantity:7.2f}|     |                           ")
-    
+
+        lines.append(
+            f"{ingredient_display}|       | {hazard_code:1} |{quantity:7.2f}|     |                           "
+        )
+
     # Add QC results
-    lines.extend([
-        "",
-        "CHECK BATCH..............|       |   |      1|     |     ALL PRODUCTION TESTS..",
-    ])
-    
+    lines.extend(
+        [
+            "",
+            "CHECK BATCH..............|       |   |      1|     |     ALL PRODUCTION TESTS..",
+        ]
+    )
+
     for qc in qc_results:
         test_name = qc.test_name[:25].ljust(25)
-        lines.append(f"{test_name}|       |   |      1|     |     RESULT->______________")
-    
+        lines.append(
+            f"{test_name}|       |   |      1|     |     RESULT->______________"
+        )
+
     # Footer
-    lines.extend([
-        "┌────────────────────┬─────────────────┬───────────────────────┬──────────────┐",
-        "│                    │                 │                       │Iss. 10/04/06 │",
-        "├──────────────┬─────┴─────┬───────────┼───────────┬───────────┼──────────────┤",
-        "│COLOUR =      │SHEEN =    │DRY.. =    │FILTER   0 │ S/G 0.957 │Date.         │",
-        "├────────┬─────┼─────┬─────┼─────┬─────┼─────┬─────┼─────┬─────┼─────┬────────┤",
-        "│Pack    │ 20L │ 10L │  4L │  2L │  1L │ .5L │.25L │300g │900g │Bulk │ BATCH. │",
-        f"├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤ {batch.batch_code.lstrip('B')} │",
-        "│Ordered │     │     │     │     │     │     │     │     │     │     │        │",
-        "├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼────────┤",
-        "│Actual  │     │     │     │     │     │     │     │     │     │     │ TOTAL. │",
-        "├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤        │",
-        "│Litres  │     │     │     │     │     │     │     │     │     │     │        │",
-        "└────────────────────┴─────────────────┴───────────────────────┴──────────────┘",
-        " From Top .0500 .0400 .0350 .0300 .0200 .0150 .0100 ***** ***** ***** ******** ",
-    ])
-    
+    lines.extend(
+        [
+            "┌────────────────────┬─────────────────┬───────────────────────┬──────────────┐",
+            "│                    │                 │                       │Iss. 10/04/06 │",
+            "├──────────────┬─────┴─────┬───────────┼───────────┬───────────┼──────────────┤",
+            "│COLOUR =      │SHEEN =    │DRY.. =    │FILTER   0 │ S/G 0.957 │Date.         │",
+            "├────────┬─────┼─────┬─────┼─────┬─────┼─────┬─────┼─────┬─────┼─────┬────────┤",
+            "│Pack    │ 20L │ 10L │  4L │  2L │  1L │ .5L │.25L │300g │900g │Bulk │ BATCH. │",
+            f"├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤ {batch.batch_code.lstrip('B')} │",
+            "│Ordered │     │     │     │     │     │     │     │     │     │     │        │",
+            "├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼────────┤",
+            "│Actual  │     │     │     │     │     │     │     │     │     │     │ TOTAL. │",
+            "├────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤        │",
+            "│Litres  │     │     │     │     │     │     │     │     │     │     │        │",
+            "└────────────────────┴─────────────────┴───────────────────────┴──────────────┘",
+            " From Top .0500 .0400 .0350 .0300 .0200 .0150 .0100 ***** ***** ***** ******** ",
+        ]
+    )
+
     return "\n".join(lines)
 
 

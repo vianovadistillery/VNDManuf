@@ -6,7 +6,6 @@ def layout():
         "notes": [
             "Render parent↔children ratios",
             "Provide Assemble/Disassemble buttons with qty inputs",
-            "Show recent assembly transactions"
-        ]
+            "Show recent assembly transactions",
+        ],
     }
-

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Test costing API endpoints."""
-import requests
-import time
+
 import sys
+import time
 from pathlib import Path
+
+import requests
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -13,6 +15,7 @@ from app.adapters.db import get_db
 from app.adapters.db.models import Product
 
 API_BASE = "http://127.0.0.1:8000/api/v1"
+
 
 def test_api_connection():
     """Test if API server is running."""
@@ -33,18 +36,21 @@ def test_api_connection():
             return False
     except requests.exceptions.ConnectionError:
         print("[FAIL] API server not running. Start with:")
-        print("  python -m uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000")
+        print(
+            "  python -m uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000"
+        )
         return False
     except Exception as e:
         print(f"[FAIL] Error connecting to API: {e}")
         return False
+
 
 def test_costing_inspect():
     """Test COGS inspection endpoint."""
     print("\n" + "=" * 60)
     print("Testing COGS Inspection Endpoint")
     print("=" * 60)
-    
+
     # Get a product from DB
     db_gen = get_db()
     db = next(db_gen)
@@ -53,36 +59,40 @@ def test_costing_inspect():
         if not product:
             print("[FAIL] No active products found in database")
             return False
-        
+
         print(f"\nTesting with product: {product.sku} ({product.name})")
         print(f"Product ID: {product.id}")
-        
+
         # Test inspect endpoint
         url = f"{API_BASE}/costing/inspect/{product.id}"
         print(f"\nGET {url}")
-        
+
         response = requests.get(url, params={"include_estimates": True}, timeout=10)
-        
+
         if response.status_code == 200:
             data = response.json()
             breakdown = data.get("cogs_breakdown", {})
-            
+
             print(f"[OK] Status: {response.status_code}")
             print(f"[OK] SKU: {breakdown.get('sku', 'N/A')}")
             print(f"[OK] Name: {breakdown.get('name', 'N/A')}")
             print(f"[OK] Unit Cost: ${breakdown.get('unit_cost', 0):.2f}")
             print(f"[OK] Cost Source: {breakdown.get('cost_source', 'unknown')}")
             print(f"[OK] Has Estimate: {breakdown.get('has_estimate', False)}")
-            
-            if breakdown.get('has_estimate'):
-                print(f"  [WARN] Estimate Reason: {breakdown.get('estimate_reason', 'N/A')}")
-            
-            children = breakdown.get('children', [])
+
+            if breakdown.get("has_estimate"):
+                print(
+                    f"  [WARN] Estimate Reason: {breakdown.get('estimate_reason', 'N/A')}"
+                )
+
+            children = breakdown.get("children", [])
             if children:
                 print(f"\n[OK] Found {len(children)} child components")
                 for i, child in enumerate(children[:3]):  # Show first 3
-                    print(f"  {i+1}. {child.get('sku')} - ${child.get('unit_cost', 0):.2f}")
-            
+                    print(
+                        f"  {i + 1}. {child.get('sku')} - ${child.get('unit_cost', 0):.2f}"
+                    )
+
             return True
         elif response.status_code == 404:
             print(f"[FAIL] Product not found (Status: {response.status_code})")
@@ -97,16 +107,17 @@ def test_costing_inspect():
             except:
                 print(f"  Response: {response.text[:200]}")
             return False
-            
+
     finally:
         db.close()
+
 
 def test_costing_current():
     """Test current cost endpoint."""
     print("\n" + "=" * 60)
     print("Testing Current Cost Endpoint")
     print("=" * 60)
-    
+
     db_gen = get_db()
     db = next(db_gen)
     try:
@@ -114,12 +125,12 @@ def test_costing_current():
         if not product:
             print("[FAIL] No active products found")
             return False
-        
+
         url = f"{API_BASE}/costing/current/{product.id}"
         print(f"\nGET {url}")
-        
+
         response = requests.get(url, timeout=10)
-        
+
         if response.status_code == 200:
             data = response.json()
             print(f"[OK] Status: {response.status_code}")
@@ -132,28 +143,29 @@ def test_costing_current():
     finally:
         db.close()
 
+
 def main():
     print("=" * 60)
     print("Costing API Test Suite")
     print("=" * 60)
-    
+
     # Wait a moment for server to be ready
     print("\nWaiting for API server...")
     time.sleep(2)
-    
+
     if not test_api_connection():
         sys.exit(1)
-    
+
     if not test_costing_inspect():
         print("\n[WARN] COGS inspection test failed, but API is running")
-    
+
     if not test_costing_current():
         print("\n[WARN] Current cost test failed")
-    
+
     print("\n" + "=" * 60)
     print("Test Suite Complete")
     print("=" * 60)
 
+
 if __name__ == "__main__":
     main()
-

@@ -1,17 +1,36 @@
-
 """Main FastAPI application with logging, settings, and error handling."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.settings import settings
+from app.api import (
+    assemblies,
+    batches,
+    contacts,
+    excise_rates,
+    formulas,
+    invoices,
+    packing,
+    pricing,
+    products,
+    raw_materials,
+    reports,
+    shopify,
+    suppliers,
+    units,
+)
+from app.error_handlers import (
+    BusinessRuleViolation,
+    business_exception_handler,
+    register_error_handlers,
+)
 from app.logging_config import RequestIDMiddleware, logger
-from app.error_handlers import register_error_handlers, business_exception_handler, BusinessRuleViolation
-from app.api import products, pricing, packing, invoices, batches, raw_materials, formulas, reports, suppliers, assemblies, shopify, contacts, units, excise_rates
+from app.settings import settings
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
-    
+
     # Create FastAPI app
     app = FastAPI(
         title=settings.app_name,
@@ -21,10 +40,10 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.api.debug else None,
         redoc_url="/redoc" if settings.api.debug else None,
     )
-    
+
     # Add middleware
     app.add_middleware(RequestIDMiddleware)
-    
+
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
@@ -33,11 +52,11 @@ def create_app() -> FastAPI:
         allow_methods=settings.api.cors_methods,
         allow_headers=settings.api.cors_headers,
     )
-    
+
     # Register error handlers
     register_error_handlers(app)
     app.add_exception_handler(BusinessRuleViolation, business_exception_handler)
-    
+
     # Include routers
     app.include_router(products.router, prefix="/api/v1")
     app.include_router(pricing.router, prefix="/api/v1")
@@ -53,7 +72,7 @@ def create_app() -> FastAPI:
     app.include_router(shopify.router, prefix="/api/v1")
     app.include_router(units.router, prefix="/api/v1")
     app.include_router(excise_rates.router, prefix="/api/v1")
-    
+
     # Health check endpoint
     @app.get("/health")
     def health():
@@ -61,9 +80,9 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "version": settings.app_version,
-            "environment": settings.environment
+            "environment": settings.environment,
         }
-    
+
     # Root endpoint
     @app.get("/")
     def root():
@@ -73,17 +92,19 @@ def create_app() -> FastAPI:
             "version": settings.app_version,
             "environment": settings.environment,
             "docs": "/docs" if settings.api.debug else "disabled",
-            "health": "/health"
+            "health": "/health",
         }
-    
+
     # Log application startup
     logger.info(
         f"Starting {settings.app_name} v{settings.app_version}",
         environment=settings.environment,
         debug_mode=settings.api.debug,
-        database_url=settings.database.database_url.split("://")[0]  # Log only protocol, not credentials
+        database_url=settings.database.database_url.split("://")[
+            0
+        ],  # Log only protocol, not credentials
     )
-    
+
     return app
 
 

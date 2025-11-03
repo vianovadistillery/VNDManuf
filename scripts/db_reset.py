@@ -9,20 +9,20 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.adapters.db.session import drop_tables, create_tables, engine
+from app.adapters.db.session import create_tables, drop_tables
 from app.settings import settings
 
 
 def reset_database():
     """Drop and recreate all database tables."""
     print("Resetting development database...")
-    
+
     # Check if we're in development mode
     if not settings.debug:
         print("ERROR: This script should only be run in development mode!")
         print("Set debug=True in settings or use a development database URL.")
         sys.exit(1)
-    
+
     # Check if we're using SQLite (safer for development)
     if not settings.database_url.startswith("sqlite"):
         print("WARNING: You are about to reset a non-SQLite database!")
@@ -31,19 +31,19 @@ def reset_database():
         if response.lower() != "yes":
             print("Operation cancelled.")
             sys.exit(0)
-    
+
     try:
         # Drop all tables
         print("Dropping all tables...")
         drop_tables()
-        
+
         # Create all tables
         print("Creating all tables...")
         create_tables()
-        
+
         print("[SUCCESS] Database reset completed successfully!")
         print(f"Database URL: {settings.database_url}")
-        
+
     except Exception as e:
         print(f"[ERROR] Error resetting database: {e}")
         sys.exit(1)
@@ -54,7 +54,7 @@ def show_status():
     print("Database Status:")
     print(f"URL: {settings.database_url}")
     print(f"Debug mode: {settings.debug}")
-    
+
     # Check if database file exists (for SQLite)
     if settings.database_url.startswith("sqlite"):
         db_path = settings.database_url.replace("sqlite:///", "")

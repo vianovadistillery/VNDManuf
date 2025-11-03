@@ -2,21 +2,20 @@
 """Raw Materials API router."""
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, or_
 
 from app.adapters.db import get_db
-from app.adapters.db.qb_models import RawMaterial, RawMaterialGroup, RawMaterialSupplier
 from app.adapters.db.models import Supplier
+from app.adapters.db.qb_models import RawMaterial, RawMaterialGroup, RawMaterialSupplier
 from app.api.dto import (
     RawMaterialCreate,
-    RawMaterialUpdate,
-    RawMaterialResponse,
     RawMaterialGroupResponse,
-    ErrorResponse
+    RawMaterialResponse,
+    RawMaterialUpdate,
 )
-from app.error_handlers import BusinessRuleViolation
 
 router = APIRouter(prefix="/raw-materials", tags=["raw-materials"])
 
@@ -72,19 +71,19 @@ async def list_raw_materials(
     status: Optional[str] = Query(None, regex="^(A|S|R|M|all)$"),
     group_id: Optional[str] = None,
     search: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List raw materials with optional filtering."""
     stmt = select(RawMaterial)
-    
+
     # Filter by status
-    if status and status.lower() != 'all':
+    if status and status.lower() != "all":
         stmt = stmt.where(RawMaterial.active_flag == status.upper())
-    
+
     # Filter by group
     if group_id:
         stmt = stmt.where(RawMaterial.group_id == group_id)
-    
+
     # Search filter
     if search:
         stmt = stmt.where(
@@ -92,22 +91,25 @@ async def list_raw_materials(
                 RawMaterial.desc1.contains(search),
                 RawMaterial.desc2.contains(search),
                 RawMaterial.search_key.contains(search),
-                RawMaterial.notes.contains(search)
+                RawMaterial.notes.contains(search),
             )
         )
-    
+
     stmt = stmt.order_by(RawMaterial.code).offset(skip).limit(limit)
     raw_materials = db.execute(stmt).scalars().all()
-    
+
     return [raw_material_to_response(rm) for rm in raw_materials]
 
 
 @router.get("/groups", response_model=List[RawMaterialGroupResponse])
-async def list_raw_material_groups(
-    db: Session = Depends(get_db)
-):
+async def list_raw_material_groups(db: Session = Depends(get_db)):
     """List all raw material groups."""
-    groups = db.query(RawMaterialGroup).filter(RawMaterialGroup.is_active == True).order_by(RawMaterialGroup.code).all()
+    groups = (
+        db.query(RawMaterialGroup)
+        .filter(RawMaterialGroup.is_active.is_(True))
+        .order_by(RawMaterialGroup.code)
+        .all()
+    )
     return [
         RawMaterialGroupResponse(
             id=str(g.id),
@@ -115,7 +117,7 @@ async def list_raw_material_groups(
             name=g.name,
             description=g.description,
             is_active=g.is_active,
-            created_at=g.created_at
+            created_at=g.created_at,
         )
         for g in groups
     ]
@@ -127,10 +129,9 @@ async def get_raw_material(raw_material_id: str, db: Session = Depends(get_db)):
     raw_material = db.get(RawMaterial, raw_material_id)
     if not raw_material:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Raw material not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
-    
+
     return raw_material_to_response(raw_material)
 
 
@@ -139,44 +140,45 @@ async def get_raw_material_by_code(code: int, db: Session = Depends(get_db)):
     """Get raw material by code."""
     stmt = select(RawMaterial).where(RawMaterial.code == code)
     raw_material = db.execute(stmt).scalar_one_or_none()
-    
+
     if not raw_material:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Raw material not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
-    
+
     return raw_material_to_response(raw_material)
 
 
-@router.post("/", response_model=RawMaterialResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=RawMaterialResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_raw_material(
-    material: RawMaterialCreate,
-    db: Session = Depends(get_db)
+    material: RawMaterialCreate, db: Session = Depends(get_db)
 ):
     """Create a new raw material."""
     # Check if code already exists
     existing = db.execute(
         select(RawMaterial).where(RawMaterial.code == material.code)
     ).scalar_one_or_none()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Raw material with code {material.code} already exists"
+            detail=f"Raw material with code {material.code} already exists",
         )
-    
+
     # Validate group exists
     if material.group_id:
         group = db.get(RawMaterialGroup, material.group_id)
         if not group:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Raw material group {material.group_id} not found"
+                detail=f"Raw material group {material.group_id} not found",
             )
-    
+
     # Create raw material
     import uuid
+
     raw_material = RawMaterial(
         id=str(uuid.uuid4()),
         code=material.code,
@@ -202,28 +204,25 @@ async def create_raw_material(
         notes=material.notes,
         xero_account=material.xero_account,
     )
-    
+
     db.add(raw_material)
     db.commit()
     db.refresh(raw_material)
-    
+
     return raw_material_to_response(raw_material)
 
 
 @router.put("/{raw_material_id}", response_model=RawMaterialResponse)
 async def update_raw_material(
-    raw_material_id: str,
-    material: RawMaterialUpdate,
-    db: Session = Depends(get_db)
+    raw_material_id: str, material: RawMaterialUpdate, db: Session = Depends(get_db)
 ):
     """Update a raw material."""
     raw_material = db.get(RawMaterial, raw_material_id)
     if not raw_material:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Raw material not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
-    
+
     # Update fields
     if material.desc1 is not None:
         raw_material.desc1 = material.desc1
@@ -275,13 +274,13 @@ async def update_raw_material(
         if not group:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Raw material group {material.group_id} not found"
+                detail=f"Raw material group {material.group_id} not found",
             )
         raw_material.group_id = material.group_id
-    
+
     db.commit()
     db.refresh(raw_material)
-    
+
     return raw_material_to_response(raw_material)
 
 
@@ -291,10 +290,9 @@ async def delete_raw_material(raw_material_id: str, db: Session = Depends(get_db
     raw_material = db.get(RawMaterial, raw_material_id)
     if not raw_material:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Raw material not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
-    
+
     db.delete(raw_material)
     db.commit()
 
@@ -302,107 +300,105 @@ async def delete_raw_material(raw_material_id: str, db: Session = Depends(get_db
 # Supplier relationship endpoints
 @router.post("/{raw_material_id}/suppliers")
 async def add_raw_material_supplier(
-    raw_material_id: str,
-    supplier_data: dict,
-    db: Session = Depends(get_db)
+    raw_material_id: str, supplier_data: dict, db: Session = Depends(get_db)
 ):
     """Add supplier to raw material."""
     from pydantic import BaseModel
-    
+
     class SupplierRelationship(BaseModel):
         supplier_id: str
-    
+
     data = SupplierRelationship(**supplier_data)
-    
+
     # Validate raw material exists
     raw_material = db.get(RawMaterial, raw_material_id)
     if not raw_material:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Raw material not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
-    
+
     # Validate supplier exists
     supplier = db.get(Supplier, data.supplier_id)
     if not supplier:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Supplier not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found"
         )
-    
+
     # Check if relationship already exists
     existing = db.execute(
         select(RawMaterialSupplier).where(
             and_(
                 RawMaterialSupplier.raw_material_id == raw_material_id,
-                RawMaterialSupplier.supplier_id == data.supplier_id
+                RawMaterialSupplier.supplier_id == data.supplier_id,
             )
         )
     ).scalar_one_or_none()
-    
+
     if existing:
         return {"message": "Supplier relationship already exists"}
-    
+
     # Create relationship
     import uuid
+
     rm_supplier = RawMaterialSupplier(
         id=str(uuid.uuid4()),
         raw_material_id=raw_material_id,
-        supplier_id=data.supplier_id
+        supplier_id=data.supplier_id,
     )
     db.add(rm_supplier)
     db.commit()
-    
+
     return {"message": "Supplier added successfully"}
 
 
 @router.delete("/{raw_material_id}/suppliers/{supplier_id}")
 async def remove_raw_material_supplier(
-    raw_material_id: str,
-    supplier_id: str,
-    db: Session = Depends(get_db)
+    raw_material_id: str, supplier_id: str, db: Session = Depends(get_db)
 ):
     """Remove supplier from raw material."""
     relationship = db.execute(
         select(RawMaterialSupplier).where(
             and_(
                 RawMaterialSupplier.raw_material_id == raw_material_id,
-                RawMaterialSupplier.supplier_id == supplier_id
+                RawMaterialSupplier.supplier_id == supplier_id,
             )
         )
     ).scalar_one_or_none()
-    
+
     if not relationship:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Supplier relationship not found"
+            detail="Supplier relationship not found",
         )
-    
+
     db.delete(relationship)
     db.commit()
-    
+
     return {"message": "Supplier removed successfully"}
 
 
 @router.get("/{raw_material_id}/suppliers")
 async def get_raw_material_suppliers(
-    raw_material_id: str,
-    db: Session = Depends(get_db)
+    raw_material_id: str, db: Session = Depends(get_db)
 ):
     """Get suppliers for a raw material."""
-    relationships = db.execute(
-        select(RawMaterialSupplier).where(
-            RawMaterialSupplier.raw_material_id == raw_material_id
+    relationships = (
+        db.execute(
+            select(RawMaterialSupplier).where(
+                RawMaterialSupplier.raw_material_id == raw_material_id
+            )
         )
-    ).scalars().all()
-    
+        .scalars()
+        .all()
+    )
+
     supplier_ids = [rel.supplier_id for rel in relationships]
     suppliers = []
     for sid in supplier_ids:
         supplier = db.get(Supplier, sid)
         if supplier:
             suppliers.append(supplier)
-    
-    from app.api.suppliers import supplier_to_response
-    return [supplier_to_response(s) for s in suppliers]
 
+    from app.api.suppliers import supplier_to_response
+
+    return [supplier_to_response(s) for s in suppliers]

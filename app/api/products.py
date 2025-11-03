@@ -5,14 +5,17 @@ from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session, selectinload
 
 from app.adapters.db import get_db
 from app.adapters.db.models import Product, ProductVariant
 from app.api.dto import (
-    ProductCreate, ProductUpdate, ProductResponse, ProductVariantCreate, ProductVariantResponse,
-    ErrorResponse
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+    ProductVariantCreate,
+    ProductVariantResponse,
 )
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -20,94 +23,102 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 def product_to_response(product: Product) -> ProductResponse:
     """Convert Product model to response DTO."""
+    # Use getattr to safely access fields that may not exist in database
     return ProductResponse(
         id=str(product.id),
         sku=product.sku,
         name=product.name,
-        description=product.description,
-        product_type=product.product_type or "RAW",
-        # Product Capabilities
-        is_purchase=product.is_purchase or False,
-        is_sell=product.is_sell or False,
-        is_assemble=product.is_assemble or False,
-        ean13=product.ean13,
-        supplier_id=str(product.supplier_id) if product.supplier_id else None,
-        raw_material_group_id=str(product.raw_material_group_id) if product.raw_material_group_id else None,
-        size=product.size,
-        base_unit=product.base_unit,
-        pack=product.pack,
-        density_kg_per_l=product.density_kg_per_l,
-        abv_percent=product.abv_percent,
-        dgflag=product.dgflag,
-        form=product.form,
-        pkge=product.pkge,
-        label=product.label,
-        manu=product.manu,
-        taxinc=product.taxinc,
-        salestaxcde=product.salestaxcde,
-        purcost=product.purcost,
-        purtax=product.purtax,
-        wholesalecost=product.wholesalecost,
-        disccdeone=product.disccdeone,
-        disccdetwo=product.disccdetwo,
-        wholesalecde=product.wholesalecde,
-        retailcde=product.retailcde,
-        countercde=product.countercde,
-        tradecde=product.tradecde,
-        contractcde=product.contractcde,
-        industrialcde=product.industrialcde,
-        distributorcde=product.distributorcde,
-        # Raw Material specific fields
-        purchase_unit_id=str(product.purchase_unit_id) if product.purchase_unit_id else None,
-        purchase_volume=product.purchase_volume,
-        specific_gravity=product.specific_gravity,
-        vol_solid=product.vol_solid,
-        solid_sg=product.solid_sg,
-        wt_solid=product.wt_solid,
-        usage_unit=product.usage_unit,
-        usage_cost=product.usage_cost,
-        restock_level=product.restock_level,
-        used_ytd=product.used_ytd,
-        hazard=product.hazard,
-        condition=product.condition,
-        msds_flag=product.msds_flag,
-        # Finished Good specific fields
-        formula_id=str(product.formula_id) if product.formula_id else None,
-        formula_revision=product.formula_revision,
-        # Sales Pricing
-        retail_price_inc_gst=product.retail_price_inc_gst,
-        retail_price_ex_gst=product.retail_price_ex_gst,
-        retail_excise=product.retail_excise,
-        wholesale_price_inc_gst=product.wholesale_price_inc_gst,
-        wholesale_price_ex_gst=product.wholesale_price_ex_gst,
-        wholesale_excise=product.wholesale_excise,
-        distributor_price_inc_gst=product.distributor_price_inc_gst,
-        distributor_price_ex_gst=product.distributor_price_ex_gst,
-        distributor_excise=product.distributor_excise,
-        counter_price_inc_gst=product.counter_price_inc_gst,
-        counter_price_ex_gst=product.counter_price_ex_gst,
-        counter_excise=product.counter_excise,
-        trade_price_inc_gst=product.trade_price_inc_gst,
-        trade_price_ex_gst=product.trade_price_ex_gst,
-        trade_excise=product.trade_excise,
-        contract_price_inc_gst=product.contract_price_inc_gst,
-        contract_price_ex_gst=product.contract_price_ex_gst,
-        contract_excise=product.contract_excise,
-        industrial_price_inc_gst=product.industrial_price_inc_gst,
-        industrial_price_ex_gst=product.industrial_price_ex_gst,
-        industrial_excise=product.industrial_excise,
-        # Cost Pricing
-        purchase_cost_inc_gst=product.purchase_cost_inc_gst,
-        purchase_cost_ex_gst=product.purchase_cost_ex_gst,
-        purchase_tax_included=product.purchase_tax_included or False,
-        usage_cost_inc_gst=product.usage_cost_inc_gst,
-        usage_cost_ex_gst=product.usage_cost_ex_gst,
-        usage_tax_included=product.usage_tax_included or False,
-        manufactured_cost_inc_gst=product.manufactured_cost_inc_gst,
-        manufactured_cost_ex_gst=product.manufactured_cost_ex_gst,
-        is_active=product.is_active,
-        created_at=product.created_at,
-        updated_at=product.updated_at,
+        description=getattr(product, "description", None),
+        # Product Capabilities (computed properties)
+        is_purchase=getattr(product, "is_purchase", False),
+        is_sell=getattr(product, "is_sell", False),
+        is_assemble=getattr(product, "is_assemble", False),
+        ean13=getattr(product, "ean13", None),
+        supplier_id=str(product.supplier_id)
+        if getattr(product, "supplier_id", None)
+        else None,
+        raw_material_group_id=str(getattr(product, "raw_material_group_id", None))
+        if getattr(product, "raw_material_group_id", None)
+        else None,
+        size=getattr(product, "size", None),
+        base_unit=getattr(product, "base_unit", None),
+        pack=getattr(product, "pack", None),
+        density_kg_per_l=getattr(product, "density_kg_per_l", None),
+        abv_percent=getattr(product, "abv_percent", None),
+        dgflag=getattr(product, "dgflag", None),
+        form=getattr(product, "form", None),
+        pkge=getattr(product, "pkge", None),
+        label=getattr(product, "label", None),
+        manu=getattr(product, "manu", None),
+        taxinc=getattr(product, "taxinc", None),
+        salestaxcde=getattr(product, "salestaxcde", None),
+        purcost=getattr(product, "purcost", None),
+        purtax=getattr(product, "purtax", None),
+        wholesalecost=getattr(product, "wholesalecost", None),
+        disccdeone=getattr(product, "disccdeone", None),
+        disccdetwo=getattr(product, "disccdetwo", None),
+        wholesalecde=getattr(product, "wholesalecde", None),
+        retailcde=getattr(product, "retailcde", None),
+        countercde=getattr(product, "countercde", None),
+        tradecde=getattr(product, "tradecde", None),
+        contractcde=getattr(product, "contractcde", None),
+        industrialcde=getattr(product, "industrialcde", None),
+        distributorcde=getattr(product, "distributorcde", None),
+        # Raw Material specific fields (may not exist)
+        purchase_unit_id=str(getattr(product, "purchase_unit_id", None))
+        if getattr(product, "purchase_unit_id", None)
+        else None,
+        purchase_volume=getattr(product, "purchase_volume", None),
+        specific_gravity=getattr(product, "specific_gravity", None),
+        vol_solid=getattr(product, "vol_solid", None),
+        solid_sg=getattr(product, "solid_sg", None),
+        wt_solid=getattr(product, "wt_solid", None),
+        usage_unit=getattr(product, "usage_unit", None),
+        usage_cost=getattr(product, "usage_cost", None),
+        restock_level=getattr(product, "restock_level", None),
+        used_ytd=getattr(product, "used_ytd", None),
+        hazard=getattr(product, "hazard", None),
+        condition=getattr(product, "condition", None),
+        msds_flag=getattr(product, "msds_flag", None),
+        # Finished Good specific fields (may not exist)
+        formula_id=str(getattr(product, "formula_id", None))
+        if getattr(product, "formula_id", None)
+        else None,
+        formula_revision=getattr(product, "formula_revision", None),
+        # Sales Pricing (may not exist)
+        retail_price_inc_gst=getattr(product, "retail_price_inc_gst", None),
+        retail_price_ex_gst=getattr(product, "retail_price_ex_gst", None),
+        retail_excise=getattr(product, "retail_excise", None),
+        wholesale_price_inc_gst=getattr(product, "wholesale_price_inc_gst", None),
+        wholesale_price_ex_gst=getattr(product, "wholesale_price_ex_gst", None),
+        wholesale_excise=getattr(product, "wholesale_excise", None),
+        distributor_price_inc_gst=getattr(product, "distributor_price_inc_gst", None),
+        distributor_price_ex_gst=getattr(product, "distributor_price_ex_gst", None),
+        distributor_excise=getattr(product, "distributor_excise", None),
+        counter_price_inc_gst=getattr(product, "counter_price_inc_gst", None),
+        counter_price_ex_gst=getattr(product, "counter_price_ex_gst", None),
+        counter_excise=getattr(product, "counter_excise", None),
+        trade_price_inc_gst=getattr(product, "trade_price_inc_gst", None),
+        trade_price_ex_gst=getattr(product, "trade_price_ex_gst", None),
+        trade_excise=getattr(product, "trade_excise", None),
+        contract_price_inc_gst=getattr(product, "contract_price_inc_gst", None),
+        contract_price_ex_gst=getattr(product, "contract_price_ex_gst", None),
+        contract_excise=getattr(product, "contract_excise", None),
+        industrial_price_inc_gst=getattr(product, "industrial_price_inc_gst", None),
+        industrial_price_ex_gst=getattr(product, "industrial_price_ex_gst", None),
+        industrial_excise=getattr(product, "industrial_excise", None),
+        # Cost Pricing (may not exist)
+        purchase_cost_inc_gst=getattr(product, "purchase_cost_inc_gst", None),
+        purchase_cost_ex_gst=getattr(product, "purchase_cost_ex_gst", None),
+        purchase_tax_included=getattr(product, "purchase_tax_included", False) or False,
+        usage_cost_inc_gst=getattr(product, "usage_cost_inc_gst", None),
+        usage_cost_ex_gst=getattr(product, "usage_cost_ex_gst", None),
+        usage_tax_included=getattr(product, "usage_tax_included", False) or False,
+        manufactured_cost_inc_gst=getattr(product, "manufactured_cost_inc_gst", None),
+        manufactured_cost_ex_gst=getattr(product, "manufactured_cost_ex_gst", None),
+        is_active=getattr(product, "is_active", True),
+        created_at=getattr(product, "created_at", None),
+        updated_at=getattr(product, "updated_at", None),
         variants=[
             ProductVariantResponse(
                 id=str(v.id),
@@ -116,9 +127,10 @@ def product_to_response(product: Product) -> ProductResponse:
                 variant_name=v.variant_name,
                 description=v.description,
                 is_active=v.is_active,
-                created_at=v.created_at
-            ) for v in product.variants
-        ]
+                created_at=v.created_at,
+            )
+            for v in product.variants
+        ],
     )
 
 
@@ -127,50 +139,71 @@ async def list_products(
     skip: int = 0,
     limit: int = 100,
     query: Optional[str] = None,
-    product_type: Optional[str] = None,  # Filter by product_type (RAW, WIP, FINISHED) - deprecated
     is_purchase: Optional[bool] = None,  # Filter by capability
     is_sell: Optional[bool] = None,  # Filter by capability
     is_assemble: Optional[bool] = None,  # Filter by capability
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List products with optional search and filtering."""
-    stmt = select(Product).options(joinedload(Product.variants))
-    
-    if query:
-        stmt = stmt.where(
-            Product.name.contains(query) | Product.sku.contains(query)
+    try:
+        # Use selectinload instead of joinedload to avoid duplicate row issues
+        # selectinload loads variants in a separate query, avoiding JOIN duplicates
+        stmt = select(Product).options(selectinload(Product.variants))
+
+        if query:
+            stmt = stmt.where(
+                Product.name.contains(query) | Product.sku.contains(query)
+            )
+
+        # Filter by capabilities (note: these are computed properties, so filter in Python)
+        # We'll filter after fetching since these aren't database columns
+        # For now, we'll apply filters after fetching
+
+        stmt = stmt.offset(skip).limit(limit)
+
+        # Execute query - no need for unique() with selectinload
+        products = db.execute(stmt).scalars().all()
+
+        # Apply capability filters in Python (since they're computed properties)
+        if is_purchase is not None:
+            products = [
+                p for p in products if getattr(p, "is_purchase", False) == is_purchase
+            ]
+        if is_sell is not None:
+            products = [p for p in products if getattr(p, "is_sell", False) == is_sell]
+        if is_assemble is not None:
+            products = [
+                p for p in products if getattr(p, "is_assemble", False) == is_assemble
+            ]
+
+        return [product_to_response(p) for p in products]
+    except Exception as e:
+        # Log the actual error for debugging
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(
+            f"Error in list_products: {type(e).__name__}: {str(e)}", exc_info=True
         )
-    
-    # Support legacy product_type filter
-    if product_type:
-        stmt = stmt.where(Product.product_type == product_type)
-    
-    # Filter by capabilities (preferred)
-    if is_purchase is not None:
-        stmt = stmt.where(Product.is_purchase == is_purchase)
-    if is_sell is not None:
-        stmt = stmt.where(Product.is_sell == is_sell)
-    if is_assemble is not None:
-        stmt = stmt.where(Product.is_assemble == is_assemble)
-    
-    stmt = stmt.offset(skip).limit(limit)
-    products = db.execute(stmt).scalars().unique().all()
-    
-    return [product_to_response(p) for p in products]
+        # Re-raise to let error handler catch it
+        raise
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str, db: Session = Depends(get_db)):
     """Get product by ID."""
-    stmt = select(Product).options(joinedload(Product.variants)).where(Product.id == product_id)
-    product = db.execute(stmt).scalars().unique().first()
-    
+    stmt = (
+        select(Product)
+        .options(selectinload(Product.variants))
+        .where(Product.id == product_id)
+    )
+    product = db.execute(stmt).scalar_one_or_none()
+
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     return product_to_response(product)
 
 
@@ -179,13 +212,12 @@ async def get_product_by_sku(sku: str, db: Session = Depends(get_db)):
     """Get product by SKU."""
     stmt = select(Product).where(Product.sku == sku)
     product = db.execute(stmt).scalar_one_or_none()
-    
+
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     return product_to_response(product)
 
 
@@ -193,19 +225,20 @@ async def get_product_by_sku(sku: str, db: Session = Depends(get_db)):
 async def create_product(product_data: ProductCreate, db: Session = Depends(get_db)):
     """Create a new product."""
     # Check if SKU already exists
-    existing = db.execute(select(Product).where(Product.sku == product_data.sku)).scalar_one_or_none()
+    existing = db.execute(
+        select(Product).where(Product.sku == product_data.sku)
+    ).scalar_one_or_none()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Product with SKU '{product_data.sku}' already exists"
+            detail=f"Product with SKU '{product_data.sku}' already exists",
         )
-    
+
     product = Product(
         id=str(uuid4()),
         sku=product_data.sku,
         name=product_data.name,
         description=product_data.description,
-        product_type=product_data.product_type or "RAW",
         # Product Capabilities
         is_purchase=product_data.is_purchase,
         is_sell=product_data.is_sell,
@@ -285,37 +318,32 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         usage_tax_included=product_data.usage_tax_included or False,
         manufactured_cost_inc_gst=product_data.manufactured_cost_inc_gst,
         manufactured_cost_ex_gst=product_data.manufactured_cost_ex_gst,
-        is_active=product_data.is_active
+        is_active=product_data.is_active,
     )
-    
+
     db.add(product)
     db.commit()
     db.refresh(product)
-    
+
     return product_to_response(product)
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
-    product_id: str,
-    product_data: ProductUpdate,
-    db: Session = Depends(get_db)
+    product_id: str, product_data: ProductUpdate, db: Session = Depends(get_db)
 ):
     """Update product."""
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     # Update fields
     if product_data.name is not None:
         product.name = product_data.name
     if product_data.description is not None:
         product.description = product_data.description
-    if product_data.product_type is not None:
-        product.product_type = product_data.product_type
     # Product Capabilities
     if product_data.is_purchase is not None:
         product.is_purchase = product_data.is_purchase
@@ -471,10 +499,10 @@ async def update_product(
         product.manufactured_cost_ex_gst = product_data.manufactured_cost_ex_gst
     if product_data.is_active is not None:
         product.is_active = product_data.is_active
-    
+
     db.commit()
     db.refresh(product)
-    
+
     return product_to_response(product)
 
 
@@ -484,59 +512,59 @@ async def delete_product(product_id: str, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     product.is_active = False
     db.commit()
 
 
 # Product Variants
-@router.post("/{product_id}/variants", response_model=ProductVariantResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{product_id}/variants",
+    response_model=ProductVariantResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_product_variant(
-    product_id: str,
-    variant_data: ProductVariantCreate,
-    db: Session = Depends(get_db)
+    product_id: str, variant_data: ProductVariantCreate, db: Session = Depends(get_db)
 ):
     """Create a new product variant."""
     # Check if product exists
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     # Check if variant code already exists for this product
     existing = db.execute(
         select(ProductVariant).where(
             and_(
                 ProductVariant.product_id == product_id,
-                ProductVariant.variant_code == variant_data.variant_code
+                ProductVariant.variant_code == variant_data.variant_code,
             )
         )
     ).scalar_one_or_none()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Variant with code '{variant_data.variant_code}' already exists for this product"
+            detail=f"Variant with code '{variant_data.variant_code}' already exists for this product",
         )
-    
+
     variant = ProductVariant(
         id=str(uuid4()),
         product_id=product_id,
         variant_code=variant_data.variant_code,
         variant_name=variant_data.variant_name,
         description=variant_data.description,
-        is_active=True
+        is_active=True,
     )
-    
+
     db.add(variant)
     db.commit()
     db.refresh(variant)
-    
+
     return ProductVariantResponse(
         id=variant.id,
         product_id=variant.product_id,
@@ -544,7 +572,7 @@ async def create_product_variant(
         variant_name=variant.variant_name,
         description=variant.description,
         is_active=variant.is_active,
-        created_at=variant.created_at
+        created_at=variant.created_at,
     )
 
 
@@ -555,13 +583,12 @@ async def list_product_variants(product_id: str, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    
+
     stmt = select(ProductVariant).where(ProductVariant.product_id == product_id)
     variants = db.execute(stmt).scalars().all()
-    
+
     return [
         ProductVariantResponse(
             id=v.id,
@@ -570,6 +597,7 @@ async def list_product_variants(product_id: str, db: Session = Depends(get_db)):
             variant_name=v.variant_name,
             description=v.description,
             is_active=v.is_active,
-            created_at=v.created_at
-        ) for v in variants
+            created_at=v.created_at,
+        )
+        for v in variants
     ]

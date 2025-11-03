@@ -1,16 +1,19 @@
 """Formula print template for legacy format compatibility."""
 
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
+from typing import Any, Dict, Optional
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
-def generate_formula_print_text(formula_code: str, revision: Optional[int] = None, db: Optional[Session] = None) -> str:
+def generate_formula_print_text(
+    formula_code: str, revision: Optional[int] = None, db: Optional[Session] = None
+) -> str:
     """Generate formula print text in legacy format."""
     if db is None:
         # For tests, return sample format
         return render_formula_print_sample(formula_code, revision)
-    
+
     # Fetch data from database
     formula_data = get_formula_data_for_printing(formula_code, revision, db)
     if formula_data:
@@ -20,22 +23,24 @@ def generate_formula_print_text(formula_code: str, revision: Optional[int] = Non
         return render_formula_print_sample(formula_code, revision)
 
 
-def get_formula_data_for_printing(formula_code: str, revision: Optional[int], db: Session) -> Optional[Dict[str, Any]]:
+def get_formula_data_for_printing(
+    formula_code: str, revision: Optional[int], db: Session
+) -> Optional[Dict[str, Any]]:
     """Fetch formula data for printing."""
     from app.adapters.db.models import Formula, FormulaLine, Product
     from app.adapters.db.qb_models import RawMaterial
-    
+
     # Get formula
     stmt = select(Formula).where(Formula.formula_code == formula_code)
     if revision:
         stmt = stmt.where(Formula.version == revision)
     else:
         stmt = stmt.order_by(Formula.version.desc())
-    
+
     formula = db.execute(stmt).scalar_one_or_none()
     if not formula:
         return None
-    
+
     # Get lines
     lines_stmt = (
         select(FormulaLine, RawMaterial)
@@ -43,77 +48,75 @@ def get_formula_data_for_printing(formula_code: str, revision: Optional[int], db
         .where(FormulaLine.formula_id == formula.id)
         .order_by(FormulaLine.sequence)
     )
-    
+
     lines_data = db.execute(lines_stmt).all()
-    
+
     # Get product
     product = db.get(Product, formula.product_id)
-    
-    return {
-        'formula': formula,
-        'product': product,
-        'lines': lines_data
-    }
+
+    return {"formula": formula, "product": product, "lines": lines_data}
 
 
 def render_formula_print_from_data(formula_data: Dict[str, Any]) -> str:
     """Render formula print from database data."""
-    formula = formula_data['formula']
-    product = formula_data['product']
-    lines_data = formula_data['lines']
-    
+    formula = formula_data["formula"]
+    product = formula_data["product"]
+    lines_data = formula_data["lines"]
+
     lines = [
         "=" * 80,
         f"FORMULA CARD: {formula.formula_code}  Rev. {formula.version}",
         "=" * 80,
         "",
         f"Product:  {product.name if product else 'UNKNOWN'}",
-        f"Class:    410.15",
-        f"Type:     S (Solvent-based)",
+        "Class:    410.15",
+        "Type:     S (Solvent-based)",
         f"Yield:    {formula.quantity_kg if hasattr(formula, 'quantity_kg') else 'N/A'} kg",
         "",
         "-" * 80,
         f"{'Seq':<5} {'Material Description':<40} {'Qty (kg)':>12} {'Unit Cost':>10} {'Line Cost':>12}",
         "-" * 80,
-        ""
+        "",
     ]
-    
+
     total_cost = 0.0
-    
+
     # Add formula lines
     for line, material in lines_data:
         qty = float(line.quantity_kg) if line.quantity_kg else 0.0
         unit_cost = float(material.usage_cost) if material.usage_cost else 0.0
         line_cost = qty * unit_cost
         total_cost += line_cost
-        
+
         material_desc = material.desc1 if material.desc1 else material.code
-        
+
         lines.append(
             f"{line.sequence:<5} {material_desc[:40]:<40} {qty:>12.3f} {unit_cost:>10.2f} {line_cost:>12.2f}"
         )
-    
-    lines.extend([
-        "",
-        "-" * 80,
-        f"Total Theoretical Cost:                                  {total_cost:>12.2f}",
-        "",
-        "Comments:",
-        f"{formula.notes if hasattr(formula, 'notes') and formula.notes else 'None'}",
-        "",
-        "=" * 80,
-        f"Date: {formula.created_at.strftime('%Y-%m-%d') if formula.created_at else 'N/A'}",
-        f"Authorized by: ___________",
-        "=" * 80,
-    ])
-    
+
+    lines.extend(
+        [
+            "",
+            "-" * 80,
+            f"Total Theoretical Cost:                                  {total_cost:>12.2f}",
+            "",
+            "Comments:",
+            f"{formula.notes if hasattr(formula, 'notes') and formula.notes else 'None'}",
+            "",
+            "=" * 80,
+            f"Date: {formula.created_at.strftime('%Y-%m-%d') if formula.created_at else 'N/A'}",
+            "Authorized by: ___________",
+            "=" * 80,
+        ]
+    )
+
     return "\n".join(lines)
 
 
 def render_formula_print_sample(formula_code: str, revision: Optional[int]) -> str:
     """Render sample formula print for tests."""
     rev_str = str(revision) if revision else "1"
-    
+
     lines = [
         "=" * 80,
         f"FORMULA CARD: {formula_code}  Rev. {rev_str}",
@@ -151,6 +154,5 @@ def render_formula_print_sample(formula_code: str, revision: Optional[int]) -> s
         "Authorized by: ___________",
         "=" * 80,
     ]
-    
-    return "\n".join(lines)
 
+    return "\n".join(lines)

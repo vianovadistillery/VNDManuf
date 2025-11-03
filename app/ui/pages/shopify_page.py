@@ -5,7 +5,6 @@ def layout():
         "notes": [
             "Map products to Shopify variant/location",
             "Buttons: Test Push, Bulk Push, Reconcile, Auto-sync toggle",
-            "Status toasts for API calls"
-        ]
+            "Status toasts for API calls",
+        ],
     }
-

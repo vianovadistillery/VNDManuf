@@ -5,15 +5,15 @@ Revises: 1647ea8a022a
 Create Date: 2025-10-26 21:02:04.912748
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'adb7b8daaa40'
-down_revision: Union[str, None] = '1647ea8a022a'
+revision: str = "adb7b8daaa40"
+down_revision: Union[str, None] = "1647ea8a022a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -25,156 +25,209 @@ def upgrade() -> None:
         op.execute("DROP TABLE IF EXISTS _alembic_tmp_condition_types")
     except:
         pass
-    
+
     # Create Xero tables first (with IF NOT EXISTS checks)
     from sqlalchemy import inspect
+
     inspector = inspect(op.get_bind())
     existing_tables = inspector.get_table_names()
-    
-    if 'xero_tokens' not in existing_tables:
-        op.create_table('xero_tokens',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('access_token', sa.Text(), nullable=False),
-    sa.Column('refresh_token', sa.Text(), nullable=False),
-    sa.Column('expires_at', sa.DateTime(), nullable=False),
-    sa.Column('tenant_id', sa.String(length=100), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_xero_tokens'))
+
+    if "xero_tokens" not in existing_tables:
+        op.create_table(
+            "xero_tokens",
+            sa.Column("id", sa.String(length=36), nullable=False),
+            sa.Column("access_token", sa.Text(), nullable=False),
+            sa.Column("refresh_token", sa.Text(), nullable=False),
+            sa.Column("expires_at", sa.DateTime(), nullable=False),
+            sa.Column("tenant_id", sa.String(length=100), nullable=True),
+            sa.Column("created_at", sa.DateTime(), nullable=True),
+            sa.Column("updated_at", sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint("id", name=op.f("pk_xero_tokens")),
         )
-    
-    if 'xero_sync_log' not in existing_tables:
-        op.create_table('xero_sync_log',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('ts', sa.DateTime(), nullable=False),
-    sa.Column('object_type', sa.String(length=50), nullable=True),
-    sa.Column('object_id', sa.String(length=100), nullable=True),
-    sa.Column('direction', sa.String(length=10), nullable=True),
-    sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('message', sa.Text(), nullable=True),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_xero_sync_log'))
+
+    if "xero_sync_log" not in existing_tables:
+        op.create_table(
+            "xero_sync_log",
+            sa.Column("id", sa.String(length=36), nullable=False),
+            sa.Column("ts", sa.DateTime(), nullable=False),
+            sa.Column("object_type", sa.String(length=50), nullable=True),
+            sa.Column("object_id", sa.String(length=100), nullable=True),
+            sa.Column("direction", sa.String(length=10), nullable=True),
+            sa.Column("status", sa.String(length=20), nullable=True),
+            sa.Column("message", sa.Text(), nullable=True),
+            sa.PrimaryKeyConstraint("id", name=op.f("pk_xero_sync_log")),
         )
-        op.create_index('ix_sync_log_object', 'xero_sync_log', ['object_type', 'object_id'], unique=False)
-        op.create_index('ix_sync_log_ts', 'xero_sync_log', ['ts'], unique=False)
-    
+        op.create_index(
+            "ix_sync_log_object",
+            "xero_sync_log",
+            ["object_type", "object_id"],
+            unique=False,
+        )
+        op.create_index("ix_sync_log_ts", "xero_sync_log", ["ts"], unique=False)
+
     # Add Xero columns to existing tables (only if they don't exist)
     inspector = inspect(op.get_bind())
-    
+
     # Customers
     try:
-        customers_cols = [col['name'] for col in inspector.get_columns('customers')]
-        if 'xero_contact_id' not in customers_cols:
-            op.add_column('customers', sa.Column('xero_contact_id', sa.String(length=100), nullable=True))
-        if 'last_sync' not in customers_cols:
-            op.add_column('customers', sa.Column('last_sync', sa.DateTime(), nullable=True))
+        customers_cols = [col["name"] for col in inspector.get_columns("customers")]
+        if "xero_contact_id" not in customers_cols:
+            op.add_column(
+                "customers",
+                sa.Column("xero_contact_id", sa.String(length=100), nullable=True),
+            )
+        if "last_sync" not in customers_cols:
+            op.add_column(
+                "customers", sa.Column("last_sync", sa.DateTime(), nullable=True)
+            )
     except:
         pass
-    
+
     # Products
     try:
-        products_cols = [col['name'] for col in inspector.get_columns('products')]
-        if 'xero_item_id' not in products_cols:
-            op.add_column('products', sa.Column('xero_item_id', sa.String(length=100), nullable=True))
-        if 'last_sync' not in products_cols:
-            op.add_column('products', sa.Column('last_sync', sa.DateTime(), nullable=True))
+        products_cols = [col["name"] for col in inspector.get_columns("products")]
+        if "xero_item_id" not in products_cols:
+            op.add_column(
+                "products",
+                sa.Column("xero_item_id", sa.String(length=100), nullable=True),
+            )
+        if "last_sync" not in products_cols:
+            op.add_column(
+                "products", sa.Column("last_sync", sa.DateTime(), nullable=True)
+            )
     except:
         pass
-    
+
     # Suppliers
     try:
-        suppliers_cols = [col['name'] for col in inspector.get_columns('suppliers')]
-        if 'xero_contact_id' not in suppliers_cols:
-            op.add_column('suppliers', sa.Column('xero_contact_id', sa.String(length=100), nullable=True))
-        if 'last_sync' not in suppliers_cols:
-            op.add_column('suppliers', sa.Column('last_sync', sa.DateTime(), nullable=True))
+        suppliers_cols = [col["name"] for col in inspector.get_columns("suppliers")]
+        if "xero_contact_id" not in suppliers_cols:
+            op.add_column(
+                "suppliers",
+                sa.Column("xero_contact_id", sa.String(length=100), nullable=True),
+            )
+        if "last_sync" not in suppliers_cols:
+            op.add_column(
+                "suppliers", sa.Column("last_sync", sa.DateTime(), nullable=True)
+            )
     except:
         pass
-    
+
     # Drop old xero_id column from suppliers (if it exists)
     try:
         inspector = inspect(op.get_bind())
-        suppliers_cols = [col['name'] for col in inspector.get_columns('suppliers')]
-        if 'xero_id' in suppliers_cols:
-            op.drop_column('suppliers', 'xero_id')
+        suppliers_cols = [col["name"] for col in inspector.get_columns("suppliers")]
+        if "xero_id" in suppliers_cols:
+            op.drop_column("suppliers", "xero_id")
     except:
         pass
-    
+
     # Drop temp table if exists
     try:
         op.execute("DROP TABLE IF EXISTS _alembic_tmp_condition_types")
     except:
         pass
-    
+
     # Skip constraint changes for now - they need batch mode but cause issues
     # Comment out the problematic constraint changes
-    op.drop_constraint('uq_condition_types__code', 'condition_types', type_='unique')
-    op.drop_index('ix_condition_type_code', table_name='condition_types')
-    op.create_index('ix_condition_type_code', 'condition_types', ['code'], unique=False)
-    op.create_index(op.f('ix_condition_types_code'), 'condition_types', ['code'], unique=True)
-    op.add_column('customers', sa.Column('xero_contact_id', sa.String(length=100), nullable=True))
-    op.add_column('customers', sa.Column('last_sync', sa.DateTime(), nullable=True))
-    op.drop_constraint('uq_datasets__code', 'datasets', type_='unique')
-    op.drop_index('ix_dataset_code', table_name='datasets')
-    op.create_index('ix_dataset_code', 'datasets', ['code'], unique=False)
-    op.create_index(op.f('ix_datasets_code'), 'datasets', ['code'], unique=True)
-    op.drop_constraint('uq_markups__code', 'markups', type_='unique')
-    op.drop_index('ix_markup_code', table_name='markups')
-    op.create_index('ix_markup_code', 'markups', ['code'], unique=False)
-    op.create_index(op.f('ix_markups_code'), 'markups', ['code'], unique=True)
-    op.add_column('products', sa.Column('xero_item_id', sa.String(length=100), nullable=True))
-    op.add_column('products', sa.Column('last_sync', sa.DateTime(), nullable=True))
-    op.create_foreign_key(op.f('fk_products__supplier_id__suppliers'), 'products', 'suppliers', ['supplier_id'], ['id'])
-    op.drop_constraint('uq_raw_material_groups__code', 'raw_material_groups', type_='unique')
-    op.drop_index('ix_rm_group_code', table_name='raw_material_groups')
-    op.create_index('ix_rm_group_code', 'raw_material_groups', ['code'], unique=False)
-    op.create_index(op.f('ix_raw_material_groups_code'), 'raw_material_groups', ['code'], unique=True)
-    op.drop_constraint('uq_raw_materials__code', 'raw_materials', type_='unique')
-    op.drop_index('ix_raw_material_code', table_name='raw_materials')
-    op.create_index('ix_raw_material_code', 'raw_materials', ['code'], unique=False)
-    op.create_index(op.f('ix_raw_materials_code'), 'raw_materials', ['code'], unique=True)
-    op.add_column('suppliers', sa.Column('xero_contact_id', sa.String(length=100), nullable=True))
-    op.add_column('suppliers', sa.Column('last_sync', sa.DateTime(), nullable=True))
-    op.drop_column('suppliers', 'xero_id')
+    op.drop_constraint("uq_condition_types__code", "condition_types", type_="unique")
+    op.drop_index("ix_condition_type_code", table_name="condition_types")
+    op.create_index("ix_condition_type_code", "condition_types", ["code"], unique=False)
+    op.create_index(
+        op.f("ix_condition_types_code"), "condition_types", ["code"], unique=True
+    )
+    op.add_column(
+        "customers", sa.Column("xero_contact_id", sa.String(length=100), nullable=True)
+    )
+    op.add_column("customers", sa.Column("last_sync", sa.DateTime(), nullable=True))
+    op.drop_constraint("uq_datasets__code", "datasets", type_="unique")
+    op.drop_index("ix_dataset_code", table_name="datasets")
+    op.create_index("ix_dataset_code", "datasets", ["code"], unique=False)
+    op.create_index(op.f("ix_datasets_code"), "datasets", ["code"], unique=True)
+    op.drop_constraint("uq_markups__code", "markups", type_="unique")
+    op.drop_index("ix_markup_code", table_name="markups")
+    op.create_index("ix_markup_code", "markups", ["code"], unique=False)
+    op.create_index(op.f("ix_markups_code"), "markups", ["code"], unique=True)
+    op.add_column(
+        "products", sa.Column("xero_item_id", sa.String(length=100), nullable=True)
+    )
+    op.add_column("products", sa.Column("last_sync", sa.DateTime(), nullable=True))
+    op.create_foreign_key(
+        op.f("fk_products__supplier_id__suppliers"),
+        "products",
+        "suppliers",
+        ["supplier_id"],
+        ["id"],
+    )
+    op.drop_constraint(
+        "uq_raw_material_groups__code", "raw_material_groups", type_="unique"
+    )
+    op.drop_index("ix_rm_group_code", table_name="raw_material_groups")
+    op.create_index("ix_rm_group_code", "raw_material_groups", ["code"], unique=False)
+    op.create_index(
+        op.f("ix_raw_material_groups_code"),
+        "raw_material_groups",
+        ["code"],
+        unique=True,
+    )
+    op.drop_constraint("uq_raw_materials__code", "raw_materials", type_="unique")
+    op.drop_index("ix_raw_material_code", table_name="raw_materials")
+    op.create_index("ix_raw_material_code", "raw_materials", ["code"], unique=False)
+    op.create_index(
+        op.f("ix_raw_materials_code"), "raw_materials", ["code"], unique=True
+    )
+    op.add_column(
+        "suppliers", sa.Column("xero_contact_id", sa.String(length=100), nullable=True)
+    )
+    op.add_column("suppliers", sa.Column("last_sync", sa.DateTime(), nullable=True))
+    op.drop_column("suppliers", "xero_id")
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.add_column('suppliers', sa.Column('xero_id', sa.VARCHAR(length=100), nullable=True))
-    op.drop_column('suppliers', 'last_sync')
-    op.drop_column('suppliers', 'xero_contact_id')
-    op.drop_index(op.f('ix_raw_materials_code'), table_name='raw_materials')
-    op.drop_index('ix_raw_material_code', table_name='raw_materials')
-    op.create_index('ix_raw_material_code', 'raw_materials', ['code'], unique=1)
-    op.create_unique_constraint('uq_raw_materials__code', 'raw_materials', ['code'])
-    op.drop_index(op.f('ix_raw_material_groups_code'), table_name='raw_material_groups')
-    op.drop_index('ix_rm_group_code', table_name='raw_material_groups')
-    op.create_index('ix_rm_group_code', 'raw_material_groups', ['code'], unique=1)
-    op.create_unique_constraint('uq_raw_material_groups__code', 'raw_material_groups', ['code'])
-    op.drop_constraint(op.f('fk_products__supplier_id__suppliers'), 'products', type_='foreignkey')
-    op.drop_column('products', 'last_sync')
-    op.drop_column('products', 'xero_item_id')
-    op.drop_index(op.f('ix_markups_code'), table_name='markups')
-    op.drop_index('ix_markup_code', table_name='markups')
-    op.create_index('ix_markup_code', 'markups', ['code'], unique=1)
-    op.create_unique_constraint('uq_markups__code', 'markups', ['code'])
-    op.drop_index(op.f('ix_datasets_code'), table_name='datasets')
-    op.drop_index('ix_dataset_code', table_name='datasets')
-    op.create_index('ix_dataset_code', 'datasets', ['code'], unique=1)
-    op.create_unique_constraint('uq_datasets__code', 'datasets', ['code'])
-    op.drop_column('customers', 'last_sync')
-    op.drop_column('customers', 'xero_contact_id')
-    op.drop_index(op.f('ix_condition_types_code'), table_name='condition_types')
-    op.drop_index('ix_condition_type_code', table_name='condition_types')
-    op.create_index('ix_condition_type_code', 'condition_types', ['code'], unique=1)
-    op.create_unique_constraint('uq_condition_types__code', 'condition_types', ['code'])
-    op.create_table('_alembic_tmp_condition_types',
-    sa.Column('id', sa.VARCHAR(length=36), nullable=False),
-    sa.Column('code', sa.VARCHAR(length=1), nullable=False),
-    sa.Column('description', sa.VARCHAR(length=100), nullable=False),
-    sa.Column('extended_desc', sa.TEXT(), nullable=True),
-    sa.Column('is_active', sa.BOOLEAN(), nullable=True),
-    sa.Column('created_at', sa.DATETIME(), nullable=True),
-    sa.PrimaryKeyConstraint('id', name='pk_condition_types')
+    op.add_column(
+        "suppliers", sa.Column("xero_id", sa.VARCHAR(length=100), nullable=True)
+    )
+    op.drop_column("suppliers", "last_sync")
+    op.drop_column("suppliers", "xero_contact_id")
+    op.drop_index(op.f("ix_raw_materials_code"), table_name="raw_materials")
+    op.drop_index("ix_raw_material_code", table_name="raw_materials")
+    op.create_index("ix_raw_material_code", "raw_materials", ["code"], unique=1)
+    op.create_unique_constraint("uq_raw_materials__code", "raw_materials", ["code"])
+    op.drop_index(op.f("ix_raw_material_groups_code"), table_name="raw_material_groups")
+    op.drop_index("ix_rm_group_code", table_name="raw_material_groups")
+    op.create_index("ix_rm_group_code", "raw_material_groups", ["code"], unique=1)
+    op.create_unique_constraint(
+        "uq_raw_material_groups__code", "raw_material_groups", ["code"]
+    )
+    op.drop_constraint(
+        op.f("fk_products__supplier_id__suppliers"), "products", type_="foreignkey"
+    )
+    op.drop_column("products", "last_sync")
+    op.drop_column("products", "xero_item_id")
+    op.drop_index(op.f("ix_markups_code"), table_name="markups")
+    op.drop_index("ix_markup_code", table_name="markups")
+    op.create_index("ix_markup_code", "markups", ["code"], unique=1)
+    op.create_unique_constraint("uq_markups__code", "markups", ["code"])
+    op.drop_index(op.f("ix_datasets_code"), table_name="datasets")
+    op.drop_index("ix_dataset_code", table_name="datasets")
+    op.create_index("ix_dataset_code", "datasets", ["code"], unique=1)
+    op.create_unique_constraint("uq_datasets__code", "datasets", ["code"])
+    op.drop_column("customers", "last_sync")
+    op.drop_column("customers", "xero_contact_id")
+    op.drop_index(op.f("ix_condition_types_code"), table_name="condition_types")
+    op.drop_index("ix_condition_type_code", table_name="condition_types")
+    op.create_index("ix_condition_type_code", "condition_types", ["code"], unique=1)
+    op.create_unique_constraint("uq_condition_types__code", "condition_types", ["code"])
+    op.create_table(
+        "_alembic_tmp_condition_types",
+        sa.Column("id", sa.VARCHAR(length=36), nullable=False),
+        sa.Column("code", sa.VARCHAR(length=1), nullable=False),
+        sa.Column("description", sa.VARCHAR(length=100), nullable=False),
+        sa.Column("extended_desc", sa.TEXT(), nullable=True),
+        sa.Column("is_active", sa.BOOLEAN(), nullable=True),
+        sa.Column("created_at", sa.DATETIME(), nullable=True),
+        sa.PrimaryKeyConstraint("id", name="pk_condition_types"),
     )
     # ### end Alembic commands ###

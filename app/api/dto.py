@@ -3,8 +3,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
-from uuid import UUID
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +11,7 @@ from pydantic import BaseModel, Field
 # Common DTOs
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     error: str
     detail: Optional[str] = None
     field: Optional[str] = None
@@ -20,6 +20,7 @@ class ErrorResponse(BaseModel):
 # Product DTOs
 class ProductVariantCreate(BaseModel):
     """Create product variant request."""
+
     variant_code: str = Field(..., min_length=1, max_length=50)
     variant_name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
@@ -27,6 +28,7 @@ class ProductVariantCreate(BaseModel):
 
 class ProductVariantResponse(BaseModel):
     """Product variant response."""
+
     id: str
     product_id: str
     variant_code: str
@@ -38,11 +40,11 @@ class ProductVariantResponse(BaseModel):
 
 class ProductCreate(BaseModel):
     """Create product request."""
+
     sku: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    product_type: Optional[str] = Field("RAW", pattern="^(RAW|WIP|FINISHED)$")  # Deprecated, use capabilities
-    # Product Capabilities (replaces product_type)
+    # Product Capabilities
     is_purchase: bool = False
     is_sell: bool = False
     is_assemble: bool = False
@@ -126,9 +128,9 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     """Update product request."""
+
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    product_type: Optional[str] = Field(None, pattern="^(RAW|WIP|FINISHED)$")  # Deprecated
     # Product Capabilities
     is_purchase: Optional[bool] = None
     is_sell: Optional[bool] = None
@@ -213,11 +215,11 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(BaseModel):
     """Product response."""
+
     id: str
     sku: str
     name: str
     description: Optional[str]
-    product_type: str  # RAW, WIP, or FINISHED (deprecated)
     # Product Capabilities
     is_purchase: bool
     is_sell: bool
@@ -306,6 +308,7 @@ class ProductResponse(BaseModel):
 # Pricing DTOs
 class PricingResolutionRequest(BaseModel):
     """Pricing resolution request."""
+
     customer_id: str
     product_id: str
     pack_unit: Optional[str] = None
@@ -313,6 +316,7 @@ class PricingResolutionRequest(BaseModel):
 
 class PricingResolutionResponse(BaseModel):
     """Pricing resolution response."""
+
     unit_price_ex_tax: Decimal
     tax_rate: Decimal
     resolution_source: str  # "customer_price", "price_list_item", "error"
@@ -321,6 +325,7 @@ class PricingResolutionResponse(BaseModel):
 # Packing DTOs
 class PackConversionRequest(BaseModel):
     """Pack conversion request."""
+
     product_id: str
     qty: Decimal = Field(..., gt=0)
     from_unit: str
@@ -329,6 +334,7 @@ class PackConversionRequest(BaseModel):
 
 class PackConversionResponse(BaseModel):
     """Pack conversion response."""
+
     converted_qty: Decimal
     conversion_factor: Decimal
     from_unit: str
@@ -338,6 +344,7 @@ class PackConversionResponse(BaseModel):
 # Invoice DTOs
 class InvoiceLineCreate(BaseModel):
     """Create invoice line request."""
+
     product_id: str
     quantity_kg: Decimal = Field(..., gt=0)
     unit_price_ex_tax: Decimal = Field(..., ge=0)
@@ -346,6 +353,7 @@ class InvoiceLineCreate(BaseModel):
 
 class InvoiceCreate(BaseModel):
     """Create invoice request."""
+
     customer_id: str
     sales_order_id: Optional[str] = None
     invoice_date: Optional[datetime] = None
@@ -356,6 +364,7 @@ class InvoiceCreate(BaseModel):
 
 class InvoiceLineResponse(BaseModel):
     """Invoice line response."""
+
     id: str
     product_id: str
     quantity_kg: Decimal
@@ -368,6 +377,7 @@ class InvoiceLineResponse(BaseModel):
 
 class InvoiceResponse(BaseModel):
     """Invoice response."""
+
     id: str
     customer_id: str
     sales_order_id: Optional[str]
@@ -384,12 +394,14 @@ class InvoiceResponse(BaseModel):
 
 class InvoiceIssueRequest(BaseModel):
     """Issue invoice request."""
+
     notes: Optional[str] = None
 
 
 # Batch DTOs
 class BatchComponentCreate(BaseModel):
     """Create batch component request."""
+
     ingredient_product_id: str
     lot_id: str
     quantity_kg: Decimal = Field(..., gt=0)
@@ -397,6 +409,7 @@ class BatchComponentCreate(BaseModel):
 
 class BatchCreate(BaseModel):
     """Create batch request."""
+
     work_order_id: str
     batch_code: str = Field(..., min_length=1, max_length=50)
     quantity_kg: Decimal = Field(..., gt=0)
@@ -405,6 +418,7 @@ class BatchCreate(BaseModel):
 
 class BatchComponentResponse(BaseModel):
     """Batch component response."""
+
     id: str
     ingredient_product_id: str
     lot_id: str
@@ -414,6 +428,7 @@ class BatchComponentResponse(BaseModel):
 
 class BatchResponse(BaseModel):
     """Batch response."""
+
     id: str
     work_order_id: str
     batch_code: str
@@ -427,6 +442,7 @@ class BatchResponse(BaseModel):
 
 class BatchFinishRequest(BaseModel):
     """Finish batch request."""
+
     notes: Optional[str] = None
     create_wip: bool = False
     wip_product_id: Optional[str] = None
@@ -436,6 +452,7 @@ class BatchFinishRequest(BaseModel):
 # Print DTOs
 class PrintResponse(BaseModel):
     """Print response."""
+
     content: str
     format: str
     generated_at: datetime
@@ -444,6 +461,7 @@ class PrintResponse(BaseModel):
 # Raw Material DTOs
 class RawMaterialCreate(BaseModel):
     """Create raw material request."""
+
     code: int
     desc1: str = Field(..., max_length=25)
     desc2: Optional[str] = Field(None, max_length=25)
@@ -470,6 +488,7 @@ class RawMaterialCreate(BaseModel):
 
 class RawMaterialUpdate(BaseModel):
     """Update raw material request."""
+
     desc1: Optional[str] = Field(None, max_length=25)
     desc2: Optional[str] = Field(None, max_length=25)
     search_key: Optional[str] = Field(None, max_length=5)
@@ -497,6 +516,7 @@ class RawMaterialUpdate(BaseModel):
 
 class RawMaterialResponse(BaseModel):
     """Raw material response."""
+
     id: str
     code: int
     desc1: str
@@ -535,19 +555,20 @@ class RawMaterialResponse(BaseModel):
     xero_account: Optional[str]
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class RawMaterialGroupResponse(BaseModel):
     """Raw material group response."""
+
     id: str
     code: str
     name: str
     description: Optional[str]
     is_active: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True

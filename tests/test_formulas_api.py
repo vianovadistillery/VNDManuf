@@ -2,11 +2,9 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from decimal import Decimal
 
-from app.api.main import create_app
 from app.adapters.db import get_db
-from app.adapters.db.models import Formula, FormulaLine, Product
+from app.api.main import create_app
 
 
 @pytest.fixture
@@ -39,7 +37,7 @@ def test_formula_revision_endpoints(client):
     # Test getting all revisions
     response = client.get("/api/v1/formulas/code/TEST/revisions")
     assert response.status_code in [200, 404]
-    
+
     # Test getting specific revision
     response = client.get("/api/v1/formulas/code/TEST/version/1")
     assert response.status_code in [200, 404]
@@ -53,9 +51,9 @@ def test_create_formula(client):
         "formula_name": "Test Formula",
         "version": 1,
         "is_active": True,
-        "lines": []
+        "lines": [],
     }
-    
+
     response = client.post("/api/v1/formulas/", json=formula_data)
     assert response.status_code in [201, 400]  # 400 if product not found
 
@@ -66,4 +64,3 @@ def test_formula_cost_calculation(client):
     # For now, test endpoint exists
     response = client.get("/api/v1/reports/formulas/cost-analysis?formula_code=TEST")
     assert response.status_code in [200, 404]
-

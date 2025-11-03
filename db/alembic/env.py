@@ -4,15 +4,15 @@
 import os
 import sys
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Import the Base and models
 from app.adapters.db.session import Base
-from app.adapters.db import models  # Import all models to register them
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -39,7 +39,7 @@ def get_url():
     url = os.getenv("DATABASE_URL")
     if url:
         return url
-    
+
     # Fall back to config file
     return config.get_main_option("sqlalchemy.url")
 
@@ -77,7 +77,7 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -85,9 +85,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

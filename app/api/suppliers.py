@@ -2,10 +2,11 @@
 """Suppliers API router."""
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.adapters.db import get_db
 from app.adapters.db.models import Supplier
@@ -14,6 +15,7 @@ from app.adapters.db.models import Supplier
 # DTOs
 class SupplierCreate(BaseModel):
     """Create supplier request."""
+
     name: str
     contact_person: Optional[str] = None
     email: Optional[str] = None
@@ -25,6 +27,7 @@ class SupplierCreate(BaseModel):
 
 class SupplierUpdate(BaseModel):
     """Update supplier request."""
+
     name: Optional[str] = None
     contact_person: Optional[str] = None
     email: Optional[str] = None
@@ -36,6 +39,7 @@ class SupplierUpdate(BaseModel):
 
 class SupplierResponse(BaseModel):
     """Supplier response."""
+
     id: str
     code: str
     name: str
@@ -63,7 +67,7 @@ def supplier_to_response(s: Supplier) -> SupplierResponse:
         address=s.address,
         xero_id=s.xero_id,
         is_active=s.is_active,
-        created_at=s.created_at.isoformat() if s.created_at else ""
+        created_at=s.created_at.isoformat() if s.created_at else "",
     )
 
 
@@ -74,26 +78,26 @@ async def list_suppliers(
     code: Optional[str] = None,
     name: Optional[str] = None,
     is_active: Optional[bool] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List suppliers with optional filtering."""
     stmt = select(Supplier)
-    
+
     # Filter by code (UUID search)
     if code:
         stmt = stmt.where(Supplier.id.contains(code))
-    
+
     # Filter by name
     if name:
         stmt = stmt.where(Supplier.name.contains(name))
-    
+
     # Filter by active status
     if is_active is not None:
         stmt = stmt.where(Supplier.is_active == is_active)
-    
+
     stmt = stmt.order_by(Supplier.name).offset(skip).limit(limit)
     suppliers = db.execute(stmt).scalars().all()
-    
+
     return [supplier_to_response(s) for s in suppliers]
 
 
@@ -103,21 +107,18 @@ async def get_supplier(supplier_id: str, db: Session = Depends(get_db)):
     supplier = db.get(Supplier, supplier_id)
     if not supplier:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Supplier not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found"
         )
-    
+
     return supplier_to_response(supplier)
 
 
 @router.post("/", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)
-async def create_supplier(
-    supplier_data: SupplierCreate,
-    db: Session = Depends(get_db)
-):
+async def create_supplier(supplier_data: SupplierCreate, db: Session = Depends(get_db)):
     """Create a new supplier."""
     # Create supplier with auto-generated code
     import uuid
+
     supplier = Supplier(
         id=str(uuid.uuid4()),
         code=str(uuid.uuid4()),  # Auto-generate UUID code
@@ -127,29 +128,26 @@ async def create_supplier(
         phone=supplier_data.phone,
         address=supplier_data.address,
         xero_id=supplier_data.xero_id,
-        is_active=supplier_data.is_active
+        is_active=supplier_data.is_active,
     )
     db.add(supplier)
     db.commit()
     db.refresh(supplier)
-    
+
     return supplier_to_response(supplier)
 
 
 @router.put("/{supplier_id}", response_model=SupplierResponse)
 async def update_supplier(
-    supplier_id: str,
-    supplier_data: SupplierUpdate,
-    db: Session = Depends(get_db)
+    supplier_id: str, supplier_data: SupplierUpdate, db: Session = Depends(get_db)
 ):
     """Update supplier."""
     supplier = db.get(Supplier, supplier_id)
     if not supplier:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Supplier not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found"
         )
-    
+
     # Update fields
     if supplier_data.name is not None:
         supplier.name = supplier_data.name
@@ -165,10 +163,10 @@ async def update_supplier(
         supplier.xero_id = supplier_data.xero_id
     if supplier_data.is_active is not None:
         supplier.is_active = supplier_data.is_active
-    
+
     db.commit()
     db.refresh(supplier)
-    
+
     return supplier_to_response(supplier)
 
 
@@ -178,10 +176,8 @@ async def delete_supplier(supplier_id: str, db: Session = Depends(get_db)):
     supplier = db.get(Supplier, supplier_id)
     if not supplier:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Supplier not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found"
         )
-    
+
     db.delete(supplier)
     db.commit()
-

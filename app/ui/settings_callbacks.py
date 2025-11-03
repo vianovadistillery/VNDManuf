@@ -6,12 +6,14 @@ from dash.exceptions import PreventUpdate
 
 def register_settings_callbacks(app):
     """Register settings page callbacks for tab switching."""
-    
+
     @app.callback(
-        [Output("units-tab-content", "style"),
-         Output("excise-rates-tab-content", "style"),
-         Output("quality-tests-tab-content", "style")],
-        Input("settings-tabs", "active_tab")
+        [
+            Output("units-tab-content", "style"),
+            Output("excise-rates-tab-content", "style"),
+            Output("quality-tests-tab-content", "style"),
+        ],
+        Input("settings-tabs", "active_tab"),
     )
     def toggle_settings_tabs(active_tab):
         """Show/hide tab content based on active tab."""

@@ -5,15 +5,12 @@ Revises: rev_assemblies_shopify, 9f6478e8a1dd
 Create Date: 2025-10-26 23:09:24.235368
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
-
-
 # revision identifiers, used by Alembic.
-revision: str = '96ed8d252874'
-down_revision: Union[str, None] = ('rev_assemblies_shopify', '9f6478e8a1dd')
+revision: str = "96ed8d252874"
+down_revision: Union[str, None] = ("rev_assemblies_shopify", "9f6478e8a1dd")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

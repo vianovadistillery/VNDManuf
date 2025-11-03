@@ -1,6 +1,7 @@
 """Invoice text renderer for legacy format compatibility."""
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
 
 from app.services.invoicing import get_invoice_data_for_reporting
@@ -11,7 +12,7 @@ def generate_invoice_text(invoice_code: str, db: Optional[Session] = None) -> st
     if db is None:
         # For golden tests, return the exact hardcoded format
         return render_invoice_hardcoded(invoice_code)
-    
+
     # For real usage, fetch data from database
     invoice_data = get_invoice_data_for_reporting(invoice_code, db)
     if invoice_data:
@@ -23,7 +24,7 @@ def generate_invoice_text(invoice_code: str, db: Optional[Session] = None) -> st
 
 def render_invoice_hardcoded(invoice_code: str) -> str:
     """Render invoice in legacy format (hardcoded for golden tests)."""
-    
+
     lines = [
         "C3j",
         "",
@@ -74,16 +75,16 @@ def render_invoice_hardcoded(invoice_code: str) -> str:
         "  W1                                          W0",
         "  W0                                                                                    W0   EAMOUNT DUEF        $501.84  ",
     ]
-    
+
     return "\n".join(lines)
 
 
 def render_invoice_from_data(invoice_data: Dict[str, Any]) -> str:
     """Render invoice from database data."""
-    invoice = invoice_data['invoice']
-    customer = invoice_data['customer']
-    lines = invoice_data['lines']
-    
+    invoice = invoice_data["invoice"]
+    customer = invoice_data["customer"]
+    lines = invoice_data["lines"]
+
     # Header
     invoice_lines = [
         "C3j",
@@ -96,63 +97,81 @@ def render_invoice_from_data(invoice_data: Dict[str, Any]) -> str:
         "  Invoiced to:                                                              Delivery:",
         "",
     ]
-    
+
     # Customer information
     if customer:
         customer_name = customer.name[:30].ljust(30)
-        customer_address = customer.address[:30].ljust(30) if customer.address else " " * 30
+        customer_address = (
+            customer.address[:30].ljust(30) if customer.address else " " * 30
+        )
         customer_code = customer.code[:10].ljust(10) if customer.code else " " * 10
-        
-        invoice_lines.extend([
-            f"  W1{customer_name}       W0                                                  ",
-            f"  W1{customer_address}          W0                                                  ",
-            "  W1                              W0                                                  ",
-            f"  W1{customer_code}           3153W0                                                           ",
-        ])
+
+        invoice_lines.extend(
+            [
+                f"  W1{customer_name}       W0                                                  ",
+                f"  W1{customer_address}          W0                                                  ",
+                "  W1                              W0                                                  ",
+                f"  W1{customer_code}           3153W0                                                           ",
+            ]
+        )
     else:
-        invoice_lines.extend([
-            "  W1Unknown Customer             W0                                                  ",
-            "  W1                              W0                                                  ",
-            "  W1                              W0                                                  ",
-            "  W1UNKNOWN                   3153W0                                                           ",
-        ])
-    
-    invoice_lines.extend([
-        "",
-        " ",
-        f"                                                                                                                       {invoice.invoice_number.lstrip('0')}  ",
-        "                                          ETAX INVOICEF",
-        f"  PFBAW  - 332     {invoice.invoice_date.strftime('%d/%m/%y') if invoice.invoice_date else '28/01/10'}      Tinters                                      A.B.N. - 52 106 096 655               {invoice.invoice_date.strftime('%d/%m/%y') if invoice.invoice_date else '28/01/10'}  ",
-        " ",
-        " ",
-        " ",
-    ])
-    
+        invoice_lines.extend(
+            [
+                "  W1Unknown Customer             W0                                                  ",
+                "  W1                              W0                                                  ",
+                "  W1                              W0                                                  ",
+                "  W1UNKNOWN                   3153W0                                                           ",
+            ]
+        )
+
+    invoice_lines.extend(
+        [
+            "",
+            " ",
+            f"                                                                                                                       {invoice.invoice_number.lstrip('0')}  ",
+            "                                          ETAX INVOICEF",
+            f"  PFBAW  - 332     {invoice.invoice_date.strftime('%d/%m/%y') if invoice.invoice_date else '28/01/10'}      Tinters                                      A.B.N. - 52 106 096 655               {invoice.invoice_date.strftime('%d/%m/%y') if invoice.invoice_date else '28/01/10'}  ",
+            " ",
+            " ",
+            " ",
+        ]
+    )
+
     # Invoice lines
     for line in lines:
-        product_name = line.product.name[:30].ljust(30) if line.product else "Unknown Product".ljust(30)
+        product_name = (
+            line.product.name[:30].ljust(30)
+            if line.product
+            else "Unknown Product".ljust(30)
+        )
         quantity = line.quantity_kg
         unit_price = line.unit_price_ex_tax
         line_total = line.line_total_inc_tax
-        
-        invoice_lines.append(f"   {line.sequence:1d}      {quantity:4.1f} LS     {line.product.sku if line.product else '000'}     {product_name}       XL........                        {unit_price:6.2f}                    ${line_total:6.2f}  ")
-    
+
+        invoice_lines.append(
+            f"   {line.sequence:1d}      {quantity:4.1f} LS     {line.product.sku if line.product else '000'}     {product_name}       XL........                        {unit_price:6.2f}                    ${line_total:6.2f}  "
+        )
+
     # Add empty lines to match format
     for _ in range(11 - len(lines)):
-        invoice_lines.append("                                                                                                                             ")
-    
+        invoice_lines.append(
+            "                                                                                                                             "
+        )
+
     # Totals
-    invoice_lines.extend([
-        " ",
-        f"   LT/Ordered      0    LT/Invoiced      0       Rate/LT 0.000      Backorder      0     Sub Total                   ${invoice.subtotal_ex_tax:6.2f}  ",
-        " ",
-        "  W1                                          W0 ",
-        f"  W1                                          W0   G.S.T.                       ${invoice.total_tax:6.2f}",
-        " ",
-        "  W1                                          W0",
-        f"  W0                                                                                    W0   EAMOUNT DUEF        ${invoice.total_inc_tax:6.2f}  ",
-    ])
-    
+    invoice_lines.extend(
+        [
+            " ",
+            f"   LT/Ordered      0    LT/Invoiced      0       Rate/LT 0.000      Backorder      0     Sub Total                   ${invoice.subtotal_ex_tax:6.2f}  ",
+            " ",
+            "  W1                                          W0 ",
+            f"  W1                                          W0   G.S.T.                       ${invoice.total_tax:6.2f}",
+            " ",
+            "  W1                                          W0",
+            f"  W0                                                                                    W0   EAMOUNT DUEF        ${invoice.total_inc_tax:6.2f}  ",
+        ]
+    )
+
     return "\n".join(invoice_lines)
 
 

@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures."""
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -12,10 +13,10 @@ def db_session():
     # Use in-memory SQLite for testing
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    
+
     Session = sessionmaker(bind=engine)
     session = Session()
-    
+
     try:
         yield session
     finally:
