@@ -524,7 +524,12 @@ def register_product_callbacks(app, make_api_request):
             for row in pricing_data:
                 if row.get("price_level") == price_level:
                     val = row.get(field)
-                    return float(val) if val is not None and val != "" else None
+                    if val is None or val == "":
+                        return None
+                    try:
+                        return float(val)
+                    except (ValueError, TypeError):
+                        return None
             return None
 
         # Extract cost data from table
@@ -536,7 +541,12 @@ def register_product_callbacks(app, make_api_request):
                     val = row.get(field)
                     if field == "tax_included":
                         return val if val != "N/A" else None
-                    return float(val) if val is not None and val != "" else None
+                    if val is None or val == "":
+                        return None
+                    try:
+                        return float(val)
+                    except (ValueError, TypeError):
+                        return None
             return None
 
         # Prepare product data
@@ -586,7 +596,7 @@ def register_product_callbacks(app, make_api_request):
             "purchase_format_id": str(purchase_format_id)
             if purchase_format_id
             else None,
-            "raw_material_group_id": None,  # Not in form, always None
+            # raw_material_group_id removed - deprecated field
             # Base unit: include even if empty string to allow clearing
             "base_unit": base_unit.strip()
             if base_unit is not None and base_unit != ""
@@ -597,8 +607,8 @@ def register_product_callbacks(app, make_api_request):
                 else (is_active if is_active is not None else True)
             ),
             "size": size.strip() if size else None,
-            "weight_kg": float(weight) if weight else None,
-            "pack": None,  # Not in form, always None
+            # weight_kg removed - not a Product model field
+            # pack removed - deprecated field
             "pkge": None,  # Not in form, always None
             # Density: include if provided (even if 0), None if empty
             "density_kg_per_l": (
@@ -608,7 +618,11 @@ def register_product_callbacks(app, make_api_request):
                 and str(density).strip() != ""
                 else None
             ),
-            "abv_percent": float(abv) if abv else None,
+            "abv_percent": (
+                float(abv)
+                if abv is not None and str(abv).strip() and str(abv).strip() != ""
+                else None
+            ),
             "dgflag": dgflag if dgflag else None,
             # Legacy pricing fields (not in form, set to None - handled by pricing/cost tables)
             "taxinc": None,
@@ -691,20 +705,31 @@ def register_product_callbacks(app, make_api_request):
             ),
             # Raw Material specific fields
             "purchase_unit_id": purchase_unit_id if purchase_unit_id else None,
-            "purchase_volume": None,  # Not in form, always None
+            # purchase_volume renamed to purchase_quantity in model - not in form, always None
             "usage_unit": usage_unit if usage_unit else None,
-            "usage_cost": float(usage_cost) if usage_cost else None,
+            "usage_cost": (
+                float(usage_cost)
+                if usage_cost is not None
+                and str(usage_cost).strip()
+                and str(usage_cost).strip() != ""
+                else None
+            ),
             "restock_level": None,  # Not in form, always None
-            # Finished Good specific fields
-            "formula_id": None,  # Not in form, always None
-            "formula_revision": None,  # Not in form, always None
+            # formula_id and formula_revision removed - deprecated fields (use Assembly section instead)
         }
 
         try:
-            if product_id and isinstance(product_id, str):
+            # Validate product_id - handle empty string case
+            product_id_clean = (
+                product_id.strip()
+                if product_id and isinstance(product_id, str)
+                else None
+            )
+
+            if product_id_clean:
                 # Update existing product
                 response = make_api_request(
-                    "PUT", f"/products/{product_id}", product_data
+                    "PUT", f"/products/{product_id_clean}", product_data
                 )
                 success_msg = f"Product {sku} updated successfully"
             else:

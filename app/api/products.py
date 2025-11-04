@@ -37,14 +37,10 @@ def product_to_response(product: Product) -> ProductResponse:
         supplier_id=(
             str(product.supplier_id) if getattr(product, "supplier_id", None) else None
         ),
-        raw_material_group_id=(
-            str(getattr(product, "raw_material_group_id", None))
-            if getattr(product, "raw_material_group_id", None)
-            else None
-        ),
+        raw_material_group_id=None,  # Deprecated field - always None for backward compatibility
         size=getattr(product, "size", None),
         base_unit=getattr(product, "base_unit", None),
-        pack=getattr(product, "pack", None),
+        pack=None,  # Deprecated field - always None for backward compatibility
         density_kg_per_l=getattr(product, "density_kg_per_l", None),
         abv_percent=getattr(product, "abv_percent", None),
         dgflag=getattr(product, "dgflag", None),
@@ -72,7 +68,7 @@ def product_to_response(product: Product) -> ProductResponse:
             if getattr(product, "purchase_unit_id", None)
             else None
         ),
-        purchase_volume=getattr(product, "purchase_volume", None),
+        purchase_quantity=getattr(product, "purchase_quantity", None),
         specific_gravity=getattr(product, "specific_gravity", None),
         vol_solid=getattr(product, "vol_solid", None),
         solid_sg=getattr(product, "solid_sg", None),
@@ -84,13 +80,9 @@ def product_to_response(product: Product) -> ProductResponse:
         hazard=getattr(product, "hazard", None),
         condition=getattr(product, "condition", None),
         msds_flag=getattr(product, "msds_flag", None),
-        # Finished Good specific fields (may not exist)
-        formula_id=(
-            str(getattr(product, "formula_id", None))
-            if getattr(product, "formula_id", None)
-            else None
-        ),
-        formula_revision=getattr(product, "formula_revision", None),
+        # Finished Good specific fields (deprecated - use Assembly section instead)
+        formula_id=None,  # Deprecated field - always None for backward compatibility
+        formula_revision=None,  # Deprecated field - always None for backward compatibility
         # Sales Pricing (may not exist)
         retail_price_inc_gst=getattr(product, "retail_price_inc_gst", None),
         retail_price_ex_gst=getattr(product, "retail_price_ex_gst", None),
@@ -256,10 +248,10 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         is_assemble=product_data.is_assemble,
         ean13=product_data.ean13,
         supplier_id=product_data.supplier_id,
-        raw_material_group_id=product_data.raw_material_group_id,
+        # raw_material_group_id removed - deprecated field
         size=product_data.size,
         base_unit=product_data.base_unit,
-        pack=product_data.pack,
+        # pack removed - deprecated field
         density_kg_per_l=product_data.density_kg_per_l,
         abv_percent=product_data.abv_percent,
         dgflag=product_data.dgflag,
@@ -283,7 +275,7 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         distributorcde=product_data.distributorcde,
         # Raw Material specific fields
         purchase_unit_id=product_data.purchase_unit_id,
-        purchase_volume=product_data.purchase_volume,
+        purchase_quantity=product_data.purchase_volume,  # DTO uses purchase_volume, model uses purchase_quantity
         specific_gravity=product_data.specific_gravity,
         vol_solid=product_data.vol_solid,
         solid_sg=product_data.solid_sg,
@@ -295,9 +287,7 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         hazard=product_data.hazard,
         condition=product_data.condition,
         msds_flag=product_data.msds_flag,
-        # Finished Good specific fields
-        formula_id=product_data.formula_id,
-        formula_revision=product_data.formula_revision,
+        # formula_id and formula_revision removed - deprecated fields (use Assembly section instead)
         # Sales Pricing
         retail_price_inc_gst=product_data.retail_price_inc_gst,
         retail_price_ex_gst=product_data.retail_price_ex_gst,
@@ -366,14 +356,12 @@ async def update_product(
         product.ean13 = product_data.ean13
     if product_data.supplier_id is not None:
         product.supplier_id = product_data.supplier_id
-    if product_data.raw_material_group_id is not None:
-        product.raw_material_group_id = product_data.raw_material_group_id
+    # raw_material_group_id removed - deprecated field
     if product_data.size is not None:
         product.size = product_data.size
     if product_data.base_unit is not None:
         product.base_unit = product_data.base_unit
-    if product_data.pack is not None:
-        product.pack = product_data.pack
+    # pack removed - deprecated field
     if product_data.density_kg_per_l is not None:
         product.density_kg_per_l = product_data.density_kg_per_l
     if product_data.abv_percent is not None:
@@ -420,7 +408,9 @@ async def update_product(
     if product_data.purchase_unit_id is not None:
         product.purchase_unit_id = product_data.purchase_unit_id
     if product_data.purchase_volume is not None:
-        product.purchase_volume = product_data.purchase_volume
+        product.purchase_quantity = (
+            product_data.purchase_volume
+        )  # DTO uses purchase_volume, model uses purchase_quantity
     if product_data.specific_gravity is not None:
         product.specific_gravity = product_data.specific_gravity
     if product_data.vol_solid is not None:
@@ -443,11 +433,7 @@ async def update_product(
         product.condition = product_data.condition
     if product_data.msds_flag is not None:
         product.msds_flag = product_data.msds_flag
-    # Finished Good specific fields
-    if product_data.formula_id is not None:
-        product.formula_id = product_data.formula_id
-    if product_data.formula_revision is not None:
-        product.formula_revision = product_data.formula_revision
+    # formula_id and formula_revision removed - deprecated fields (use Assembly section instead)
     # Sales Pricing
     if product_data.retail_price_inc_gst is not None:
         product.retail_price_inc_gst = product_data.retail_price_inc_gst
