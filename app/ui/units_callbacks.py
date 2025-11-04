@@ -93,9 +93,11 @@ def register_units_callbacks(app, make_api_request):
                 unit.get("unit_type", ""),
                 unit.get("description", ""),
                 unit.get("conversion_formula", ""),
-                unit.get("is_active") == "Yes"
-                if isinstance(unit.get("is_active"), str)
-                else unit.get("is_active", True),
+                (
+                    unit.get("is_active") == "Yes"
+                    if isinstance(unit.get("is_active"), str)
+                    else unit.get("is_active", True)
+                ),
                 unit.get("id"),  # Hidden field - unit ID
             )
 
@@ -157,9 +159,9 @@ def register_units_callbacks(app, make_api_request):
             "symbol": symbol.strip() if symbol else None,
             "unit_type": unit_type if unit_type else None,
             "description": description.strip() if description else None,
-            "conversion_formula": conversion_formula.strip()
-            if conversion_formula
-            else None,
+            "conversion_formula": (
+                conversion_formula.strip() if conversion_formula else None
+            ),
             "is_active": is_active if is_active is not None else True,
         }
 

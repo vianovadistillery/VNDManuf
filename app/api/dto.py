@@ -572,3 +572,162 @@ class RawMaterialGroupResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Work Order DTOs
+class WorkOrderCreate(BaseModel):
+    """Create work order request."""
+
+    product_id: str
+    planned_qty: Decimal = Field(..., gt=0)
+    work_center: Optional[str] = None
+    assembly_id: Optional[str] = None  # Primary recipe definition (Assembly)
+    uom: str = "KG"
+    notes: Optional[str] = None
+
+
+class WorkOrderInputResponse(BaseModel):
+    """Work order input line response."""
+
+    id: str
+    component_product_id: str
+    planned_qty: Optional[Decimal]
+    actual_qty: Optional[Decimal]
+    uom: Optional[str]
+    source_batch_id: Optional[str]
+    unit_cost: Optional[Decimal]
+    line_type: Optional[str]
+    sequence: int
+
+    class Config:
+        from_attributes = True
+
+
+class WorkOrderOutputResponse(BaseModel):
+    """Work order output response."""
+
+    id: str
+    product_id: str
+    qty_produced: Decimal
+    uom: str
+    batch_id: str
+    unit_cost: Optional[Decimal]
+    scrap_qty: Optional[Decimal]
+    note: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class WorkOrderResponse(BaseModel):
+    """Work order response."""
+
+    id: str
+    code: str
+    product_id: str
+    assembly_id: Optional[str]  # Primary recipe definition (Assembly)
+    formula_id: Optional[str] = None  # Legacy, kept for backward compatibility
+    planned_qty: Optional[Decimal]
+    uom: Optional[str]
+    work_center: Optional[str]
+    status: str
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    batch_code: Optional[str]
+    notes: Optional[str]
+    created_at: datetime
+    inputs: List[WorkOrderInputResponse] = []
+    outputs: List[WorkOrderOutputResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class WorkOrderReleaseRequest(BaseModel):
+    """Release work order request."""
+
+    pass
+
+
+class WorkOrderStartRequest(BaseModel):
+    """Start work order request."""
+
+    pass
+
+
+class WorkOrderIssueRequest(BaseModel):
+    """Issue material request."""
+
+    component_product_id: str
+    qty: Decimal = Field(..., gt=0)
+    source_batch_id: Optional[str] = None
+    uom: Optional[str] = None
+
+
+class WorkOrderQcRequest(BaseModel):
+    """Record QC test request."""
+
+    test_type: str
+    result_value: Optional[Decimal] = None
+    result_text: Optional[str] = None
+    unit: Optional[str] = None
+    status: str = "pending"
+    tester: Optional[str] = None
+    note: Optional[str] = None
+
+
+class WorkOrderQcResponse(BaseModel):
+    """QC test response."""
+
+    id: str
+    test_type: str
+    result_value: Optional[Decimal]
+    result_text: Optional[str]
+    unit: Optional[str]
+    status: str
+    tested_at: Optional[datetime]
+    tester: Optional[str]
+    note: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class WorkOrderOverheadRequest(BaseModel):
+    """Apply overhead request."""
+
+    rate_code: str
+    basis_qty: Optional[Decimal] = None
+    seconds: Optional[int] = None
+
+
+class WorkOrderCompleteRequest(BaseModel):
+    """Complete work order request."""
+
+    qty_produced: Decimal = Field(..., gt=0)
+    batch_attrs: Optional[dict] = None  # mfg_date, exp_date, meta
+
+
+class WorkOrderCostResponse(BaseModel):
+    """Work order cost breakdown response."""
+
+    material_cost: Decimal
+    overhead_cost: Decimal
+    total_cost: Decimal
+    qty_produced: Optional[Decimal]
+    unit_cost: Optional[Decimal]
+
+
+class GenealogyResponse(BaseModel):
+    """Batch genealogy response."""
+
+    batch_id: str
+    batch_code: str
+    input_batch_ids: List[str]
+    genealogy: Optional[dict] = None
+
+
+class WorkOrderVoidRequest(BaseModel):
+    """Void work order request."""
+
+    reason: str = Field(..., min_length=1)

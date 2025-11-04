@@ -11,7 +11,7 @@ import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import requests
-from dash import Input, Output, State, html, no_update
+from dash import Input, Output, State, html
 
 # Load pages.py as a module
 spec = importlib.util.spec_from_file_location(
@@ -29,7 +29,6 @@ reports_page = pages_old.reports_page
 from .contacts_callbacks import register_contacts_callbacks  # noqa: E402
 from .excise_rates_callbacks import register_excise_rates_callbacks  # noqa: E402
 from .formulas_callbacks import register_formulas_callbacks  # noqa: E402
-from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .pages.batch_processing_page import BatchProcessingPage  # noqa: E402
 from .pages.batch_reports_page import BatchReportsPage  # noqa: E402
 from .pages.condition_types_page import ConditionTypesPage  # noqa: E402
@@ -39,8 +38,15 @@ from .pages.contacts_page import ContactsPage  # noqa: E402
 from .pages.formulas_page import FormulasPage  # noqa: E402
 from .pages.rm_reports_page import RmReportsPage  # noqa: E402
 from .pages.stocktake_page import StocktakePage  # noqa: E402
+from .pages.work_orders_page import WorkOrdersPage  # noqa: E402
 from .pages_enhanced import products_page_enhanced  # noqa: E402
+from .product_section_callbacks import register_product_section_callbacks  # noqa: E402
 from .products_callbacks import register_product_callbacks  # noqa: E402
+from .purchase_formats_callbacks import (  # noqa: E402
+    register_purchase_formats_callbacks,
+)
+from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa: E402
+from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
 
 # Xero integration temporarily disabled - will re-enable later
@@ -92,6 +98,7 @@ app.layout = dbc.Container(
                                 dbc.Tab(
                                     label="Batch Processing", tab_id="batch-processing"
                                 ),
+                                dbc.Tab(label="Work Orders", tab_id="work-orders"),
                                 dbc.Tab(label="Contacts", tab_id="contacts"),
                                 dbc.Tab(label="Inventory", tab_id="inventory"),
                                 dbc.Tab(label="Batch Reports", tab_id="batch-reports"),
@@ -421,6 +428,10 @@ def render_tab_content(active_tab):
         layout = ConditionTypesPage.get_layout()
         print("Conditions layout created")  # Debug print
         return layout
+    elif active_tab == "work-orders":
+        layout = WorkOrdersPage.get_layout()
+        print("Work Orders layout created")  # Debug print
+        return layout
     elif active_tab == "settings":
         from .pages.settings_page import SettingsPage
 
@@ -447,16 +458,22 @@ def render_tab_content(active_tab):
         Input("filter-purchase", "value"),
         Input("filter-sell", "value"),
         Input("filter-assemble", "value"),
+        Input("products-refresh-trigger", "children"),
     ],
-    prevent_initial_call=True,
+    prevent_initial_call=False,
 )
 def load_products_table(
-    active_tab, refresh_clicks, filter_purchase, filter_sell, filter_assemble
+    active_tab,
+    refresh_clicks,
+    filter_purchase,
+    filter_sell,
+    filter_assemble,
+    refresh_trigger,
 ):
     """Load products table when products tab is activated, refresh is clicked, or filters change."""
     # Only load if we're on the products tab
     if active_tab != "products":
-        return no_update
+        return []
 
     print(
         f"[load_products_table] active_tab={active_tab}, filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}"
@@ -466,20 +483,14 @@ def load_products_table(
     all_products = []
 
     try:
-        # Build filter query using capabilities
-        filter_params = {}
-        if filter_purchase is True:
-            filter_params["is_purchase"] = True
-        if filter_sell is True:
-            filter_params["is_sell"] = True
-        if filter_assemble is True:
-            filter_params["is_assemble"] = True
+        # Fetch all products (we'll filter client-side for OR logic)
+        print(
+            f"[load_products_table] Filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}"
+        )
 
-        print(f"[load_products_table] Fetching products with filters: {filter_params}")
-
-        # Fetch products with filters
+        # Fetch all products
         try:
-            response = make_api_request("GET", "/products/", data=filter_params)
+            response = make_api_request("GET", "/products/")
             print(f"[load_products_table] Response: type={type(response).__name__}")
 
             if isinstance(response, list):
@@ -508,31 +519,33 @@ def load_products_table(
             traceback.print_exc()
             all_products = []
 
-        # If still no products, try fetching all
-        if not all_products:
-            print("[load_products_table] No products with filters, trying all...")
-            try:
-                response = make_api_request("GET", "/products/")
-                if isinstance(response, list):
-                    all_products = response
-                elif isinstance(response, dict):
-                    if "products" in response:
-                        all_products = response["products"]
-                    elif "error" in response:
-                        print(
-                            f"[load_products_table] Error fetching all: {response.get('error')}"
-                        )
-                        all_products = []
-                    else:
-                        print(
-                            f"[load_products_table] Unexpected response keys: {list(response.keys())}"
-                        )
-                        all_products = []
-                else:
-                    all_products = []
-            except Exception as e:
-                print(f"[load_products_table] Error fetching all: {e}")
-                all_products = []
+        # Apply OR filter logic client-side
+        # If any filter is True, show products matching ANY of those types
+        # If all filters are False/None, show all products
+        active_filters = []
+        if filter_purchase is True:
+            active_filters.append("is_purchase")
+        if filter_sell is True:
+            active_filters.append("is_sell")
+        if filter_assemble is True:
+            active_filters.append("is_assemble")
+
+        if active_filters:
+            print(f"[load_products_table] Applying OR filter for: {active_filters}")
+            filtered_products = []
+            for product in all_products:
+                # Check if product matches ANY of the active filters
+                matches = False
+                for filter_type in active_filters:
+                    if product.get(filter_type):
+                        matches = True
+                        break
+                if matches:
+                    filtered_products.append(product)
+            all_products = filtered_products
+            print(
+                f"[load_products_table] After OR filter: {len(all_products)} products"
+            )
 
         print(f"[load_products_table] Total products: {len(all_products)}")
 
@@ -579,10 +592,43 @@ def load_products_table(
             product["is_purchase"] = "✓" if product.get("is_purchase") else ""
             product["is_sell"] = "✓" if product.get("is_sell") else ""
             product["is_assemble"] = "✓" if product.get("is_assemble") else ""
-            # Convert datetime objects to strings
+            # Convert datetime objects to strings and format dates
             for date_field in ["created_at", "updated_at"]:
                 if date_field in product and product[date_field]:
-                    product[date_field] = str(product[date_field])
+                    try:
+                        from datetime import datetime
+
+                        if isinstance(product[date_field], str):
+                            # Try to parse and format
+                            try:
+                                dt = datetime.fromisoformat(
+                                    product[date_field].replace("Z", "+00:00")
+                                )
+                                product[date_field] = dt.strftime("%Y-%m-%d %H:%M")
+                            except (ValueError, TypeError, AttributeError):
+                                product[date_field] = str(product[date_field])
+                        else:
+                            product[date_field] = str(product[date_field])
+                    except (ValueError, TypeError, AttributeError):
+                        product[date_field] = str(product[date_field])
+                elif date_field not in product:
+                    product[date_field] = "-"
+
+            # Add record status/version info
+            # Determine record type based on available fields
+            if not product.get("is_active", True):
+                pass
+            # Add version info if available
+            if "version" in product:
+                product["record_version"] = str(product.get("version", ""))
+            else:
+                product["record_version"] = "-"
+
+            # Add last modified date for versioning
+            product["last_modified"] = product.get(
+                "updated_at", product.get("created_at", "-")
+            )
+
             # Add placeholder fields for table display - format stock as number without unit
             stock_value = product.get("stock_on_hand", 0.0) or 0.0
             product["stock"] = round(float(stock_value), 3) if stock_value else 0.0
@@ -796,11 +842,19 @@ def generate_report(n_clicks, report_type, start_date, end_date):
 
 # Register CRUD callbacks
 register_product_callbacks(app, make_api_request)
+register_product_section_callbacks(app)
+register_purchase_usage_callbacks(app, make_api_request)
 register_formulas_callbacks(app, make_api_request)
 register_contacts_callbacks(app, make_api_request)
 register_units_callbacks(app, make_api_request)
 register_excise_rates_callbacks(app, make_api_request)
+register_purchase_formats_callbacks(app, make_api_request)
 register_settings_callbacks(app)
+
+# Register work orders callbacks
+from .work_orders_callbacks import register_work_orders_callbacks  # noqa: E402
+
+register_work_orders_callbacks(app, API_BASE_URL)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth

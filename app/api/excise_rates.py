@@ -76,6 +76,10 @@ async def list_excise_rates(
     """
     List excise rates with optional filtering by date.
 
+    Rates are ordered by date_active_from descending (most recent first).
+    Each rate is effective from its date_active_from until the next rate's date_active_from
+    (or indefinitely if it's the most recent rate).
+
     Args:
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -244,14 +248,15 @@ async def update_excise_rate(
 
 @router.delete("/{rate_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_excise_rate(rate_id: str, db: Session = Depends(get_db)):
-    """Delete an excise rate."""
+    """Soft delete an excise rate (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     rate = db.get(ExciseRate, rate_id)
     if not rate:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Excise rate not found"
         )
 
-    db.delete(rate)
+    soft_delete(db, rate)
     db.commit()
-
     return None

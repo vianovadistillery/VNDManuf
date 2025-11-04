@@ -16,7 +16,6 @@ def get_engine(echo: bool | None = None):
     kw = {
         "echo": False if echo is None else echo,
         "pool_pre_ping": True,
-        "future": True,
     }
     if url.startswith("sqlite"):
         kw.update(
@@ -41,12 +40,26 @@ def _lazy_init():
     if _engine is None:
         _engine = get_engine()
     if _SessionLocal is None:
-        _SessionLocal = sessionmaker(
-            bind=_engine, autoflush=False, autocommit=False, future=True
-        )
+        _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False)
 
 
 def get_session():
+    """
+    Create and return a database session.
+
+    For use in non-FastAPI contexts. Use try/finally or contextlib for cleanup:
+
+        session = get_session()
+        try:
+            # use session
+        finally:
+            session.close()
+
+    Or use contextlib.closing:
+        from contextlib import closing
+        with closing(get_session()) as session:
+            # use session
+    """
     _lazy_init()
     return _SessionLocal()
 

@@ -11,7 +11,9 @@ from app.adapters.db import Base  # This import ensures all models are registere
 def db_session():
     """Create a test database session."""
     # Use in-memory SQLite for testing
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, echo=False)
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, echo=False
+    )
     Base.metadata.create_all(engine)
 
     Session = sessionmaker(bind=engine)

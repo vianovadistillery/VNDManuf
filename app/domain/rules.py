@@ -638,3 +638,75 @@ def calculate_line_totals(
     line_total_inc_tax = round_money(line_total_ex_tax + tax_amount)
 
     return line_total_ex_tax, tax_amount, line_total_inc_tax
+
+
+def fifo_peek_cost(
+    lots: List[InventoryLot], batch_id: Optional[str] = None
+) -> Optional[Decimal]:
+    """
+    Get FIFO unit cost without consuming inventory (peek operation).
+
+    Args:
+        lots: List of inventory lots ordered by received_at (oldest first)
+        batch_id: Optional batch ID to get cost for specific batch
+
+    Returns:
+        Unit cost (Decimal) or None if no stock available
+    """
+    if not lots:
+        return None
+
+    # If batch_id specified, find that specific batch
+    if batch_id:
+        batch_lot = next((lot for lot in lots if lot.id == batch_id), None)
+        if batch_lot and batch_lot.quantity_kg > 0:
+            return batch_lot.unit_cost or Decimal("0")
+        return None
+
+    # Otherwise, return cost of oldest lot with stock
+    for lot in lots:
+        if lot.quantity_kg > 0:
+            return lot.unit_cost or Decimal("0")
+
+    return None
+
+
+# Valid work order status transitions
+VALID_WO_STATUS_TRANSITIONS = {
+    "draft": ["released", "void"],
+    "released": ["in_progress", "hold", "void"],
+    "in_progress": ["hold", "complete"],
+    "hold": ["released", "in_progress", "void"],
+    "complete": [],  # Terminal state
+    "void": [],  # Terminal state
+}
+
+
+def validate_wo_status_transition(from_status: str, to_status: str) -> bool:
+    """
+    Validate work order status transition.
+
+    Args:
+        from_status: Current status
+        to_status: Target status
+
+    Returns:
+        True if transition is valid
+
+    Raises:
+        ValueError: If transition is invalid
+    """
+    from_status = from_status.lower()
+    to_status = to_status.lower()
+
+    if from_status == to_status:
+        return True
+
+    valid_next = VALID_WO_STATUS_TRANSITIONS.get(from_status, [])
+    if to_status not in valid_next:
+        raise ValueError(
+            f"Invalid status transition from '{from_status}' to '{to_status}'. "
+            f"Valid transitions: {valid_next}"
+        )
+
+    return True

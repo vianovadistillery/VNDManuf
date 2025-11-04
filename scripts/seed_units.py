@@ -1,181 +1,171 @@
-"""Seed script to populate units table with standard metric units."""
+#!/usr/bin/env python3
+"""Seed the Units table with standard units of measure and conversion formulas."""
 
-import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Add the project root to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.adapters.db import get_session
+from app.adapters.db import get_db
 from app.adapters.db.models import Unit
 
-# Define units to seed
-# Units include: ton, kg, k, kL, L, mL, density (kg/L), ABV
-UNITS_DATA = [
-    # Mass units - Canonical storage is in kg
-    {
-        "code": "TON",
-        "name": "Metric Ton",
-        "symbol": "t",
-        "unit_type": "MASS",
-        "description": "Metric ton (1000 kg). Base unit for mass storage is kg. All mass quantities are stored in kg in the database.",
-        "conversion_formula": "to_kg(ton) = ton × 1000; to_ton(kg) = kg ÷ 1000; Example: 2.5 ton = 2500 kg; 1500 kg = 1.5 ton; Use for bulk mass measurements.",
-    },
-    {
-        "code": "KG",
-        "name": "Kilogram",
-        "symbol": "kg",
-        "unit_type": "MASS",
-        "description": "Kilogram - base metric unit of mass (canonical storage unit). All mass quantities are stored in kg in the database. This is the standard unit for inventory tracking.",
-        "conversion_formula": "kg = kg (base unit, no conversion needed for storage). Display conversions: kg → ton = kg ÷ 1000; kg → g = kg × 1000; kg → mg = kg × 1,000,000; kg → k (kilo) = kg × 1 (identical).",
-    },
-    {
-        "code": "K",
-        "name": "Kilo (shorthand)",
-        "symbol": "k",
-        "unit_type": "MASS",
-        "description": "Kilo - shorthand for kilogram (same as KG). 1 k = 1 kg = 1000 g. Used interchangeably with kg in forms and displays.",
-        "conversion_formula": "k = kg (identical to KG). to_kg(k) = k × 1; to_k(kg) = kg × 1; Example: 5 k = 5 kg = 5000 g; 3.2 k = 3.2 kg. No conversion needed - just display preference.",
-    },
-    {
-        "code": "G",
-        "name": "Gram",
-        "symbol": "g",
-        "unit_type": "MASS",
-        "description": "Gram - metric unit of mass. 1 kg = 1000 g. For storage convert to kg: g ÷ 1000 = kg. Use for small quantities.",
-        "conversion_formula": "to_kg(g) = g ÷ 1000; to_g(kg) = kg × 1000; Example: 2500 g = 2.5 kg; 3.5 kg = 3500 g; 500 g = 0.5 kg.",
-    },
-    {
-        "code": "MG",
-        "name": "Milligram",
-        "symbol": "mg",
-        "unit_type": "MASS",
-        "description": "Milligram - metric unit of mass. 1 kg = 1,000,000 mg. For storage convert to kg: mg ÷ 1,000,000 = kg. Use for very small quantities.",
-        "conversion_formula": "to_kg(mg) = mg ÷ 1,000,000; to_mg(kg) = kg × 1,000,000; Example: 500000 mg = 0.5 kg; 0.001 kg = 1000 mg; 2500 mg = 0.0025 kg.",
-    },
-    # Volume units - Base unit is Liter (L)
-    {
-        "code": "KL",
-        "name": "Kiloliter",
-        "symbol": "kL",
-        "unit_type": "VOLUME",
-        "description": "Kiloliter - 1000 liters. 1 kL = 1000 L. For mass conversion: use density. mass_kg = volume_kL × 1000 × density_kg_per_L. Use for bulk volume measurements.",
-        "conversion_formula": "to_L(kL) = kL × 1000; to_kL(L) = L ÷ 1000; to_kg(kL, density_kg_per_L) = kL × 1000 × density_kg_per_L; to_kL(kg, density_kg_per_L) = kg ÷ (1000 × density_kg_per_L); Example: 2.5 kL = 2500 L; 5000 L = 5 kL; 2 kL × 0.8 kg/L = 1600 kg.",
-    },
-    {
-        "code": "L",
-        "name": "Liter",
-        "symbol": "L",
-        "unit_type": "VOLUME",
-        "description": "Liter - base metric unit of volume. For mass conversion: use product density. mass_kg = volume_L × density_kg_per_L. Standard unit for liquid volume measurements.",
-        "conversion_formula": "L = L (base volume unit). Mass conversion: to_kg(L, density_kg_per_L) = L × density_kg_per_L; to_L(kg, density_kg_per_L) = kg ÷ density_kg_per_L; Example: 100 L × 0.8 kg/L = 80 kg; 200 kg ÷ 1.2 kg/L = 166.67 L; 50 L × 1.0 kg/L = 50 kg.",
-    },
-    {
-        "code": "ML",
-        "name": "Milliliter",
-        "symbol": "mL",
-        "unit_type": "VOLUME",
-        "description": "Milliliter - metric unit of volume. 1 L = 1000 mL. For mass conversion: mass_kg = volume_mL × density_kg_per_L ÷ 1000. Use for small volume measurements.",
-        "conversion_formula": "to_L(mL) = mL ÷ 1000; to_mL(L) = L × 1000; to_kg(mL, density_kg_per_L) = mL × density_kg_per_L ÷ 1000; to_mL(kg, density_kg_per_L) = kg × 1000 ÷ density_kg_per_L; Example: 5000 mL = 5 L; 250 mL × 0.9 kg/L ÷ 1000 = 0.225 kg; 100 mL = 0.1 L.",
-    },
-    # Density units - kg/L is the canonical density unit
-    {
-        "code": "DENSITY",
-        "name": "Density (Kilograms per Liter)",
-        "symbol": "kg/L",
-        "unit_type": "DENSITY",
-        "description": "Density in kilograms per liter (canonical density unit). Used for converting between mass and volume. Store on product records for L ⇄ kg conversions. Essential for alcohol and liquid products.",
-        "conversion_formula": "density_kg_per_L = mass_kg ÷ volume_L; volume_L = mass_kg ÷ density_kg_per_L; mass_kg = volume_L × density_kg_per_L; Example: 100 kg ÷ 125 L = 0.8 kg/L; 200 L × 1.2 kg/L = 240 kg; 150 kg ÷ 0.9 kg/L = 166.67 L; Pure water = 1.0 kg/L; Ethanol = 0.79 kg/L.",
-    },
-    {
-        "code": "KG_L",
-        "name": "Kilograms per Liter",
-        "symbol": "kg/L",
-        "unit_type": "DENSITY",
-        "description": "Density in kilograms per liter (same as DENSITY, alternative code). Used for converting between mass and volume. Store on product records for L ⇄ kg conversions.",
-        "conversion_formula": "density_kg_per_L = mass_kg ÷ volume_L; volume_L = mass_kg ÷ density_kg_per_L; mass_kg = volume_L × density_kg_per_L; Example: 100 kg ÷ 125 L = 0.8 kg/L; 200 L × 1.2 kg/L = 240 kg.",
-    },
-    {
-        "code": "G_CM3",
-        "name": "Grams per Cubic Centimeter",
-        "symbol": "g/cm³",
-        "unit_type": "DENSITY",
-        "description": "Density in grams per cubic centimeter (numerically equivalent to kg/L: 1 g/cm³ = 1 kg/L). Alternative density unit.",
-        "conversion_formula": "to_kg_per_L(g_per_cm3) = g_per_cm3 (same value); to_g_per_cm3(kg_per_L) = kg_per_L (same value); Example: 0.8 g/cm³ = 0.8 kg/L; 1.2 kg/L = 1.2 g/cm³.",
-    },
-    {
-        "code": "KG_M3",
-        "name": "Kilograms per Cubic Meter",
-        "symbol": "kg/m³",
-        "unit_type": "DENSITY",
-        "description": "Density in kilograms per cubic meter. 1 kg/L = 1000 kg/m³. Convert to kg/L for storage: kg/m³ ÷ 1000 = kg/L.",
-        "conversion_formula": "to_kg_per_L(kg_per_m3) = kg_per_m3 ÷ 1000; to_kg_per_m3(kg_per_L) = kg_per_L × 1000; Example: 800 kg/m³ = 0.8 kg/L; 1.2 kg/L = 1200 kg/m³.",
-    },
-    # ABV - Alcohol by Volume percentage
-    {
-        "code": "ABV",
-        "name": "ABV - Alcohol by Volume",
-        "symbol": "ABV %",
-        "unit_type": "CONCENTRATION",
-        "description": "Alcohol by Volume - percentage volume/volume. Stored as % (v/v) on products. Used to calculate alcohol quantity from total volume or mass using density. Essential for excise calculations.",
-        "conversion_formula": "alcohol_volume_L = total_volume_L × (ABV_percent ÷ 100); alcohol_mass_kg = alcohol_volume_L × density_kg_per_L; ABV_from_mass = (alcohol_mass_kg ÷ density_kg_per_L) ÷ total_volume_L × 100; Example: 100 L × 40% ABV = 40 L alcohol; 40 L × 0.79 kg/L = 31.6 kg alcohol; For excise: excise_tax = alcohol_volume_L × excise_rate_per_L_ABV.",
-    },
-    {
-        "code": "ABV_VOL_VOL",
-        "name": "ABV Volume/Volume (Legacy)",
-        "symbol": "ABV %",
-        "unit_type": "CONCENTRATION",
-        "description": "Alcohol by Volume - percentage volume/volume (legacy code, use ABV instead). Maintained for backward compatibility.",
-        "conversion_formula": "ABV % = (volume_alcohol_L ÷ volume_total_L) × 100; Same as ABV unit; Example: 40 L alcohol ÷ 100 L total × 100 = 40% ABV.",
-    },
-    # Additional concentration units
-    {
-        "code": "WT_PCT",
-        "name": "Weight Percentage",
-        "symbol": "wt%",
-        "unit_type": "CONCENTRATION",
-        "description": "Weight percentage concentration - mass of component per 100 mass units of total. Used for solid concentrations.",
-        "conversion_formula": "wt_percent = (mass_component_kg ÷ mass_total_kg) × 100; mass_component_kg = mass_total_kg × (wt_percent ÷ 100); Example: 25 kg ÷ 100 kg × 100 = 25 wt%; 100 kg × 0.15 = 15 kg component.",
-    },
-    {
-        "code": "SOLIDS_PCT",
-        "name": "Solids Percentage",
-        "symbol": "solids%",
-        "unit_type": "CONCENTRATION",
-        "description": "Solids percentage concentration - mass of solids per 100 mass units of total. Used in paint and coating formulations.",
-        "conversion_formula": "solids_percent = (mass_solids_kg ÷ mass_total_kg) × 100; mass_solids_kg = mass_total_kg × (solids_percent ÷ 100); Example: 40 kg solids ÷ 100 kg total × 100 = 40% solids.",
-    },
-    # Additional units for completeness
-    {
-        "code": "EA",
-        "name": "Each",
-        "symbol": "ea",
-        "unit_type": "COUNT",
-        "description": "Each - count unit (1 each = 1). No conversion factor. Used for discrete items counted individually.",
-        "conversion_formula": "ea = ea (no conversion). Used for discrete items counted individually. Example: 5 ea = 5 items.",
-    },
-    {
-        "code": "PK",
-        "name": "Pack",
-        "symbol": "pk",
-        "unit_type": "COUNT",
-        "description": "Pack - count unit. Conversion factor depends on product-specific pack_conversion table.",
-        "conversion_formula": "pk = pk (conversion factor from pack_conversion table). Look up product-specific conversion: pk_to_ea = pack_conversion_factor; ea_to_pk = 1 ÷ pack_conversion_factor.",
-    },
-]
 
+def seed_units(db: Session, dry_run: bool = False) -> None:
+    """Seed the Units table with standard units."""
 
-def seed_units(db: Session, overwrite: bool = False):
-    """Seed units table with standard units."""
-    print("Seeding units table...")
+    units_data = [
+        # Mass Units
+        {
+            "code": "TON",
+            "name": "Metric Ton",
+            "symbol": "t",
+            "unit_type": "MASS",
+            "description": "Metric ton (1,000 kg). Base unit for large mass measurements.",
+            "conversion_formula": "To kg: qty_ton * 1000 = qty_kg\nFrom kg: qty_kg / 1000 = qty_ton",
+            "is_active": True,
+        },
+        {
+            "code": "KG",
+            "name": "Kilogram",
+            "symbol": "kg",
+            "unit_type": "MASS",
+            "description": "Kilogram - canonical storage unit for mass. Base unit for mass conversions.",
+            "conversion_formula": "To g: qty_kg * 1000 = qty_g\nTo ton: qty_kg / 1000 = qty_ton\nTo mg: qty_kg * 1,000,000 = qty_mg",
+            "is_active": True,
+        },
+        {
+            "code": "K",
+            "name": "Kilogram (abbreviated)",
+            "symbol": "k",
+            "unit_type": "MASS",
+            "description": "Kilogram abbreviated as 'k'. Equivalent to KG.",
+            "conversion_formula": "Same as KG: To g: qty_k * 1000 = qty_g\nTo ton: qty_k / 1000 = qty_ton",
+            "is_active": True,
+        },
+        {
+            "code": "G",
+            "name": "Gram",
+            "symbol": "g",
+            "unit_type": "MASS",
+            "description": "Gram - 1/1000 of a kilogram.",
+            "conversion_formula": "To kg: qty_g / 1000 = qty_kg\nTo mg: qty_g * 1000 = qty_mg",
+            "is_active": True,
+        },
+        {
+            "code": "MG",
+            "name": "Milligram",
+            "symbol": "mg",
+            "unit_type": "MASS",
+            "description": "Milligram - 1/1,000,000 of a kilogram.",
+            "conversion_formula": "To kg: qty_mg / 1,000,000 = qty_kg\nTo g: qty_mg / 1000 = qty_g",
+            "is_active": True,
+        },
+        # Volume Units
+        {
+            "code": "KL",
+            "name": "Kiloliter",
+            "symbol": "kL",
+            "unit_type": "VOLUME",
+            "description": "Kiloliter (1,000 L). Base unit for large volume measurements.",
+            "conversion_formula": "To L: qty_kl * 1000 = qty_l\nTo mL: qty_kl * 1,000,000 = qty_ml",
+            "is_active": True,
+        },
+        {
+            "code": "L",
+            "name": "Liter",
+            "symbol": "L",
+            "unit_type": "VOLUME",
+            "description": "Liter - base unit for volume measurements.",
+            "conversion_formula": "To mL: qty_l * 1000 = qty_ml\nTo kL: qty_l / 1000 = qty_kl\nTo kg (requires density): qty_l * density_kg_per_l = qty_kg",
+            "is_active": True,
+        },
+        {
+            "code": "ML",
+            "name": "Milliliter",
+            "symbol": "mL",
+            "unit_type": "VOLUME",
+            "description": "Milliliter - 1/1000 of a liter.",
+            "conversion_formula": "To L: qty_ml / 1000 = qty_l\nTo kL: qty_ml / 1,000,000 = qty_kl\nTo kg (requires density): (qty_ml / 1000) * density_kg_per_l = qty_kg",
+            "is_active": True,
+        },
+        # Density Units
+        {
+            "code": "KG_L",
+            "name": "Kilograms per Liter",
+            "symbol": "kg/L",
+            "unit_type": "DENSITY",
+            "description": "Density expressed as kilograms per liter. Used for converting between volume and mass.",
+            "conversion_formula": "Volume to Mass: volume_l * density_kg_per_l = mass_kg\nMass to Volume: mass_kg / density_kg_per_l = volume_l\nTo g/cm³: density_kg_per_l * 1 = density_g_per_cm3 (numerically equivalent)",
+            "is_active": True,
+        },
+        {
+            "code": "G_CM3",
+            "name": "Grams per Cubic Centimeter",
+            "symbol": "g/cm³",
+            "unit_type": "DENSITY",
+            "description": "Density expressed as grams per cubic centimeter. Numerically equivalent to kg/L.",
+            "conversion_formula": "To kg/L: density_g_per_cm3 * 1 = density_kg_per_l (numerically equivalent)\nVolume to Mass: volume_l * density_g_per_cm3 = mass_kg",
+            "is_active": True,
+        },
+        {
+            "code": "KG_M3",
+            "name": "Kilograms per Cubic Meter",
+            "symbol": "kg/m³",
+            "unit_type": "DENSITY",
+            "description": "Density expressed as kilograms per cubic meter.",
+            "conversion_formula": "To kg/L: density_kg_per_m3 / 1000 = density_kg_per_l\nFrom kg/L: density_kg_per_l * 1000 = density_kg_per_m3",
+            "is_active": True,
+        },
+        # Concentration Units
+        {
+            "code": "ABV",
+            "name": "Alcohol by Volume",
+            "symbol": "% ABV",
+            "unit_type": "CONCENTRATION",
+            "description": "Alcohol by volume expressed as percentage (v/v). Used for excise calculations.",
+            "conversion_formula": "Alcohol volume from solution volume: solution_volume_l * (abv_percent / 100) = alcohol_volume_l\nAlcohol mass from solution volume: solution_volume_l * (abv_percent / 100) * 0.789 = alcohol_mass_kg\nAlcohol mass from solution mass: (solution_mass_kg / solution_density_kg_per_l) * (abv_percent / 100) * 0.789 = alcohol_mass_kg\nNote: 0.789 kg/L is the density of pure ethanol at 20°C",
+            "is_active": True,
+        },
+        {
+            "code": "ABV_PCT",
+            "name": "Alcohol by Volume Percentage",
+            "symbol": "% v/v",
+            "unit_type": "CONCENTRATION",
+            "description": "Alcohol by volume as percentage (v/v). Same as ABV but explicitly percentage.",
+            "conversion_formula": "Same as ABV: solution_volume_l * (abv_pct / 100) * 0.789 = alcohol_mass_kg",
+            "is_active": True,
+        },
+        {
+            "code": "WT_PCT",
+            "name": "Weight Percentage",
+            "symbol": "% w/w",
+            "unit_type": "CONCENTRATION",
+            "description": "Weight percentage (w/w). Concentration expressed as mass of solute per mass of solution.",
+            "conversion_formula": "To ABV (requires solution density): wt_pct * solution_density_kg_per_l / 0.789 * 100 = abv_pct\nFrom ABV (requires solution density): abv_pct * 0.789 / solution_density_kg_per_l * 100 = wt_pct",
+            "is_active": True,
+        },
+        # Count Units
+        {
+            "code": "EA",
+            "name": "Each",
+            "symbol": "ea",
+            "unit_type": "COUNT",
+            "description": "Each - unit of count for discrete items. No conversion needed (1 ea = 1 ea).",
+            "conversion_formula": "No conversion: 1 ea = 1 ea\nCount units are discrete and do not convert to mass or volume.",
+            "is_active": True,
+        },
+    ]
 
+    print(f"{'[DRY RUN] ' if dry_run else ''}Seeding Units table...")
     created_count = 0
     updated_count = 0
     skipped_count = 0
 
-    for unit_data in UNITS_DATA:
+    for unit_data in units_data:
         code = unit_data["code"]
 
         # Check if unit already exists
@@ -184,42 +174,70 @@ def seed_units(db: Session, overwrite: bool = False):
         ).scalar_one_or_none()
 
         if existing:
-            if overwrite:
-                # Update existing unit
-                for key, value in unit_data.items():
-                    setattr(existing, key, value)
-                updated_count += 1
-                print(f"  Updated: {code}")
-            else:
-                skipped_count += 1
-                print(f"  Skipped (exists): {code}")
+            # Update existing unit
+            print(f"  Updating existing unit: {code}")
+            if not dry_run:
+                existing.name = unit_data["name"]
+                existing.symbol = unit_data.get("symbol")
+                existing.unit_type = unit_data.get("unit_type")
+                existing.description = unit_data.get("description")
+                existing.conversion_formula = unit_data.get("conversion_formula")
+                existing.is_active = unit_data.get("is_active", True)
+            updated_count += 1
         else:
             # Create new unit
-            unit = Unit(**unit_data)
-            db.add(unit)
+            print(f"  Creating new unit: {code} - {unit_data['name']}")
+            if not dry_run:
+                unit = Unit(
+                    code=code,
+                    name=unit_data["name"],
+                    symbol=unit_data.get("symbol"),
+                    unit_type=unit_data.get("unit_type"),
+                    description=unit_data.get("description"),
+                    conversion_formula=unit_data.get("conversion_formula"),
+                    is_active=unit_data.get("is_active", True),
+                )
+                db.add(unit)
             created_count += 1
-            print(f"  Created: {code}")
 
-    db.commit()
+        if not dry_run:
+            db.flush()
 
-    print("\nUnits seeding complete:")
+    if not dry_run:
+        db.commit()
+        print("\n[SUCCESS] Units table seeded successfully!")
+    else:
+        print(
+            f"\n[DRY RUN] Would create {created_count} units, update {updated_count} units"
+        )
+
     print(f"  Created: {created_count}")
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
-    print(f"  Total processed: {len(UNITS_DATA)}")
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Seed units table with standard units")
+    parser = argparse.ArgumentParser(description="Seed the Units table")
     parser.add_argument(
-        "--overwrite", action="store_true", help="Overwrite existing units"
+        "--dry-run",
+        action="store_true",
+        help="Perform a dry run without making changes",
     )
     args = parser.parse_args()
 
-    db = get_session()
+    db: Session = next(get_db())
     try:
-        seed_units(db, overwrite=args.overwrite)
+        seed_units(db, dry_run=args.dry_run)
+    except Exception as e:
+        print(f"Error seeding units: {e}", file=sys.stderr)
+        db.rollback()
+        sys.exit(1)
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    main()

@@ -78,9 +78,9 @@ def generate_contact_code(db: Session, length: int = 5) -> str:
         # Generate code using uppercase letters and digits
         code = "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-        # Check if code is already in use
+        # Check if code is already in use (excluding soft-deleted)
         existing = db.execute(
-            select(Contact).where(Contact.code == code)
+            select(Contact).where(Contact.code == code, Contact.deleted_at.is_(None))
         ).scalar_one_or_none()
         if not existing:
             return code
@@ -125,7 +125,7 @@ async def list_contacts(
     db: Session = Depends(get_db),
 ):
     """List contacts with optional filtering by type."""
-    stmt = select(Contact)
+    stmt = select(Contact).where(Contact.deleted_at.is_(None))
 
     # Filter by code (UUID search)
     if code:
@@ -157,7 +157,7 @@ async def list_contacts(
 async def get_contact(contact_id: str, db: Session = Depends(get_db)):
     """Get contact by ID."""
     contact = db.get(Contact, contact_id)
-    if not contact:
+    if not contact or contact.deleted_at is not None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
         )
@@ -174,7 +174,9 @@ async def create_contact(contact_data: ContactCreate, db: Session = Depends(get_
     if contact_data.code:
         # Validate provided code is unique
         existing = db.execute(
-            select(Contact).where(Contact.code == contact_data.code)
+            select(Contact).where(
+                Contact.code == contact_data.code, Contact.deleted_at.is_(None)
+            )
         ).scalar_one_or_none()
         if existing:
             raise HTTPException(
@@ -263,12 +265,15 @@ async def update_contact(
 
 @router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_contact(contact_id: str, db: Session = Depends(get_db)):
-    """Delete contact."""
+    """Soft delete contact (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     contact = db.get(Contact, contact_id)
     if not contact:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
         )
 
-    db.delete(contact)
+    soft_delete(db, contact)
     db.commit()
+    return None

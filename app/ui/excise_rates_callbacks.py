@@ -43,31 +43,90 @@ def register_excise_rates_callbacks(app, make_api_request):
 
             rates = response if isinstance(response, list) else []
 
-            # Format dates and rates for display
-            for rate in rates:
-                if "date_active_from" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["date_active_from"].replace("Z", "+00:00")
-                        )
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
-                    except (ValueError, TypeError):
-                        pass
-                if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    try:
-                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
-                    except (ValueError, TypeError):
-                        pass
-                if "created_at" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["created_at"].replace("Z", "+00:00")
-                        )
-                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
-                    except (ValueError, TypeError):
-                        pass
-                if "is_active" in rate:
-                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
+            # Sort rates by date_active_from descending (most recent first)
+            # Then calculate effective periods
+            try:
+                rates_with_dates = []
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rates_with_dates.append((dt, rate))
+                        except (ValueError, TypeError):
+                            rates_with_dates.append((datetime.min, rate))
+                    else:
+                        rates_with_dates.append((datetime.min, rate))
+
+                # Sort by date descending
+                rates_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+                # Calculate effective periods
+                for i, (date_from, rate) in enumerate(rates_with_dates):
+                    # Format date_active_from
+                    rate["date_active_from"] = date_from.strftime("%Y-%m-%d")
+
+                    # Calculate effective period
+                    if i < len(rates_with_dates) - 1:
+                        # There's a next rate, so this one is effective until that date
+                        next_date = rates_with_dates[i + 1][0]
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} to {next_date.strftime('%Y-%m-%d')}"
+                    else:
+                        # This is the most recent rate, effective indefinitely
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} onwards"
+
+                    rate["effective_period"] = effective_period
+
+                    # Format other fields
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
+
+                # Return sorted rates
+                rates = [rate for _, rate in rates_with_dates]
+            except Exception as e:
+                print(f"Error formatting excise rates: {e}")
+                # Fallback: format without effective period calculation
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rate["date_active_from"] = dt.strftime("%Y-%m-%d")
+                            rate["effective_period"] = (
+                                f"{dt.strftime('%Y-%m-%d')} onwards"
+                            )
+                        except (ValueError, TypeError):
+                            rate["effective_period"] = "N/A"
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
 
             return rates
         except Exception as e:
@@ -201,7 +260,7 @@ def register_excise_rates_callbacks(app, make_api_request):
                 "Invalid rate value. Please enter a valid number.",
                 no_update,
             ]
-        
+
         rate_data = {
             "date_active_from": f"{date_active}T00:00:00",
             "rate_per_l_abv": str(rate_float),  # Pydantic will parse string to Decimal
@@ -209,7 +268,9 @@ def register_excise_rates_callbacks(app, make_api_request):
             "is_active": bool(is_active) if is_active is not None else True,
         }
 
-        print(f"DEBUG: Saving excise rate with data: {rate_data}, rate_id: {rate_id}")  # Debug output
+        print(
+            f"DEBUG: Saving excise rate with data: {rate_data}, rate_id: {rate_id}"
+        )  # Debug output
 
         try:
             if rate_id and rate_id.strip():  # Update existing
@@ -221,6 +282,7 @@ def register_excise_rates_callbacks(app, make_api_request):
                     if isinstance(error_msg, str):
                         try:
                             import json
+
                             error_dict = json.loads(error_msg)
                             error_msg = error_dict.get("message", error_msg)
                         except (ValueError, TypeError):
@@ -241,6 +303,7 @@ def register_excise_rates_callbacks(app, make_api_request):
                     if isinstance(error_msg, str):
                         try:
                             import json
+
                             error_dict = json.loads(error_msg)
                             error_msg = error_dict.get("message", error_msg)
                         except (ValueError, TypeError):
@@ -257,7 +320,7 @@ def register_excise_rates_callbacks(app, make_api_request):
                 message = "Excise rate created successfully"
 
             # Reload table after successful save
-            print(f"DEBUG: Save successful, reloading table...")  # Debug output
+            print("DEBUG: Save successful, reloading table...")  # Debug output
             rates_response = make_api_request("GET", "/excise-rates/")
             if "error" in rates_response:
                 print(f"DEBUG: Error reloading table: {rates_response['error']}")
@@ -266,31 +329,83 @@ def register_excise_rates_callbacks(app, make_api_request):
                 rates = rates_response if isinstance(rates_response, list) else []
                 print(f"DEBUG: Reloaded {len(rates)} rates")
 
-            # Format dates and rates for display
-            for rate in rates:
-                if "date_active_from" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["date_active_from"].replace("Z", "+00:00")
-                        )
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
-                    except (ValueError, TypeError):
-                        pass
-                if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    try:
-                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
-                    except (ValueError, TypeError):
-                        pass
-                if "created_at" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["created_at"].replace("Z", "+00:00")
-                        )
-                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
-                    except (ValueError, TypeError):
-                        pass
-                if "is_active" in rate:
-                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
+            # Format dates and rates for display (same logic as load_excise_rates_table)
+            try:
+                rates_with_dates = []
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rates_with_dates.append((dt, rate))
+                        except (ValueError, TypeError):
+                            rates_with_dates.append((datetime.min, rate))
+                    else:
+                        rates_with_dates.append((datetime.min, rate))
+
+                # Sort by date descending
+                rates_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+                # Calculate effective periods
+                for i, (date_from, rate) in enumerate(rates_with_dates):
+                    rate["date_active_from"] = date_from.strftime("%Y-%m-%d")
+
+                    if i < len(rates_with_dates) - 1:
+                        next_date = rates_with_dates[i + 1][0]
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} to {next_date.strftime('%Y-%m-%d')}"
+                    else:
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} onwards"
+
+                    rate["effective_period"] = effective_period
+
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
+
+                rates = [rate for _, rate in rates_with_dates]
+            except Exception as e:
+                print(f"Error formatting excise rates after save: {e}")
+                # Fallback formatting
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rate["date_active_from"] = dt.strftime("%Y-%m-%d")
+                            rate["effective_period"] = (
+                                f"{dt.strftime('%Y-%m-%d')} onwards"
+                            )
+                        except (ValueError, TypeError):
+                            rate["effective_period"] = "N/A"
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
 
             return [False, "Add Excise Rate", True, "Success", message, rates]
 
@@ -356,31 +471,81 @@ def register_excise_rates_callbacks(app, make_api_request):
             rates_response = make_api_request("GET", "/excise-rates/")
             rates = rates_response if isinstance(rates_response, list) else []
 
-            # Format dates and rates for display
-            for rate in rates:
-                if "date_active_from" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["date_active_from"].replace("Z", "+00:00")
-                        )
-                        rate["date_active_from"] = dt.strftime("%Y-%m-%d")
-                    except (ValueError, TypeError):
-                        pass
-                if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
-                    try:
-                        rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
-                    except (ValueError, TypeError):
-                        pass
-                if "created_at" in rate:
-                    try:
-                        dt = datetime.fromisoformat(
-                            rate["created_at"].replace("Z", "+00:00")
-                        )
-                        rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
-                    except (ValueError, TypeError):
-                        pass
-                if "is_active" in rate:
-                    rate["is_active"] = "Yes" if rate["is_active"] else "No"
+            # Format dates and rates for display (same logic as load_excise_rates_table)
+            try:
+                rates_with_dates = []
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rates_with_dates.append((dt, rate))
+                        except (ValueError, TypeError):
+                            rates_with_dates.append((datetime.min, rate))
+                    else:
+                        rates_with_dates.append((datetime.min, rate))
+
+                rates_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+                for i, (date_from, rate) in enumerate(rates_with_dates):
+                    rate["date_active_from"] = date_from.strftime("%Y-%m-%d")
+
+                    if i < len(rates_with_dates) - 1:
+                        next_date = rates_with_dates[i + 1][0]
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} to {next_date.strftime('%Y-%m-%d')}"
+                    else:
+                        effective_period = f"{date_from.strftime('%Y-%m-%d')} onwards"
+
+                    rate["effective_period"] = effective_period
+
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
+
+                rates = [rate for _, rate in rates_with_dates]
+            except Exception as e:
+                print(f"Error formatting excise rates after delete: {e}")
+                # Fallback formatting
+                for rate in rates:
+                    if "date_active_from" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["date_active_from"].replace("Z", "+00:00")
+                            )
+                            rate["date_active_from"] = dt.strftime("%Y-%m-%d")
+                            rate["effective_period"] = (
+                                f"{dt.strftime('%Y-%m-%d')} onwards"
+                            )
+                        except (ValueError, TypeError):
+                            rate["effective_period"] = "N/A"
+                    if "rate_per_l_abv" in rate and rate["rate_per_l_abv"]:
+                        try:
+                            rate["rate_per_l_abv"] = float(rate["rate_per_l_abv"])
+                        except (ValueError, TypeError):
+                            pass
+                    if "created_at" in rate:
+                        try:
+                            dt = datetime.fromisoformat(
+                                rate["created_at"].replace("Z", "+00:00")
+                            )
+                            rate["created_at"] = dt.strftime("%Y-%m-%d %H:%M")
+                        except (ValueError, TypeError):
+                            pass
+                    if "is_active" in rate:
+                        rate["is_active"] = "Yes" if rate["is_active"] else "No"
 
             return rates, True, "Success", "Excise rate deleted successfully"
 

@@ -1,0 +1,735 @@
+{
+  "metadata": {
+    "generated_at": "1762173747.5702841",
+    "database_url": "sqlite:///./tpmanuf.db",
+    "total_db_tables": 48,
+    "total_model_tables": 50
+  },
+  "tables_in_db_not_in_models": [
+    "alembic_version"
+  ],
+  "tables_in_models_not_in_db": [
+    "finished_goods",
+    "raw_materials",
+    "units"
+  ],
+  "table_comparisons": {
+    "assemblies": {
+      "table_name": "assemblies",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "assembly_cost_dependencies": {
+      "table_name": "assembly_cost_dependencies",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "assembly_lines": {
+      "table_name": "assembly_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "batch_components": {
+      "table_name": "batch_components",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "batch_lines": {
+      "table_name": "batch_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "batches": {
+      "table_name": "batches",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "condition_types": {
+      "table_name": "condition_types",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "contacts": {
+      "table_name": "contacts",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "customer_prices": {
+      "table_name": "customer_prices",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "customers": {
+      "table_name": "customers",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "datasets": {
+      "table_name": "datasets",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "excise_rates": {
+      "table_name": "excise_rates",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "finished_goods_inventory": {
+      "table_name": "finished_goods_inventory",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "formula_classes": {
+      "table_name": "formula_classes",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "formula_lines": {
+      "table_name": "formula_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "formulas": {
+      "table_name": "formulas",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "inventory_lots": {
+      "table_name": "inventory_lots",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "inventory_movements": {
+      "table_name": "inventory_movements",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "inventory_reservations": {
+      "table_name": "inventory_reservations",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "inventory_txns": {
+      "table_name": "inventory_txns",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "invoice_lines": {
+      "table_name": "invoice_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "invoices": {
+      "table_name": "invoices",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "legacy_acstk_data": {
+      "table_name": "legacy_acstk_data",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "manufacturing_config": {
+      "table_name": "manufacturing_config",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "markups": {
+      "table_name": "markups",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "pack_conversions": {
+      "table_name": "pack_conversions",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "pack_units": {
+      "table_name": "pack_units",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "po_lines": {
+      "table_name": "po_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "price_list_items": {
+      "table_name": "price_list_items",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "price_lists": {
+      "table_name": "price_lists",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "product_channel_links": {
+      "table_name": "product_channel_links",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "product_migration_map": {
+      "table_name": "product_migration_map",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "product_variants": {
+      "table_name": "product_variants",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "products": {
+      "table_name": "products",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {
+        "contractcde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "estimated_at": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "DATETIME"
+          }
+        ],
+        "created_at": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "DATETIME"
+          }
+        ],
+        "is_purchase": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "sellable": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "is_archived": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "industrialcde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "last_sync": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "DATETIME"
+          }
+        ],
+        "distributorcde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "wholesalecde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "id": [
+          {
+            "field": "nullable",
+            "database": true,
+            "model": false
+          }
+        ],
+        "updated_at": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "DATETIME"
+          }
+        ],
+        "purchase_tax_included_bool": [
+          {
+            "field": "type",
+            "database": "NULL",
+            "model": "BOOLEAN"
+          }
+        ],
+        "tradecde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "is_active": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "archived_at": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "DATETIME"
+          }
+        ],
+        "is_sell": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "retailcde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ],
+        "is_assemble": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "is_tracked": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "BOOLEAN"
+          }
+        ],
+        "countercde": [
+          {
+            "field": "type",
+            "database": "NUMERIC",
+            "model": "VARCHAR(1)"
+          }
+        ]
+      },
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": {
+        "database": [],
+        "model": [
+          "id"
+        ]
+      },
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "purchase_orders": {
+      "table_name": "purchase_orders",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "qc_results": {
+      "table_name": "qc_results",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "quality_test_definitions": {
+      "table_name": "quality_test_definitions",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "raw_material_groups": {
+      "table_name": "raw_material_groups",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "raw_material_suppliers": {
+      "table_name": "raw_material_suppliers",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "revaluations": {
+      "table_name": "revaluations",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "sales_orders": {
+      "table_name": "sales_orders",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "so_lines": {
+      "table_name": "so_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "suppliers": {
+      "table_name": "suppliers",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "work_order_lines": {
+      "table_name": "work_order_lines",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "work_orders": {
+      "table_name": "work_orders",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "xero_sync_log": {
+      "table_name": "xero_sync_log",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    },
+    "xero_tokens": {
+      "table_name": "xero_tokens",
+      "exists_in_db": true,
+      "exists_in_models": true,
+      "column_differences": {},
+      "columns_in_db_not_in_model": [],
+      "columns_in_model_not_in_db": [],
+      "primary_key_differences": [],
+      "foreign_key_differences": [],
+      "index_differences": [],
+      "unique_constraint_differences": []
+    }
+  }
+}

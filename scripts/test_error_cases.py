@@ -86,9 +86,9 @@ def test_insufficient_stock_assembly(db: Session):
 
                 # Verify no partial consumption occurred
                 db.refresh(lot)
-                assert lot.quantity_kg == Decimal(
-                    "10.0"
-                ), "Stock was partially consumed!"
+                assert lot.quantity_kg == Decimal("10.0"), (
+                    "Stock was partially consumed!"
+                )
                 print(f"   [OK] Stock not consumed: {lot.quantity_kg} kg remaining")
                 return True
             else:

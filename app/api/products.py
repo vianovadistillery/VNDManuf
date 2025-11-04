@@ -34,12 +34,14 @@ def product_to_response(product: Product) -> ProductResponse:
         is_sell=getattr(product, "is_sell", False),
         is_assemble=getattr(product, "is_assemble", False),
         ean13=getattr(product, "ean13", None),
-        supplier_id=str(product.supplier_id)
-        if getattr(product, "supplier_id", None)
-        else None,
-        raw_material_group_id=str(getattr(product, "raw_material_group_id", None))
-        if getattr(product, "raw_material_group_id", None)
-        else None,
+        supplier_id=(
+            str(product.supplier_id) if getattr(product, "supplier_id", None) else None
+        ),
+        raw_material_group_id=(
+            str(getattr(product, "raw_material_group_id", None))
+            if getattr(product, "raw_material_group_id", None)
+            else None
+        ),
         size=getattr(product, "size", None),
         base_unit=getattr(product, "base_unit", None),
         pack=getattr(product, "pack", None),
@@ -65,9 +67,11 @@ def product_to_response(product: Product) -> ProductResponse:
         industrialcde=getattr(product, "industrialcde", None),
         distributorcde=getattr(product, "distributorcde", None),
         # Raw Material specific fields (may not exist)
-        purchase_unit_id=str(getattr(product, "purchase_unit_id", None))
-        if getattr(product, "purchase_unit_id", None)
-        else None,
+        purchase_unit_id=(
+            str(getattr(product, "purchase_unit_id", None))
+            if getattr(product, "purchase_unit_id", None)
+            else None
+        ),
         purchase_volume=getattr(product, "purchase_volume", None),
         specific_gravity=getattr(product, "specific_gravity", None),
         vol_solid=getattr(product, "vol_solid", None),
@@ -81,9 +85,11 @@ def product_to_response(product: Product) -> ProductResponse:
         condition=getattr(product, "condition", None),
         msds_flag=getattr(product, "msds_flag", None),
         # Finished Good specific fields (may not exist)
-        formula_id=str(getattr(product, "formula_id", None))
-        if getattr(product, "formula_id", None)
-        else None,
+        formula_id=(
+            str(getattr(product, "formula_id", None))
+            if getattr(product, "formula_id", None)
+            else None
+        ),
         formula_revision=getattr(product, "formula_revision", None),
         # Sales Pricing (may not exist)
         retail_price_inc_gst=getattr(product, "retail_price_inc_gst", None),
@@ -150,6 +156,9 @@ async def list_products(
         # selectinload loads variants in a separate query, avoiding JOIN duplicates
         stmt = select(Product).options(selectinload(Product.variants))
 
+        # Filter out soft-deleted records
+        stmt = stmt.where(Product.deleted_at.is_(None))
+
         if query:
             stmt = stmt.where(
                 Product.name.contains(query) | Product.sku.contains(query)
@@ -195,7 +204,7 @@ async def get_product(product_id: str, db: Session = Depends(get_db)):
     stmt = (
         select(Product)
         .options(selectinload(Product.variants))
-        .where(Product.id == product_id)
+        .where(Product.id == product_id, Product.deleted_at.is_(None))
     )
     product = db.execute(stmt).scalar_one_or_none()
 
@@ -210,7 +219,7 @@ async def get_product(product_id: str, db: Session = Depends(get_db)):
 @router.get("/sku/{sku}", response_model=ProductResponse)
 async def get_product_by_sku(sku: str, db: Session = Depends(get_db)):
     """Get product by SKU."""
-    stmt = select(Product).where(Product.sku == sku)
+    stmt = select(Product).where(Product.sku == sku, Product.deleted_at.is_(None))
     product = db.execute(stmt).scalar_one_or_none()
 
     if not product:
@@ -224,9 +233,11 @@ async def get_product_by_sku(sku: str, db: Session = Depends(get_db)):
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(product_data: ProductCreate, db: Session = Depends(get_db)):
     """Create a new product."""
-    # Check if SKU already exists
+    # Check if SKU already exists (excluding soft-deleted)
     existing = db.execute(
-        select(Product).where(Product.sku == product_data.sku)
+        select(Product).where(
+            Product.sku == product_data.sku, Product.deleted_at.is_(None)
+        )
     ).scalar_one_or_none()
     if existing:
         raise HTTPException(
@@ -508,15 +519,18 @@ async def update_product(
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(product_id: str, db: Session = Depends(get_db)):
-    """Delete product (soft delete by setting is_active=False)."""
+    """Soft delete product (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
 
-    product.is_active = False
+    soft_delete(db, product)
     db.commit()
+    return None
 
 
 # Product Variants
@@ -536,12 +550,13 @@ async def create_product_variant(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
 
-    # Check if variant code already exists for this product
+    # Check if variant code already exists for this product (excluding soft-deleted)
     existing = db.execute(
         select(ProductVariant).where(
             and_(
                 ProductVariant.product_id == product_id,
                 ProductVariant.variant_code == variant_data.variant_code,
+                ProductVariant.deleted_at.is_(None),
             )
         )
     ).scalar_one_or_none()
@@ -586,7 +601,9 @@ async def list_product_variants(product_id: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
 
-    stmt = select(ProductVariant).where(ProductVariant.product_id == product_id)
+    stmt = select(ProductVariant).where(
+        ProductVariant.product_id == product_id, ProductVariant.deleted_at.is_(None)
+    )
     variants = db.execute(stmt).scalars().all()
 
     return [

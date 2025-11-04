@@ -17,7 +17,8 @@ def _log_sync(
     object_type: str, object_id: str, direction: str, status: str, message: str
 ):
     """Log a sync operation to the audit table."""
-    with get_session() as session:
+    session = get_session()
+    try:
         log = XeroSyncLog(
             object_type=object_type,
             object_id=str(object_id),
@@ -27,6 +28,8 @@ def _log_sync(
         )
         session.add(log)
         session.commit()
+    finally:
+        session.close()
 
 
 def _get_access_token_and_tenant():
@@ -59,7 +62,8 @@ def push_supplier(supplier_id: str) -> Dict[str, Any]:
     Returns:
         Xero contact data
     """
-    with get_session() as session:
+    session = get_session()
+    try:
         supplier = session.get(Supplier, supplier_id)
         if not supplier:
             raise ValueError(f"Supplier {supplier_id} not found")
@@ -81,17 +85,19 @@ def push_supplier(supplier_id: str) -> Dict[str, Any]:
                     "Name": supplier.name,
                     "ContactNumber": supplier.code,
                     "EmailAddress": supplier.email or "",
-                    "ContactPersons": [
-                        {"FirstName": supplier.contact_person or supplier.name}
-                    ]
-                    if supplier.contact_person or supplier.name
-                    else [],
-                    "Phones": [{"PhoneNumber": supplier.phone}]
-                    if supplier.phone
-                    else [],
-                    "Addresses": [{"AddressLine1": supplier.address or ""}]
-                    if supplier.address
-                    else [],
+                    "ContactPersons": (
+                        [{"FirstName": supplier.contact_person or supplier.name}]
+                        if supplier.contact_person or supplier.name
+                        else []
+                    ),
+                    "Phones": (
+                        [{"PhoneNumber": supplier.phone}] if supplier.phone else []
+                    ),
+                    "Addresses": (
+                        [{"AddressLine1": supplier.address or ""}]
+                        if supplier.address
+                        else []
+                    ),
                     "IsSupplier": True,
                     "IsCustomer": False,
                 }
@@ -121,6 +127,8 @@ def push_supplier(supplier_id: str) -> Dict[str, Any]:
         except Exception as e:
             _log_sync("Contact", supplier_id, "PUSH", "ERROR", str(e))
             raise
+    finally:
+        session.close()
 
 
 def push_customer(customer_id: str) -> Dict[str, Any]:
@@ -133,7 +141,8 @@ def push_customer(customer_id: str) -> Dict[str, Any]:
     Returns:
         Xero contact data
     """
-    with get_session() as session:
+    session = get_session()
+    try:
         customer = session.get(Customer, customer_id)
         if not customer:
             raise ValueError(f"Customer {customer_id} not found")
@@ -154,17 +163,19 @@ def push_customer(customer_id: str) -> Dict[str, Any]:
                     "Name": customer.name,
                     "ContactNumber": customer.code,
                     "EmailAddress": customer.email or "",
-                    "ContactPersons": [
-                        {"FirstName": customer.contact_person or customer.name}
-                    ]
-                    if customer.contact_person or customer.name
-                    else [],
-                    "Phones": [{"PhoneNumber": customer.phone}]
-                    if customer.phone
-                    else [],
-                    "Addresses": [{"AddressLine1": customer.address or ""}]
-                    if customer.address
-                    else [],
+                    "ContactPersons": (
+                        [{"FirstName": customer.contact_person or customer.name}]
+                        if customer.contact_person or customer.name
+                        else []
+                    ),
+                    "Phones": (
+                        [{"PhoneNumber": customer.phone}] if customer.phone else []
+                    ),
+                    "Addresses": (
+                        [{"AddressLine1": customer.address or ""}]
+                        if customer.address
+                        else []
+                    ),
                     "IsSupplier": False,
                     "IsCustomer": True,
                 }
@@ -194,6 +205,8 @@ def push_customer(customer_id: str) -> Dict[str, Any]:
         except Exception as e:
             _log_sync("Contact", customer_id, "PUSH", "ERROR", str(e))
             raise
+    finally:
+        session.close()
 
 
 def push_product_as_item(product_id: str) -> Dict[str, Any]:
@@ -206,7 +219,8 @@ def push_product_as_item(product_id: str) -> Dict[str, Any]:
     Returns:
         Xero item data
     """
-    with get_session() as session:
+    session = get_session()
+    try:
         product = session.get(Product, product_id)
         if not product:
             raise ValueError(f"Product {product_id} not found")
@@ -234,18 +248,22 @@ def push_product_as_item(product_id: str) -> Dict[str, Any]:
                     "Description": product.description or product.name,
                     "IsPurchased": is_purchased,
                     "IsSold": is_sold,
-                    "PurchaseDetails": {
-                        "UnitPrice": float(product.purcost or 0),
-                        "AccountCode": "510",  # Cost of Sales
-                    }
-                    if is_purchased
-                    else None,
-                    "SalesDetails": {
-                        "UnitPrice": float(product.wholesalecost or 0),
-                        "AccountCode": "200",  # Sales
-                    }
-                    if is_sold
-                    else None,
+                    "PurchaseDetails": (
+                        {
+                            "UnitPrice": float(product.purcost or 0),
+                            "AccountCode": "510",  # Cost of Sales
+                        }
+                        if is_purchased
+                        else None
+                    ),
+                    "SalesDetails": (
+                        {
+                            "UnitPrice": float(product.wholesalecost or 0),
+                            "AccountCode": "200",  # Sales
+                        }
+                        if is_sold
+                        else None
+                    ),
                 }
             ]
         }
@@ -279,6 +297,8 @@ def push_product_as_item(product_id: str) -> Dict[str, Any]:
         except Exception as e:
             _log_sync("Item", product_id, "PUSH", "ERROR", str(e))
             raise
+    finally:
+        session.close()
 
 
 def post_batch_journal(
@@ -380,7 +400,8 @@ def pull_contacts() -> int:
         contacts = result.get("Contacts", [])
         count = 0
 
-        with get_session() as session:
+        session = get_session()
+        try:
             for contact in contacts:
                 name = contact.get("Name", "").strip()
                 if not name:
@@ -406,9 +427,11 @@ def pull_contacts() -> int:
                             or f"XERO-{contact_id[:8]}",
                             name=name,
                             email=email,
-                            phone=contact.get("Phones", [{}])[0].get("PhoneNumber")
-                            if contact.get("Phones")
-                            else "",
+                            phone=(
+                                contact.get("Phones", [{}])[0].get("PhoneNumber")
+                                if contact.get("Phones")
+                                else ""
+                            ),
                             xero_contact_id=contact_id,
                         )
                         session.add(supplier)
@@ -431,9 +454,11 @@ def pull_contacts() -> int:
                             or f"XERO-{contact_id[:8]}",
                             name=name,
                             email=email,
-                            phone=contact.get("Phones", [{}])[0].get("PhoneNumber")
-                            if contact.get("Phones")
-                            else "",
+                            phone=(
+                                contact.get("Phones", [{}])[0].get("PhoneNumber")
+                                if contact.get("Phones")
+                                else ""
+                            ),
                             xero_contact_id=contact_id,
                         )
                         session.add(customer)
@@ -445,6 +470,8 @@ def pull_contacts() -> int:
                         count += 1
 
             session.commit()
+        finally:
+            session.close()
 
         _log_sync("Contact", "*", "PULL", "OK", f"Pulled {count} contacts")
 

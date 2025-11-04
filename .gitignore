@@ -41,3 +41,11 @@ dist/
 # Environment files
 .env
 .env.local
+
+schema_snapshot.json
+
+*.db.bak
+
+*.db
+
+*.sqlite

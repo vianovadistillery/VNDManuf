@@ -168,9 +168,9 @@ class TestDataIntegrity:
             .scalar()
         )
 
-        assert abs(ledger_sum - lot.quantity_kg) < Decimal(
-            "0.001"
-        ), f"Ledger mismatch: ledger={ledger_sum}, lot={lot.quantity_kg}"
+        assert abs(ledger_sum - lot.quantity_kg) < Decimal("0.001"), (
+            f"Ledger mismatch: ledger={ledger_sum}, lot={lot.quantity_kg}"
+        )
 
 
 class TestCostRollup:
@@ -416,15 +416,15 @@ class TestRevaluationPropagation:
 
         # Raw lot should have new cost
         db_session.refresh(raw_lot)
-        assert abs(raw_lot.current_unit_cost - Decimal("12.00")) < Decimal(
-            "0.01"
-        ), "Raw lot should be revalued"
+        assert abs(raw_lot.current_unit_cost - Decimal("12.00")) < Decimal("0.01"), (
+            "Raw lot should be revalued"
+        )
 
         # WIP cost should be updated (50 units × $12 = $600, so $12/unit)
         # For a 1:1 ratio, if raw cost goes from $10 to $12, WIP cost should go from $10 to $12
-        assert abs(wip_lot.current_unit_cost - Decimal("12.00")) < Decimal(
-            "0.01"
-        ), f"WIP cost not updated. Expected ~$12.00, got ${wip_lot.current_unit_cost}"
+        assert abs(wip_lot.current_unit_cost - Decimal("12.00")) < Decimal("0.01"), (
+            f"WIP cost not updated. Expected ~$12.00, got ${wip_lot.current_unit_cost}"
+        )
 
         # Check revaluation record exists
         revals = (
@@ -600,9 +600,9 @@ class TestWorkedExample:
         costing_service = CostingService(db_session)
         cogs = costing_service.inspect_cogs(carton.id)
 
-        assert (
-            cogs["has_estimate"] is True
-        ), "Carton should have estimate flag due to botanicals"
+        assert cogs["has_estimate"] is True, (
+            "Carton should have estimate flag due to botanicals"
+        )
         assert (
             "Botanicals" in str(cogs.get("estimate_reason", ""))
             or "estimate" in str(cogs.get("estimate_reason", "")).lower()
@@ -643,9 +643,9 @@ class TestPerformance:
                 id=str(uuid4()),
                 sku=f"PROD-{i}",
                 name=f"Product {i}",
-                product_type=ProductType.RAW.value
-                if i == 0
-                else ProductType.FINISHED.value,
+                product_type=(
+                    ProductType.RAW.value if i == 0 else ProductType.FINISHED.value
+                ),
                 is_tracked=True,
                 standard_cost=Decimal("10.00") if i == 0 else None,
             )

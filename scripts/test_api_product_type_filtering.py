@@ -73,9 +73,9 @@ def test_list_products_filter_raw():
 
         # Verify all are RAW
         for product in products:
-            assert (
-                product["product_type"] == "RAW"
-            ), f"Expected RAW, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            assert product["product_type"] == "RAW", (
+                f"Expected RAW, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            )
         print("   [OK] All products are RAW type")
         return products
     except AssertionError as e:
@@ -98,9 +98,9 @@ def test_list_products_filter_wip():
 
         # Verify all are WIP
         for product in products:
-            assert (
-                product["product_type"] == "WIP"
-            ), f"Expected WIP, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            assert product["product_type"] == "WIP", (
+                f"Expected WIP, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            )
         print("   [OK] All products are WIP type")
         return products
     except AssertionError as e:
@@ -125,9 +125,9 @@ def test_list_products_filter_finished():
 
         # Verify all are FINISHED
         for product in products:
-            assert (
-                product["product_type"] == "FINISHED"
-            ), f"Expected FINISHED, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            assert product["product_type"] == "FINISHED", (
+                f"Expected FINISHED, got {product['product_type']} for {product.get('sku', 'unknown')}"
+            )
         print("   [OK] All products are FINISHED type")
         return products
     except AssertionError as e:
@@ -157,13 +157,13 @@ def test_create_product_with_type(product_type: str):
         response = requests.post(
             f"{API_BASE_URL}/products", json=product_data, timeout=5
         )
-        assert (
-            response.status_code == 201
-        ), f"Expected 201, got {response.status_code}: {response.text}"
+        assert response.status_code == 201, (
+            f"Expected 201, got {response.status_code}: {response.text}"
+        )
         product = response.json()
-        assert (
-            product["product_type"] == product_type
-        ), f"Expected {product_type}, got {product['product_type']}"
+        assert product["product_type"] == product_type, (
+            f"Expected {product_type}, got {product['product_type']}"
+        )
         print(f"   [OK] Created {product_type} product: {product['sku']}")
         return product
     except AssertionError as e:
@@ -185,13 +185,13 @@ def test_update_product_type(product_id: str, new_type: str):
         response = requests.put(
             f"{API_BASE_URL}/products/{product_id}", json=update_data, timeout=5
         )
-        assert (
-            response.status_code == 200
-        ), f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         product = response.json()
-        assert (
-            product["product_type"] == new_type
-        ), f"Expected {new_type}, got {product['product_type']}"
+        assert product["product_type"] == new_type, (
+            f"Expected {new_type}, got {product['product_type']}"
+        )
         print(f"   [OK] Updated product type to {new_type}")
         return product
     except AssertionError as e:
@@ -221,9 +221,9 @@ def test_invalid_product_type():
             f"{API_BASE_URL}/products", json=product_data, timeout=5
         )
         # Should return validation error
-        assert (
-            response.status_code == 422
-        ), f"Expected 422 validation error, got {response.status_code}: {response.text}"
+        assert response.status_code == 422, (
+            f"Expected 422 validation error, got {response.status_code}: {response.text}"
+        )
         print("   [OK] Correctly rejected invalid product_type")
         return True
     except AssertionError as e:

@@ -133,9 +133,9 @@ def backfill_transaction_costing_fields(db: Session, dry_run: bool = True):
                 else:
                     updates["cost_source"] = CostSource.UNKNOWN.value
             elif txn.transaction_type == "PRODUCE":
-                updates[
-                    "cost_source"
-                ] = CostSource.FIFO_ACTUAL.value  # Assembly-produced items
+                updates["cost_source"] = (
+                    CostSource.FIFO_ACTUAL.value
+                )  # Assembly-produced items
             else:
                 updates["cost_source"] = CostSource.UNKNOWN.value
 
@@ -168,9 +168,11 @@ def build_assembly_cost_dependencies(db: Session, dry_run: bool = True):
             db.query(InventoryLot)
             .filter(
                 InventoryLot.product_id == batch.work_order.product_id,
-                InventoryLot.received_at >= batch.completed_at
-                if batch.completed_at
-                else True,
+                (
+                    InventoryLot.received_at >= batch.completed_at
+                    if batch.completed_at
+                    else True
+                ),
             )
             .order_by(InventoryLot.received_at.desc())
             .limit(1)

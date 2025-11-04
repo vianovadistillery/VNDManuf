@@ -180,9 +180,9 @@ def test_batch_completion_with_wip_service(db: Session):
 
         assert len(wip_lots) > 0, "WIP lot should be created"
         wip_lot = wip_lots[0]
-        assert wip_lot.quantity_kg == Decimal(
-            "95.0"
-        ), f"Expected 95.0 kg, got {wip_lot.quantity_kg}"
+        assert wip_lot.quantity_kg == Decimal("95.0"), (
+            f"Expected 95.0 kg, got {wip_lot.quantity_kg}"
+        )
         print(
             f"   [OK] WIP lot created: {wip_lot.lot_code}, qty: {wip_lot.quantity_kg} kg"
         )

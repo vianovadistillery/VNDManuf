@@ -371,12 +371,16 @@ class CostingPage:
                                     [
                                         html.Strong("Has Estimate: "),
                                         html.Span(
-                                            "Yes"
-                                            if cogs_breakdown.get("has_estimate")
-                                            else "No",
-                                            className="badge bg-warning"
-                                            if cogs_breakdown.get("has_estimate")
-                                            else "badge bg-success",
+                                            (
+                                                "Yes"
+                                                if cogs_breakdown.get("has_estimate")
+                                                else "No"
+                                            ),
+                                            className=(
+                                                "badge bg-warning"
+                                                if cogs_breakdown.get("has_estimate")
+                                                else "badge bg-success"
+                                            ),
                                         ),
                                     ]
                                 ),
@@ -520,9 +524,9 @@ def flatten_cogs_tree(
             "extended_cost": extended_cost,
             "cost_source": cost_source,
             "has_estimate": "Yes" if has_estimate else "No",
-            "estimate_reason": estimate_reason[:100]
-            if estimate_reason
-            else "",  # Truncate long reasons
+            "estimate_reason": (
+                estimate_reason[:100] if estimate_reason else ""
+            ),  # Truncate long reasons
         }
     )
 

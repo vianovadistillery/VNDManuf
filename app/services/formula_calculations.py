@@ -46,9 +46,9 @@ def calculate_theoretical_cost_per_line(
     results = db.execute(stmt).all()
 
     return {
-        str(line.id): Decimal(str(line.line_cost))
-        if line.line_cost
-        else Decimal("0.00")
+        str(line.id): (
+            Decimal(str(line.line_cost)) if line.line_cost else Decimal("0.00")
+        )
         for line in results
     }
 

@@ -34,6 +34,13 @@ class ProductsPageEnhanced:
                                                     disabled=True,
                                                 ),
                                                 dbc.Button(
+                                                    "Duplicate",
+                                                    id="duplicate-product-btn",
+                                                    color="warning",
+                                                    className="me-2",
+                                                    disabled=True,
+                                                ),
+                                                dbc.Button(
                                                     "Delete Selected",
                                                     id="delete-product-btn",
                                                     color="danger",
@@ -53,7 +60,7 @@ class ProductsPageEnhanced:
                                                 html.Div(
                                                     [
                                                         dbc.Label(
-                                                            "Filter by Capabilities:",
+                                                            "Filter by type:",
                                                             className="me-2",
                                                             style={
                                                                 "display": "inline-block",
@@ -135,6 +142,12 @@ class ProductsPageEnhanced:
                                         {"name": "Stock", "id": "stock"},
                                         {"name": "Cost", "id": "primary_assembly_cost"},
                                         {"name": "Active", "id": "is_active"},
+                                        {"name": "Created", "id": "created_at"},
+                                        {
+                                            "name": "Last Modified",
+                                            "id": "last_modified",
+                                        },
+                                        {"name": "Version", "id": "record_version"},
                                     ],
                                     data=[],
                                     sort_action="native",
@@ -183,7 +196,7 @@ class ProductsPageEnhanced:
                                                 ),
                                                 html.P(
                                                     [
-                                                        html.Strong("Capabilities: "),
+                                                        html.Strong("Product Type: "),
                                                         html.Span(
                                                             id="product-detail-capabilities",
                                                             children="-",
@@ -366,7 +379,7 @@ class ProductsPageEnhanced:
                                                         dbc.Col(
                                                             [
                                                                 dbc.Label(
-                                                                    "Product Capabilities *"
+                                                                    "Product Type *"
                                                                 ),
                                                                 html.Div(
                                                                     [
@@ -469,29 +482,7 @@ class ProductsPageEnhanced:
                                                     ],
                                                     className="mb-3",
                                                 ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Raw Material Group ID"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-raw-material-group-id",
-                                                                    placeholder="Raw Material Group ID",
-                                                                ),
-                                                            ],
-                                                            width=12,
-                                                        )
-                                                    ]
-                                                ),
-                                            ],
-                                            title="Basic Information",
-                                            item_id="basic",
-                                        ),
-                                        # Physical Properties
-                                        dbc.AccordionItem(
-                                            [
+                                                # Base Unit, Size, Weight, ABV, Density moved to Basic Information
                                                 dbc.Row(
                                                     [
                                                         dbc.Col(
@@ -537,30 +528,6 @@ class ProductsPageEnhanced:
                                                     [
                                                         dbc.Col(
                                                             [
-                                                                dbc.Label("Pack"),
-                                                                dbc.Input(
-                                                                    id="product-pack",
-                                                                    type="number",
-                                                                    placeholder="Pack quantity",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Package Type"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-pkge",
-                                                                    type="number",
-                                                                    placeholder="Package type",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
                                                                 dbc.Label(
                                                                     "Density (kg/L)"
                                                                 ),
@@ -571,13 +538,8 @@ class ProductsPageEnhanced:
                                                                     placeholder="0.000",
                                                                 ),
                                                             ],
-                                                            width=4,
+                                                            width=6,
                                                         ),
-                                                    ],
-                                                    className="mb-3",
-                                                ),
-                                                dbc.Row(
-                                                    [
                                                         dbc.Col(
                                                             [
                                                                 dbc.Label("ABV (%)"),
@@ -590,198 +552,118 @@ class ProductsPageEnhanced:
                                                             ],
                                                             width=6,
                                                         ),
-                                                        dbc.Col([], width=6),
                                                     ],
                                                     className="mb-3",
                                                 ),
                                             ],
-                                            title="Physical Properties",
-                                            item_id="physical",
+                                            title="Basic Information",
+                                            item_id="basic",
                                         ),
-                                        # Sales & Pricing (conditional - grey if is_sell=False)
+                                        # Purchase Section (conditional - grey if is_purchase=False)
                                         dbc.AccordionItem(
                                             [
                                                 html.Div(
-                                                    id="sales-pricing-disabled-notice",
+                                                    [
+                                                        html.P(
+                                                            "Purchase capability is not enabled for this product. Enable 'Purchase' in Basic Information to edit.",
+                                                            className="mb-0",
+                                                        ),
+                                                    ],
+                                                    id="purchase-disabled-notice",
                                                     style={"display": "none"},
                                                 ),
-                                                dash_table.DataTable(
-                                                    id="product-pricing-table",
-                                                    columns=[
-                                                        {
-                                                            "name": "Price Level",
-                                                            "id": "price_level",
-                                                            "editable": False,
-                                                        },
-                                                        {
-                                                            "name": "Inc GST",
-                                                            "id": "inc_gst",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".2f"
-                                                            },
-                                                        },
-                                                        {
-                                                            "name": "Ex GST",
-                                                            "id": "ex_gst",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".2f"
-                                                            },
-                                                        },
-                                                        {
-                                                            "name": "Excise",
-                                                            "id": "excise",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".2f"
-                                                            },
-                                                            "editable": False,
-                                                        },
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Purchase Format"
+                                                                ),
+                                                                dcc.Dropdown(
+                                                                    id="product-purchase-format-dropdown",
+                                                                    placeholder="Select purchase format (IBC, Bag, etc.)",
+                                                                    searchable=True,
+                                                                    clearable=True,
+                                                                ),
+                                                            ],
+                                                            width=6,
+                                                        ),
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label("Supplier"),
+                                                                dcc.Dropdown(
+                                                                    id="product-supplier-dropdown",
+                                                                    placeholder="Select supplier",
+                                                                    searchable=True,
+                                                                    clearable=True,
+                                                                ),
+                                                            ],
+                                                            width=6,
+                                                        ),
                                                     ],
-                                                    data=[
-                                                        {
-                                                            "price_level": "Retail",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Wholesale",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Distributor",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Counter",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Trade",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Contract",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
-                                                        {
-                                                            "price_level": "Industrial",
-                                                            "inc_gst": None,
-                                                            "ex_gst": None,
-                                                            "excise": None,
-                                                        },
+                                                    className="mb-3",
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Purchase Quantity"
+                                                                ),
+                                                                dbc.Input(
+                                                                    id="product-purchase-quantity",
+                                                                    type="number",
+                                                                    step="0.001",
+                                                                    placeholder="0.000",
+                                                                ),
+                                                            ],
+                                                            width=4,
+                                                        ),
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Purchase Unit"
+                                                                ),
+                                                                dcc.Dropdown(
+                                                                    id="product-purchase-unit-dropdown",
+                                                                    placeholder="Select purchase unit",
+                                                                    searchable=True,
+                                                                    clearable=True,
+                                                                ),
+                                                            ],
+                                                            width=4,
+                                                        ),
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Purchase Cost"
+                                                                ),
+                                                                dbc.Input(
+                                                                    id="product-purchase-cost",
+                                                                    type="number",
+                                                                    step="0.01",
+                                                                    placeholder="0.00",
+                                                                ),
+                                                            ],
+                                                            width=4,
+                                                        ),
                                                     ],
-                                                    editable=True,
-                                                    style_cell={
-                                                        "textAlign": "left",
-                                                        "fontSize": "12px",
-                                                    },
-                                                    style_header={
-                                                        "backgroundColor": "rgb(230, 230, 230)",
-                                                        "fontWeight": "bold",
-                                                    },
-                                                    style_data_conditional=[
-                                                        {
-                                                            "if": {
-                                                                "filter_query": "{is_sell} = False"
-                                                            },
-                                                            "backgroundColor": "#f0f0f0",
-                                                            "color": "#999",
-                                                        },
-                                                    ],
+                                                    className="mb-3",
                                                 ),
                                             ],
-                                            title="Sales & Pricing",
-                                            item_id="sales-pricing",
-                                        ),
-                                        # Usage Cost Settings (conditional - grey based on capabilities)
-                                        dbc.AccordionItem(
-                                            [
-                                                html.Div(
-                                                    id="cost-settings-disabled-notice",
-                                                    style={"display": "none"},
-                                                ),
-                                                dash_table.DataTable(
-                                                    id="product-cost-table",
-                                                    columns=[
-                                                        {
-                                                            "name": "Cost Type",
-                                                            "id": "cost_type",
-                                                            "editable": False,
-                                                        },
-                                                        {
-                                                            "name": "Ex GST",
-                                                            "id": "ex_gst",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".2f"
-                                                            },
-                                                        },
-                                                        {
-                                                            "name": "Inc GST",
-                                                            "id": "inc_gst",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".2f"
-                                                            },
-                                                        },
-                                                        {
-                                                            "name": "Tax Included",
-                                                            "id": "tax_included",
-                                                            "presentation": "markdown",
-                                                            "editable": False,
-                                                        },
-                                                    ],
-                                                    data=[
-                                                        {
-                                                            "cost_type": "Purchase Cost",
-                                                            "ex_gst": None,
-                                                            "inc_gst": None,
-                                                            "tax_included": False,
-                                                        },
-                                                        {
-                                                            "cost_type": "Usage Cost",
-                                                            "ex_gst": None,
-                                                            "inc_gst": None,
-                                                            "tax_included": False,
-                                                        },
-                                                        {
-                                                            "cost_type": "Manufactured Cost",
-                                                            "ex_gst": None,
-                                                            "inc_gst": None,
-                                                            "tax_included": "N/A",
-                                                        },
-                                                    ],
-                                                    editable=True,
-                                                    style_cell={
-                                                        "textAlign": "left",
-                                                        "fontSize": "12px",
-                                                    },
-                                                    style_header={
-                                                        "backgroundColor": "rgb(230, 230, 230)",
-                                                        "fontWeight": "bold",
-                                                    },
-                                                ),
-                                            ],
-                                            title="Usage Cost Settings",
-                                            item_id="cost-settings",
+                                            title="Purchase",
+                                            item_id="purchase",
                                         ),
                                         # Assembly Section (conditional - grey if is_assemble=False)
                                         dbc.AccordionItem(
                                             [
                                                 html.Div(
+                                                    [
+                                                        html.P(
+                                                            "Assembly capability is not enabled for this product. Enable 'Assemble' in Basic Information to edit.",
+                                                            className="mb-0",
+                                                        ),
+                                                    ],
                                                     id="assembly-disabled-notice",
                                                     style={"display": "none"},
                                                 ),
@@ -871,381 +753,326 @@ class ProductsPageEnhanced:
                                             title="Assembly",
                                             item_id="assembly",
                                         ),
-                                        # Cost Information (Legacy - keeping for backward compatibility but can be removed)
+                                        # Cost Summary (positioned second from bottom, above Sales)
                                         dbc.AccordionItem(
                                             [
-                                                dbc.Row(
+                                                html.Div(
                                                     [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Purchase Cost"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-purcost",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
+                                                        html.H6(
+                                                            "Cost Information",
+                                                            className="mb-3",
                                                         ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Purchase Tax"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-purtax",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="0.00",
-                                                                ),
+                                                        dash_table.DataTable(
+                                                            id="product-cost-table",
+                                                            columns=[
+                                                                {
+                                                                    "name": "Cost Type",
+                                                                    "id": "cost_type",
+                                                                    "editable": False,
+                                                                },
+                                                                {
+                                                                    "name": "Ex GST",
+                                                                    "id": "ex_gst",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".2f"
+                                                                    },
+                                                                },
+                                                                {
+                                                                    "name": "Inc GST",
+                                                                    "id": "inc_gst",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".2f"
+                                                                    },
+                                                                },
+                                                                {
+                                                                    "name": "Tax Included",
+                                                                    "id": "tax_included",
+                                                                    "presentation": "markdown",
+                                                                    "editable": False,
+                                                                },
                                                             ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Wholesale Cost"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-wholesalecost",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="0.00",
-                                                                ),
+                                                            data=[
+                                                                {
+                                                                    "cost_type": "Purchase Cost",
+                                                                    "ex_gst": None,
+                                                                    "inc_gst": None,
+                                                                    "tax_included": False,
+                                                                },
+                                                                {
+                                                                    "cost_type": "Usage Cost",
+                                                                    "ex_gst": None,
+                                                                    "inc_gst": None,
+                                                                    "tax_included": False,
+                                                                },
+                                                                {
+                                                                    "cost_type": "Manufactured Cost",
+                                                                    "ex_gst": None,
+                                                                    "inc_gst": None,
+                                                                    "tax_included": "N/A",
+                                                                },
                                                             ],
-                                                            width=4,
+                                                            editable=True,
+                                                            style_cell={
+                                                                "textAlign": "left",
+                                                                "fontSize": "12px",
+                                                            },
+                                                            style_header={
+                                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                                "fontWeight": "bold",
+                                                            },
                                                         ),
-                                                    ],
-                                                    className="mb-3",
-                                                ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Excise Amount"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-excise-amount",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
+                                                        html.H6(
+                                                            "Usage Information",
+                                                            className="mb-3 mt-4",
                                                         ),
-                                                        dbc.Col(
+                                                        dbc.Row(
                                                             [
-                                                                dbc.Label(
-                                                                    "Tax Included"
-                                                                ),
-                                                                dbc.Select(
-                                                                    id="product-taxinc",
-                                                                    options=[
-                                                                        {
-                                                                            "label": "Y",
-                                                                            "value": "Y",
-                                                                        },
-                                                                        {
-                                                                            "label": "N",
-                                                                            "value": "N",
-                                                                        },
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Usage Unit"
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="product-usage-unit-dropdown",
+                                                                            placeholder="Select usage unit",
+                                                                            searchable=True,
+                                                                            clearable=True,
+                                                                        ),
                                                                     ],
-                                                                    placeholder="Tax included?",
+                                                                    width=4,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Usage Quantity"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="product-usage-quantity",
+                                                                            type="number",
+                                                                            step="0.001",
+                                                                            placeholder="0.000",
+                                                                        ),
+                                                                    ],
+                                                                    width=4,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Usage Cost"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="product-usage-cost",
+                                                                            type="number",
+                                                                            step="0.01",
+                                                                            placeholder="0.00",
+                                                                            disabled=True,
+                                                                        ),
+                                                                    ],
+                                                                    width=4,
                                                                 ),
                                                             ],
-                                                            width=4,
+                                                            className="mb-3",
                                                         ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Sales Tax Code"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-salestaxcde",
-                                                                    placeholder="Tax code",
-                                                                ),
-                                                            ],
-                                                            width=4,
+                                                        # Hidden usage table for backward compatibility (used by callbacks)
+                                                        html.Div(
+                                                            dash_table.DataTable(
+                                                                id="product-usage-table",
+                                                                columns=[
+                                                                    {
+                                                                        "name": "Unit",
+                                                                        "id": "usage_unit",
+                                                                        "editable": False,
+                                                                    },
+                                                                    {
+                                                                        "name": "Quantity",
+                                                                        "id": "usage_quantity",
+                                                                        "type": "numeric",
+                                                                        "format": {
+                                                                            "specifier": ".3f"
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "name": "Usage Cost",
+                                                                        "id": "usage_cost",
+                                                                        "type": "numeric",
+                                                                        "format": {
+                                                                            "specifier": ".2f"
+                                                                        },
+                                                                        "editable": False,
+                                                                    },
+                                                                ],
+                                                                data=[
+                                                                    {
+                                                                        "usage_unit": "",
+                                                                        "usage_quantity": None,
+                                                                        "usage_cost": None,
+                                                                    }
+                                                                ],
+                                                                editable=True,
+                                                                style_cell={
+                                                                    "textAlign": "left",
+                                                                    "fontSize": "12px",
+                                                                },
+                                                                style_header={
+                                                                    "backgroundColor": "rgb(230, 230, 230)",
+                                                                    "fontWeight": "bold",
+                                                                },
+                                                            ),
+                                                            style={"display": "none"},
                                                         ),
                                                     ]
                                                 ),
                                             ],
-                                            title="Cost",
-                                            item_id="cost",
+                                            title="Cost Summary",
+                                            item_id="cost-settings",
                                         ),
-                                        # Pricing
+                                        # Sales & Pricing (conditional - grey if is_sell=False) - at bottom
                                         dbc.AccordionItem(
                                             [
-                                                dbc.Row(
+                                                html.Div(
                                                     [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Wholesale"),
-                                                                dbc.Input(
-                                                                    id="product-wholesalecde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Retail"),
-                                                                dbc.Input(
-                                                                    id="product-retailcde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Counter"),
-                                                                dbc.Input(
-                                                                    id="product-countercde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
+                                                        html.P(
+                                                            "Sales capability is not enabled for this product. Enable 'Sell' in Basic Information to edit.",
+                                                            className="mb-0",
                                                         ),
                                                     ],
-                                                    className="mb-3",
+                                                    id="sales-pricing-disabled-notice",
+                                                    style={"display": "none"},
                                                 ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Trade"),
-                                                                dbc.Input(
-                                                                    id="product-tradecde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Contract"),
-                                                                dbc.Input(
-                                                                    id="product-contractcde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Industrial"),
-                                                                dbc.Input(
-                                                                    id="product-industrialcde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=4,
-                                                        ),
+                                                dash_table.DataTable(
+                                                    id="product-pricing-table",
+                                                    columns=[
+                                                        {
+                                                            "name": "Price Level",
+                                                            "id": "price_level",
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Inc GST",
+                                                            "id": "inc_gst",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                        },
+                                                        {
+                                                            "name": "Ex GST",
+                                                            "id": "ex_gst",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                        },
+                                                        {
+                                                            "name": "Excise",
+                                                            "id": "excise",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Inc GST COGS",
+                                                            "id": "inc_gst_cogs",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Inc Excise COGS",
+                                                            "id": "inc_excise_cogs",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                            "editable": False,
+                                                        },
                                                     ],
-                                                    className="mb-3",
-                                                ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Distributor"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-distributorcde",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col([], width=6),
-                                                    ]
-                                                ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Discount 1"),
-                                                                dbc.Input(
-                                                                    id="product-disccdeone",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Discount 2"),
-                                                                dbc.Input(
-                                                                    id="product-disccdetwo",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="$0.00",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
+                                                    data=[
+                                                        {
+                                                            "price_level": "Retail",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Wholesale",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Distributor",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Counter",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Trade",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Contract",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
+                                                        {
+                                                            "price_level": "Industrial",
+                                                            "inc_gst": None,
+                                                            "ex_gst": None,
+                                                            "excise": None,
+                                                            "inc_gst_cogs": None,
+                                                            "inc_excise_cogs": None,
+                                                        },
                                                     ],
-                                                    className="mt-3",
+                                                    editable=True,
+                                                    style_cell={
+                                                        "textAlign": "left",
+                                                        "fontSize": "12px",
+                                                    },
+                                                    style_header={
+                                                        "backgroundColor": "rgb(230, 230, 230)",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                    style_data_conditional=[
+                                                        {
+                                                            "if": {
+                                                                "filter_query": "{is_sell} = False"
+                                                            },
+                                                            "backgroundColor": "#f0f0f0",
+                                                            "color": "#999",
+                                                        },
+                                                    ],
                                                 ),
                                             ],
-                                            title="Pricing",
-                                            item_id="pricing",
-                                        ),
-                                        # Raw Material Usage Fields
-                                        dbc.AccordionItem(
-                                            [
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Supplier ID"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-supplier-id",
-                                                                    placeholder="Supplier ID",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Purchase Unit"
-                                                                ),
-                                                                dcc.Dropdown(
-                                                                    id="product-purchase-unit",
-                                                                    placeholder="Select purchase unit",
-                                                                    searchable=True,
-                                                                    clearable=True,
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                    ],
-                                                    className="mb-3",
-                                                ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Purchase Volume"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-purchase-volume",
-                                                                    type="number",
-                                                                    step="0.001",
-                                                                    placeholder="0.000",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Usage Cost"),
-                                                                dbc.Input(
-                                                                    id="product-usage-cost",
-                                                                    type="number",
-                                                                    step="0.01",
-                                                                    placeholder="0.00",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                    ],
-                                                    className="mb-3",
-                                                ),
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Usage Unit"),
-                                                                dcc.Dropdown(
-                                                                    id="product-usage-unit",
-                                                                    placeholder="Select usage unit",
-                                                                    searchable=True,
-                                                                    clearable=True,
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Restock Level"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-restock-level",
-                                                                    type="number",
-                                                                    step="0.001",
-                                                                    placeholder="0.000",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                    ]
-                                                ),
-                                            ],
-                                            title="Raw Material Usage",
-                                            item_id="raw-material",
-                                        ),
-                                        # Finished Good Specific Fields
-                                        dbc.AccordionItem(
-                                            [
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label("Formula ID"),
-                                                                dbc.Input(
-                                                                    id="product-formula-id",
-                                                                    placeholder="Formula ID",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                dbc.Label(
-                                                                    "Formula Revision"
-                                                                ),
-                                                                dbc.Input(
-                                                                    id="product-formula-revision",
-                                                                    type="number",
-                                                                    placeholder="Revision number",
-                                                                ),
-                                                            ],
-                                                            width=6,
-                                                        ),
-                                                    ]
-                                                )
-                                            ],
-                                            title="Assembly",
-                                            item_id="finished-good",
+                                            title="Sales & Pricing",
+                                            item_id="sales-pricing",
                                         ),
                                     ],
                                     start_collapsed=True,
@@ -1460,36 +1287,7 @@ class ProductsPageEnhanced:
                                             [
                                                 dbc.Col(
                                                     [
-                                                        dbc.Label("Formula Code *"),
-                                                        dbc.Input(
-                                                            id="assembly-code",
-                                                            required=True,
-                                                            maxLength=50,
-                                                        ),
-                                                    ],
-                                                    width=6,
-                                                ),
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Version"),
-                                                        dbc.Input(
-                                                            id="assembly-version",
-                                                            type="number",
-                                                            value=1,
-                                                            min=1,
-                                                            readonly=True,
-                                                        ),
-                                                    ],
-                                                    width=3,
-                                                ),
-                                            ],
-                                            className="mb-3",
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Formula Name *"),
+                                                        dbc.Label("Assembly Name *"),
                                                         dbc.Input(
                                                             id="assembly-name",
                                                             required=True,
@@ -1503,19 +1301,35 @@ class ProductsPageEnhanced:
                                         ),
                                         html.Hr(),
                                         html.H5("Assembly Lines", className="mb-3"),
-                                        html.P(
-                                            "Total Cost: ",
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Button(
+                                                            "Add Line",
+                                                            id="assembly-add-line-btn",
+                                                            color="info",
+                                                            size="sm",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "Edit Line",
+                                                            id="assembly-edit-line-btn",
+                                                            color="primary",
+                                                            size="sm",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "Delete Line",
+                                                            id="assembly-delete-line-btn",
+                                                            color="danger",
+                                                            size="sm",
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                ),
+                                            ],
                                             className="mb-2",
-                                            style={"fontWeight": "bold"},
-                                        ),
-                                        html.P(
-                                            id="assembly-total-cost",
-                                            children="$0.00",
-                                            className="mb-3",
-                                            style={
-                                                "fontSize": "16px",
-                                                "color": "green",
-                                            },
                                         ),
                                         dash_table.DataTable(
                                             id="assembly-lines-table",
@@ -1529,8 +1343,7 @@ class ProductsPageEnhanced:
                                                 {
                                                     "name": "Product",
                                                     "id": "product_search",
-                                                    "presentation": "dropdown",
-                                                    "editable": True,
+                                                    "editable": False,
                                                 },
                                                 {
                                                     "name": "Product SKU",
@@ -1552,12 +1365,18 @@ class ProductsPageEnhanced:
                                                 {
                                                     "name": "Unit",
                                                     "id": "unit",
-                                                    "presentation": "dropdown",
-                                                    "editable": True,
+                                                    "editable": False,
                                                 },
                                                 {
-                                                    "name": "Qty (kg)",
+                                                    "name": "Calculated (kg)",
                                                     "id": "quantity_kg",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".3f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Calculated (L)",
+                                                    "id": "quantity_l",
                                                     "type": "numeric",
                                                     "format": {"specifier": ".3f"},
                                                     "editable": False,
@@ -1570,10 +1389,15 @@ class ProductsPageEnhanced:
                                                     "editable": False,
                                                 },
                                                 {
-                                                    "name": "Line Cost",
+                                                    "name": "Cost",
                                                     "id": "line_cost",
                                                     "type": "numeric",
                                                     "format": {"specifier": ".2f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Primary",
+                                                    "id": "is_primary",
                                                     "editable": False,
                                                 },
                                                 {
@@ -1584,7 +1408,7 @@ class ProductsPageEnhanced:
                                             ],
                                             data=[],
                                             editable=True,
-                                            row_deletable=True,
+                                            row_selectable="single",
                                             style_cell={
                                                 "textAlign": "left",
                                                 "fontSize": "11px",
@@ -1594,39 +1418,238 @@ class ProductsPageEnhanced:
                                                 "fontWeight": "bold",
                                             },
                                         ),
+                                        html.Div(
+                                            id="assembly-line-edit-index",
+                                            style={"display": "none"},
+                                            children="",
+                                        ),
+                                        html.Hr(),
+                                        html.H5(
+                                            "Edit Assembly Line", className="mb-3 mt-3"
+                                        ),
+                                        dbc.Card(
+                                            [
+                                                dbc.CardBody(
+                                                    [
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Product *"
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="assembly-line-edit-product",
+                                                                            placeholder="Select product...",
+                                                                            searchable=True,
+                                                                            clearable=True,
+                                                                        ),
+                                                                    ],
+                                                                    width=6,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Quantity *"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="assembly-line-edit-quantity",
+                                                                            type="number",
+                                                                            step=0.001,
+                                                                            value=0.0,
+                                                                        ),
+                                                                    ],
+                                                                    width=3,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Unit *"
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="assembly-line-edit-unit",
+                                                                            placeholder="Select unit...",
+                                                                            searchable=True,
+                                                                            clearable=False,
+                                                                        ),
+                                                                    ],
+                                                                    width=3,
+                                                                ),
+                                                            ],
+                                                            className="mb-3",
+                                                        ),
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Notes"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="assembly-line-edit-notes",
+                                                                            type="text",
+                                                                        ),
+                                                                    ],
+                                                                    width=12,
+                                                                ),
+                                                            ],
+                                                            className="mb-3",
+                                                        ),
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Button(
+                                                                            "Save Line",
+                                                                            id="assembly-line-save-btn",
+                                                                            color="success",
+                                                                            className="me-2",
+                                                                        ),
+                                                                        dbc.Button(
+                                                                            "Cancel",
+                                                                            id="assembly-line-cancel-btn",
+                                                                            color="secondary",
+                                                                        ),
+                                                                    ],
+                                                                    width=12,
+                                                                ),
+                                                            ],
+                                                        ),
+                                                    ]
+                                                ),
+                                            ],
+                                            id="assembly-line-edit-card",
+                                            style={"display": "none"},
+                                            className="mb-3",
+                                        ),
+                                        html.Hr(),
+                                        html.H5("Summary", className="mb-3 mt-3"),
                                         dbc.Row(
                                             [
                                                 dbc.Col(
                                                     [
-                                                        dbc.Button(
-                                                            "Add Line",
-                                                            id="assembly-add-line-btn",
-                                                            color="info",
-                                                            size="sm",
-                                                            className="me-2",
-                                                        ),
-                                                        dbc.Button(
-                                                            "Lookup Product",
-                                                            id="assembly-lookup-product-btn",
-                                                            color="secondary",
-                                                            size="sm",
+                                                        html.Strong("Total Cost: "),
+                                                        html.Span(
+                                                            id="assembly-summary-total-cost",
+                                                            children="$0.00",
+                                                            className="text-success",
+                                                            style={"fontSize": "14px"},
                                                         ),
                                                     ],
-                                                    width=6,
+                                                    width=3,
                                                 ),
                                                 dbc.Col(
                                                     [
-                                                        dbc.Input(
-                                                            id="assembly-product-search",
-                                                            placeholder="Search by SKU or name...",
-                                                            size="sm",
-                                                            className="ms-auto",
+                                                        html.Strong("Total kg: "),
+                                                        html.Span(
+                                                            id="assembly-summary-total-kg",
+                                                            children="0.000",
+                                                            className="text-info",
+                                                            style={"fontSize": "14px"},
                                                         ),
                                                     ],
-                                                    width=6,
+                                                    width=3,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        html.Strong("Total L: "),
+                                                        html.Span(
+                                                            id="assembly-summary-total-l",
+                                                            children="0.000",
+                                                            className="text-info",
+                                                            style={"fontSize": "14px"},
+                                                        ),
+                                                    ],
+                                                    width=3,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        html.Strong("Cost/kg: "),
+                                                        html.Span(
+                                                            id="assembly-summary-cost-per-kg",
+                                                            children="$0.00",
+                                                            className="text-warning",
+                                                            style={"fontSize": "14px"},
+                                                        ),
+                                                    ],
+                                                    width=3,
                                                 ),
                                             ],
-                                            className="mt-2",
+                                            className="mb-2",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        html.Strong("Cost/L: "),
+                                                        html.Span(
+                                                            id="assembly-summary-cost-per-l",
+                                                            children="$0.00",
+                                                            className="text-warning",
+                                                            style={"fontSize": "14px"},
+                                                        ),
+                                                    ],
+                                                    width=3,
+                                                ),
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        html.Hr(),
+                                        html.H5("Assembly Summary", className="mb-3"),
+                                        dash_table.DataTable(
+                                            id="assembly-summary-table",
+                                            columns=[
+                                                {
+                                                    "name": "Type",
+                                                    "id": "type",
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Total Cost",
+                                                    "id": "total_cost",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".2f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Assembly Mass (kg)",
+                                                    "id": "assembly_mass_kg",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".3f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Assembly Volume (L)",
+                                                    "id": "assembly_volume_l",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".3f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Cost per kg",
+                                                    "id": "cost_per_kg",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".2f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Cost per L",
+                                                    "id": "cost_per_l",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".2f"},
+                                                    "editable": False,
+                                                },
+                                            ],
+                                            data=[],
+                                            editable=False,
+                                            style_cell={
+                                                "textAlign": "left",
+                                                "fontSize": "11px",
+                                            },
+                                            style_header={
+                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                "fontWeight": "bold",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1651,6 +1674,12 @@ class ProductsPageEnhanced:
                     id="assembly-form-modal",
                     is_open=False,
                     size="xl",
+                ),
+                # Hidden refresh trigger for table updates
+                html.Div(
+                    id="products-refresh-trigger",
+                    children="",
+                    style={"display": "none"},
                 ),
             ],
             fluid=True,

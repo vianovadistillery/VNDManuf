@@ -119,9 +119,11 @@ def register_quality_tests_callbacks(app, make_api_request):
                 test.get("target_value"),
                 test.get("max_value"),
                 test.get("description", ""),
-                test.get("is_active") == "Yes"
-                if isinstance(test.get("is_active"), str)
-                else test.get("is_active", True),
+                (
+                    test.get("is_active") == "Yes"
+                    if isinstance(test.get("is_active"), str)
+                    else test.get("is_active", True)
+                ),
                 test.get("id"),  # Hidden field - test ID
             )
 

@@ -171,9 +171,9 @@ async def batch_history_report(
             "quantity_kg": float(b.quantity_kg),
             "yield_actual": float(b.yield_actual) if b.yield_actual else None,
             "yield_litres": float(b.yield_litres) if b.yield_litres else None,
-            "variance_percent": float(b.variance_percent)
-            if b.variance_percent
-            else None,
+            "variance_percent": (
+                float(b.variance_percent) if b.variance_percent else None
+            ),
             "status": b.status,
             "started_at": b.started_at.isoformat() if b.started_at else None,
             "completed_at": b.completed_at.isoformat() if b.completed_at else None,

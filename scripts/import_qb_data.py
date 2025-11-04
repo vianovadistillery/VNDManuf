@@ -97,72 +97,76 @@ def import_raw_materials(
                 "search_key": qb_rec.get("Search", "")[:5],
                 "search_ext": qb_rec.get("searchs", "")[:8],
                 "sg": float(qb_rec.get("Sg", 0.0)) if qb_rec.get("Sg") else None,
-                "purchase_cost": float(qb_rec.get("PurCost", 0.0))
-                if qb_rec.get("PurCost")
-                else None,
+                "purchase_cost": (
+                    float(qb_rec.get("PurCost", 0.0)) if qb_rec.get("PurCost") else None
+                ),
                 "purchase_unit": qb_rec.get("PurUnit", "")[:2],
-                "usage_cost": float(qb_rec.get("UseCost", 0.0))
-                if qb_rec.get("UseCost")
-                else None,
+                "usage_cost": (
+                    float(qb_rec.get("UseCost", 0.0)) if qb_rec.get("UseCost") else None
+                ),
                 "usage_unit": qb_rec.get("UseUnit", "")[:2],
-                "deal_cost": float(qb_rec.get("Dealcost", 0.0))
-                if qb_rec.get("Dealcost")
-                else None,
+                "deal_cost": (
+                    float(qb_rec.get("Dealcost", 0.0))
+                    if qb_rec.get("Dealcost")
+                    else None
+                ),
                 "sup_unit": qb_rec.get("SupUnit", "")[:2],
-                "sup_qty": float(qb_rec.get("supqty", 0.0))
-                if qb_rec.get("supqty")
-                else None,
+                "sup_qty": (
+                    float(qb_rec.get("supqty", 0.0)) if qb_rec.get("supqty") else None
+                ),
                 "active_flag": qb_rec.get("Active", "A")[:1],
                 "soh": float(qb_rec.get("soh", 0.0)) if qb_rec.get("soh") else None,
-                "opening_soh": float(qb_rec.get("Osoh", 0.0))
-                if qb_rec.get("Osoh")
-                else None,
-                "soh_value": float(qb_rec.get("sohv", 0.0))
-                if qb_rec.get("sohv")
-                else None,
+                "opening_soh": (
+                    float(qb_rec.get("Osoh", 0.0)) if qb_rec.get("Osoh") else None
+                ),
+                "soh_value": (
+                    float(qb_rec.get("sohv", 0.0)) if qb_rec.get("sohv") else None
+                ),
                 "so_on_order": int(qb_rec.get("soo", 0)) if qb_rec.get("soo") else None,
-                "so_in_process": float(qb_rec.get("sip", 0.0))
-                if qb_rec.get("sip")
-                else None,
-                "restock_level": float(qb_rec.get("restock", 0.0))
-                if qb_rec.get("restock")
-                else None,
-                "used_ytd": float(qb_rec.get("used", 0.0))
-                if qb_rec.get("used")
-                else None,
+                "so_in_process": (
+                    float(qb_rec.get("sip", 0.0)) if qb_rec.get("sip") else None
+                ),
+                "restock_level": (
+                    float(qb_rec.get("restock", 0.0)) if qb_rec.get("restock") else None
+                ),
+                "used_ytd": (
+                    float(qb_rec.get("used", 0.0)) if qb_rec.get("used") else None
+                ),
                 "hazard": qb_rec.get("hazard", "")[:1],
                 "condition": qb_rec.get("cond", "")[:1],
                 "msds_flag": qb_rec.get("msdsflag", "")[:1],
-                "altno1": int(qb_rec.get("altno1", 0))
-                if qb_rec.get("altno1")
-                else None,
-                "altno2": int(qb_rec.get("altno2", 0))
-                if qb_rec.get("altno2")
-                else None,
-                "altno3": int(qb_rec.get("altno3", 0))
-                if qb_rec.get("altno3")
-                else None,
-                "altno4": int(qb_rec.get("altno4", 0))
-                if qb_rec.get("altno4")
-                else None,
-                "altno5": int(qb_rec.get("altno5", 0))
-                if qb_rec.get("altno5")
-                else None,
+                "altno1": (
+                    int(qb_rec.get("altno1", 0)) if qb_rec.get("altno1") else None
+                ),
+                "altno2": (
+                    int(qb_rec.get("altno2", 0)) if qb_rec.get("altno2") else None
+                ),
+                "altno3": (
+                    int(qb_rec.get("altno3", 0)) if qb_rec.get("altno3") else None
+                ),
+                "altno4": (
+                    int(qb_rec.get("altno4", 0)) if qb_rec.get("altno4") else None
+                ),
+                "altno5": (
+                    int(qb_rec.get("altno5", 0)) if qb_rec.get("altno5") else None
+                ),
                 "last_movement_date": qb_rec.get("Date", "")[:8],
                 "last_purchase_date": qb_rec.get("lastpur", "")[:8],
                 "notes": qb_rec.get("Notes", "")[:25],
-                "ean13": float(qb_rec.get("ean13", 0.0))
-                if qb_rec.get("ean13")
-                else None,
-                "vol_solid": float(qb_rec.get("Volsolid", 0.0))
-                if qb_rec.get("Volsolid")
-                else None,
-                "solid_sg": float(qb_rec.get("Solidsg", 0.0))
-                if qb_rec.get("Solidsg")
-                else None,
-                "wt_solid": float(qb_rec.get("Wtsolid", 0.0))
-                if qb_rec.get("Wtsolid")
-                else None,
+                "ean13": (
+                    float(qb_rec.get("ean13", 0.0)) if qb_rec.get("ean13") else None
+                ),
+                "vol_solid": (
+                    float(qb_rec.get("Volsolid", 0.0))
+                    if qb_rec.get("Volsolid")
+                    else None
+                ),
+                "solid_sg": (
+                    float(qb_rec.get("Solidsg", 0.0)) if qb_rec.get("Solidsg") else None
+                ),
+                "wt_solid": (
+                    float(qb_rec.get("Wtsolid", 0.0)) if qb_rec.get("Wtsolid") else None
+                ),
                 "group_id": group_map.get(int(qb_rec.get("Group", 0))),
             }
 

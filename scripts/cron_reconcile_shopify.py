@@ -2,6 +2,7 @@
 Example cron entry:
 */60 * * * * /usr/bin/python -m scripts.cron_reconcile_shopify
 """
+
 # from app.adapters.db import SessionLocal
 # from app.services.shopify_sync import ShopifySyncService
 

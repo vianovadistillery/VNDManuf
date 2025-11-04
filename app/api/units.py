@@ -117,9 +117,9 @@ async def get_unit(unit_id: str, db: Session = Depends(get_db)):
 @router.post("/", response_model=UnitResponse, status_code=status.HTTP_201_CREATED)
 async def create_unit(unit_data: UnitCreate, db: Session = Depends(get_db)):
     """Create a new unit."""
-    # Check if code already exists
+    # Check if code already exists (excluding soft-deleted)
     existing = db.execute(
-        select(Unit).where(Unit.code == unit_data.code)
+        select(Unit).where(Unit.code == unit_data.code, Unit.deleted_at.is_(None))
     ).scalar_one_or_none()
     if existing:
         raise HTTPException(
@@ -156,7 +156,7 @@ async def update_unit(
     # Check if new code conflicts with existing unit
     if unit_data.code and unit_data.code != unit.code:
         existing = db.execute(
-            select(Unit).where(Unit.code == unit_data.code)
+            select(Unit).where(Unit.code == unit_data.code, Unit.deleted_at.is_(None))
         ).scalar_one_or_none()
         if existing:
             raise HTTPException(
@@ -187,14 +187,16 @@ async def update_unit(
 
 @router.delete("/{unit_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_unit(unit_id: str, db: Session = Depends(get_db)):
-    """Delete a unit."""
+    """Soft delete a unit (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     unit = db.get(Unit, unit_id)
     if not unit:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Unit not found"
         )
 
-    db.delete(unit)
+    soft_delete(db, unit)
     db.commit()
     return None
 

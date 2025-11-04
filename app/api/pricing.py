@@ -34,27 +34,28 @@ async def resolve_pricing(
 
     Resolution order: customer_price → price_list_item → error
     """
-    # Validate customer exists
+    # Validate customer exists (excluding soft-deleted)
     customer = db.get(Customer, customer_id)
-    if not customer:
+    if not customer or customer.deleted_at is not None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
         )
 
-    # Validate product exists
+    # Validate product exists (excluding soft-deleted)
     product = db.get(Product, product_id)
-    if not product:
+    if not product or product.deleted_at is not None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
 
-    # Try customer-specific price first
+    # Try customer-specific price first (excluding soft-deleted)
     customer_price_stmt = (
         select(CustomerPrice)
         .where(
             and_(
                 CustomerPrice.customer_id == customer_id,
                 CustomerPrice.product_id == product_id,
+                CustomerPrice.deleted_at.is_(None),
             )
         )
         .order_by(CustomerPrice.effective_date.desc())
@@ -68,12 +69,17 @@ async def resolve_pricing(
             resolution_source="customer_price",
         )
 
-    # Try price list item
+    # Try price list item (excluding soft-deleted)
     price_list_item_stmt = (
         select(PriceListItem)
         .join(PriceList)
         .where(
-            and_(PriceListItem.product_id == product_id, PriceList.is_active.is_(True))
+            and_(
+                PriceListItem.product_id == product_id,
+                PriceList.is_active.is_(True),
+                PriceListItem.deleted_at.is_(None),
+                PriceList.deleted_at.is_(None),
+            )
         )
         .order_by(PriceListItem.effective_date.desc())
     )

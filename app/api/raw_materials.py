@@ -286,15 +286,18 @@ async def update_raw_material(
 
 @router.delete("/{raw_material_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_raw_material(raw_material_id: str, db: Session = Depends(get_db)):
-    """Delete a raw material."""
+    """Soft delete a raw material (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     raw_material = db.get(RawMaterial, raw_material_id)
     if not raw_material:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Raw material not found"
         )
 
-    db.delete(raw_material)
+    soft_delete(db, raw_material)
     db.commit()
+    return None
 
 
 # Supplier relationship endpoints
@@ -371,9 +374,10 @@ async def remove_raw_material_supplier(
             detail="Supplier relationship not found",
         )
 
-    db.delete(relationship)
-    db.commit()
+    from app.services.audit import soft_delete
 
+    soft_delete(db, relationship)
+    db.commit()
     return {"message": "Supplier removed successfully"}
 
 

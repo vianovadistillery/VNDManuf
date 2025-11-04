@@ -93,7 +93,8 @@ def exchange_code_for_tokens(code: str) -> Dict[str, Any]:
         seconds=int(token_data.get("expires_in", 1800))
     )
 
-    with get_session() as session:
+    session = get_session()
+    try:
         # Delete any existing tokens
         session.query(XeroToken).delete()
 
@@ -106,6 +107,8 @@ def exchange_code_for_tokens(code: str) -> Dict[str, Any]:
         )
         session.add(xero_token)
         session.commit()
+    finally:
+        session.close()
 
     return {
         "access_token": token_data["access_token"],
@@ -117,8 +120,11 @@ def exchange_code_for_tokens(code: str) -> Dict[str, Any]:
 def get_latest_tokens(session: Optional[Session] = None) -> Optional[XeroToken]:
     """Get the latest Xero token from database."""
     if session is None:
-        with get_session() as s:
+        s = get_session()
+        try:
             return get_latest_tokens(s)
+        finally:
+            s.close()
 
     return session.query(XeroToken).order_by(XeroToken.id.desc()).first()
 
@@ -174,13 +180,16 @@ def ensure_fresh_token(session: Optional[Session] = None) -> XeroToken:
     )
 
     if session is None:
-        with get_session() as s:
+        s = get_session()
+        try:
             token.access_token = token_data["access_token"]
             token.refresh_token = token_data["refresh_token"]
             token.expires_at = new_expires_at
             s.commit()
             s.refresh(token)
             return token
+        finally:
+            s.close()
     else:
         token.access_token = token_data["access_token"]
         token.refresh_token = token_data["refresh_token"]

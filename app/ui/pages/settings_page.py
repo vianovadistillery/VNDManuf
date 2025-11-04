@@ -24,6 +24,10 @@ class SettingsPage:
                                         dbc.Tab(
                                             label="Excise Rates", tab_id="excise-rates"
                                         ),
+                                        dbc.Tab(
+                                            label="Purchase Formats",
+                                            tab_id="purchase-formats",
+                                        ),
                                     ],
                                     className="mb-4",
                                 ),
@@ -83,6 +87,7 @@ class SettingsPage:
                                                 {
                                                     "name": "Conversion Formula",
                                                     "id": "conversion_formula",
+                                                    "presentation": "markdown",
                                                 },
                                                 {"name": "Active", "id": "is_active"},
                                             ],
@@ -93,7 +98,24 @@ class SettingsPage:
                                             page_current=0,
                                             page_size=20,
                                             row_selectable="single",
-                                            style_cell={"textAlign": "left"},
+                                            style_cell={
+                                                "textAlign": "left",
+                                                "whiteSpace": "pre-wrap",
+                                                "fontSize": "12px",
+                                            },
+                                            style_data={
+                                                "whiteSpace": "normal",
+                                                "height": "auto",
+                                            },
+                                            style_cell_conditional=[
+                                                {
+                                                    "if": {
+                                                        "column_id": "conversion_formula"
+                                                    },
+                                                    "width": "30%",
+                                                    "textAlign": "left",
+                                                },
+                                            ],
                                             style_header={
                                                 "backgroundColor": "rgb(230, 230, 230)",
                                                 "fontWeight": "bold",
@@ -324,6 +346,10 @@ class SettingsPage:
                                                     "format": {"specifier": ".2f"},
                                                 },
                                                 {
+                                                    "name": "Effective Period",
+                                                    "id": "effective_period",
+                                                },
+                                                {
                                                     "name": "Comment",
                                                     "id": "description",
                                                 },
@@ -442,6 +468,171 @@ class SettingsPage:
                 ),
                 # Hidden field for excise rate ID
                 html.Div(id="excise-rate-form-hidden", style={"display": "none"}),
+                # Purchase Formats Tab
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    [
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Button(
+                                                            "Add Purchase Format",
+                                                            id="add-purchase-format-btn",
+                                                            color="success",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "Edit Selected",
+                                                            id="edit-purchase-format-btn",
+                                                            color="primary",
+                                                            className="me-2",
+                                                            disabled=True,
+                                                        ),
+                                                        dbc.Button(
+                                                            "Delete Selected",
+                                                            id="delete-purchase-format-btn",
+                                                            color="danger",
+                                                            className="me-2",
+                                                            disabled=True,
+                                                        ),
+                                                        dbc.Button(
+                                                            "Refresh",
+                                                            id="purchase-formats-refresh",
+                                                            color="info",
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dash_table.DataTable(
+                                            id="purchase-formats-table",
+                                            columns=[
+                                                {"name": "Code", "id": "code"},
+                                                {"name": "Name", "id": "name"},
+                                                {
+                                                    "name": "Description",
+                                                    "id": "description",
+                                                },
+                                                {"name": "Active", "id": "is_active"},
+                                            ],
+                                            data=[],
+                                            sort_action="native",
+                                            filter_action="native",
+                                            page_action="native",
+                                            page_current=0,
+                                            page_size=20,
+                                            row_selectable="single",
+                                            style_cell={"textAlign": "left"},
+                                            style_header={
+                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                "fontWeight": "bold",
+                                            },
+                                        ),
+                                    ],
+                                    id="purchase-formats-list-content",
+                                )
+                            ]
+                        )
+                    ],
+                    id="purchase-formats-tab-content",
+                ),
+                # Purchase Format Form Modal
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(
+                            dbc.ModalTitle(id="purchase-format-modal-title")
+                        ),
+                        dbc.ModalBody(
+                            [
+                                dbc.Form(
+                                    [
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Code *"),
+                                                        dbc.Input(
+                                                            id="purchase-format-code",
+                                                            required=True,
+                                                            maxLength=20,
+                                                        ),
+                                                    ],
+                                                    width=6,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Name *"),
+                                                        dbc.Input(
+                                                            id="purchase-format-name",
+                                                            required=True,
+                                                            maxLength=100,
+                                                        ),
+                                                    ],
+                                                    width=6,
+                                                ),
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Description"),
+                                                        dbc.Textarea(
+                                                            id="purchase-format-description",
+                                                            rows=3,
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Active"),
+                                                        dbc.Switch(
+                                                            id="purchase-format-is-active",
+                                                            value=True,
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ]
+                                        ),
+                                    ]
+                                )
+                            ]
+                        ),
+                        dbc.ModalFooter(
+                            [
+                                dbc.Button(
+                                    "Save",
+                                    id="save-purchase-format-btn",
+                                    color="primary",
+                                ),
+                                dbc.Button(
+                                    "Cancel",
+                                    id="cancel-purchase-format-btn",
+                                    color="secondary",
+                                ),
+                            ]
+                        ),
+                    ],
+                    id="purchase-format-form-modal",
+                    is_open=False,
+                    size="lg",
+                ),
+                # Hidden field for purchase format ID
+                html.Div(id="purchase-format-form-hidden", style={"display": "none"}),
             ],
             fluid=True,
         )

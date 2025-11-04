@@ -28,7 +28,8 @@ class AccountingIntegrationPage:
         is_connected = token is not None
 
         # Load recent sync logs
-        with get_session() as session:
+        session = get_session()
+        try:
             logs = (
                 session.query(XeroSyncLog)
                 .order_by(XeroSyncLog.ts.desc())
@@ -46,6 +47,8 @@ class AccountingIntegrationPage:
                 }
                 for log in logs
             ]
+        finally:
+            session.close()
 
         log_df = pd.DataFrame(log_data)
 
@@ -55,32 +58,44 @@ class AccountingIntegrationPage:
                 dbc.CardHeader("Xero Connection"),
                 dbc.CardBody(
                     [
-                        html.P(
-                            [
-                                html.Strong("Status: "),
-                                html.Span(
-                                    "Connected" if is_connected else "Not Connected",
-                                    className="badge bg-success"
-                                    if is_connected
-                                    else "badge bg-danger",
-                                ),
-                            ]
-                        )
-                        if is_connected
-                        else html.P(
-                            [
-                                html.Strong("Status: "),
-                                html.Span("Not Connected", className="badge bg-danger"),
-                            ]
+                        (
+                            html.P(
+                                [
+                                    html.Strong("Status: "),
+                                    html.Span(
+                                        (
+                                            "Connected"
+                                            if is_connected
+                                            else "Not Connected"
+                                        ),
+                                        className=(
+                                            "badge bg-success"
+                                            if is_connected
+                                            else "badge bg-danger"
+                                        ),
+                                    ),
+                                ]
+                            )
+                            if is_connected
+                            else html.P(
+                                [
+                                    html.Strong("Status: "),
+                                    html.Span(
+                                        "Not Connected", className="badge bg-danger"
+                                    ),
+                                ]
+                            )
                         ),
-                        html.P(
-                            [
-                                html.Strong("Tenant: "),
-                                token.tenant_id if token else "N/A",
-                            ]
-                        )
-                        if token and token.tenant_id
-                        else None,
+                        (
+                            html.P(
+                                [
+                                    html.Strong("Tenant: "),
+                                    token.tenant_id if token else "N/A",
+                                ]
+                            )
+                            if token and token.tenant_id
+                            else None
+                        ),
                         html.Hr(),
                         dbc.ButtonGroup(
                             [
@@ -101,13 +116,15 @@ class AccountingIntegrationPage:
                             ],
                             className="mb-3",
                         ),
-                        dbc.Alert(
-                            "Connect to Xero to enable integration features",
-                            color="info",
-                            className="mb-0",
-                        )
-                        if not is_connected
-                        else None,
+                        (
+                            dbc.Alert(
+                                "Connect to Xero to enable integration features",
+                                color="info",
+                                className="mb-0",
+                            )
+                            if not is_connected
+                            else None
+                        ),
                     ]
                 ),
             ],
@@ -238,41 +255,47 @@ class AccountingIntegrationPage:
                 ),
                 dbc.CardBody(
                     [
-                        dash.dash_table.DataTable(
-                            id="sync-log-table",
-                            data=log_df.to_dict("records") if not log_df.empty else [],
-                            columns=[
-                                {"name": "Time", "id": "ts"},
-                                {"name": "Type", "id": "type"},
-                                {"name": "ID", "id": "id"},
-                                {"name": "Direction", "id": "direction"},
-                                {"name": "Status", "id": "status"},
-                                {"name": "Message", "id": "message"},
-                            ],
-                            style_cell={
-                                "textAlign": "left",
-                                "fontSize": "12px",
-                                "overflow": "hidden",
-                                "textOverflow": "ellipsis",
-                            },
-                            style_data_conditional=[
-                                {
-                                    "if": {"filter_query": "{status} = OK"},
-                                    "backgroundColor": "#d4edda",
-                                    "color": "#155724",
+                        (
+                            dash.dash_table.DataTable(
+                                id="sync-log-table",
+                                data=(
+                                    log_df.to_dict("records")
+                                    if not log_df.empty
+                                    else []
+                                ),
+                                columns=[
+                                    {"name": "Time", "id": "ts"},
+                                    {"name": "Type", "id": "type"},
+                                    {"name": "ID", "id": "id"},
+                                    {"name": "Direction", "id": "direction"},
+                                    {"name": "Status", "id": "status"},
+                                    {"name": "Message", "id": "message"},
+                                ],
+                                style_cell={
+                                    "textAlign": "left",
+                                    "fontSize": "12px",
+                                    "overflow": "hidden",
+                                    "textOverflow": "ellipsis",
                                 },
-                                {
-                                    "if": {"filter_query": "{status} = ERROR"},
-                                    "backgroundColor": "#f8d7da",
-                                    "color": "#721c24",
-                                },
-                            ],
-                            page_size=20,
-                            sort_action="native",
-                            sort_mode="multi",
-                        )
-                        if not log_df.empty
-                        else html.P("No sync logs yet"),
+                                style_data_conditional=[
+                                    {
+                                        "if": {"filter_query": "{status} = OK"},
+                                        "backgroundColor": "#d4edda",
+                                        "color": "#155724",
+                                    },
+                                    {
+                                        "if": {"filter_query": "{status} = ERROR"},
+                                        "backgroundColor": "#f8d7da",
+                                        "color": "#721c24",
+                                    },
+                                ],
+                                page_size=20,
+                                sort_action="native",
+                                sort_mode="multi",
+                            )
+                            if not log_df.empty
+                            else html.P("No sync logs yet")
+                        ),
                     ]
                 ),
             ]
@@ -359,7 +382,8 @@ class AccountingIntegrationPage:
                 print(f"Error in {button_id}: {e}")
 
             # Always refresh logs after action
-            with get_session() as session:
+            session = get_session()
+            try:
                 logs = (
                     session.query(XeroSyncLog)
                     .order_by(XeroSyncLog.ts.desc())
@@ -377,8 +401,10 @@ class AccountingIntegrationPage:
                     }
                     for log in logs
                 ]
+            finally:
+                session.close()
 
-                return log_data
+            return log_data
 
 
 # Create page instance

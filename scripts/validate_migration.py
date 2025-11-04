@@ -165,7 +165,9 @@ def validate_migration():
 
             if null_refs > 0:
                 issues.append(f"{null_refs} inventory_movements have NULL product_id")
-                print(f"  ❌ FAIL: {null_refs} inventory_movements with NULL product_id")
+                print(
+                    f"  ❌ FAIL: {null_refs} inventory_movements with NULL product_id"
+                )
             else:
                 print("  ✓ PASS: All inventory_movements have product_id")
 

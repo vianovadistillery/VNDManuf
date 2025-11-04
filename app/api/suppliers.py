@@ -172,12 +172,15 @@ async def update_supplier(
 
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_supplier(supplier_id: str, db: Session = Depends(get_db)):
-    """Delete supplier."""
+    """Soft delete supplier (marks as deleted, does not remove from database)."""
+    from app.services.audit import soft_delete
+
     supplier = db.get(Supplier, supplier_id)
     if not supplier:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found"
         )
 
-    db.delete(supplier)
+    soft_delete(db, supplier)
     db.commit()
+    return None

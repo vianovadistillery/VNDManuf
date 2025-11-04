@@ -132,11 +132,13 @@ def render_batch_ticket_from_data(batch_data: Dict[str, Any]) -> str:
         hazard_code = (
             "R"
             if "TOLUOL" in ingredient_name
-            else "B"
-            if "TINUVIN" in ingredient_name
-            else "W"
-            if "POLYBUTENE" in ingredient_name
-            else ""
+            else (
+                "B"
+                if "TINUVIN" in ingredient_name
+                else "W"
+                if "POLYBUTENE" in ingredient_name
+                else ""
+            )
         )
 
         # Format ingredient name to fit the column width

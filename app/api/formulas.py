@@ -37,9 +37,9 @@ class FormulaLineResponse(BaseModel):
     unit: Optional[str] = None  # Display unit (kg, g, L, mL, etc.)
 
     ingredient_name: Optional[str] = None
-    ingredient_density_kg_per_l: Optional[
-        float
-    ] = None  # Product density for conversions
+    ingredient_density_kg_per_l: Optional[float] = (
+        None  # Product density for conversions
+    )
 
 
 class FormulaCreate(BaseModel):
@@ -102,9 +102,11 @@ def formula_to_response(f: Formula, db: Session) -> FormulaResponse:
                 notes=line.notes,
                 unit=line.unit,
                 ingredient_name=line.product.name if line.product else None,
-                ingredient_density_kg_per_l=float(line.product.density_kg_per_l)
-                if line.product and line.product.density_kg_per_l
-                else None,
+                ingredient_density_kg_per_l=(
+                    float(line.product.density_kg_per_l)
+                    if line.product and line.product.density_kg_per_l
+                    else None
+                ),
             )
             for line in lines
         ],
@@ -179,7 +181,9 @@ async def get_formula_versions(code: str, db: Session = Depends(get_db)):
 async def get_formula_version(code: str, version: int, db: Session = Depends(get_db)):
     """Get specific version of a formula."""
     stmt = select(Formula).where(
-        Formula.formula_code == code, Formula.version == version
+        Formula.formula_code == code,
+        Formula.version == version,
+        Formula.deleted_at.is_(None),
     )
     formula = db.execute(stmt).scalar_one_or_none()
 
@@ -203,12 +207,13 @@ async def create_formula(formula_data: FormulaCreate, db: Session = Depends(get_
             detail=f"Product {formula_data.product_id} not found",
         )
 
-    # Check if code/version exists
+    # Check if code/version exists (excluding soft-deleted)
     existing = db.execute(
         select(Formula).where(
             Formula.product_id == formula_data.product_id,
             Formula.formula_code == formula_data.formula_code,
             Formula.version == formula_data.version,
+            Formula.deleted_at.is_(None),
         )
     ).scalar_one_or_none()
 
@@ -275,10 +280,12 @@ async def create_formula_revision(
             status_code=status.HTTP_404_NOT_FOUND, detail="Formula not found"
         )
 
-    # Get latest version
+    # Get latest version (excluding soft-deleted)
     stmt = (
         select(Formula)
-        .where(Formula.formula_code == original.formula_code)
+        .where(
+            Formula.formula_code == original.formula_code, Formula.deleted_at.is_(None)
+        )
         .order_by(Formula.version.desc())
     )
     latest = db.execute(stmt).scalar_one_or_none()
@@ -292,18 +299,24 @@ async def create_formula_revision(
         id=str(uuid.uuid4()),
         product_id=original.product_id,
         formula_code=original.formula_code,
-        formula_name=revision_data.get("formula_name", original.formula_name)
-        if revision_data
-        else original.formula_name,
+        formula_name=(
+            revision_data.get("formula_name", original.formula_name)
+            if revision_data
+            else original.formula_name
+        ),
         version=new_version,
         is_active=True,
     )
     db.add(new_formula)
     db.flush()
 
-    # Copy lines
+    # Copy lines (excluding soft-deleted)
     old_lines = (
-        db.execute(select(FormulaLine).where(FormulaLine.formula_id == original.id))
+        db.execute(
+            select(FormulaLine).where(
+                FormulaLine.formula_id == original.id, FormulaLine.deleted_at.is_(None)
+            )
+        )
         .scalars()
         .all()
     )
@@ -360,11 +373,16 @@ async def replace_formula_lines(
             status_code=status.HTTP_404_NOT_FOUND, detail="Formula not found"
         )
 
-    # Delete existing lines
-    stmt = select(FormulaLine).where(FormulaLine.formula_id == formula.id)
+    # Soft delete existing lines (mark as deleted)
+    from app.services.audit import soft_delete
+
+    stmt = select(FormulaLine).where(
+        FormulaLine.formula_id == formula.id,
+        FormulaLine.deleted_at.is_(None),  # Only get non-deleted lines
+    )
     existing_lines = db.execute(stmt).scalars().all()
     for line in existing_lines:
-        db.delete(line)
+        soft_delete(db, line)
 
     # Commit the deletions before adding new lines
     db.flush()
@@ -400,18 +418,24 @@ async def replace_formula_lines(
 
 @router.delete("/{formula_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_formula(formula_id: str, db: Session = Depends(get_db)):
-    """Delete formula (and its lines)."""
+    """Soft delete formula (and its lines)."""
+    from app.services.audit import soft_delete
+
     formula = db.get(Formula, formula_id)
     if not formula:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Formula not found"
         )
 
-    # Delete lines
-    stmt = select(FormulaLine).where(FormulaLine.formula_id == formula.id)
+    # Soft delete lines
+    stmt = select(FormulaLine).where(
+        FormulaLine.formula_id == formula.id,
+        FormulaLine.deleted_at.is_(None),  # Only get non-deleted lines
+    )
     lines = db.execute(stmt).scalars().all()
     for line in lines:
-        db.delete(line)
+        soft_delete(db, line)
 
-    db.delete(formula)
+    soft_delete(db, formula)
     db.commit()
+    return None

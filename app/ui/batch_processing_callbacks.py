@@ -397,12 +397,16 @@ def register_batch_processing_callbacks(
                             "batch_code": batch.get("batch_code", ""),
                             "formula_code": "N/A",  # Would need to join work order → formula
                             "quantity_kg": batch.get("quantity_kg", 0),
-                            "yield_actual": batch.get("yield_actual", 0)
-                            if batch.get("yield_actual")
-                            else None,
-                            "variance_percent": batch.get("variance_percent", 0)
-                            if batch.get("variance_percent")
-                            else None,
+                            "yield_actual": (
+                                batch.get("yield_actual", 0)
+                                if batch.get("yield_actual")
+                                else None
+                            ),
+                            "variance_percent": (
+                                batch.get("variance_percent", 0)
+                                if batch.get("variance_percent")
+                                else None
+                            ),
                             "status": batch.get("status", ""),
                             "started_at": started,
                         }

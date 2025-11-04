@@ -61,9 +61,9 @@ def create_legacy_legacy_impl(session, record: AcstkRecord, product: Product):
         salestaxcde=record.salestaxcde,
         purcost=Decimal(str(record.purcost)) if record.purcost else None,
         purtax=Decimal(str(record.purtax)) if record.purtax else None,
-        wholesalecost=Decimal(str(record.wholesalecost))
-        if record.wholesalecost
-        else None,
+        wholesalecost=(
+            Decimal(str(record.wholesalecost)) if record.wholesalecost else None
+        ),
         disccdeone=record.disccdeone,
         disccdetwo=record.disccdetwo,
         # Price Codes

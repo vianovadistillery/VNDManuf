@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('db/vnd.db')
+conn = sqlite3.connect("db/vnd.db")
 cursor = conn.cursor()
 
 # List all tables
@@ -11,7 +11,3 @@ for table in tables:
     print(f"  {table[0]}")
 
 conn.close()
-
-
-
-

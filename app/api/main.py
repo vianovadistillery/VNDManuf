@@ -13,11 +13,13 @@ from app.api import (
     packing,
     pricing,
     products,
+    purchase_formats,
     raw_materials,
     reports,
     shopify,
     suppliers,
     units,
+    work_orders,
 )
 from app.error_handlers import (
     BusinessRuleViolation,
@@ -72,6 +74,8 @@ def create_app() -> FastAPI:
     app.include_router(shopify.router, prefix="/api/v1")
     app.include_router(units.router, prefix="/api/v1")
     app.include_router(excise_rates.router, prefix="/api/v1")
+    app.include_router(purchase_formats.router, prefix="/api/v1")
+    app.include_router(work_orders.router, prefix="/api/v1")
 
     # Health check endpoint
     @app.get("/health")
