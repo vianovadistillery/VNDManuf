@@ -1,77 +1,96 @@
 # app/services/batch_codes.py
-"""Batch code generation service - deterministic sequencing per product/date."""
+"""Batch code generation service - deterministic sequencing per year."""
 
 from datetime import datetime
-from uuid import uuid4
+from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from app.adapters.db.models import BatchSeq, Product
 
 
 class BatchCodeGenerator:
     """
     Service for generating deterministic batch codes.
 
-    Format: {SITE}-{PROD}-{YYYYMMDD}-{SEQ}
-    Example: VND-GIN42-20251104-03
+    Format: B + YY + 0000
+    Example: B250001, B250002 (where 25 is year 2025, 0001/0002 are sequential)
     """
 
     def __init__(self, db: Session):
         self.db = db
 
-    def generate_batch_code(self, product_id: str, site_code: str = "VND") -> str:
+    def generate_batch_code(
+        self, product_id: Optional[str] = None, site_code: str = "VND"
+    ) -> str:
         """
-        Generate a deterministic batch code for a product on the current date.
+        Generate a deterministic batch code for the current year.
 
         Args:
-            product_id: Product ID
-            site_code: Site code (default: VND)
+            product_id: Product ID (optional, not used in new format but kept for compatibility)
+            site_code: Site code (optional, not used in new format but kept for compatibility)
 
         Returns:
-            Batch code in format {SITE}-{PROD}-{YYYYMMDD}-{SEQ}
+            Batch code in format B + YY + 0000 (e.g., B250001)
 
-        Raises:
-            ValueError: If product not found
+        Note:
+            The new format uses a global sequence per year, not per product/date.
+            Format: B + 2-digit year + 4-digit increment starting from 0001
         """
-        # Validate product exists
-        product = self.db.get(Product, product_id)
-        if not product:
-            raise ValueError(f"Product {product_id} not found")
-
-        # Get product code/SKU (use first 6 chars, uppercase)
-        prod_code = (product.sku or product.name or "UNK")[:6].upper().replace(" ", "")
-
-        # Get current date string (YYYYMMDD)
+        # Get current year (2-digit)
         today = datetime.utcnow()
-        date_str = today.strftime("%Y%m%d")
+        year_2digit = today.strftime("%y")  # e.g., "25" for 2025
 
-        # Get or create sequence entry for this product/date
-        seq_entry = self.db.execute(
-            select(BatchSeq).where(
-                BatchSeq.product_id == product_id, BatchSeq.date == date_str
+        # Check for existing batches with this year prefix to find the max sequence
+        from app.adapters.db.models import Batch
+
+        # Find the highest sequence number for this year
+        year_prefix = f"B{year_2digit}"
+        existing_batches = (
+            self.db.execute(
+                select(Batch).where(Batch.batch_code.like(f"{year_prefix}%"))
             )
-        ).scalar_one_or_none()
+            .scalars()
+            .all()
+        )
 
-        if seq_entry:
-            # Increment sequence
-            seq_entry.seq += 1
-            seq = seq_entry.seq
-        else:
-            # Create new sequence entry
-            seq_entry = BatchSeq(
-                id=str(uuid4()),
-                product_id=product_id,
-                date=date_str,
-                seq=1,
+        # Also check WorkOrder batch codes
+        from app.adapters.db.models import WorkOrder
+
+        existing_wo_batch_codes = (
+            self.db.execute(
+                select(WorkOrder).where(WorkOrder.batch_code.like(f"{year_prefix}%"))
             )
-            self.db.add(seq_entry)
-            seq = 1
+            .scalars()
+            .all()
+        )
 
-        self.db.flush()
+        max_seq = 0
+        # Check Batch table
+        for batch in existing_batches:
+            if batch.batch_code and batch.batch_code.startswith(year_prefix):
+                try:
+                    # Extract sequence from batch code (last 4 digits)
+                    seq_part = batch.batch_code[-4:]
+                    seq_num = int(seq_part)
+                    max_seq = max(max_seq, seq_num)
+                except (ValueError, IndexError):
+                    pass
 
-        # Format: VND-GIN42-20251104-03
-        batch_code = f"{site_code}-{prod_code}-{date_str}-{seq:02d}"
+        # Check WorkOrder batch codes
+        for wo in existing_wo_batch_codes:
+            if wo.batch_code and wo.batch_code.startswith(year_prefix):
+                try:
+                    # Extract sequence from batch code (last 4 digits)
+                    seq_part = wo.batch_code[-4:]
+                    seq_num = int(seq_part)
+                    max_seq = max(max_seq, seq_num)
+                except (ValueError, IndexError):
+                    pass
+
+        # Start from max_seq + 1, or 1 if no existing batches
+        seq = max_seq + 1
+
+        # Format: B + YY + 0000 (e.g., B250001)
+        batch_code = f"B{year_2digit}{seq:04d}"
 
         return batch_code

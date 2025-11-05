@@ -203,6 +203,23 @@ class ProductsPageEnhanced:
                                                         ),
                                                     ]
                                                 ),
+                                                html.Div(
+                                                    [
+                                                        html.Span(
+                                                            id="product-detail-is-purchase",
+                                                            className="badge bg-secondary me-1",
+                                                        ),
+                                                        html.Span(
+                                                            id="product-detail-is-sell",
+                                                            className="badge bg-secondary me-1",
+                                                        ),
+                                                        html.Span(
+                                                            id="product-detail-is-assemble",
+                                                            className="badge bg-secondary",
+                                                        ),
+                                                    ],
+                                                    className="mb-2",
+                                                ),
                                                 html.P(
                                                     [
                                                         html.Strong("Name: "),
@@ -305,6 +322,20 @@ class ProductsPageEnhanced:
                                                     color="primary",
                                                     className="mt-2",
                                                     style={"display": "none"},
+                                                ),
+                                                html.Hr(),
+                                                html.H6("Assemblies"),
+                                                html.Div(
+                                                    id="product-detail-assemblies-table-container",
+                                                    children=html.Div("No assemblies"),
+                                                ),
+                                                html.Hr(),
+                                                html.H6("Assembly Line Items"),
+                                                html.Div(
+                                                    id="product-detail-assembly-lines-container",
+                                                    children=html.Div(
+                                                        "Select an assembly to view line items"
+                                                    ),
                                                 ),
                                                 html.Hr(),
                                                 html.P(
@@ -633,19 +664,38 @@ class ProductsPageEnhanced:
                                                             ],
                                                             width=4,
                                                         ),
+                                                    ],
+                                                    className="mb-3",
+                                                ),
+                                                dbc.Row(
+                                                    [
                                                         dbc.Col(
                                                             [
                                                                 dbc.Label(
-                                                                    "Purchase Cost"
+                                                                    "Purchase Cost (Ex GST)"
                                                                 ),
                                                                 dbc.Input(
-                                                                    id="product-purchase-cost",
+                                                                    id="product-purchase-cost-ex-gst",
                                                                     type="number",
                                                                     step="0.01",
                                                                     placeholder="0.00",
                                                                 ),
                                                             ],
-                                                            width=4,
+                                                            width=6,
+                                                        ),
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Purchase Cost (Inc GST)"
+                                                                ),
+                                                                dbc.Input(
+                                                                    id="product-purchase-cost-inc-gst",
+                                                                    type="number",
+                                                                    step="0.01",
+                                                                    placeholder="0.00",
+                                                                ),
+                                                            ],
+                                                            width=6,
                                                         ),
                                                     ],
                                                     className="mb-3",
@@ -710,16 +760,12 @@ class ProductsPageEnhanced:
                                                     id="product-assemblies-table",
                                                     columns=[
                                                         {
+                                                            "name": "Name",
+                                                            "id": "formula_name",
+                                                        },
+                                                        {
                                                             "name": "Version",
                                                             "id": "version",
-                                                        },
-                                                        {
-                                                            "name": "Sequence",
-                                                            "id": "sequence",
-                                                        },
-                                                        {
-                                                            "name": "Ratio",
-                                                            "id": "ratio",
                                                         },
                                                         {
                                                             "name": "Yield Factor",
@@ -730,7 +776,26 @@ class ProductsPageEnhanced:
                                                             "id": "is_primary",
                                                             "presentation": "markdown",
                                                         },
-                                                        {"name": "Cost", "id": "cost"},
+                                                        {
+                                                            "name": "Total Cost",
+                                                            "id": "cost",
+                                                        },
+                                                        {
+                                                            "name": "Cost per kg",
+                                                            "id": "cost_per_kg",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".4f"
+                                                            },
+                                                        },
+                                                        {
+                                                            "name": "Cost per L",
+                                                            "id": "cost_per_l",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".4f"
+                                                            },
+                                                        },
                                                         {
                                                             "name": "Actions",
                                                             "id": "actions",
@@ -771,11 +836,31 @@ class ProductsPageEnhanced:
                                                                     "editable": False,
                                                                 },
                                                                 {
+                                                                    "name": "Primary",
+                                                                    "id": "is_primary",
+                                                                    "presentation": "markdown",
+                                                                    "editable": True,
+                                                                },
+                                                                {
+                                                                    "name": "Qty",
+                                                                    "id": "qty",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".3f"
+                                                                    },
+                                                                    "editable": False,
+                                                                },
+                                                                {
+                                                                    "name": "Unit",
+                                                                    "id": "unit",
+                                                                    "editable": False,
+                                                                },
+                                                                {
                                                                     "name": "Ex GST",
                                                                     "id": "ex_gst",
                                                                     "type": "numeric",
                                                                     "format": {
-                                                                        "specifier": ".2f"
+                                                                        "specifier": ".4f"
                                                                     },
                                                                 },
                                                                 {
@@ -783,7 +868,7 @@ class ProductsPageEnhanced:
                                                                     "id": "inc_gst",
                                                                     "type": "numeric",
                                                                     "format": {
-                                                                        "specifier": ".2f"
+                                                                        "specifier": ".4f"
                                                                     },
                                                                 },
                                                                 {
@@ -795,22 +880,48 @@ class ProductsPageEnhanced:
                                                             ],
                                                             data=[
                                                                 {
-                                                                    "cost_type": "Purchase Cost",
+                                                                    "cost_type": "Purchase",
+                                                                    "is_primary": "[Set Primary]",
+                                                                    "is_primary_bool": False,
+                                                                    "qty": None,
+                                                                    "unit": None,
                                                                     "ex_gst": None,
                                                                     "inc_gst": None,
-                                                                    "tax_included": False,
+                                                                    "tax_included": "[Set Tax Included]",
+                                                                    "tax_included_bool": False,
                                                                 },
                                                                 {
-                                                                    "cost_type": "Usage Cost",
+                                                                    "cost_type": "Assembly",
+                                                                    "is_primary": "[Set Primary]",
+                                                                    "is_primary_bool": False,
+                                                                    "qty": None,
+                                                                    "unit": None,
                                                                     "ex_gst": None,
                                                                     "inc_gst": None,
-                                                                    "tax_included": False,
+                                                                    "tax_included": "[Set Tax Included]",
+                                                                    "tax_included_bool": False,
+                                                                },
+                                                                {
+                                                                    "cost_type": "Usage",
+                                                                    "is_primary": "",
+                                                                    "is_primary_bool": False,
+                                                                    "qty": None,
+                                                                    "unit": None,
+                                                                    "ex_gst": None,
+                                                                    "inc_gst": None,
+                                                                    "tax_included": "[Set Tax Included]",
+                                                                    "tax_included_bool": False,
                                                                 },
                                                                 {
                                                                     "cost_type": "Manufactured Cost",
+                                                                    "is_primary": "",
+                                                                    "is_primary_bool": False,
+                                                                    "qty": None,
+                                                                    "unit": None,
                                                                     "ex_gst": None,
                                                                     "inc_gst": None,
                                                                     "tax_included": "N/A",
+                                                                    "tax_included_bool": False,
                                                                 },
                                                             ],
                                                             editable=True,
@@ -853,21 +964,6 @@ class ProductsPageEnhanced:
                                                                             type="number",
                                                                             step="0.001",
                                                                             placeholder="0.000",
-                                                                        ),
-                                                                    ],
-                                                                    width=4,
-                                                                ),
-                                                                dbc.Col(
-                                                                    [
-                                                                        dbc.Label(
-                                                                            "Usage Cost"
-                                                                        ),
-                                                                        dbc.Input(
-                                                                            id="product-usage-cost",
-                                                                            type="number",
-                                                                            step="0.01",
-                                                                            placeholder="0.00",
-                                                                            disabled=True,
                                                                         ),
                                                                     ],
                                                                     width=4,
@@ -1004,6 +1100,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Wholesale",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1012,6 +1109,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Distributor",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1020,6 +1118,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Counter",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1028,6 +1127,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Trade",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1036,6 +1136,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Contract",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1044,6 +1145,7 @@ class ProductsPageEnhanced:
                                                         },
                                                         {
                                                             "price_level": "Industrial",
+                                                            "use_unit": "",
                                                             "inc_gst": None,
                                                             "ex_gst": None,
                                                             "excise": None,
@@ -1294,8 +1396,22 @@ class ProductsPageEnhanced:
                                                             maxLength=200,
                                                         ),
                                                     ],
-                                                    width=12,
-                                                )
+                                                    width=6,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Yield Factor"),
+                                                        dbc.Input(
+                                                            id="assembly-yield-factor",
+                                                            type="number",
+                                                            step="0.01",
+                                                            min="0.01",
+                                                            placeholder="1.00",
+                                                            value=1.0,
+                                                        ),
+                                                    ],
+                                                    width=6,
+                                                ),
                                             ],
                                             className="mb-3",
                                         ),
@@ -1385,19 +1501,14 @@ class ProductsPageEnhanced:
                                                     "name": "Unit Cost",
                                                     "id": "unit_cost",
                                                     "type": "numeric",
-                                                    "format": {"specifier": ".2f"},
+                                                    "format": {"specifier": ".4f"},
                                                     "editable": False,
                                                 },
                                                 {
                                                     "name": "Cost",
                                                     "id": "line_cost",
                                                     "type": "numeric",
-                                                    "format": {"specifier": ".2f"},
-                                                    "editable": False,
-                                                },
-                                                {
-                                                    "name": "Primary",
-                                                    "id": "is_primary",
+                                                    "format": {"specifier": ".4f"},
                                                     "editable": False,
                                                 },
                                                 {
@@ -1629,14 +1740,14 @@ class ProductsPageEnhanced:
                                                     "name": "Cost per kg",
                                                     "id": "cost_per_kg",
                                                     "type": "numeric",
-                                                    "format": {"specifier": ".2f"},
+                                                    "format": {"specifier": ".4f"},
                                                     "editable": False,
                                                 },
                                                 {
                                                     "name": "Cost per L",
                                                     "id": "cost_per_l",
                                                     "type": "numeric",
-                                                    "format": {"specifier": ".2f"},
+                                                    "format": {"specifier": ".4f"},
                                                     "editable": False,
                                                 },
                                             ],

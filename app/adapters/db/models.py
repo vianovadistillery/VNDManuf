@@ -84,8 +84,9 @@ class Product(Base, AuditMixin):
     wt_solid = Column(Numeric(10, 6), nullable=True)
     usage_cost = Column(Numeric(10, 2), nullable=True)
     usage_unit = Column(String(10), nullable=True)
-    usage_cost_ex_gst = Column(Numeric(10, 2), nullable=True)
-    usage_cost_inc_gst = Column(Numeric(10, 2), nullable=True)
+    usage_quantity = Column(Numeric(10, 3), nullable=True)  # Usage quantity (e.g., 1 g)
+    usage_cost_ex_gst = Column(Numeric(10, 4), nullable=True)
+    usage_cost_inc_gst = Column(Numeric(10, 4), nullable=True)
     usage_tax_included = Column(String(1), nullable=True)
     restock_level = Column(Numeric(12, 3), nullable=True)
     used_ytd = Column(Numeric(12, 3), nullable=True)
@@ -123,8 +124,8 @@ class Product(Base, AuditMixin):
     purchase_quantity = Column(
         Numeric(10, 3), nullable=True
     )  # Renamed from purchase_volume
-    purchase_cost_ex_gst = Column(Numeric(10, 2), nullable=True)
-    purchase_cost_inc_gst = Column(Numeric(10, 2), nullable=True)
+    purchase_cost_ex_gst = Column(Numeric(10, 4), nullable=True)
+    purchase_cost_inc_gst = Column(Numeric(10, 4), nullable=True)
     purchase_tax_included = Column(String(1), nullable=True)
     purchase_tax_included_bool = Column(Boolean, nullable=True)
     purcost = Column(Numeric(10, 2))  # Purchase cost (legacy)

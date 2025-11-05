@@ -35,6 +35,42 @@ class WorkOrdersPage:
                         )
                     ]
                 ),
+                # Hidden placeholder buttons for callbacks (must be outside dynamic content)
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Issue Material",
+                            id="wo-issue-submit-btn",
+                            style={"display": "none"},
+                        ),
+                        dbc.Button(
+                            "Record QC Test",
+                            id="wo-qc-submit-btn",
+                            style={"display": "none"},
+                        ),
+                        dbc.Button(
+                            "Complete Work Order",
+                            id="wo-complete-submit-btn",
+                            style={"display": "none"},
+                        ),
+                        dbc.Button(
+                            "Release",
+                            id="wo-release-btn",
+                            style={"display": "none"},
+                        ),
+                        dbc.Button(
+                            "Start",
+                            id="wo-start-btn",
+                            style={"display": "none"},
+                        ),
+                        dbc.Button(
+                            "Void",
+                            id="wo-void-btn",
+                            style={"display": "none"},
+                        ),
+                    ],
+                    style={"display": "none"},
+                ),
                 # Tab content
                 html.Div(
                     id="wo-main-tab-content",
@@ -243,13 +279,40 @@ class WorkOrdersPage:
                                     [
                                         dbc.Col(
                                             [
+                                                dbc.Label(
+                                                    [
+                                                        "Batch Code (Preview)",
+                                                        html.Small(
+                                                            " Preview only - final code generated on save",
+                                                            className="text-muted d-block",
+                                                            style={
+                                                                "fontSize": "0.875rem"
+                                                            },
+                                                        ),
+                                                    ]
+                                                ),
+                                                dbc.Input(
+                                                    id="wo-create-batch-code",
+                                                    type="text",
+                                                    placeholder="Auto-generated",
+                                                    readonly=True,
+                                                    style={
+                                                        "backgroundColor": "#f8f9fa"
+                                                    },
+                                                ),
+                                            ],
+                                            md=6,
+                                        ),
+                                        dbc.Col(
+                                            [
                                                 dbc.Label("Notes"),
                                                 dbc.Textarea(
                                                     id="wo-create-notes",
                                                     placeholder="Optional notes",
                                                 ),
-                                            ]
-                                        )
+                                            ],
+                                            md=6,
+                                        ),
                                     ],
                                     className="mb-3",
                                 ),

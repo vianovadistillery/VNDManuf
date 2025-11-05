@@ -2,6 +2,7 @@
 """Callbacks for Work Orders page."""
 
 import json
+from datetime import datetime
 
 import dash
 import dash_bootstrap_components as dbc
@@ -297,19 +298,22 @@ def register_work_orders_callbacks(
     @app.callback(
         [
             Output("wo-create-product-dropdown", "options"),
+            Output("wo-create-product-dropdown", "value"),
             Output("wo-create-assembly-dropdown", "options"),
+            Output("wo-create-assembly-dropdown", "value"),
+            Output("wo-create-batch-code", "value"),
         ],
         [Input("wo-create-modal", "is_open")],
         prevent_initial_call=True,
     )
     def load_create_modal_dropdowns(modal_is_open):
-        """Load products and assemblies for create modal."""
+        """Load products and assemblies for create modal, and generate batch code."""
         if not modal_is_open:
             raise PreventUpdate
 
         try:
-            # Load products
-            products_url = f"{api_base_url}/products/?is_active=true"
+            # Load products that have assembly capability (is_assemble=True)
+            products_url = f"{api_base_url}/products/?is_active=true&is_assemble=true"
             products_response = requests.get(products_url, timeout=5)
             products = []
             if products_response.status_code == 200:
@@ -320,6 +324,9 @@ def register_work_orders_callbacks(
                     else products_data.get("products", [])
                 )
 
+            # Filter to only include products with is_assemble=True
+            products = [p for p in products if p.get("is_assemble", False)]
+
             product_options = [
                 {
                     "label": f"{p.get('sku', '')} - {p.get('name', '')}",
@@ -328,8 +335,67 @@ def register_work_orders_callbacks(
                 for p in products
             ]
 
-            # Load assemblies (will be filtered by product selection if needed)
-            assemblies_url = f"{api_base_url}/assemblies/?is_active=true"
+            # Generate batch code (client-side generation matching server logic)
+            # This is a preview - actual code will be generated server-side on save
+            today = datetime.utcnow()
+            year_2digit = today.strftime("%y")  # e.g., "25" for 2025
+
+            # Get existing batch codes from work orders to find max sequence
+            # Note: This is a preview - actual code will be generated server-side on save
+            # But we can generate a likely next code for display
+            try:
+                work_orders_response = requests.get(
+                    f"{api_base_url}/work-orders/", timeout=5
+                )
+
+                max_seq = 0
+                year_prefix = f"B{year_2digit}"
+
+                # Check work orders for batch codes
+                if work_orders_response.status_code == 200:
+                    work_orders = work_orders_response.json()
+                    for wo in work_orders:
+                        batch_code = wo.get("batch_code", "")
+                        if batch_code and batch_code.startswith(year_prefix):
+                            try:
+                                seq_part = batch_code[-4:]
+                                seq_num = int(seq_part)
+                                max_seq = max(max_seq, seq_num)
+                            except (ValueError, IndexError):
+                                pass
+
+                seq = max_seq + 1
+                batch_code = f"B{year_2digit}{seq:04d}"
+            except Exception:
+                # Fallback: generate a simple code
+                batch_code = f"B{year_2digit}0001"
+
+            # Reset both dropdowns when modal opens
+            return product_options, None, [], None, batch_code
+        except Exception as e:
+            print(f"Error loading dropdowns: {e}")
+            return [], None, [], None, ""
+
+    # Update assembly dropdown when product is selected
+    @app.callback(
+        [
+            Output("wo-create-assembly-dropdown", "options", allow_duplicate=True),
+            Output("wo-create-assembly-dropdown", "value", allow_duplicate=True),
+        ],
+        [Input("wo-create-product-dropdown", "value")],
+        prevent_initial_call=True,
+    )
+    def update_assembly_dropdown(product_id):
+        """Update assembly dropdown based on selected product."""
+        if not product_id:
+            # Clear assemblies if no product selected
+            return [], None
+
+        try:
+            # Load assemblies (not formulas) filtered by product_id
+            assemblies_url = (
+                f"{api_base_url}/assemblies/?product_id={product_id}&is_active=true"
+            )
             assemblies_response = requests.get(assemblies_url, timeout=5)
             assemblies = []
             if assemblies_response.status_code == 200:
@@ -343,10 +409,11 @@ def register_work_orders_callbacks(
                 for a in assemblies
             ]
 
-            return product_options, assembly_options
+            # Clear the selected value if assemblies changed
+            return assembly_options, None
         except Exception as e:
-            print(f"Error loading dropdowns: {e}")
-            return [], []
+            print(f"Error loading assemblies for product {product_id}: {e}")
+            return [], None
 
     # Create work order
     @app.callback(
@@ -364,12 +431,20 @@ def register_work_orders_callbacks(
             State("wo-create-uom", "value"),
             State("wo-create-work-center", "value"),
             State("wo-create-assembly-dropdown", "value"),
+            State("wo-create-batch-code", "value"),
             State("wo-create-notes", "value"),
         ],
         prevent_initial_call=True,
     )
     def create_work_order(
-        n_clicks, product_id, planned_qty, uom, work_center, assembly_id, notes
+        n_clicks,
+        product_id,
+        planned_qty,
+        uom,
+        work_center,
+        assembly_id,
+        batch_code,
+        notes,
     ):
         """Create a new work order."""
         if not n_clicks:
@@ -385,14 +460,48 @@ def register_work_orders_callbacks(
             )
 
         try:
+            # Only include assembly_id if it's provided and not empty
             data = {
                 "product_id": product_id,
                 "planned_qty": float(planned_qty),
                 "uom": uom or "KG",
                 "work_center": work_center,
-                "assembly_id": assembly_id,
                 "notes": notes,
             }
+            # Only add assembly_id if it's provided and not empty
+            # Also validate that the assembly_id is not just whitespace or "None"
+            if (
+                assembly_id
+                and str(assembly_id).strip()
+                and str(assembly_id).strip().lower() != "none"
+            ):
+                # Verify the assembly exists before sending
+                try:
+                    # Quick validation - check if assembly exists in the assemblies list for this product
+                    assemblies_check = requests.get(
+                        f"{api_base_url}/assemblies/?product_id={product_id}&is_active=true",
+                        timeout=5,
+                    )
+                    if assemblies_check.status_code == 200:
+                        assemblies_list = assemblies_check.json()
+                        assembly_ids = [a.get("id") for a in assemblies_list]
+                        if assembly_id in assembly_ids:
+                            data["assembly_id"] = assembly_id
+                        else:
+                            # Assembly doesn't exist or doesn't belong to this product, don't send it
+                            print(
+                                f"Warning: Assembly {assembly_id} not found for product {product_id}, skipping"
+                            )
+                    else:
+                        # Can't validate, skip sending assembly_id
+                        print(
+                            f"Warning: Could not validate assembly {assembly_id}: API error"
+                        )
+                except Exception as e:
+                    # If validation fails, skip sending assembly_id
+                    print(f"Warning: Could not validate assembly {assembly_id}: {e}")
+            # Note: batch_code is generated server-side, so we don't send it here
+            # The server will generate it using BatchCodeGenerator
 
             url = f"{api_base_url}/work-orders/"
             response = requests.post(url, json=data, timeout=10)
@@ -840,6 +949,10 @@ def register_work_orders_callbacks(
     )
     def switch_main_tabs(active_tab, current_wo_id):
         """Switch between main tabs (list, detail, rates, batch-lookup)."""
+        # Default to "list" if active_tab is None or empty
+        if not active_tab:
+            active_tab = "list"
+
         if active_tab == "list":
             return dbc.Card(
                 [

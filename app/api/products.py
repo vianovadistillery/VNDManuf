@@ -68,12 +68,18 @@ def product_to_response(product: Product) -> ProductResponse:
             if getattr(product, "purchase_unit_id", None)
             else None
         ),
+        purchase_format_id=(
+            str(getattr(product, "purchase_format_id", None))
+            if getattr(product, "purchase_format_id", None)
+            else None
+        ),
         purchase_quantity=getattr(product, "purchase_quantity", None),
         specific_gravity=getattr(product, "specific_gravity", None),
         vol_solid=getattr(product, "vol_solid", None),
         solid_sg=getattr(product, "solid_sg", None),
         wt_solid=getattr(product, "wt_solid", None),
         usage_unit=getattr(product, "usage_unit", None),
+        usage_quantity=getattr(product, "usage_quantity", None),
         usage_cost=getattr(product, "usage_cost", None),
         restock_level=getattr(product, "restock_level", None),
         used_ytd=getattr(product, "used_ytd", None),
@@ -275,12 +281,18 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         distributorcde=product_data.distributorcde,
         # Raw Material specific fields
         purchase_unit_id=product_data.purchase_unit_id,
-        purchase_quantity=product_data.purchase_volume,  # DTO uses purchase_volume, model uses purchase_quantity
+        purchase_format_id=product_data.purchase_format_id,
+        purchase_quantity=(
+            product_data.purchase_quantity
+            if product_data.purchase_quantity is not None
+            else product_data.purchase_volume
+        ),  # Use purchase_quantity if provided, otherwise fall back to purchase_volume
         specific_gravity=product_data.specific_gravity,
         vol_solid=product_data.vol_solid,
         solid_sg=product_data.solid_sg,
         wt_solid=product_data.wt_solid,
         usage_unit=product_data.usage_unit,
+        usage_quantity=product_data.usage_quantity,
         usage_cost=product_data.usage_cost,
         restock_level=product_data.restock_level,
         used_ytd=product_data.used_ytd,
@@ -407,10 +419,20 @@ async def update_product(
     # Raw Material specific fields
     if product_data.purchase_unit_id is not None:
         product.purchase_unit_id = product_data.purchase_unit_id
-    if product_data.purchase_volume is not None:
+    if product_data.purchase_format_id is not None:
+        product.purchase_format_id = product_data.purchase_format_id
+    elif product_data.purchase_format_id is None and hasattr(
+        product_data, "purchase_format_id"
+    ):
+        # Allow clearing purchase_format_id by setting to None
+        product.purchase_format_id = None
+    if product_data.purchase_quantity is not None:
+        product.purchase_quantity = product_data.purchase_quantity
+    elif product_data.purchase_volume is not None:
         product.purchase_quantity = (
             product_data.purchase_volume
-        )  # DTO uses purchase_volume, model uses purchase_quantity
+        )  # Fallback for backward compatibility
+    # Note: purchase_cost is not stored in the model - it's calculated from purchase_cost_ex_gst/inc_gst
     if product_data.specific_gravity is not None:
         product.specific_gravity = product_data.specific_gravity
     if product_data.vol_solid is not None:
@@ -421,6 +443,8 @@ async def update_product(
         product.wt_solid = product_data.wt_solid
     if product_data.usage_unit is not None:
         product.usage_unit = product_data.usage_unit
+    if product_data.usage_quantity is not None:
+        product.usage_quantity = product_data.usage_quantity
     if product_data.usage_cost is not None:
         product.usage_cost = product_data.usage_cost
     if product_data.restock_level is not None:

@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.adapters.db import get_db
@@ -27,6 +27,7 @@ from app.api.dto import (
     PrintResponse,
 )
 from app.reports.batch_ticket import generate_batch_ticket_text
+from app.services.batch_codes import BatchCodeGenerator
 from app.services.batching import BatchingService
 
 router = APIRouter(prefix="/batches", tags=["batches"])
@@ -66,26 +67,27 @@ async def create_batch(batch_data: BatchCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND, detail="Work order not found"
         )
 
-    # Check if batch code already exists for this work order
-    existing_stmt = select(Batch).where(
-        and_(
-            Batch.work_order_id == batch_data.work_order_id,
-            Batch.batch_code == batch_data.batch_code,
-        )
-    )
+    # Auto-generate batch code if not provided
+    batch_code = batch_data.batch_code
+    if not batch_code:
+        batch_code_gen = BatchCodeGenerator(db)
+        batch_code = batch_code_gen.generate_batch_code()
+
+    # Check if batch code already exists (globally unique)
+    existing_stmt = select(Batch).where(Batch.batch_code == batch_code)
     existing = db.execute(existing_stmt).scalar_one_or_none()
 
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Batch with code '{batch_data.batch_code}' already exists for this work order",
+            detail=f"Batch with code '{batch_code}' already exists",
         )
 
     # Create batch
     batch = Batch(
         id=str(uuid4()),
         work_order_id=batch_data.work_order_id,
-        batch_code=batch_data.batch_code,
+        batch_code=batch_code,
         quantity_kg=batch_data.quantity_kg,
         status="DRAFT",
         notes=batch_data.notes,

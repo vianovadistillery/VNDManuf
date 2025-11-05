@@ -390,7 +390,9 @@ async def replace_formula_lines(
     # Add new lines
     import uuid
 
-    for line_data in lines_data:
+    # Ensure sequences are unique and sequential
+    # Use enumerate to assign sequential sequence numbers regardless of what's in line_data
+    for idx, line_data in enumerate(lines_data, start=1):
         # Validate product exists
         product = db.get(Product, line_data.raw_material_id)
         if not product:
@@ -404,7 +406,7 @@ async def replace_formula_lines(
             formula_id=formula.id,
             raw_material_id=line_data.raw_material_id,
             quantity_kg=line_data.quantity_kg,
-            sequence=line_data.sequence,
+            sequence=idx,  # Use sequential index to ensure uniqueness
             notes=line_data.notes,
             unit=line_data.unit,
         )

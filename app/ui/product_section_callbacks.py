@@ -70,14 +70,15 @@ def register_product_section_callbacks(app):
             Output("product-supplier-dropdown", "disabled"),
             Output("product-purchase-quantity", "disabled"),
             Output("product-purchase-unit-dropdown", "disabled"),
-            Output("product-purchase-cost", "disabled"),
+            Output("product-purchase-cost-ex-gst", "disabled"),
+            Output("product-purchase-cost-inc-gst", "disabled"),
         ],
         [Input("product-is-purchase", "value")],
     )
     def disable_purchase_fields(is_purchase):
         """Disable purchase fields if is_purchase is False."""
         disabled = not is_purchase
-        return disabled, disabled, disabled, disabled, disabled
+        return disabled, disabled, disabled, disabled, disabled, disabled
 
     # Apply grey styling to Assembly section content
     @app.callback(

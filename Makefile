@@ -10,6 +10,12 @@ migrate:
 	alembic upgrade head
 	python scripts/migrate_legacy.py --dry-run
 
+check:
+	@python scripts/alembic_check_safe.py
+
+db: migrate check
+	@echo "DB upgraded + checked (safe). See tmp/alembic_drift.txt"
+
 run:
 	bash scripts/run_dev.sh
 

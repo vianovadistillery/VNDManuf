@@ -119,8 +119,11 @@ def register_product_callbacks(app, make_api_request):
             Output("product-abv", "value", allow_duplicate=True),
             Output("product-dgflag", "value", allow_duplicate=True),
             Output("product-purchase-unit-dropdown", "value", allow_duplicate=True),
+            Output("product-purchase-quantity", "value", allow_duplicate=True),
+            Output("product-purchase-cost-ex-gst", "value", allow_duplicate=True),
+            Output("product-purchase-cost-inc-gst", "value", allow_duplicate=True),
             Output("product-usage-unit-dropdown", "value", allow_duplicate=True),
-            Output("product-usage-cost", "value", allow_duplicate=True),
+            Output("product-usage-quantity", "value", allow_duplicate=True),
             Output("product-purchase-format-dropdown", "value", allow_duplicate=True),
             Output("product-form-hidden", "children", allow_duplicate=True),
         ],
@@ -153,36 +156,42 @@ def register_product_callbacks(app, make_api_request):
                 },
                 {
                     "price_level": "Wholesale",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
                 },
                 {
                     "price_level": "Distributor",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
                 },
                 {
                     "price_level": "Counter",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
                 },
                 {
                     "price_level": "Trade",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
                 },
                 {
                     "price_level": "Contract",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
                 },
                 {
                     "price_level": "Industrial",
+                    "use_unit": "",
                     "inc_gst": None,
                     "ex_gst": None,
                     "excise": None,
@@ -190,22 +199,48 @@ def register_product_callbacks(app, make_api_request):
             ]
             cost_data = [
                 {
-                    "cost_type": "Purchase Cost",
+                    "cost_type": "Purchase",
+                    "is_primary": "[Set Primary]",
+                    "is_primary_bool": False,
+                    "qty": None,
+                    "unit": None,
                     "ex_gst": None,
                     "inc_gst": None,
-                    "tax_included": False,
+                    "tax_included": "✗",
+                    "tax_included_bool": False,
                 },
                 {
-                    "cost_type": "Usage Cost",
+                    "cost_type": "Assembly",
+                    "is_primary": "[Set Primary]",
+                    "is_primary_bool": False,
+                    "qty": None,
+                    "unit": None,
                     "ex_gst": None,
                     "inc_gst": None,
-                    "tax_included": False,
+                    "tax_included": "✗",
+                    "tax_included_bool": False,
+                },
+                {
+                    "cost_type": "Usage",
+                    "is_primary": "",
+                    "is_primary_bool": False,
+                    "qty": None,
+                    "unit": None,
+                    "ex_gst": None,
+                    "inc_gst": None,
+                    "tax_included": "✗",
+                    "tax_included_bool": False,
                 },
                 {
                     "cost_type": "Manufactured Cost",
+                    "is_primary": "",
+                    "is_primary_bool": False,
+                    "qty": None,
+                    "unit": None,
                     "ex_gst": None,
                     "inc_gst": None,
                     "tax_included": "N/A",
+                    "tax_included_bool": False,
                 },
             ]
             return (
@@ -228,8 +263,11 @@ def register_product_callbacks(app, make_api_request):
                 None,  # abv
                 None,  # dgflag
                 None,  # purchase-unit
+                None,  # purchase-quantity
+                None,  # purchase-cost-ex-gst
+                None,  # purchase-cost-inc-gst
                 None,  # usage-unit
-                None,  # usage-cost
+                None,  # usage-quantity
                 None,  # purchase-format
                 "",  # product-form-hidden (product_id)
             )
@@ -238,8 +276,22 @@ def register_product_callbacks(app, make_api_request):
             if not selected_rows or not data:
                 raise PreventUpdate
 
-            product = data[selected_rows[0]]
+            # Get product from table data
+            product_table_row = data[selected_rows[0]]
+            product_id = product_table_row.get("id")
             is_duplicate = button_id == "duplicate-product-btn"
+
+            # Fetch full product record from API to ensure we have all fields
+            product = product_table_row  # Default to table data
+            if product_id and not is_duplicate:
+                try:
+                    full_product = make_api_request("GET", f"/products/{product_id}")
+                    if isinstance(full_product, dict):
+                        product = full_product  # Use full API response
+                except Exception as e:
+                    print(f"Error fetching full product: {e}")
+                    # Fall back to table data
+                    product = product_table_row
 
             # Helper function to safely convert to float
             def safe_float(value, default=None):
@@ -355,25 +407,191 @@ def register_product_callbacks(app, make_api_request):
                 },
             ]
 
-            # Build cost table data
+            # Build cost table data with row-based structure
+            # Get purchase unit code for display
+            purchase_unit_display = ""
+            if purchase_unit_id:
+                try:
+                    units_response = make_api_request("GET", "/units/?is_active=true")
+                    units = units_response if isinstance(units_response, list) else []
+                    for unit in units:
+                        if str(unit.get("id")) == str(purchase_unit_id):
+                            purchase_unit_display = unit.get("code", "").upper()
+                            break
+                except Exception:
+                    pass
+
+            # Calculate per unit costs from purchase_cost_ex_gst
+            purchase_per_unit = None
+            purchase_cost_ex_gst = safe_float(product.get("purchase_cost_ex_gst"))
+            purchase_qty_val = safe_float(product.get("purchase_quantity"))
+            if (
+                purchase_qty_val
+                and purchase_qty_val > 0
+                and purchase_cost_ex_gst is not None
+            ):
+                purchase_per_unit = purchase_cost_ex_gst / purchase_qty_val
+
+            safe_float(product.get("usage_cost_ex_gst"))
+
+            # product_id already extracted above
+            if is_duplicate:
+                product_id = None  # Clear ID for duplicate
+
+            # Check if product has assembly (formulas)
+            has_assembly = False
+            assembly_cost_per_kg = None
+            assembly_total_kg = None
+            if product_id:
+                try:
+                    formulas_response = make_api_request(
+                        "GET", f"/formulas/?product_id={product_id}&is_active=true"
+                    )
+                    if (
+                        isinstance(formulas_response, list)
+                        and len(formulas_response) > 0
+                    ):
+                        # Get the first active formula and calculate its cost
+                        formula = formulas_response[0]
+                        lines_list = formula.get("lines", [])
+                        if lines_list:
+                            has_assembly = True
+                            # Calculate assembly cost (similar to calculate_assembly_line_costs)
+                            total_cost = 0.0
+                            total_quantity_kg = 0.0
+                            total_quantity_l = 0.0
+                            for line in lines_list:
+                                if isinstance(line, dict):
+                                    qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                                    unit_cost = float(line.get("unit_cost", 0.0) or 0.0)
+                                    if unit_cost == 0:
+                                        # Try to get cost from product
+                                        line_product_id = line.get("product_id")
+                                        if line_product_id:
+                                            try:
+                                                line_product = make_api_request(
+                                                    "GET",
+                                                    f"/products/{line_product_id}",
+                                                )
+                                                if isinstance(line_product, dict):
+                                                    # Preserve 4 decimal places
+                                                    cost_val = (
+                                                        line_product.get(
+                                                            "usage_cost_ex_gst"
+                                                        )
+                                                        or line_product.get(
+                                                            "purchase_cost_ex_gst"
+                                                        )
+                                                        or 0
+                                                    )
+                                                    if cost_val:
+                                                        try:
+                                                            unit_cost = round(
+                                                                float(cost_val), 4
+                                                            )
+                                                        except (ValueError, TypeError):
+                                                            unit_cost = 0.0
+                                                    else:
+                                                        unit_cost = 0.0
+                                            except Exception:
+                                                pass
+                                    line_cost = (
+                                        qty_kg * unit_cost
+                                        if unit_cost > 0 and qty_kg > 0
+                                        else 0.0
+                                    )
+                                    total_cost += line_cost
+                                    total_quantity_kg += qty_kg
+                                    # Calculate L if density available
+                                    density = safe_float(
+                                        product.get("density_kg_per_l")
+                                    )
+                                    if density and density > 0:
+                                        total_quantity_l += qty_kg / density
+                            if total_quantity_kg > 0:
+                                assembly_cost_per_kg = total_cost / total_quantity_kg
+                                assembly_total_kg = total_quantity_kg
+                            if total_quantity_l > 0:
+                                total_cost / total_quantity_l
+                except Exception as e:
+                    print(f"Error fetching assembly data: {e}")
+
+            # Determine primary cost: if purchase type only, auto-flag purchase; otherwise check if purchase or assembly is primary
+            # For now, default to purchase if available, otherwise assembly
+            purchase_is_primary = False
+            assembly_is_primary = False
+            if purchase_per_unit is not None and purchase_per_unit > 0:
+                # If purchase exists and no assembly, purchase is primary
+                if not has_assembly or assembly_cost_per_kg is None:
+                    purchase_is_primary = True
+                else:
+                    # Both exist - check saved preference (could be stored in product, but for now default to purchase)
+                    purchase_is_primary = True  # Default to purchase if both exist
+
             cost_data = [
                 {
-                    "cost_type": "Purchase Cost",
+                    "cost_type": "Purchase",
+                    "is_primary": "✓" if purchase_is_primary else "[Set Primary]",
+                    "is_primary_bool": purchase_is_primary,
+                    "qty": safe_float(product.get("purchase_quantity")),
+                    "unit": purchase_unit_display,
                     "ex_gst": safe_float(product.get("purchase_cost_ex_gst")),
                     "inc_gst": safe_float(product.get("purchase_cost_inc_gst")),
-                    "tax_included": product.get("purchase_tax_included") or False,
+                    "tax_included": "✓"
+                    if product.get("purchase_tax_included")
+                    else "✗",
+                    "tax_included_bool": product.get("purchase_tax_included") or False,
                 },
                 {
-                    "cost_type": "Usage Cost",
-                    "ex_gst": safe_float(product.get("usage_cost_ex_gst")),
-                    "inc_gst": safe_float(product.get("usage_cost_inc_gst")),
-                    "tax_included": product.get("usage_tax_included") or False,
+                    "cost_type": "Assembly",
+                    "is_primary": "✓" if assembly_is_primary else "[Set Primary]",
+                    "is_primary_bool": assembly_is_primary,
+                    "qty": assembly_total_kg,
+                    "unit": "kg",
+                    "ex_gst": round(assembly_cost_per_kg, 4)
+                    if assembly_cost_per_kg is not None
+                    else None,
+                    "inc_gst": round(assembly_cost_per_kg * 1.1, 4)
+                    if assembly_cost_per_kg
+                    else None,
+                    "tax_included": "✗",
+                    "tax_included_bool": False,
+                },
+                {
+                    "cost_type": "Usage",
+                    "is_primary": "",
+                    "is_primary_bool": False,
+                    "qty": safe_float(product.get("usage_quantity"))
+                    if product.get("usage_quantity")
+                    else None,
+                    "unit": (
+                        str(product.get("usage_unit", "")).upper()
+                        if product.get("usage_unit")
+                        else ""
+                    ),
+                    "ex_gst": (
+                        round(safe_float(product.get("usage_cost_ex_gst")), 4)
+                        if safe_float(product.get("usage_cost_ex_gst")) is not None
+                        else None
+                    ),
+                    "inc_gst": (
+                        round(safe_float(product.get("usage_cost_inc_gst")), 4)
+                        if safe_float(product.get("usage_cost_inc_gst")) is not None
+                        else None
+                    ),
+                    "tax_included": "✓" if product.get("usage_tax_included") else "✗",
+                    "tax_included_bool": product.get("usage_tax_included") or False,
                 },
                 {
                     "cost_type": "Manufactured Cost",
+                    "is_primary": "",
+                    "is_primary_bool": False,
+                    "qty": None,
+                    "unit": None,
                     "ex_gst": safe_float(product.get("manufactured_cost_ex_gst")),
                     "inc_gst": safe_float(product.get("manufactured_cost_inc_gst")),
                     "tax_included": "N/A",
+                    "tax_included_bool": False,
                 },
             ]
 
@@ -422,13 +640,22 @@ def register_product_callbacks(app, make_api_request):
                 safe_float(product.get("abv_percent")),
                 product.get("dgflag") or "",
                 purchase_unit_id,
+                safe_float(product.get("purchase_quantity")),
+                # Purchase cost per unit (ex GST)
+                safe_float(product.get("purchase_cost_ex_gst")),
+                # Purchase cost per unit (inc GST) - calculate if ex_gst exists
+                (
+                    round(safe_float(product.get("purchase_cost_ex_gst")) * 1.1, 2)
+                    if product.get("purchase_cost_ex_gst")
+                    else safe_float(product.get("purchase_cost_inc_gst"))
+                ),
                 product.get("usage_unit") or "",
-                safe_float(product.get("usage_cost")),
+                safe_float(product.get("usage_quantity")),
                 purchase_format_id,
                 ""
                 if is_duplicate
                 else (
-                    str(product.get("id", "")) if product.get("id") else ""
+                    str(product_id) if product_id else ""
                 ),  # Empty ID for duplicate (new product)
             )
 
@@ -446,6 +673,50 @@ def register_product_callbacks(app, make_api_request):
             return False
         raise PreventUpdate
 
+    # Auto-calculate between purchase cost ex GST and inc GST
+    @app.callback(
+        [
+            Output("product-purchase-cost-ex-gst", "value", allow_duplicate=True),
+            Output("product-purchase-cost-inc-gst", "value", allow_duplicate=True),
+        ],
+        [
+            Input("product-purchase-cost-ex-gst", "value"),
+            Input("product-purchase-cost-inc-gst", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def calculate_purchase_cost_gst(ex_gst_value, inc_gst_value):
+        """Auto-calculate inc GST from ex GST or vice versa."""
+        GST_RATE = 0.10
+
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise PreventUpdate
+
+        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        try:
+            if (
+                triggered_id == "product-purchase-cost-ex-gst"
+                and ex_gst_value is not None
+            ):
+                # User entered ex GST, calculate inc GST
+                ex_gst_float = float(ex_gst_value)
+                inc_gst = round(ex_gst_float * (1 + GST_RATE), 2)
+                return dash.no_update, inc_gst
+            elif (
+                triggered_id == "product-purchase-cost-inc-gst"
+                and inc_gst_value is not None
+            ):
+                # User entered inc GST, calculate ex GST
+                inc_gst_float = float(inc_gst_value)
+                ex_gst = round(inc_gst_float / (1 + GST_RATE), 2)
+                return ex_gst, dash.no_update
+        except (ValueError, TypeError):
+            pass
+
+        raise PreventUpdate
+
     # Save product (create or update)
     @app.callback(
         [
@@ -454,6 +725,8 @@ def register_product_callbacks(app, make_api_request):
             Output("toast", "header"),
             Output("toast", "children"),
             Output("products-refresh-trigger", "children", allow_duplicate=True),
+            Output("product-form-hidden", "children", allow_duplicate=True),
+            Output("product-assemblies-table", "data", allow_duplicate=True),
         ],
         [Input("product-save-btn", "n_clicks")],
         [
@@ -475,8 +748,11 @@ def register_product_callbacks(app, make_api_request):
             State("product-abv", "value"),
             State("product-dgflag", "value"),
             State("product-purchase-unit-dropdown", "value"),
+            State("product-purchase-quantity", "value"),
+            State("product-purchase-cost-ex-gst", "value"),
+            State("product-purchase-cost-inc-gst", "value"),
             State("product-usage-unit-dropdown", "value"),
-            State("product-usage-cost", "value"),
+            State("product-usage-quantity", "value"),
             State("product-purchase-format-dropdown", "value"),
             State("product-form-hidden", "children"),
         ],
@@ -507,8 +783,11 @@ def register_product_callbacks(app, make_api_request):
             abv,
             dgflag,
             purchase_unit_id,
+            purchase_quantity,
+            purchase_cost_ex_gst,
+            purchase_cost_inc_gst,
             usage_unit,
-            usage_cost,
+            usage_quantity,
             purchase_format_id,
             product_id,
         ) = args
@@ -540,11 +819,31 @@ def register_product_callbacks(app, make_api_request):
                 if row.get("cost_type") == cost_type:
                     val = row.get(field)
                     if field == "tax_included":
-                        return val if val != "N/A" else None
+                        # Handle tax_included - can be bool, markdown string, or "N/A"
+                        if val == "N/A":
+                            return None
+                        # Check tax_included_bool first, then parse from tax_included string
+                        tax_included_bool = row.get("tax_included_bool")
+                        if tax_included_bool is not None:
+                            return tax_included_bool
+                        if isinstance(val, bool):
+                            return val
+                        if isinstance(val, str):
+                            return val == "✓" or val.lower() in (
+                                "true",
+                                "1",
+                                "yes",
+                                "y",
+                            )
+                        return False
                     if val is None or val == "":
                         return None
                     try:
-                        return float(val)
+                        # Preserve 4 decimal places for cost fields (ex_gst, inc_gst, excise)
+                        float_val = float(val)
+                        if field in ("ex_gst", "inc_gst", "excise"):
+                            return round(float_val, 4)
+                        return float_val
                     except (ValueError, TypeError):
                         return None
             return None
@@ -593,9 +892,14 @@ def register_product_callbacks(app, make_api_request):
             ),
             "ean13": ean13.strip() if ean13 else None,
             "supplier_id": str(supplier_id) if supplier_id else None,
-            "purchase_format_id": str(purchase_format_id)
-            if purchase_format_id
-            else None,
+            "purchase_format_id": (
+                str(purchase_format_id)
+                if purchase_format_id
+                and purchase_format_id != ""
+                and str(purchase_format_id).strip() != ""
+                and str(purchase_format_id).lower() != "none"
+                else None
+            ),
             # raw_material_group_id removed - deprecated field
             # Base unit: include even if empty string to allow clearing
             "base_unit": base_unit.strip()
@@ -682,36 +986,38 @@ def register_product_callbacks(app, make_api_request):
                 pricing_data, "Industrial", "ex_gst"
             ),
             "industrial_excise": get_price_value(pricing_data, "Industrial", "excise"),
-            # Cost Pricing from table
-            "purchase_cost_ex_gst": get_cost_value(
-                cost_data, "Purchase Cost", "ex_gst"
-            ),
-            "purchase_cost_inc_gst": get_cost_value(
-                cost_data, "Purchase Cost", "inc_gst"
-            ),
+            # Cost Pricing from table (now using "Purchase", "Assembly", and "Usage" as cost_type)
+            "purchase_cost_ex_gst": get_cost_value(cost_data, "Purchase", "ex_gst"),
+            "purchase_cost_inc_gst": get_cost_value(cost_data, "Purchase", "inc_gst"),
             "purchase_tax_included": get_cost_value(
-                cost_data, "Purchase Cost", "tax_included"
+                cost_data, "Purchase", "tax_included"
             ),
-            "usage_cost_ex_gst": get_cost_value(cost_data, "Usage Cost", "ex_gst"),
-            "usage_cost_inc_gst": get_cost_value(cost_data, "Usage Cost", "inc_gst"),
-            "usage_tax_included": get_cost_value(
-                cost_data, "Usage Cost", "tax_included"
-            ),
+            "usage_cost_ex_gst": get_cost_value(cost_data, "Usage", "ex_gst"),
+            "usage_cost_inc_gst": get_cost_value(cost_data, "Usage", "inc_gst"),
+            "usage_tax_included": get_cost_value(cost_data, "Usage", "tax_included"),
             "manufactured_cost_ex_gst": get_cost_value(
                 cost_data, "Manufactured Cost", "ex_gst"
             ),
             "manufactured_cost_inc_gst": get_cost_value(
                 cost_data, "Manufactured Cost", "inc_gst"
             ),
+            # Note: Assembly cost is not stored directly in product model - it's calculated from formulas
             # Raw Material specific fields
             "purchase_unit_id": purchase_unit_id if purchase_unit_id else None,
-            # purchase_volume renamed to purchase_quantity in model - not in form, always None
+            "purchase_quantity": (
+                float(purchase_quantity)
+                if purchase_quantity is not None
+                and str(purchase_quantity).strip()
+                and str(purchase_quantity).strip() != ""
+                else None
+            ),
+            # Note: purchase_cost is not stored directly - it's calculated from purchase_cost_ex_gst/inc_gst in cost table
             "usage_unit": usage_unit if usage_unit else None,
-            "usage_cost": (
-                float(usage_cost)
-                if usage_cost is not None
-                and str(usage_cost).strip()
-                and str(usage_cost).strip() != ""
+            "usage_quantity": (
+                float(usage_quantity)
+                if usage_quantity is not None
+                and str(usage_quantity).strip()
+                and str(usage_quantity).strip() != ""
                 else None
             ),
             "restock_level": None,  # Not in form, always None
@@ -749,17 +1055,178 @@ def register_product_callbacks(app, make_api_request):
                     except (KeyError, ValueError, TypeError):
                         pass
                 # On error, don't refresh table (operation failed)
-                return True, True, "Error", error_msg, ""
+                return (
+                    True,
+                    True,
+                    "Error",
+                    error_msg,
+                    "",
+                    product_id_clean or "",
+                    no_update,
+                )
+
+            # Extract product_id from response (for new products, it's in the response)
+            saved_product_id = product_id_clean
+            if not saved_product_id and isinstance(response, dict):
+                saved_product_id = response.get("id") or response.get("product_id")
+            if saved_product_id:
+                saved_product_id = str(saved_product_id)
+            else:
+                saved_product_id = product_id_clean or ""
+
+            # Reload assemblies table after saving product
+            assemblies_data = []
+            if saved_product_id:
+                try:
+                    formulas_response = make_api_request(
+                        "GET", f"/formulas/?product_id={saved_product_id}"
+                    )
+                    if isinstance(formulas_response, list):
+                        # Get parent product density for L calculations
+                        parent_density = 0.0
+                        try:
+                            parent_resp = make_api_request(
+                                "GET", f"/products/{saved_product_id}"
+                            )
+                            if (
+                                isinstance(parent_resp, dict)
+                                and "error" not in parent_resp
+                            ):
+                                parent_density = float(
+                                    parent_resp.get("density_kg_per_l", 0) or 0
+                                )
+                        except Exception:
+                            pass
+
+                        for formula in formulas_response:
+                            lines_list = formula.get("lines", [])
+                            if not isinstance(lines_list, list):
+                                lines_list = []
+                            lines_count = len(lines_list)
+
+                            # Calculate total cost and quantities from lines
+                            total_cost = 0.0
+                            total_quantity_kg = 0.0
+                            for line in lines_list:
+                                if isinstance(line, dict):
+                                    qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                                    unit_cost = line.get("unit_cost") or 0.0
+                                    if not unit_cost:
+                                        product_id_line = line.get("raw_material_id")
+                                        if product_id_line:
+                                            try:
+                                                prod_resp = make_api_request(
+                                                    "GET",
+                                                    f"/products/{product_id_line}",
+                                                )
+                                                if (
+                                                    isinstance(prod_resp, dict)
+                                                    and "error" not in prod_resp
+                                                ):
+                                                    # Preserve 4 decimal places
+                                                    cost_val = (
+                                                        prod_resp.get(
+                                                            "usage_cost_ex_gst"
+                                                        )
+                                                        or prod_resp.get(
+                                                            "purchase_cost_ex_gst"
+                                                        )
+                                                        or 0
+                                                    )
+                                                    if cost_val:
+                                                        try:
+                                                            unit_cost = round(
+                                                                float(cost_val), 4
+                                                            )
+                                                        except (ValueError, TypeError):
+                                                            unit_cost = 0.0
+                                                    else:
+                                                        unit_cost = 0.0
+                                            except (ValueError, KeyError, TypeError):
+                                                pass
+                                    total_cost += (
+                                        qty_kg * float(unit_cost) if unit_cost else 0.0
+                                    )
+                                    total_quantity_kg += qty_kg
+
+                            # Calculate quantity in liters if density available
+                            total_quantity_l = (
+                                total_quantity_kg / parent_density
+                                if parent_density > 0
+                                else 0.0
+                            )
+
+                            # Calculate cost per kg and cost per L
+                            cost_per_kg = (
+                                total_cost / total_quantity_kg
+                                if total_quantity_kg > 0
+                                else 0.0
+                            )
+                            cost_per_l = (
+                                total_cost / total_quantity_l
+                                if total_quantity_l > 0
+                                else 0.0
+                            )
+
+                            # Get yield_factor from formula
+                            yield_factor = formula.get("yield_factor", 1.0)
+                            if yield_factor is None:
+                                yield_factor = 1.0
+                            try:
+                                yield_factor = float(yield_factor)
+                            except (ValueError, TypeError):
+                                yield_factor = 1.0
+
+                            assemblies_data.append(
+                                {
+                                    "formula_id": str(formula.get("id", "")),
+                                    "version": int(formula.get("version", 1)),
+                                    "formula_code": str(
+                                        formula.get("formula_code", "")
+                                    ),
+                                    "formula_name": str(
+                                        formula.get("formula_name", "")
+                                    ),
+                                    "yield_factor": round(yield_factor, 2),
+                                    "is_primary": "✓"
+                                    if formula.get("is_active")
+                                    else "",
+                                    "cost": f"${total_cost:.2f}"
+                                    if total_cost > 0
+                                    else "-",
+                                    "cost_per_kg": round(cost_per_kg, 4),
+                                    "cost_per_l": round(cost_per_l, 4),
+                                    "lines_count": int(lines_count),
+                                }
+                            )
+                except Exception as e:
+                    print(f"Error loading assemblies after save: {e}")
 
             # Trigger table refresh by updating refresh trigger
             import time
 
             refresh_timestamp = str(time.time())
-            return False, True, "Success", success_msg, refresh_timestamp
+            return (
+                False,
+                True,
+                "Success",
+                success_msg,
+                refresh_timestamp,
+                saved_product_id,
+                assemblies_data,
+            )
 
         except Exception as e:
             # On error, don't refresh table (operation failed)
-            return True, True, "Error", f"Failed to save product: {str(e)}", ""
+            return (
+                True,
+                True,
+                "Error",
+                f"Failed to save product: {str(e)}",
+                "",
+                product_id_clean or "",
+                no_update,
+            )
 
     # Update delete modal with product name
     @app.callback(
@@ -973,22 +1440,113 @@ def register_product_callbacks(app, make_api_request):
     # Auto-calculate GST for cost table
     @app.callback(
         Output("product-cost-table", "data", allow_duplicate=True),
-        [Input("product-cost-table", "data")],
+        [
+            Input("product-cost-table", "data"),
+            Input("product-purchase-unit-dropdown", "value"),
+            Input("product-purchase-quantity", "value"),
+            Input("product-purchase-cost-ex-gst", "value"),
+            Input("product-purchase-cost-inc-gst", "value"),
+            Input("product-usage-unit-dropdown", "value"),
+            Input("product-usage-quantity", "value"),
+            Input("product-density", "value"),
+        ],
         prevent_initial_call=True,
     )
-    def calculate_cost_table(cost_data):
-        """Auto-calculate GST when cost values change. Allow values to be cleared."""
+    def calculate_cost_table(
+        cost_data,
+        purchase_unit_id,
+        purchase_quantity,
+        purchase_cost_ex_gst,
+        purchase_cost_inc_gst,
+        usage_unit,
+        usage_quantity,
+        density,
+    ):
+        """Auto-calculate GST when cost values change and propagate to cost table. Allow values to be cleared."""
         if not cost_data:
             raise PreventUpdate
 
+        # Check if this was triggered by active_cell (tax_included click)
+        # If so, don't recalculate to preserve the tax_included toggle
+        ctx = dash.callback_context
+        if ctx.triggered:
+            triggered_id = ctx.triggered[0]["prop_id"]
+            if triggered_id == "product-cost-table.data":
+                # This was triggered by a data change, which might be from active_cell click
+                # Check if we should preserve tax_included changes
+                # We'll preserve tax_included_bool and tax_included display values
+                pass  # Continue with calculation but preserve tax_included values
+
         GST_RATE = 0.10
+
+        # Get purchase unit code if purchase_unit_id is provided
+        purchase_unit_code = None
+        if purchase_unit_id:
+            try:
+                units_response = make_api_request("GET", "/units/?is_active=true")
+                units = units_response if isinstance(units_response, list) else []
+                for unit in units:
+                    if str(unit.get("id")) == str(purchase_unit_id):
+                        purchase_unit_code = unit.get("code", "").upper()
+                        break
+            except Exception:
+                pass
+
+        # Convert purchase and usage quantities to floats
+        purchase_qty = None
+        if purchase_quantity and str(purchase_quantity).strip():
+            try:
+                purchase_qty = float(purchase_quantity)
+            except (ValueError, TypeError):
+                pass
+
+        # Get purchase cost per unit - prefer ex_gst if available, otherwise calculate from inc_gst
+        if purchase_cost_ex_gst and str(purchase_cost_ex_gst).strip():
+            try:
+                float(purchase_cost_ex_gst)
+            except (ValueError, TypeError):
+                pass
+        elif purchase_cost_inc_gst and str(purchase_cost_inc_gst).strip():
+            try:
+                # Calculate ex_gst from inc_gst
+                inc_gst_float = float(purchase_cost_inc_gst)
+                inc_gst_float / (1 + GST_RATE)
+            except (ValueError, TypeError):
+                pass
+
+        usage_qty = None
+        if usage_quantity and str(usage_quantity).strip():
+            try:
+                usage_qty = float(usage_quantity)
+            except (ValueError, TypeError):
+                pass
+
+        usage_unit_upper = str(usage_unit).upper() if usage_unit else None
 
         updated_data = []
         for row in cost_data:
             cost_type = row.get("cost_type", "")
             ex_gst = row.get("ex_gst")
             inc_gst = row.get("inc_gst")
-            tax_included = row.get("tax_included")
+            # Handle tax_included - can be bool, string, or markdown format
+            tax_included_raw = row.get("tax_included")
+            tax_included_bool = row.get("tax_included_bool", False)
+            # If tax_included_bool exists, use it; otherwise try to parse from tax_included
+            if tax_included_bool is not None:
+                tax_included = tax_included_bool
+            elif isinstance(tax_included_raw, bool):
+                tax_included = tax_included_raw
+            elif isinstance(tax_included_raw, str):
+                tax_included = tax_included_raw == "✓" or tax_included_raw.lower() in (
+                    "true",
+                    "1",
+                    "yes",
+                    "y",
+                )
+            else:
+                tax_included = False
+            row.get("qty")
+            unit = row.get("unit")
 
             # Helper to check if value is empty/None
             def is_empty(val):
@@ -1038,13 +1596,16 @@ def register_product_callbacks(app, make_api_request):
                 updated_data.append(
                     {
                         "cost_type": cost_type,
+                        "qty": None,
+                        "unit": None,
                         "ex_gst": (
-                            round(ex_gst_val, 2) if ex_gst_val is not None else None
+                            round(ex_gst_val, 4) if ex_gst_val is not None else None
                         ),
                         "inc_gst": (
-                            round(inc_gst_val, 2) if inc_gst_val is not None else None
+                            round(inc_gst_val, 4) if inc_gst_val is not None else None
                         ),
                         "tax_included": "N/A",
+                        "tax_included_bool": False,
                     }
                 )
             else:
@@ -1090,20 +1651,659 @@ def register_product_callbacks(app, make_api_request):
                     ex_gst_val = ex_gst_float
                     inc_gst_val = inc_gst_float
 
-                updated_data.append(
-                    {
-                        "cost_type": cost_type,
-                        "ex_gst": (
-                            round(ex_gst_val, 2) if ex_gst_val is not None else None
-                        ),
-                        "inc_gst": (
-                            round(inc_gst_val, 2) if inc_gst_val is not None else None
-                        ),
-                        "tax_included": (
-                            tax_included if tax_included is not None else False
-                        ),
-                    }
+                # Preserve is_primary flags and tax_included flags from existing data
+                existing_row = None
+                for existing in cost_data:
+                    if existing.get("cost_type") == cost_type:
+                        existing_row = existing
+                        break
+                is_primary_bool = (
+                    existing_row.get("is_primary_bool", False)
+                    if existing_row
+                    else False
                 )
+                is_primary_display = (
+                    existing_row.get("is_primary", "[Set Primary]")
+                    if existing_row
+                    else "[Set Primary]"
+                )
+
+                # IMPORTANT: Preserve tax_included_bool from existing row - don't recalculate it
+                # The user may have manually toggled it via the click handler
+                preserved_tax_included_bool = (
+                    existing_row.get("tax_included_bool", False)
+                    if existing_row
+                    else tax_included
+                )
+                preserved_tax_included = preserved_tax_included_bool
+
+                # Update inc_gst based on preserved tax_included flag
+                # If tax_included is True, ensure inc_gst is calculated from ex_gst
+                # If tax_included is False, clear inc_gst
+                if preserved_tax_included and ex_gst_val is not None:
+                    inc_gst_val = round(ex_gst_val * (1 + GST_RATE), 4)
+                elif not preserved_tax_included:
+                    inc_gst_val = None
+
+                # Auto-populate purchase row with purchase info
+                if cost_type == "Purchase":
+                    # Use preserved tax_included_bool (from manual toggle or existing value)
+                    # Only update it if user entered a new value in form fields
+                    existing_tax_included_bool = preserved_tax_included_bool
+
+                    # Form fields now contain per-unit costs directly
+                    # Update cost table from form fields when they are provided
+                    # If user enters ex_gst, tax is excluded. If user enters inc_gst, tax is included.
+                    # Check if form fields were actually changed (not just callback triggered by data change)
+                    ctx = dash.callback_context
+                    form_field_changed = False
+                    if ctx.triggered:
+                        for trigger in ctx.triggered:
+                            trigger_id = trigger["prop_id"].split(".")[0]
+                            if trigger_id in [
+                                "product-purchase-cost-ex-gst",
+                                "product-purchase-cost-inc-gst",
+                            ]:
+                                form_field_changed = True
+                                break
+
+                    if form_field_changed:
+                        if (
+                            purchase_cost_ex_gst is not None
+                            and str(purchase_cost_ex_gst).strip()
+                        ):
+                            try:
+                                # User entered ex GST per unit - tax is excluded
+                                ex_gst_per_unit = float(purchase_cost_ex_gst)
+                                ex_gst_val = round(ex_gst_per_unit, 4)
+                                inc_gst_val = round(ex_gst_per_unit * (1 + GST_RATE), 4)
+                                existing_tax_included_bool = (
+                                    False  # Tax excluded when user enters ex_gst
+                                )
+                            except (ValueError, TypeError):
+                                pass
+                        elif (
+                            purchase_cost_inc_gst is not None
+                            and str(purchase_cost_inc_gst).strip()
+                        ):
+                            try:
+                                # User entered inc GST per unit - tax is included
+                                inc_gst_per_unit = float(purchase_cost_inc_gst)
+                                ex_gst_val = round(inc_gst_per_unit / (1 + GST_RATE), 4)
+                                inc_gst_val = round(inc_gst_per_unit, 4)
+                                existing_tax_included_bool = (
+                                    True  # Tax included when user enters inc_gst
+                                )
+                            except (ValueError, TypeError):
+                                pass
+
+                    tax_included_display = "✓" if existing_tax_included_bool else "✗"
+
+                    # Only set inc_gst if tax_included is True
+                    # If tax_included is False, inc_gst should be None (not used in calculations)
+                    final_inc_gst = None
+                    if existing_tax_included_bool and inc_gst_val is not None:
+                        final_inc_gst = round(inc_gst_val, 4)
+
+                    updated_data.append(
+                        {
+                            "cost_type": "Purchase",
+                            "is_primary": is_primary_display,
+                            "is_primary_bool": is_primary_bool,
+                            "qty": purchase_qty,
+                            "unit": purchase_unit_code,
+                            "ex_gst": (
+                                round(ex_gst_val, 4) if ex_gst_val is not None else None
+                            ),
+                            "inc_gst": final_inc_gst,
+                            "tax_included": tax_included_display,
+                            "tax_included_bool": existing_tax_included_bool,
+                        }
+                    )
+                elif cost_type == "Assembly":
+                    # Assembly row - keep existing values or update from assembly summary if available
+                    # Note: Assembly data should be updated from assembly-summary-table via separate callback
+                    # Use preserved tax_included_bool (from manual toggle or existing value)
+                    existing_tax_included_bool = preserved_tax_included_bool
+                    tax_included_display = "✓" if existing_tax_included_bool else "✗"
+
+                    # Only set inc_gst if tax_included is True
+                    # If tax_included is False, inc_gst should be None (not used in calculations)
+                    final_inc_gst = None
+                    if existing_tax_included_bool and inc_gst_val is not None:
+                        final_inc_gst = round(inc_gst_val, 4)
+
+                    updated_data.append(
+                        {
+                            "cost_type": "Assembly",
+                            "is_primary": is_primary_display,
+                            "is_primary_bool": is_primary_bool,
+                            "qty": existing_row.get("qty") if existing_row else None,
+                            "unit": existing_row.get("unit") if existing_row else "kg",
+                            "ex_gst": (
+                                round(ex_gst_val, 4) if ex_gst_val is not None else None
+                            ),
+                            "inc_gst": final_inc_gst,
+                            "tax_included": tax_included_display,
+                            "tax_included_bool": existing_tax_included_bool,
+                        }
+                    )
+                elif cost_type == "Usage":
+                    # Use preserved tax_included_bool (from manual toggle or existing value)
+                    existing_tax_included_bool = preserved_tax_included_bool
+                    tax_included_display = "✓" if existing_tax_included_bool else "✗"
+
+                    # Only set inc_gst if tax_included is True
+                    # If tax_included is False, inc_gst should be None (not used in calculations)
+                    final_inc_gst = None
+                    if existing_tax_included_bool and inc_gst_val is not None:
+                        final_inc_gst = round(inc_gst_val, 4)
+
+                    updated_data.append(
+                        {
+                            "cost_type": "Usage",
+                            "is_primary": "",
+                            "is_primary_bool": False,
+                            "qty": usage_qty,
+                            "unit": usage_unit_upper,
+                            "ex_gst": (
+                                round(ex_gst_val, 4) if ex_gst_val is not None else None
+                            ),
+                            "inc_gst": final_inc_gst,
+                            "tax_included": tax_included_display,
+                            "tax_included_bool": existing_tax_included_bool,
+                        }
+                    )
+                else:
+                    # Manufactured Cost or other
+                    updated_data.append(
+                        {
+                            "cost_type": cost_type,
+                            "is_primary": "",
+                            "is_primary_bool": False,
+                            "qty": None,
+                            "unit": None,
+                            "ex_gst": (
+                                round(ex_gst_val, 4) if ex_gst_val is not None else None
+                            ),
+                            "inc_gst": (
+                                round(inc_gst_val, 4)
+                                if inc_gst_val is not None
+                                else None
+                            ),
+                            "tax_included": "N/A",
+                            "tax_included_bool": False,
+                        }
+                    )
+
+        # Find which cost source is primary (Purchase or Assembly)
+        primary_cost_row = None
+        primary_cost_type = None
+        for row in updated_data:
+            if row.get("is_primary_bool", False) and row.get("cost_type") in [
+                "Purchase",
+                "Assembly",
+            ]:
+                primary_cost_row = row
+                primary_cost_type = row.get("cost_type")
+                break
+
+        # If no primary is set, default to Purchase if available
+        if not primary_cost_row:
+            for row in updated_data:
+                if row.get("cost_type") == "Purchase" and row.get("ex_gst") is not None:
+                    primary_cost_row = row
+                    primary_cost_type = "Purchase"
+                    row["is_primary"] = "✓"
+                    row["is_primary_bool"] = True
+                    break
+
+        # Calculate usage cost from primary cost source
+        # Run conversion even if usage_qty is 0/empty - conversion is about unit conversion, not quantity
+        if primary_cost_row and primary_cost_type and usage_unit_upper:
+            try:
+                # Find usage cost row
+                usage_cost_row = None
+                for row in updated_data:
+                    if row.get("cost_type") == "Usage":
+                        usage_cost_row = row
+                        break
+
+                if usage_cost_row:
+                    # Get primary cost values
+                    primary_ex_gst = primary_cost_row.get("ex_gst")
+                    primary_unit = primary_cost_row.get("unit", "").upper()
+                    primary_cost_row.get("qty")
+
+                    if primary_ex_gst is not None and primary_unit:
+                        # Helper function to get conversion factor (kg equivalent of 1 unit)
+                        def get_unit_to_kg_factor(unit_code, density_val=None):
+                            """Get the kg equivalent of 1 unit."""
+                            unit = unit_code.upper()
+
+                            # Mass units
+                            MASS_TO_KG = {
+                                "MG": 0.000001,
+                                "G": 0.001,
+                                "KG": 1.0,
+                                "TON": 1000.0,
+                            }
+
+                            # Volume units
+                            VOLUME_TO_L = {
+                                "ML": 0.001,
+                                "L": 1.0,
+                                "LT": 1.0,
+                                "LTR": 1.0,
+                                "LITER": 1.0,
+                                "LITRE": 1.0,
+                            }
+
+                            if unit in MASS_TO_KG:
+                                return MASS_TO_KG[unit]
+                            elif unit in VOLUME_TO_L:
+                                if density_val and density_val > 0:
+                                    return VOLUME_TO_L[unit] * float(density_val)
+                                else:
+                                    return None
+                            return None
+
+                        # Calculate usage cost: convert from primary unit to usage unit
+                        density_val = (
+                            float(density) if density and density != "" else None
+                        )
+                        usage_unit_factor = get_unit_to_kg_factor(
+                            usage_unit_upper, density_val
+                        )
+                        primary_unit_factor = get_unit_to_kg_factor(
+                            primary_unit, density_val
+                        )
+
+                        if (
+                            usage_unit_factor is not None
+                            and primary_unit_factor is not None
+                            and primary_unit_factor > 0
+                        ):
+                            # Formula: (use_unit/primary_unit) × primary_cost_per_unit = use_cost_per_unit
+                            unit_ratio = usage_unit_factor / primary_unit_factor
+                            converted_usage_cost = unit_ratio * primary_ex_gst
+
+                            if converted_usage_cost is not None:
+                                # Always update usage cost row with converted value when fields change
+                                # Round to 4 decimal places for small values
+                                # The converted_usage_cost is ex-GST (derived from primary ex_gst)
+                                usage_cost_row["ex_gst"] = round(
+                                    converted_usage_cost, 4
+                                )
+                                # Only calculate inc_gst if tax_included is True
+                                # If tax_included is False, clear inc_gst (it's not used in calculations)
+                                tax_included_bool = usage_cost_row.get(
+                                    "tax_included_bool", False
+                                )
+                                if tax_included_bool:
+                                    usage_cost_row["inc_gst"] = round(
+                                        converted_usage_cost * (1 + GST_RATE), 4
+                                    )
+                                else:
+                                    usage_cost_row["inc_gst"] = None
+            except Exception as e:
+                print(f"Error converting primary cost to usage cost: {e}")
+                # Continue with original data if conversion fails
+
+        return updated_data
+
+    # Handle primary button and tax included button clicks in cost table
+    @app.callback(
+        Output("product-cost-table", "data", allow_duplicate=True),
+        [Input("product-cost-table", "active_cell")],
+        [
+            State("product-cost-table", "data"),
+            State("product-usage-unit-dropdown", "value"),
+            State("product-usage-quantity", "value"),
+            State("product-density", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def handle_cost_table_clicks(
+        active_cell, cost_data, usage_unit, usage_quantity, density
+    ):
+        """Handle clicks on primary or tax included columns in cost table."""
+        if not active_cell or not cost_data:
+            raise PreventUpdate
+
+        col_id = active_cell.get("column_id")
+        row_idx = active_cell.get("row")
+
+        if row_idx is None:
+            raise PreventUpdate
+
+        clicked_row = cost_data[row_idx]
+        clicked_cost_type = clicked_row.get("cost_type")
+
+        # Handle tax_included column clicks
+        if col_id == "tax_included":
+            # Don't allow toggling for Manufactured Cost
+            if clicked_cost_type == "Manufactured Cost":
+                raise PreventUpdate
+
+            # Toggle tax_included for the clicked row
+            updated_data = []
+            GST_RATE = 0.10
+            for idx, row in enumerate(cost_data):
+                if idx == row_idx:
+                    # Toggle the clicked row
+                    current_tax_included = row.get("tax_included_bool", False)
+                    new_tax_included = not current_tax_included
+
+                    # Get ex_gst value to calculate inc_gst if needed
+                    ex_gst = row.get("ex_gst")
+                    ex_gst_float = None
+                    if ex_gst is not None and str(ex_gst).strip():
+                        try:
+                            ex_gst_float = float(ex_gst)
+                        except (ValueError, TypeError):
+                            pass
+
+                    # Update inc_gst based on tax_included flag
+                    # If tax_included is True, calculate inc_gst from ex_gst
+                    # If tax_included is False, clear inc_gst (set to None)
+                    if new_tax_included:
+                        # Tax included - calculate inc_gst from ex_gst
+                        if ex_gst_float is not None:
+                            inc_gst_val = round(ex_gst_float * (1 + GST_RATE), 4)
+                        else:
+                            inc_gst_val = None
+                        tax_included_display = "✓"
+                    else:
+                        # Tax excluded - clear inc_gst
+                        inc_gst_val = None
+                        tax_included_display = "✗"
+
+                    updated_row = {
+                        **row,
+                        "tax_included": tax_included_display,
+                        "tax_included_bool": new_tax_included,
+                        "inc_gst": inc_gst_val,
+                    }
+                    updated_data.append(updated_row)
+                else:
+                    # Keep other rows unchanged
+                    updated_data.append(row)
+            return updated_data
+
+        # Handle is_primary column clicks
+        elif col_id == "is_primary":
+            # Only allow Purchase or Assembly to be primary
+            if clicked_cost_type not in ["Purchase", "Assembly"]:
+                raise PreventUpdate
+
+            # Update all rows - set primary to False for Purchase/Assembly, then set selected one to True
+            updated_data = []
+            for idx, row in enumerate(cost_data):
+                cost_type = row.get("cost_type")
+                if cost_type in ["Purchase", "Assembly"]:
+                    is_primary = idx == row_idx
+                    updated_row = {
+                        **row,
+                        "is_primary": "✓" if is_primary else "[Set Primary]",
+                        "is_primary_bool": is_primary,
+                    }
+                else:
+                    # Usage and Manufactured Cost rows don't have primary buttons
+                    updated_row = {
+                        **row,
+                        "is_primary": "",
+                        "is_primary_bool": False,
+                    }
+                updated_data.append(updated_row)
+
+            # Recalculate usage cost from the new primary source
+            # Find the primary cost row
+            primary_cost_row = None
+            for row in updated_data:
+                if row.get("is_primary_bool", False) and row.get("cost_type") in [
+                    "Purchase",
+                    "Assembly",
+                ]:
+                    primary_cost_row = row
+                    break
+
+            # Recalculate usage cost if primary changed and usage data is available
+            if primary_cost_row and usage_unit and usage_quantity:
+                try:
+                    usage_unit_upper = str(usage_unit).upper()
+                    try:
+                        usage_qty = float(usage_quantity) if usage_quantity else None
+                    except (ValueError, TypeError):
+                        usage_qty = None
+
+                    if usage_qty and usage_qty > 0:
+                        # Find usage row
+                        usage_row = None
+                        for row in updated_data:
+                            if row.get("cost_type") == "Usage":
+                                usage_row = row
+                                break
+
+                        if usage_row:
+                            # Get primary cost values
+                            primary_ex_gst = primary_cost_row.get("ex_gst")
+                            primary_unit = primary_cost_row.get("unit", "").upper()
+
+                            if primary_ex_gst is not None and primary_unit:
+                                # Helper function to get conversion factor
+                                def get_unit_to_kg_factor(unit_code, density_val=None):
+                                    unit = unit_code.upper()
+                                    MASS_TO_KG = {
+                                        "MG": 0.000001,
+                                        "G": 0.001,
+                                        "KG": 1.0,
+                                        "TON": 1000.0,
+                                    }
+                                    VOLUME_TO_L = {
+                                        "ML": 0.001,
+                                        "L": 1.0,
+                                        "LT": 1.0,
+                                        "LTR": 1.0,
+                                        "LITER": 1.0,
+                                        "LITRE": 1.0,
+                                    }
+                                    if unit in MASS_TO_KG:
+                                        return MASS_TO_KG[unit]
+                                    elif unit in VOLUME_TO_L:
+                                        if density_val and density_val > 0:
+                                            return VOLUME_TO_L[unit] * float(
+                                                density_val
+                                            )
+                                        return None
+                                    return None
+
+                                density_val = (
+                                    float(density)
+                                    if density and density != ""
+                                    else None
+                                )
+                                usage_unit_factor = get_unit_to_kg_factor(
+                                    usage_unit_upper, density_val
+                                )
+                                primary_unit_factor = get_unit_to_kg_factor(
+                                    primary_unit, density_val
+                                )
+
+                                if (
+                                    usage_unit_factor is not None
+                                    and primary_unit_factor is not None
+                                    and primary_unit_factor > 0
+                                ):
+                                    unit_ratio = usage_unit_factor / primary_unit_factor
+                                    converted_usage_cost = unit_ratio * primary_ex_gst
+
+                                    if converted_usage_cost is not None:
+                                        # Update usage cost
+                                        usage_row["ex_gst"] = round(
+                                            converted_usage_cost, 4
+                                        )
+                                        tax_included_bool = usage_row.get(
+                                            "tax_included_bool", False
+                                        )
+                                        if not tax_included_bool:
+                                            usage_row["inc_gst"] = round(
+                                                converted_usage_cost * 1.1, 4
+                                            )
+                except Exception as e:
+                    print(f"Error recalculating usage cost after primary change: {e}")
+
+            return updated_data
+
+        # If clicked on a different column, don't update
+        raise PreventUpdate
+
+    # Update Assembly row in cost table when assembly summary changes
+    @app.callback(
+        Output("product-cost-table", "data", allow_duplicate=True),
+        [Input("assembly-summary-table", "data")],
+        [
+            State("product-cost-table", "data"),
+            State("product-usage-unit-dropdown", "value"),
+            State("product-usage-quantity", "value"),
+            State("product-density", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def update_cost_table_assembly_row(
+        assembly_summary_data, cost_data, usage_unit, usage_quantity, density
+    ):
+        """Update Assembly row in cost table when assembly summary changes and recalculate usage if assembly is primary."""
+        if not assembly_summary_data or not cost_data:
+            raise PreventUpdate
+
+        # Find assembly row in summary (type="assembly")
+        assembly_row = None
+        for row in assembly_summary_data:
+            if row.get("type") == "assembly":
+                assembly_row = row
+                break
+
+        if not assembly_row:
+            raise PreventUpdate
+
+        # Update cost table with assembly data
+        updated_data = []
+        assembly_is_primary = False
+        for row in cost_data:
+            if row.get("cost_type") == "Assembly":
+                # Preserve is_primary flags
+                is_primary_bool = row.get("is_primary_bool", False)
+                assembly_is_primary = is_primary_bool
+                is_primary_display = "✓" if is_primary_bool else "[Set Primary]"
+
+                # Get assembly values
+                assembly_cost_per_kg = assembly_row.get("cost_per_kg", 0) or 0
+                assembly_total_kg = assembly_row.get("assembly_mass_kg", 0) or 0
+
+                # Preserve tax_included state
+                existing_tax_included_bool = row.get("tax_included_bool", False)
+                tax_included_display = "✓" if existing_tax_included_bool else "✗"
+
+                updated_row = {
+                    **row,
+                    "is_primary": is_primary_display,
+                    "is_primary_bool": is_primary_bool,
+                    "qty": round(assembly_total_kg, 3)
+                    if assembly_total_kg > 0
+                    else None,
+                    "unit": "kg",
+                    "ex_gst": round(assembly_cost_per_kg, 4)
+                    if assembly_cost_per_kg > 0
+                    else None,
+                    "inc_gst": round(assembly_cost_per_kg * 1.1, 4)
+                    if (assembly_cost_per_kg > 0 and existing_tax_included_bool)
+                    else None,
+                    "tax_included": tax_included_display,
+                    "tax_included_bool": existing_tax_included_bool,
+                }
+                updated_data.append(updated_row)
+            else:
+                updated_data.append(row)
+
+        # If assembly is primary, recalculate usage cost
+        if assembly_is_primary and usage_unit and usage_quantity:
+            usage_unit_upper = str(usage_unit).upper()
+            try:
+                usage_qty = float(usage_quantity) if usage_quantity else None
+            except (ValueError, TypeError):
+                usage_qty = None
+
+            if usage_qty and usage_qty > 0:
+                # Find usage row and assembly row
+                usage_row = None
+                assembly_row_data = None
+                for row in updated_data:
+                    if row.get("cost_type") == "Usage":
+                        usage_row = row
+                    elif row.get("cost_type") == "Assembly":
+                        assembly_row_data = row
+
+                if usage_row and assembly_row_data:
+                    assembly_per_unit_cost = assembly_row_data.get(
+                        "per_unit_cost"
+                    ) or assembly_row_data.get("ex_gst")
+                    assembly_unit = assembly_row_data.get("unit", "kg").upper()
+
+                    if assembly_per_unit_cost is not None and assembly_unit:
+                        # Helper function to get conversion factor
+                        def get_unit_to_kg_factor(unit_code, density_val=None):
+                            unit = unit_code.upper()
+                            MASS_TO_KG = {
+                                "MG": 0.000001,
+                                "G": 0.001,
+                                "KG": 1.0,
+                                "TON": 1000.0,
+                            }
+                            VOLUME_TO_L = {
+                                "ML": 0.001,
+                                "L": 1.0,
+                                "LT": 1.0,
+                                "LTR": 1.0,
+                                "LITER": 1.0,
+                                "LITRE": 1.0,
+                            }
+                            if unit in MASS_TO_KG:
+                                return MASS_TO_KG[unit]
+                            elif unit in VOLUME_TO_L:
+                                if density_val and density_val > 0:
+                                    return VOLUME_TO_L[unit] * float(density_val)
+                                return None
+                            return None
+
+                        density_val = (
+                            float(density) if density and density != "" else None
+                        )
+                        usage_unit_factor = get_unit_to_kg_factor(
+                            usage_unit_upper, density_val
+                        )
+                        assembly_unit_factor = get_unit_to_kg_factor(
+                            assembly_unit, density_val
+                        )
+
+                        if (
+                            usage_unit_factor is not None
+                            and assembly_unit_factor is not None
+                            and assembly_unit_factor > 0
+                        ):
+                            unit_ratio = usage_unit_factor / assembly_unit_factor
+                            converted_usage_cost = unit_ratio * assembly_per_unit_cost
+
+                            if converted_usage_cost is not None:
+                                # Update usage cost
+                                usage_row["ex_gst"] = round(converted_usage_cost, 4)
+                                usage_row["per_unit_cost"] = round(
+                                    converted_usage_cost, 4
+                                )
+                                if not usage_row.get("tax_included"):
+                                    usage_row["inc_gst"] = round(
+                                        converted_usage_cost * 1.1, 4
+                                    )
 
         return updated_data
 
@@ -1113,6 +2313,9 @@ def register_product_callbacks(app, make_api_request):
             Output("product-detail-title", "children"),
             Output("product-detail-sku", "children"),
             Output("product-detail-capabilities", "children"),
+            Output("product-detail-is-purchase", "children"),
+            Output("product-detail-is-sell", "children"),
+            Output("product-detail-is-assemble", "children"),
             Output("product-detail-name", "children"),
             Output("product-detail-description", "children"),
             Output("product-detail-base-unit", "children"),
@@ -1127,6 +2330,7 @@ def register_product_callbacks(app, make_api_request):
             Output("product-detail-restock", "children"),
             Output("product-detail-active", "children"),
             Output("adjust-inventory-btn", "style"),
+            Output("product-detail-assemblies-table-container", "children"),
         ],
         [Input("products-table", "selected_rows")],
         [State("products-table", "data")],
@@ -1192,25 +2396,188 @@ def register_product_callbacks(app, make_api_request):
         is_sell = product.get("is_sell")
         is_assemble = product.get("is_assemble")
 
-        if (
+        is_purchase_bool = (
             is_purchase is True
             or is_purchase == "✓"
             or (isinstance(is_purchase, str) and is_purchase.strip() == "✓")
-        ):
-            caps.append("Purchase")
-        if (
+        )
+        is_sell_bool = (
             is_sell is True
             or is_sell == "✓"
             or (isinstance(is_sell, str) and is_sell.strip() == "✓")
-        ):
-            caps.append("Sell")
-        if (
+        )
+        is_assemble_bool = (
             is_assemble is True
             or is_assemble == "✓"
             or (isinstance(is_assemble, str) and is_assemble.strip() == "✓")
-        ):
+        )
+
+        if is_purchase_bool:
+            caps.append("Purchase")
+        if is_sell_bool:
+            caps.append("Sell")
+        if is_assemble_bool:
             caps.append("Assemble")
         product_type = ", ".join(caps) if caps else "None"
+
+        # Format badges for product type booleans
+        purchase_badge = (
+            html.Span("Purchase", className="badge bg-primary me-1")
+            if is_purchase_bool
+            else html.Span("")
+        )
+        sell_badge = (
+            html.Span("Sell", className="badge bg-success me-1")
+            if is_sell_bool
+            else html.Span("")
+        )
+        assemble_badge = (
+            html.Span("Assemble", className="badge bg-info")
+            if is_assemble_bool
+            else html.Span("")
+        )
+
+        # Load assemblies for this product
+        assemblies_table = html.Div("No assemblies")
+        if product_id and is_assemble_bool:
+            try:
+                formulas_response = make_api_request(
+                    "GET", f"/formulas/?product_id={product_id}&is_active=true"
+                )
+                if isinstance(formulas_response, list) and len(formulas_response) > 0:
+                    # Format assemblies for table
+                    assembly_data = []
+                    for formula in formulas_response:
+                        lines_list = formula.get("lines", [])
+                        if not isinstance(lines_list, list):
+                            lines_list = []
+                        lines_count = len(lines_list)
+
+                        # Calculate costs (simplified - similar to load_product_assemblies)
+                        total_cost = 0.0
+                        total_quantity_kg = 0.0
+                        for line in lines_list:
+                            if isinstance(line, dict):
+                                qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                                unit_cost = line.get("unit_cost") or 0.0
+                                if not unit_cost:
+                                    line_product_id = line.get("raw_material_id")
+                                    if line_product_id:
+                                        try:
+                                            line_product = make_api_request(
+                                                "GET", f"/products/{line_product_id}"
+                                            )
+                                            if isinstance(line_product, dict):
+                                                cost_val = (
+                                                    line_product.get(
+                                                        "usage_cost_inc_gst"
+                                                    )
+                                                    or line_product.get(
+                                                        "purchase_cost_inc_gst"
+                                                    )
+                                                    or 0
+                                                )
+                                                if cost_val:
+                                                    try:
+                                                        unit_cost = round(
+                                                            float(cost_val), 4
+                                                        )
+                                                    except (ValueError, TypeError):
+                                                        unit_cost = 0.0
+                                        except Exception:
+                                            pass
+                                total_cost += (
+                                    qty_kg * float(unit_cost) if unit_cost else 0.0
+                                )
+                                total_quantity_kg += qty_kg
+
+                        # Get yield factor
+                        yield_factor = float(formula.get("yield_factor", 1.0) or 1.0)
+
+                        # Calculate cost per kg and cost per L
+                        parent_density = float(product.get("density_kg_per_l", 0) or 0)
+                        total_quantity_l = (
+                            total_quantity_kg / parent_density
+                            if parent_density > 0
+                            else 0.0
+                        )
+                        cost_per_kg = (
+                            total_cost / total_quantity_kg
+                            if total_quantity_kg > 0
+                            else 0.0
+                        )
+                        cost_per_l = (
+                            total_cost / total_quantity_l
+                            if total_quantity_l > 0
+                            else 0.0
+                        )
+
+                        assembly_data.append(
+                            {
+                                "formula_id": str(formula.get("id", "")),
+                                "formula_name": str(formula.get("formula_name", "")),
+                                "version": int(formula.get("version", 1)),
+                                "yield_factor": round(yield_factor, 2),
+                                "is_primary": "✓"
+                                if formula.get("is_active")
+                                and formula.get("is_primary")
+                                else "",
+                                "total_cost": f"${total_cost:.2f}"
+                                if total_cost > 0
+                                else "-",
+                                "cost_per_kg": round(cost_per_kg, 4),
+                                "cost_per_l": round(cost_per_l, 4),
+                                "lines_count": lines_count,
+                            }
+                        )
+
+                    if assembly_data:
+                        assemblies_table = dash_table.DataTable(
+                            id="product-detail-assemblies-table",
+                            data=assembly_data,
+                            columns=[
+                                {"name": "Name", "id": "formula_name"},
+                                {"name": "Version", "id": "version"},
+                                {
+                                    "name": "Yield",
+                                    "id": "yield_factor",
+                                    "type": "numeric",
+                                    "format": {"specifier": ".2f"},
+                                },
+                                {
+                                    "name": "Primary",
+                                    "id": "is_primary",
+                                    "presentation": "markdown",
+                                },
+                                {"name": "Total Cost", "id": "total_cost"},
+                                {
+                                    "name": "Cost/kg",
+                                    "id": "cost_per_kg",
+                                    "type": "numeric",
+                                    "format": {"specifier": ".4f"},
+                                },
+                                {
+                                    "name": "Cost/L",
+                                    "id": "cost_per_l",
+                                    "type": "numeric",
+                                    "format": {"specifier": ".4f"},
+                                },
+                                {"name": "Lines", "id": "lines_count"},
+                            ],
+                            style_cell={
+                                "textAlign": "left",
+                                "fontSize": "11px",
+                                "padding": "4px",
+                            },
+                            style_header={
+                                "backgroundColor": "rgb(230, 230, 230)",
+                                "fontWeight": "bold",
+                            },
+                            row_selectable="single",
+                            selected_rows=[],
+                        )
+            except Exception as e:
+                print(f"Error loading assemblies: {e}")
 
         # Build consolidated cost/pricing table with all requested calculations
         consolidated_rows = []
@@ -1234,24 +2601,57 @@ def register_product_callbacks(app, make_api_request):
             },
         ]
 
-        # Pricing data
-        distributor_ex_gst = product.get("distributor_price_ex_gst")
-        distributor_inc_gst = product.get("distributor_price_inc_gst")
-        retail_ex_gst = product.get("retail_price_ex_gst")
-        retail_inc_gst = product.get("retail_price_inc_gst")
+        # Pricing data - ensure numeric types
+        def safe_float(value):
+            """Safely convert value to float, returning None if conversion fails."""
+            if value is None or value == "":
+                return None
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return None
+
+        distributor_ex_gst = safe_float(product.get("distributor_price_ex_gst"))
+        distributor_inc_gst = safe_float(product.get("distributor_price_inc_gst"))
+        retail_ex_gst = safe_float(product.get("retail_price_ex_gst"))
+        retail_inc_gst = safe_float(product.get("retail_price_inc_gst"))
+
+        # Check if product is GST free (salestaxcde indicates GST free status)
+        # Common values: "F" = Free, "G" = GST Free, or empty/None = GST applies
+        salestaxcde = product.get("salestaxcde")
+        is_gst_free = salestaxcde and str(salestaxcde).upper() in ["F", "G"]
+        gst_multiplier = 1.0 if is_gst_free else 1.1  # Don't apply GST if GST free
 
         for cost_type in cost_types:
-            ex_gst = cost_type["ex_gst"] or 0.0
-            excise = cost_type.get("excise") or 0.0
+            # Ensure numeric types - convert strings/Decimals to float
+            ex_gst_raw = cost_type["ex_gst"]
+            if ex_gst_raw is None or ex_gst_raw == "":
+                ex_gst = 0.0
+            else:
+                try:
+                    ex_gst = float(ex_gst_raw)
+                except (ValueError, TypeError):
+                    ex_gst = 0.0
+
+            excise_raw = cost_type.get("excise")
+            if excise_raw is None or excise_raw == "":
+                excise = 0.0
+            else:
+                try:
+                    excise = float(excise_raw)
+                except (ValueError, TypeError):
+                    excise = 0.0
 
             # Calculate Ex-GST+Excise
             ex_gst_plus_excise = ex_gst + excise
 
-            # Calculate Excised (calculated as [ex-excise + Excise]*1.1)
-            excised = (ex_gst + excise) * 1.1
+            # Calculate Excised (calculated as [ex-excise + Excise]*gst_multiplier)
+            # If GST free, don't apply GST (multiply by 1.0 instead of 1.1)
+            excised = (ex_gst + excise) * gst_multiplier
 
-            # Calculate UnExcised (calculated as ex-GST * 1.1)
-            unexcised = ex_gst * 1.1
+            # Calculate UnExcised (calculated as ex-GST * gst_multiplier)
+            # If GST free, don't apply GST (multiply by 1.0 instead of 1.1)
+            unexcised = ex_gst * gst_multiplier
 
             # Distributor and Retail calculations (only for rows with pricing data)
             if cost_type["name"] == "Manufactured Cost":
@@ -1274,18 +2674,26 @@ def register_product_callbacks(app, make_api_request):
                 retail_price_calc = None
                 retail_profit_margin = None
 
+            # Get use unit for display
+            use_unit = (
+                str(product.get("usage_unit", "")).upper()
+                if product.get("usage_unit")
+                else "-"
+            )
+
             consolidated_rows.append(
                 {
                     "Cost Type": cost_type["name"],
-                    "Ex GST": f"${ex_gst:.2f}" if ex_gst else "-",
-                    "Excise": f"${excise:.2f}" if excise else "-",
+                    "Use Unit": use_unit,
+                    "Ex GST": f"${ex_gst:.4f}" if ex_gst else "-",
+                    "Excise": f"${excise:.4f}" if excise else "-",
                     "Ex-GST+Excise": (
-                        f"${ex_gst_plus_excise:.2f}" if ex_gst_plus_excise else "-"
+                        f"${ex_gst_plus_excise:.4f}" if ex_gst_plus_excise else "-"
                     ),
-                    "Excised": f"${excised:.2f}" if excised else "-",
-                    "UnExcised": f"${unexcised:.2f}" if unexcised else "-",
+                    "Excised": f"${excised:.4f}" if excised else "-",
+                    "UnExcised": f"${unexcised:.4f}" if unexcised else "-",
                     "Distributor Inc GST": (
-                        f"${dist_inc_gst_calc:.2f}" if dist_inc_gst_calc else "-"
+                        f"${dist_inc_gst_calc:.4f}" if dist_inc_gst_calc else "-"
                     ),
                     "Dist Profit Margin": (
                         f"{dist_profit_margin:.1f}%"
@@ -1293,7 +2701,7 @@ def register_product_callbacks(app, make_api_request):
                         else "-"
                     ),
                     "Retail Price": (
-                        f"${retail_price_calc:.2f}" if retail_price_calc else "-"
+                        f"${retail_price_calc:.4f}" if retail_price_calc else "-"
                     ),
                     "Retail Margin": (
                         f"{retail_profit_margin:.1f}%"
@@ -1328,6 +2736,9 @@ def register_product_callbacks(app, make_api_request):
             product.get("name", "Product Details"),
             product.get("sku", "-"),
             product_type,
+            purchase_badge,
+            sell_badge,
+            assemble_badge,
             product.get("name", "-"),
             product.get("description") or "-",
             product.get("base_unit") or "-",
@@ -1357,6 +2768,426 @@ def register_product_callbacks(app, make_api_request):
             ),
             "Yes" if product.get("is_active") else "No",
             {"display": "block"} if product_id else {"display": "none"},
+            assemblies_table,
+        )
+
+    # Load assembly line items when assembly is selected in view panel
+    @app.callback(
+        Output("product-detail-assembly-lines-container", "children"),
+        [Input("product-detail-assemblies-table", "selected_rows")],
+        [State("product-detail-assemblies-table", "data")],
+        prevent_initial_call=True,
+    )
+    def load_assembly_line_items_view(selected_rows, assembly_data):
+        """Load line items for selected assembly in view panel."""
+        if not selected_rows or not assembly_data or len(selected_rows) == 0:
+            return html.Div("Select an assembly to view line items")
+
+        formula_id = assembly_data[selected_rows[0]].get("formula_id")
+
+        try:
+            formula_response = make_api_request("GET", f"/formulas/{formula_id}")
+
+            if isinstance(formula_response, dict) and "error" not in formula_response:
+                lines_data = []
+                for line in formula_response.get("lines", []):
+                    line_product_id = line.get("raw_material_id")
+                    product_sku = ""
+                    product_name = line.get("ingredient_name", "")
+                    unit_cost = 0.0
+
+                    if line_product_id:
+                        try:
+                            product_resp = make_api_request(
+                                "GET", f"/products/{line_product_id}"
+                            )
+                            if (
+                                isinstance(product_resp, dict)
+                                and "error" not in product_resp
+                            ):
+                                product_sku = product_resp.get("sku", "")
+                                product_name = product_resp.get("name", product_name)
+                                cost_val = (
+                                    product_resp.get("usage_cost_inc_gst")
+                                    or product_resp.get("purchase_cost_inc_gst")
+                                    or 0
+                                )
+                                if cost_val:
+                                    try:
+                                        unit_cost = round(float(cost_val), 4)
+                                    except (ValueError, TypeError):
+                                        unit_cost = 0.0
+                        except Exception:
+                            pass
+
+                    quantity = float(line.get("quantity", 0.0) or 0.0)
+                    unit = line.get("unit", "kg")
+                    quantity_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                    line_cost = quantity_kg * unit_cost if unit_cost > 0 else 0.0
+
+                    lines_data.append(
+                        {
+                            "product_sku": product_sku,
+                            "product_name": product_name,
+                            "quantity": round(quantity, 3),
+                            "unit": unit,
+                            "quantity_kg": round(quantity_kg, 3),
+                            "unit_cost": round(unit_cost, 4),
+                            "line_cost": round(line_cost, 4),
+                        }
+                    )
+
+                if lines_data:
+                    lines_table = dash_table.DataTable(
+                        data=lines_data,
+                        columns=[
+                            {"name": "SKU", "id": "product_sku"},
+                            {"name": "Product", "id": "product_name"},
+                            {
+                                "name": "Quantity",
+                                "id": "quantity",
+                                "type": "numeric",
+                                "format": {"specifier": ".3f"},
+                            },
+                            {"name": "Unit", "id": "unit"},
+                            {
+                                "name": "Qty (kg)",
+                                "id": "quantity_kg",
+                                "type": "numeric",
+                                "format": {"specifier": ".3f"},
+                            },
+                            {
+                                "name": "Unit Cost",
+                                "id": "unit_cost",
+                                "type": "numeric",
+                                "format": {"specifier": ".4f"},
+                            },
+                            {
+                                "name": "Line Cost",
+                                "id": "line_cost",
+                                "type": "numeric",
+                                "format": {"specifier": ".4f"},
+                            },
+                        ],
+                        style_cell={
+                            "textAlign": "left",
+                            "fontSize": "11px",
+                            "padding": "4px",
+                        },
+                        style_header={
+                            "backgroundColor": "rgb(230, 230, 230)",
+                            "fontWeight": "bold",
+                        },
+                    )
+                    return lines_table
+                else:
+                    return html.Div("No line items in this assembly")
+            else:
+                return html.Div("Error loading assembly details")
+        except Exception as e:
+            print(f"Error loading assembly line items: {e}")
+            return html.Div(f"Error: {str(e)}")
+
+    # Update view panel when form fields change
+    @app.callback(
+        [
+            Output("product-detail-title", "children", allow_duplicate=True),
+            Output("product-detail-sku", "children", allow_duplicate=True),
+            Output("product-detail-capabilities", "children", allow_duplicate=True),
+            Output("product-detail-name", "children", allow_duplicate=True),
+            Output("product-detail-description", "children", allow_duplicate=True),
+            Output("product-detail-base-unit", "children", allow_duplicate=True),
+            Output("product-detail-size", "children", allow_duplicate=True),
+            Output("product-detail-density", "children", allow_duplicate=True),
+            Output("product-detail-abv", "children", allow_duplicate=True),
+            Output(
+                "product-detail-consolidated-cost-pricing-table",
+                "children",
+                allow_duplicate=True,
+            ),
+        ],
+        [
+            Input("product-sku", "value"),
+            Input("product-name", "value"),
+            Input("product-description", "value"),
+            Input("product-base-unit", "value"),
+            Input("product-size", "value"),
+            Input("product-density", "value"),
+            Input("product-abv", "value"),
+            Input("product-is-purchase", "value"),
+            Input("product-is-sell", "value"),
+            Input("product-is-assemble", "value"),
+            Input("product-cost-table", "data"),
+            Input("product-pricing-table", "data"),
+            Input("product-purchase-quantity", "value"),
+            Input("product-purchase-cost-ex-gst", "value"),
+            Input("product-purchase-cost-inc-gst", "value"),
+            Input("product-purchase-unit-dropdown", "value"),
+            Input("product-usage-quantity", "value"),
+            Input("product-usage-unit-dropdown", "value"),
+        ],
+        [
+            State("product-form-modal", "is_open"),
+            State("product-form-hidden", "children"),
+            State("products-table", "selected_rows"),
+            State("products-table", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def update_view_panel_from_form(
+        sku,
+        name,
+        description,
+        base_unit,
+        size,
+        density,
+        abv,
+        is_purchase,
+        is_sell,
+        is_assemble,
+        cost_data,
+        pricing_data,
+        purchase_quantity,
+        purchase_cost_ex_gst,
+        purchase_cost_inc_gst,
+        purchase_unit_id,
+        usage_quantity,
+        usage_unit_id,
+        modal_is_open,
+        product_id,
+        selected_rows,
+        table_data,
+    ):
+        """Update view panel as form fields change."""
+        # Only update if modal is open, product is selected, and we're in edit mode (not add mode)
+        if not modal_is_open:
+            raise PreventUpdate
+
+        # Skip if product_id is empty (add mode) or if we don't have valid data
+        if not product_id or product_id == "" or not product_id.strip():
+            raise PreventUpdate
+
+        # Check if modal is actually open by checking if product_id exists and form has data
+        if not selected_rows or not table_data or len(selected_rows) == 0:
+            raise PreventUpdate
+
+        # Check if we have valid table data
+        if not isinstance(table_data, list) or len(table_data) == 0:
+            raise PreventUpdate
+
+        # Additional safety check: ensure the selected row index is valid
+        if selected_rows[0] >= len(table_data):
+            raise PreventUpdate
+
+        # Get current product from table to maintain other fields
+        product = (
+            table_data[selected_rows[0]]
+            if selected_rows and len(selected_rows) > 0
+            else {}
+        )
+
+        # Build updated product dict from form values
+        updated_product = product.copy()
+        if sku:
+            updated_product["sku"] = sku
+        if name:
+            updated_product["name"] = name
+        if description is not None:
+            updated_product["description"] = description
+        if base_unit:
+            updated_product["base_unit"] = base_unit
+        if size:
+            updated_product["size"] = size
+        if density:
+            try:
+                updated_product["density_kg_per_l"] = float(density)
+            except (ValueError, TypeError):
+                pass
+        if abv:
+            try:
+                updated_product["abv_percent"] = float(abv)
+            except (ValueError, TypeError):
+                pass
+
+        # Update product type booleans
+        updated_product["is_purchase"] = is_purchase if is_purchase else False
+        updated_product["is_sell"] = is_sell if is_sell else False
+        updated_product["is_assemble"] = is_assemble if is_assemble else False
+
+        # Update cost/pricing from tables
+        if cost_data:
+            for row in cost_data:
+                cost_type = row.get("cost_type", "")
+                if cost_type == "Purchase":
+                    ex_gst = row.get("ex_gst")
+                    inc_gst = row.get("inc_gst")
+                    if ex_gst is not None:
+                        updated_product["purchase_cost_ex_gst"] = ex_gst
+                    if inc_gst is not None:
+                        updated_product["purchase_cost_inc_gst"] = inc_gst
+                elif cost_type == "Usage":
+                    ex_gst = row.get("ex_gst")
+                    inc_gst = row.get("inc_gst")
+                    if ex_gst is not None:
+                        updated_product["usage_cost_ex_gst"] = ex_gst
+                    if inc_gst is not None:
+                        updated_product["usage_cost_inc_gst"] = inc_gst
+
+        if pricing_data:
+            for row in pricing_data:
+                price_level = row.get("price_level", "")
+                if price_level == "Retail":
+                    updated_product["retail_price_ex_gst"] = row.get("ex_gst")
+                    updated_product["retail_price_inc_gst"] = row.get("inc_gst")
+                elif price_level == "Distributor":
+                    updated_product["distributor_price_ex_gst"] = row.get("ex_gst")
+                    updated_product["distributor_price_inc_gst"] = row.get("inc_gst")
+
+        # Format product type
+        caps = []
+        if updated_product.get("is_purchase"):
+            caps.append("Purchase")
+        if updated_product.get("is_sell"):
+            caps.append("Sell")
+        if updated_product.get("is_assemble"):
+            caps.append("Assemble")
+        product_type = ", ".join(caps) if caps else "None"
+
+        # Build consolidated cost/pricing table
+        def safe_float(value):
+            if value is None or value == "":
+                return None
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return None
+
+        consolidated_rows = []
+        cost_types = [
+            {
+                "name": "Purchase Cost",
+                "ex_gst": updated_product.get("purchase_cost_ex_gst"),
+                "excise": None,
+            },
+            {
+                "name": "Usage Cost",
+                "ex_gst": updated_product.get("usage_cost_ex_gst"),
+                "excise": None,
+            },
+            {
+                "name": "Manufactured Cost",
+                "ex_gst": updated_product.get("manufactured_cost_ex_gst"),
+                "excise": None,
+            },
+        ]
+
+        distributor_ex_gst = safe_float(updated_product.get("distributor_price_ex_gst"))
+        distributor_inc_gst = safe_float(
+            updated_product.get("distributor_price_inc_gst")
+        )
+        retail_ex_gst = safe_float(updated_product.get("retail_price_ex_gst"))
+        retail_inc_gst = safe_float(updated_product.get("retail_price_inc_gst"))
+
+        # Check if product is GST free (salestaxcde indicates GST free status)
+        # Common values: "F" = Free, "G" = GST Free, or empty/None = GST applies
+        salestaxcde = updated_product.get("salestaxcde")
+        is_gst_free = salestaxcde and str(salestaxcde).upper() in ["F", "G"]
+        gst_multiplier = 1.0 if is_gst_free else 1.1  # Don't apply GST if GST free
+
+        for cost_type in cost_types:
+            ex_gst = safe_float(cost_type["ex_gst"]) or 0.0
+            excise = safe_float(cost_type.get("excise")) or 0.0
+            ex_gst_plus_excise = ex_gst + excise
+            # If GST free, don't apply GST (multiply by 1.0 instead of 1.1)
+            excised = (ex_gst + excise) * gst_multiplier
+            unexcised = ex_gst * gst_multiplier
+
+            if cost_type["name"] == "Manufactured Cost":
+                dist_inc_gst_calc = distributor_inc_gst if distributor_inc_gst else None
+                dist_profit_margin = (
+                    ((distributor_ex_gst - ex_gst) / ex_gst * 100)
+                    if distributor_ex_gst and ex_gst > 0
+                    else None
+                )
+                retail_price_calc = retail_inc_gst if retail_inc_gst else None
+                retail_profit_margin = (
+                    ((retail_ex_gst - distributor_ex_gst) / distributor_ex_gst * 100)
+                    if retail_ex_gst and distributor_ex_gst and distributor_ex_gst > 0
+                    else None
+                )
+            else:
+                dist_inc_gst_calc = None
+                dist_profit_margin = None
+                retail_price_calc = None
+                retail_profit_margin = None
+
+            consolidated_rows.append(
+                {
+                    "Cost Type": cost_type["name"],
+                    "Ex GST": f"${ex_gst:.2f}" if ex_gst else "-",
+                    "Excise": f"${excise:.2f}" if excise else "-",
+                    "Ex-GST+Excise": f"${ex_gst_plus_excise:.2f}"
+                    if ex_gst_plus_excise
+                    else "-",
+                    "Excised": f"${excised:.2f}" if excised else "-",
+                    "UnExcised": f"${unexcised:.2f}" if unexcised else "-",
+                    "Distributor Inc GST": f"${dist_inc_gst_calc:.2f}"
+                    if dist_inc_gst_calc
+                    else "-",
+                    "Dist Profit Margin": f"{dist_profit_margin:.1f}%"
+                    if dist_profit_margin is not None
+                    else "-",
+                    "Retail Price": f"${retail_price_calc:.2f}"
+                    if retail_price_calc
+                    else "-",
+                    "Retail Margin": f"{retail_profit_margin:.1f}%"
+                    if retail_profit_margin is not None
+                    else "-",
+                }
+            )
+
+        consolidated_table = dash_table.DataTable(
+            data=consolidated_rows,
+            columns=[
+                {"name": "Cost Type", "id": "Cost Type"},
+                {"name": "Ex GST", "id": "Ex GST"},
+                {"name": "Excise", "id": "Excise"},
+                {"name": "Ex-GST+Excise", "id": "Ex-GST+Excise"},
+                {"name": "Excised", "id": "Excised"},
+                {"name": "UnExcised", "id": "UnExcised"},
+                {"name": "Distributor Inc GST", "id": "Distributor Inc GST"},
+                {"name": "Dist Profit Margin", "id": "Dist Profit Margin"},
+                {"name": "Retail Price", "id": "Retail Price"},
+                {"name": "Retail Margin", "id": "Retail Margin"},
+            ],
+            style_cell={"textAlign": "left", "fontSize": "10px", "padding": "4px"},
+            style_header={
+                "backgroundColor": "rgb(230, 230, 230)",
+                "fontWeight": "bold",
+            },
+        )
+
+        return (
+            updated_product.get("name", "Product Details"),
+            updated_product.get("sku", "-"),
+            product_type,
+            updated_product.get("name", "-"),
+            updated_product.get("description") or "-",
+            updated_product.get("base_unit") or "-",
+            updated_product.get("size") or "-",
+            (
+                f"{float(updated_product.get('density_kg_per_l', 0) or 0):.3f}"
+                if updated_product.get("density_kg_per_l") is not None
+                and str(updated_product.get("density_kg_per_l", "")).strip() != ""
+                else "-"
+            ),
+            (
+                f"{float(updated_product.get('abv_percent', 0) or 0):.2f}%"
+                if updated_product.get("abv_percent") is not None
+                and str(updated_product.get("abv_percent", "")).strip() != ""
+                else "-"
+            ),
+            consolidated_table,
         )
 
     # Open inventory adjustment modal
@@ -1538,8 +3369,28 @@ def register_product_callbacks(app, make_api_request):
 
                     lines_count = len(lines_list)
 
-                    # Calculate total cost from lines using actual product costs
+                    # Calculate total cost and quantities from lines using actual product costs
                     total_cost = 0.0
+                    total_quantity_kg = 0.0
+                    total_quantity_l = 0.0
+
+                    # Get parent product density for L calculations
+                    parent_density = 0.0
+                    if product_id:
+                        try:
+                            parent_resp = make_api_request(
+                                "GET", f"/products/{product_id}"
+                            )
+                            if (
+                                isinstance(parent_resp, dict)
+                                and "error" not in parent_resp
+                            ):
+                                parent_density = float(
+                                    parent_resp.get("density_kg_per_l", 0) or 0
+                                )
+                        except Exception:
+                            pass
+
                     for line in lines_list:
                         if isinstance(line, dict):
                             qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
@@ -1556,18 +3407,50 @@ def register_product_callbacks(app, make_api_request):
                                             isinstance(prod_resp, dict)
                                             and "error" not in prod_resp
                                         ):
-                                            unit_cost = float(
-                                                prod_resp.get("usage_cost_ex_gst", 0)
-                                                or prod_resp.get(
-                                                    "purchase_cost_ex_gst", 0
-                                                )
+                                            # Preserve 4 decimal places
+                                            cost_val = (
+                                                prod_resp.get("usage_cost_ex_gst")
+                                                or prod_resp.get("purchase_cost_ex_gst")
                                                 or 0
                                             )
+                                            if cost_val:
+                                                try:
+                                                    unit_cost = round(
+                                                        float(cost_val), 4
+                                                    )
+                                                except (ValueError, TypeError):
+                                                    unit_cost = 0.0
+                                            else:
+                                                unit_cost = 0.0
                                     except (ValueError, KeyError, TypeError):
                                         pass
                             total_cost += (
                                 qty_kg * float(unit_cost) if unit_cost else 0.0
                             )
+                            total_quantity_kg += qty_kg
+
+                    # Calculate quantity in liters if density available
+                    if parent_density > 0:
+                        total_quantity_l = total_quantity_kg / parent_density
+                    else:
+                        total_quantity_l = 0.0
+
+                    # Calculate cost per kg and cost per L
+                    cost_per_kg = (
+                        total_cost / total_quantity_kg if total_quantity_kg > 0 else 0.0
+                    )
+                    cost_per_l = (
+                        total_cost / total_quantity_l if total_quantity_l > 0 else 0.0
+                    )
+
+                    # Get yield_factor from formula
+                    yield_factor = formula.get("yield_factor", 1.0)
+                    if yield_factor is None:
+                        yield_factor = 1.0
+                    try:
+                        yield_factor = float(yield_factor)
+                    except (ValueError, TypeError):
+                        yield_factor = 1.0
 
                     # Create flattened structure - no nested objects
                     assembly_data.append(
@@ -1576,11 +3459,11 @@ def register_product_callbacks(app, make_api_request):
                             "version": int(formula.get("version", 1)),
                             "formula_code": str(formula.get("formula_code", "")),
                             "formula_name": str(formula.get("formula_name", "")),
-                            "sequence": 1,  # Would be from formula or line
-                            "ratio": "1:1",  # Would calculate from formula lines
-                            "yield_factor": "1.0",  # Would be from formula
+                            "yield_factor": round(yield_factor, 2),
                             "is_primary": "✓" if formula.get("is_active") else "",
                             "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
+                            "cost_per_kg": round(cost_per_kg, 2),
+                            "cost_per_l": round(cost_per_l, 2),
                             "lines_count": int(lines_count),  # Convert to int, not list
                         }
                     )
@@ -1617,6 +3500,7 @@ def register_product_callbacks(app, make_api_request):
                 "assembly-parent-product-id-hidden", "children", allow_duplicate=True
             ),
             Output("assembly-name", "value", allow_duplicate=True),
+            Output("assembly-yield-factor", "value", allow_duplicate=True),
             Output("assembly-lines-table", "data", allow_duplicate=True),
         ],
         [Input("new-assembly-btn", "n_clicks"), Input("edit-assembly-btn", "n_clicks")],
@@ -1659,6 +3543,7 @@ def register_product_callbacks(app, make_api_request):
                 product_id or "",  # product_id (hidden)
                 product_id or "",  # parent_product_id (hidden)
                 "",  # name
+                1.0,  # yield_factor (default)
                 [],  # lines data
             )
 
@@ -1700,11 +3585,19 @@ def register_product_callbacks(app, make_api_request):
                                     product_name = product_resp.get(
                                         "name", product_name
                                     )
-                                    unit_cost = float(
-                                        product_resp.get("usage_cost_ex_gst", 0)
-                                        or product_resp.get("purchase_cost_ex_gst", 0)
+                                    # Preserve 4 decimal places - use inc_gst costs
+                                    cost_val = (
+                                        product_resp.get("usage_cost_inc_gst")
+                                        or product_resp.get("purchase_cost_inc_gst")
                                         or 0
                                     )
+                                    if cost_val:
+                                        try:
+                                            unit_cost = round(float(cost_val), 4)
+                                        except (ValueError, TypeError):
+                                            unit_cost = 0.0
+                                    else:
+                                        unit_cost = 0.0
                                     density = float(
                                         product_resp.get("density_kg_per_l", 0) or 0
                                     )
@@ -1768,13 +3661,22 @@ def register_product_callbacks(app, make_api_request):
                                 "unit": unit,
                                 "quantity_kg": round(quantity_kg, 3),
                                 "quantity_l": round(quantity_l, 3),
-                                "unit_cost": round(unit_cost, 2),
-                                "line_cost": round(line_cost, 2),
+                                "unit_cost": round(unit_cost, 4),
+                                "line_cost": round(line_cost, 4),
                                 "is_primary": primary_button,
                                 "is_primary_bool": is_primary,
                                 "notes": line.get("notes", ""),
                             }
                         )
+
+                    # Get yield_factor from formula or default to 1.0
+                    yield_factor = formula_response.get("yield_factor", 1.0)
+                    if yield_factor is None:
+                        yield_factor = 1.0
+                    try:
+                        yield_factor = float(yield_factor)
+                    except (ValueError, TypeError):
+                        yield_factor = 1.0
 
                     return (
                         True,  # is_open
@@ -1783,6 +3685,7 @@ def register_product_callbacks(app, make_api_request):
                         product_id,  # product_id
                         product_id or "",  # parent_product_id (hidden)
                         formula_response.get("formula_name", ""),  # name
+                        yield_factor,  # yield_factor
                         lines_data,  # lines data
                     )
             except Exception as e:
@@ -1805,11 +3708,12 @@ def register_product_callbacks(app, make_api_request):
             State("assembly-formula-id", "children"),
             State("assembly-product-id", "children"),
             State("assembly-name", "value"),
+            State("assembly-yield-factor", "value"),
             State("assembly-lines-table", "data"),
         ],
         prevent_initial_call=True,
     )
-    def save_assembly(n_clicks, formula_id, product_id, name, lines_data):
+    def save_assembly(n_clicks, formula_id, product_id, name, yield_factor, lines_data):
         """Save assembly definition (formula)."""
         if not n_clicks:
             raise PreventUpdate
@@ -1859,11 +3763,22 @@ def register_product_callbacks(app, make_api_request):
                     no_update,
                 )
 
+            # Process yield_factor - default to 1.0 if not provided
+            yield_factor_val = 1.0
+            if yield_factor is not None and str(yield_factor).strip():
+                try:
+                    yield_factor_val = float(yield_factor)
+                    if yield_factor_val <= 0:
+                        yield_factor_val = 1.0
+                except (ValueError, TypeError):
+                    yield_factor_val = 1.0
+
             if formula_id:
                 # Update existing formula
                 # First update header
                 update_data = {
                     "formula_name": name,
+                    "yield_factor": yield_factor_val,
                 }
                 update_response = make_api_request(
                     "PUT", f"/formulas/{formula_id}", update_data
@@ -1916,6 +3831,7 @@ def register_product_callbacks(app, make_api_request):
                     "formula_name": str(name),
                     "version": 1,
                     "is_active": True,
+                    "yield_factor": yield_factor_val,
                     "lines": formula_lines,
                 }
 
@@ -1950,6 +3866,17 @@ def register_product_callbacks(app, make_api_request):
 
                 if isinstance(formulas_response, list):
                     assembly_data = []
+                    # Get parent product density for L calculations
+                    parent_density = 0.0
+                    try:
+                        parent_resp = make_api_request("GET", f"/products/{product_id}")
+                        if isinstance(parent_resp, dict) and "error" not in parent_resp:
+                            parent_density = float(
+                                parent_resp.get("density_kg_per_l", 0) or 0
+                            )
+                    except Exception:
+                        pass
+
                     for formula in formulas_response:
                         # Get lines safely - ensure it's a list, not an object
                         lines_list = formula.get("lines", [])
@@ -1957,11 +3884,76 @@ def register_product_callbacks(app, make_api_request):
                             lines_list = []
 
                         lines_count = len(lines_list)
+
+                        # Calculate total cost and quantities from lines
                         total_cost = 0.0
+                        total_quantity_kg = 0.0
                         for line in lines_list:
                             if isinstance(line, dict):
-                                qty = float(line.get("quantity_kg", 0.0) or 0.0)
-                                total_cost += qty  # Placeholder
+                                qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                                unit_cost = line.get("unit_cost") or 0.0
+                                if not unit_cost:
+                                    product_id_line = line.get("raw_material_id")
+                                    if product_id_line:
+                                        try:
+                                            prod_resp = make_api_request(
+                                                "GET", f"/products/{product_id_line}"
+                                            )
+                                            if (
+                                                isinstance(prod_resp, dict)
+                                                and "error" not in prod_resp
+                                            ):
+                                                # Preserve 4 decimal places
+                                                cost_val = (
+                                                    prod_resp.get("usage_cost_ex_gst")
+                                                    or prod_resp.get(
+                                                        "purchase_cost_ex_gst"
+                                                    )
+                                                    or 0
+                                                )
+                                                if cost_val:
+                                                    try:
+                                                        unit_cost = round(
+                                                            float(cost_val), 4
+                                                        )
+                                                    except (ValueError, TypeError):
+                                                        unit_cost = 0.0
+                                                else:
+                                                    unit_cost = 0.0
+                                        except (ValueError, KeyError, TypeError):
+                                            pass
+                                total_cost += (
+                                    qty_kg * float(unit_cost) if unit_cost else 0.0
+                                )
+                                total_quantity_kg += qty_kg
+
+                        # Calculate quantity in liters if density available
+                        total_quantity_l = (
+                            total_quantity_kg / parent_density
+                            if parent_density > 0
+                            else 0.0
+                        )
+
+                        # Calculate cost per kg and cost per L
+                        cost_per_kg = (
+                            total_cost / total_quantity_kg
+                            if total_quantity_kg > 0
+                            else 0.0
+                        )
+                        cost_per_l = (
+                            total_cost / total_quantity_l
+                            if total_quantity_l > 0
+                            else 0.0
+                        )
+
+                        # Get yield_factor from formula
+                        yield_factor = formula.get("yield_factor", 1.0)
+                        if yield_factor is None:
+                            yield_factor = 1.0
+                        try:
+                            yield_factor = float(yield_factor)
+                        except (ValueError, TypeError):
+                            yield_factor = 1.0
 
                         # Create flattened structure - no nested objects
                         assembly_data.append(
@@ -1970,14 +3962,12 @@ def register_product_callbacks(app, make_api_request):
                                 "version": int(formula.get("version", 1)),
                                 "formula_code": str(formula.get("formula_code", "")),
                                 "formula_name": str(formula.get("formula_name", "")),
-                                "sequence": 1,
-                                "ratio": "1:1",
-                                "yield_factor": "1.0",
+                                "yield_factor": round(yield_factor, 2),
                                 "is_primary": "✓" if formula.get("is_active") else "",
                                 "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
-                                "lines_count": int(
-                                    lines_count
-                                ),  # Convert to int, not list
+                                "cost_per_kg": round(cost_per_kg, 2),
+                                "cost_per_l": round(cost_per_l, 2),
+                                "lines_count": int(lines_count),
                             }
                         )
 
@@ -2036,25 +4026,99 @@ def register_product_callbacks(app, make_api_request):
 
             if isinstance(formulas_response, list):
                 assembly_data_new = []
+                # Get parent product density for L calculations
+                parent_density = 0.0
+                try:
+                    parent_resp = make_api_request("GET", f"/products/{product_id}")
+                    if isinstance(parent_resp, dict) and "error" not in parent_resp:
+                        parent_density = float(
+                            parent_resp.get("density_kg_per_l", 0) or 0
+                        )
+                except Exception:
+                    pass
+
                 for formula in formulas_response:
-                    lines_count = len(formula.get("lines", []))
+                    lines_list = formula.get("lines", [])
+                    if not isinstance(lines_list, list):
+                        lines_list = []
+                    lines_count = len(lines_list)
+
+                    # Calculate total cost and quantities from lines
                     total_cost = 0.0
-                    for line in formula.get("lines", []):
-                        qty = line.get("quantity_kg", 0.0) or 0.0
-                        total_cost += qty
+                    total_quantity_kg = 0.0
+                    for line in lines_list:
+                        if isinstance(line, dict):
+                            qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                            unit_cost = line.get("unit_cost") or 0.0
+                            if not unit_cost:
+                                product_id_line = line.get("raw_material_id")
+                                if product_id_line:
+                                    try:
+                                        prod_resp = make_api_request(
+                                            "GET", f"/products/{product_id_line}"
+                                        )
+                                        if (
+                                            isinstance(prod_resp, dict)
+                                            and "error" not in prod_resp
+                                        ):
+                                            # Preserve 4 decimal places
+                                            cost_val = (
+                                                prod_resp.get("usage_cost_ex_gst")
+                                                or prod_resp.get("purchase_cost_ex_gst")
+                                                or 0
+                                            )
+                                            if cost_val:
+                                                try:
+                                                    unit_cost = round(
+                                                        float(cost_val), 4
+                                                    )
+                                                except (ValueError, TypeError):
+                                                    unit_cost = 0.0
+                                            else:
+                                                unit_cost = 0.0
+                                    except (ValueError, KeyError, TypeError):
+                                        pass
+                            total_cost += (
+                                qty_kg * float(unit_cost) if unit_cost else 0.0
+                            )
+                            total_quantity_kg += qty_kg
+
+                    # Calculate quantity in liters if density available
+                    total_quantity_l = (
+                        total_quantity_kg / parent_density
+                        if parent_density > 0
+                        else 0.0
+                    )
+
+                    # Calculate cost per kg and cost per L
+                    cost_per_kg = (
+                        total_cost / total_quantity_kg if total_quantity_kg > 0 else 0.0
+                    )
+                    cost_per_l = (
+                        total_cost / total_quantity_l if total_quantity_l > 0 else 0.0
+                    )
+
+                    # Get yield_factor from formula
+                    yield_factor = formula.get("yield_factor", 1.0)
+                    if yield_factor is None:
+                        yield_factor = 1.0
+                    try:
+                        yield_factor = float(yield_factor)
+                    except (ValueError, TypeError):
+                        yield_factor = 1.0
 
                     assembly_data_new.append(
                         {
-                            "formula_id": formula.get("id"),
-                            "version": formula.get("version", 1),
-                            "formula_code": formula.get("formula_code", ""),
-                            "formula_name": formula.get("formula_name", ""),
-                            "sequence": 1,
-                            "ratio": "1:1",
-                            "yield_factor": "1.0",
+                            "formula_id": str(formula.get("id", "")),
+                            "version": int(formula.get("version", 1)),
+                            "formula_code": str(formula.get("formula_code", "")),
+                            "formula_name": str(formula.get("formula_name", "")),
+                            "yield_factor": round(yield_factor, 2),
                             "is_primary": "✓" if formula.get("is_active") else "",
                             "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
-                            "lines_count": lines_count,
+                            "cost_per_kg": round(cost_per_kg, 2),
+                            "cost_per_l": round(cost_per_l, 2),
+                            "lines_count": int(lines_count),
                         }
                     )
 
@@ -2104,25 +4168,99 @@ def register_product_callbacks(app, make_api_request):
 
             if isinstance(formulas_response, list):
                 assembly_data_new = []
+                # Get parent product density for L calculations
+                parent_density = 0.0
+                try:
+                    parent_resp = make_api_request("GET", f"/products/{product_id}")
+                    if isinstance(parent_resp, dict) and "error" not in parent_resp:
+                        parent_density = float(
+                            parent_resp.get("density_kg_per_l", 0) or 0
+                        )
+                except Exception:
+                    pass
+
                 for formula in formulas_response:
-                    lines_count = len(formula.get("lines", []))
+                    lines_list = formula.get("lines", [])
+                    if not isinstance(lines_list, list):
+                        lines_list = []
+                    lines_count = len(lines_list)
+
+                    # Calculate total cost and quantities from lines
                     total_cost = 0.0
-                    for line in formula.get("lines", []):
-                        qty = line.get("quantity_kg", 0.0) or 0.0
-                        total_cost += qty
+                    total_quantity_kg = 0.0
+                    for line in lines_list:
+                        if isinstance(line, dict):
+                            qty_kg = float(line.get("quantity_kg", 0.0) or 0.0)
+                            unit_cost = line.get("unit_cost") or 0.0
+                            if not unit_cost:
+                                product_id_line = line.get("raw_material_id")
+                                if product_id_line:
+                                    try:
+                                        prod_resp = make_api_request(
+                                            "GET", f"/products/{product_id_line}"
+                                        )
+                                        if (
+                                            isinstance(prod_resp, dict)
+                                            and "error" not in prod_resp
+                                        ):
+                                            # Preserve 4 decimal places
+                                            cost_val = (
+                                                prod_resp.get("usage_cost_ex_gst")
+                                                or prod_resp.get("purchase_cost_ex_gst")
+                                                or 0
+                                            )
+                                            if cost_val:
+                                                try:
+                                                    unit_cost = round(
+                                                        float(cost_val), 4
+                                                    )
+                                                except (ValueError, TypeError):
+                                                    unit_cost = 0.0
+                                            else:
+                                                unit_cost = 0.0
+                                    except (ValueError, KeyError, TypeError):
+                                        pass
+                            total_cost += (
+                                qty_kg * float(unit_cost) if unit_cost else 0.0
+                            )
+                            total_quantity_kg += qty_kg
+
+                    # Calculate quantity in liters if density available
+                    total_quantity_l = (
+                        total_quantity_kg / parent_density
+                        if parent_density > 0
+                        else 0.0
+                    )
+
+                    # Calculate cost per kg and cost per L
+                    cost_per_kg = (
+                        total_cost / total_quantity_kg if total_quantity_kg > 0 else 0.0
+                    )
+                    cost_per_l = (
+                        total_cost / total_quantity_l if total_quantity_l > 0 else 0.0
+                    )
+
+                    # Get yield_factor from formula
+                    yield_factor = formula.get("yield_factor", 1.0)
+                    if yield_factor is None:
+                        yield_factor = 1.0
+                    try:
+                        yield_factor = float(yield_factor)
+                    except (ValueError, TypeError):
+                        yield_factor = 1.0
 
                     assembly_data_new.append(
                         {
-                            "formula_id": formula.get("id"),
-                            "version": formula.get("version", 1),
-                            "formula_code": formula.get("formula_code", ""),
-                            "formula_name": formula.get("formula_name", ""),
-                            "sequence": 1,
-                            "ratio": "1:1",
-                            "yield_factor": "1.0",
+                            "formula_id": str(formula.get("id", "")),
+                            "version": int(formula.get("version", 1)),
+                            "formula_code": str(formula.get("formula_code", "")),
+                            "formula_name": str(formula.get("formula_name", "")),
+                            "yield_factor": round(yield_factor, 2),
                             "is_primary": "✓" if formula.get("is_active") else "",
                             "cost": f"${total_cost:.2f}" if total_cost > 0 else "-",
-                            "lines_count": lines_count,
+                            "cost_per_kg": round(cost_per_kg, 2),
+                            "cost_per_l": round(cost_per_l, 2),
+                            "lines_count": int(lines_count),
                         }
                     )
 
@@ -2339,11 +4477,20 @@ def register_product_callbacks(app, make_api_request):
                     if isinstance(product_resp, dict) and "error" not in product_resp:
                         product_sku = product_resp.get("sku", "")
                         product_name = product_resp.get("name", "")
-                        unit_cost = float(
-                            product_resp.get("usage_cost_ex_gst", 0)
-                            or product_resp.get("purchase_cost_ex_gst", 0)
+                        # Preserve 4 decimal places
+                        # Use inc_gst costs for line cost calculation
+                        cost_val = (
+                            product_resp.get("usage_cost_inc_gst")
+                            or product_resp.get("purchase_cost_inc_gst")
                             or 0
                         )
+                        if cost_val:
+                            try:
+                                unit_cost = round(float(cost_val), 4)
+                            except (ValueError, TypeError):
+                                unit_cost = 0.0
+                        else:
+                            unit_cost = 0.0
                         density = float(product_resp.get("density_kg_per_l", 0) or 0)
                 except Exception:
                     pass
@@ -2383,8 +4530,8 @@ def register_product_callbacks(app, make_api_request):
                 "unit": unit or "kg",
                 "quantity_kg": round(quantity_kg, 3),
                 "quantity_l": round(quantity_l, 3),
-                "unit_cost": round(unit_cost, 2),
-                "line_cost": round(line_cost, 2),
+                "unit_cost": round(unit_cost, 4),
+                "line_cost": round(line_cost, 4),
                 "notes": notes or "",
             }
 
@@ -2510,10 +4657,13 @@ def register_product_callbacks(app, make_api_request):
                         "product_sku": product.get("sku", ""),
                         "product_name": product.get("name", ""),
                         "unit": base_unit,
-                        "unit_cost": float(
-                            product.get("usage_cost_ex_gst", 0)
-                            or product.get("purchase_cost_ex_gst", 0)
-                            or 0
+                        "unit_cost": round(
+                            float(
+                                product.get("usage_cost_inc_gst", 0)
+                                or product.get("purchase_cost_inc_gst", 0)
+                                or 0
+                            ),
+                            4,
                         ),
                     }
 
@@ -2620,9 +4770,10 @@ def register_product_callbacks(app, make_api_request):
             quantity = float(line.get("quantity", 0.0) or 0.0)
             unit = line.get("unit", "kg")
 
-            # Get product density if needed
+            # Get product density and usage unit if needed
             density = 0.0
-            unit_cost = float(line.get("unit_cost", 0.0) or 0.0)
+            product_usage_unit = None
+            product_usage_cost = 0.0
 
             if product_id:
                 try:
@@ -2639,13 +4790,28 @@ def register_product_callbacks(app, make_api_request):
                             density = float(density_val)
                         except (ValueError, TypeError):
                             density = 0.0
-                        if unit_cost == 0:
-                            # Get cost from product - prefer usage_cost, then purchase_cost
-                            unit_cost = float(
-                                product_response.get("usage_cost_ex_gst", 0)
-                                or product_response.get("purchase_cost_ex_gst", 0)
-                                or 0
-                            )
+
+                        # Get product's usage_unit (the unit that usage_cost is per)
+                        product_usage_unit = (
+                            product_response.get("usage_unit", "").upper()
+                            if product_response.get("usage_unit")
+                            else None
+                        )
+
+                        # Always get cost from product - prefer usage_cost_inc_gst, then purchase_cost_inc_gst
+                        # This cost is per product_usage_unit (e.g., per gram, per kg, per L)
+                        cost_val = (
+                            product_response.get("usage_cost_inc_gst")
+                            or product_response.get("purchase_cost_inc_gst")
+                            or 0
+                        )
+                        if cost_val:
+                            try:
+                                product_usage_cost = round(float(cost_val), 4)
+                            except (ValueError, TypeError):
+                                product_usage_cost = 0.0
+                        else:
+                            product_usage_cost = 0.0
                 except (ValueError, KeyError, TypeError):
                     pass
 
@@ -2655,14 +4821,36 @@ def register_product_callbacks(app, make_api_request):
             except (ValueError, TypeError):
                 density = 0.0
 
-            if unit.upper() in ["L", "LT", "LTR", "LITER", "LITRE"]:
+            # Convert quantity to kg and L based on unit
+            unit_upper = unit.upper() if unit else "KG"
+
+            if unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                # Liters to kg (using density) and L (no conversion)
                 if density > 0:
                     quantity_kg = quantity * density
                     quantity_l = quantity
                 else:
                     quantity_kg = quantity  # Fallback - treat L as kg if no density
-                    quantity_l = 0.0
-            elif unit.upper() in ["EA", "EACH", "UNIT", "UNITS"]:
+                    quantity_l = quantity
+            elif unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                # Milliliters to kg and L
+                quantity_l = quantity / 1000.0  # Convert mL to L
+                if density > 0:
+                    quantity_kg = quantity_l * density  # Convert L to kg using density
+                else:
+                    # Assume 1 mL = 1 g (water-like density) if no density
+                    quantity_kg = quantity / 1000.0  # Convert mL to kg (via g)
+            elif unit_upper in ["G", "GRAM", "GRAMS"]:
+                # Grams to kg
+                quantity_kg = quantity / 1000.0
+                # Convert kg to L using density
+                quantity_l = quantity_kg / density if density > 0 else 0.0
+            elif unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                # Kilograms - no conversion needed
+                quantity_kg = quantity
+                # Convert kg to L using density
+                quantity_l = quantity_kg / density if density > 0 else 0.0
+            elif unit_upper in ["EA", "EACH", "UNIT", "UNITS"]:
                 # For "each" units, check if product has weight_kg
                 if product_id:
                     try:
@@ -2692,34 +4880,366 @@ def register_product_callbacks(app, make_api_request):
                     quantity_kg = 0.0
                     quantity_l = 0.0
             else:
-                # Assume kg for other units
+                # Default: assume kg for unknown units
                 quantity_kg = quantity
                 quantity_l = quantity_kg / density if density > 0 else 0.0
 
-            # Calculate line cost using actual unit cost
-            line_cost = (
-                quantity_kg * unit_cost if unit_cost > 0 and quantity_kg > 0 else 0.0
-            )
+            # Calculate line cost
+            # Convert assembly line quantity to product's usage_unit, then multiply by cost per usage_unit
+            line_cost = 0.0
+            if product_usage_cost > 0 and product_usage_unit:
+                # Convert assembly line quantity to product's usage_unit
+                quantity_in_usage_unit = 0.0
+
+                # Convert assembly line quantity (in its unit) to product's usage_unit
+                assembly_unit_upper = unit.upper() if unit else "KG"
+                product_usage_unit_upper = product_usage_unit.upper()
+
+                # If units match, no conversion needed
+                if assembly_unit_upper == product_usage_unit_upper:
+                    quantity_in_usage_unit = quantity
+                # Mass conversions
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    quantity_in_usage_unit = quantity
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    quantity_in_usage_unit = quantity / 1000.0  # g to kg
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    quantity_in_usage_unit = quantity * 1000.0  # kg to g
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    quantity_in_usage_unit = quantity
+                # Volume conversions
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    quantity_in_usage_unit = quantity
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    quantity_in_usage_unit = quantity / 1000.0  # mL to L
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    quantity_in_usage_unit = quantity * 1000.0  # L to mL
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    quantity_in_usage_unit = quantity
+                # Volume to mass (using density) - if assembly is volume and product usage_unit is mass
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    if density > 0:
+                        quantity_in_usage_unit = quantity * density  # L to kg
+                    else:
+                        quantity_in_usage_unit = quantity  # Fallback
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    if density > 0:
+                        quantity_in_usage_unit = quantity * density * 1000.0  # L to g
+                    else:
+                        quantity_in_usage_unit = quantity * 1000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    if density > 0:
+                        quantity_in_usage_unit = (
+                            quantity / 1000.0
+                        ) * density  # mL to L to kg
+                    else:
+                        quantity_in_usage_unit = quantity / 1000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    if density > 0:
+                        quantity_in_usage_unit = (
+                            (quantity / 1000.0) * density * 1000.0
+                        )  # mL to L to kg to g
+                    else:
+                        quantity_in_usage_unit = (
+                            quantity  # Fallback (assume 1 mL = 1 g)
+                        )
+                # Mass to volume (using density) - if assembly is mass and product usage_unit is volume
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    if density > 0:
+                        quantity_in_usage_unit = quantity / density  # kg to L
+                    else:
+                        quantity_in_usage_unit = 0.0
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    if density > 0:
+                        quantity_in_usage_unit = (
+                            quantity / 1000.0
+                        ) / density  # g to kg to L
+                    else:
+                        quantity_in_usage_unit = 0.0
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    if density > 0:
+                        quantity_in_usage_unit = (
+                            (quantity / 1000.0) / density
+                        ) * 1000.0  # g to kg to L to mL
+                    else:
+                        quantity_in_usage_unit = (
+                            quantity  # Fallback (assume 1 g = 1 mL)
+                        )
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    if density > 0:
+                        quantity_in_usage_unit = (
+                            quantity / density
+                        ) * 1000.0  # kg to L to mL
+                    else:
+                        quantity_in_usage_unit = 0.0
+                else:
+                    # Fallback: convert assembly quantity to kg, then try to convert to usage_unit
+                    # If we can't determine, use quantity_kg and assume usage_unit is kg
+                    if product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                        quantity_in_usage_unit = quantity_kg
+                    elif product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                        quantity_in_usage_unit = quantity_kg * 1000.0
+                    elif product_usage_unit_upper in [
+                        "L",
+                        "LT",
+                        "LTR",
+                        "LITER",
+                        "LITRE",
+                    ]:
+                        quantity_in_usage_unit = (
+                            quantity_l
+                            if quantity_l > 0
+                            else quantity_kg / density
+                            if density > 0
+                            else 0.0
+                        )
+                    elif product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                        quantity_in_usage_unit = (
+                            quantity_l * 1000.0
+                            if quantity_l > 0
+                            else (quantity_kg / density * 1000.0)
+                            if density > 0
+                            else 0.0
+                        )
+                    else:
+                        quantity_in_usage_unit = quantity_kg  # Default fallback
+
+                # Calculate line cost: quantity in usage_unit × cost per usage_unit
+                line_cost = quantity_in_usage_unit * product_usage_cost
+            elif product_usage_cost > 0:
+                # If no usage_unit specified, assume it's per kg (legacy behavior)
+                line_cost = quantity_kg * product_usage_cost
+            else:
+                line_cost = 0.0
             total_cost += line_cost
             total_quantity_kg += quantity_kg
             total_quantity_l += quantity_l
 
-            # Check if this is the primary line
-            is_primary = line.get("is_primary_bool", False)
-            if is_primary:
-                pass
+            # Calculate unit_cost for display (cost per assembly line unit)
+            # Convert product_usage_cost from product's usage_unit to assembly line's unit
+            display_unit_cost = 0.0
+            if product_usage_cost > 0 and product_usage_unit:
+                assembly_unit_upper = unit.upper() if unit else "KG"
+                product_usage_unit_upper = product_usage_unit.upper()
 
-            # Update primary button display
-            primary_button = "✓" if is_primary else "[Set Primary]"
+                # If units match, no conversion needed
+                if assembly_unit_upper == product_usage_unit_upper:
+                    display_unit_cost = product_usage_cost
+                # Mass conversions
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    display_unit_cost = product_usage_cost / 1000.0  # $/kg to $/g
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    display_unit_cost = product_usage_cost * 1000.0  # $/g to $/kg
+                # Volume conversions
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    display_unit_cost = product_usage_cost / 1000.0  # $/L to $/mL
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    display_unit_cost = product_usage_cost * 1000.0  # $/mL to $/L
+                # Volume to mass (using density)
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    if density > 0:
+                        display_unit_cost = product_usage_cost / density  # $/kg to $/L
+                    else:
+                        display_unit_cost = product_usage_cost  # Fallback
+                elif assembly_unit_upper in [
+                    "L",
+                    "LT",
+                    "LTR",
+                    "LITER",
+                    "LITRE",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    if density > 0:
+                        display_unit_cost = product_usage_cost / (
+                            density * 1000.0
+                        )  # $/g to $/L
+                    else:
+                        display_unit_cost = product_usage_cost / 1000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    if density > 0:
+                        display_unit_cost = (
+                            product_usage_cost / density
+                        ) / 1000.0  # $/kg to $/mL
+                    else:
+                        display_unit_cost = product_usage_cost / 1000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "ML",
+                    "MILLILITER",
+                    "MILLILITRE",
+                ] and product_usage_unit_upper in ["G", "GRAM", "GRAMS"]:
+                    if density > 0:
+                        display_unit_cost = (
+                            product_usage_cost / (density * 1000.0)
+                        ) / 1000.0  # $/g to $/mL
+                    else:
+                        display_unit_cost = product_usage_cost / 1000000.0  # Fallback
+                # Mass to volume (using density)
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    if density > 0:
+                        display_unit_cost = product_usage_cost * density  # $/L to $/kg
+                    else:
+                        display_unit_cost = product_usage_cost  # Fallback
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
+                    if density > 0:
+                        display_unit_cost = (
+                            product_usage_cost * density
+                        ) * 1000.0  # $/L to $/g
+                    else:
+                        display_unit_cost = product_usage_cost * 1000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "G",
+                    "GRAM",
+                    "GRAMS",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    if density > 0:
+                        display_unit_cost = (
+                            (product_usage_cost * density) * 1000.0
+                        ) * 1000.0  # $/mL to $/g
+                    else:
+                        display_unit_cost = product_usage_cost * 1000000.0  # Fallback
+                elif assembly_unit_upper in [
+                    "KG",
+                    "KILOGRAM",
+                    "KILOGRAMS",
+                ] and product_usage_unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
+                    if density > 0:
+                        display_unit_cost = (
+                            product_usage_cost * density
+                        ) * 1000.0  # $/mL to $/kg
+                    else:
+                        display_unit_cost = product_usage_cost * 1000.0  # Fallback
+                else:
+                    # Fallback: calculate from line_cost if available
+                    if quantity > 0 and line_cost > 0:
+                        display_unit_cost = line_cost / quantity
+                    else:
+                        display_unit_cost = product_usage_cost  # Default fallback
+            elif product_usage_cost > 0:
+                # If no usage_unit, assume it's per kg and convert to assembly unit
+                if unit.upper() in ["G", "GRAM", "GRAMS"]:
+                    display_unit_cost = product_usage_cost / 1000.0
+                elif unit.upper() in ["KG", "KILOGRAM", "KILOGRAMS"]:
+                    display_unit_cost = product_usage_cost
+                else:
+                    display_unit_cost = product_usage_cost
 
             updated_line = {
                 **line,
                 "quantity_kg": round(quantity_kg, 3),
                 "quantity_l": round(quantity_l, 3),
-                "unit_cost": round(unit_cost, 2),
-                "line_cost": round(line_cost, 2),
-                "is_primary": primary_button,
+                "unit_cost": round(display_unit_cost, 4),
+                "line_cost": round(line_cost, 4),
             }
+            # Remove is_primary from updated_line if it exists
+            updated_line.pop("is_primary", None)
+            updated_line.pop("is_primary_bool", None)
             updated_data.append(updated_line)
 
         # Calculate summary values
@@ -2733,16 +5253,16 @@ def register_product_callbacks(app, make_api_request):
                 "total_cost": round(total_cost, 2),
                 "assembly_mass_kg": round(total_quantity_kg, 3),
                 "assembly_volume_l": round(total_quantity_l, 3),
-                "cost_per_kg": round(cost_per_kg, 2),
-                "cost_per_l": round(cost_per_l, 2),
+                "cost_per_kg": round(cost_per_kg, 4),
+                "cost_per_l": round(cost_per_l, 4),
             },
             {
                 "type": "normalised",
                 "total_cost": round(total_cost, 2),
                 "assembly_mass_kg": round(total_quantity_kg, 3),
                 "assembly_volume_l": round(total_quantity_l, 3),
-                "cost_per_kg": round(cost_per_kg, 2),
-                "cost_per_l": round(cost_per_l, 2),
+                "cost_per_kg": round(cost_per_kg, 4),
+                "cost_per_l": round(cost_per_l, 4),
             },
         ]
 
@@ -2751,8 +5271,8 @@ def register_product_callbacks(app, make_api_request):
             f"${total_cost:.2f}",
             f"{total_quantity_kg:.3f}",
             f"{total_quantity_l:.3f}",
-            f"${cost_per_kg:.2f}",
-            f"${cost_per_l:.2f}",
+            f"${cost_per_kg:.4f}",
+            f"${cost_per_l:.4f}",
             summary_data,
         )
 

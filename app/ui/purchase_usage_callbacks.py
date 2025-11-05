@@ -13,32 +13,34 @@ def register_purchase_usage_callbacks(app, make_api_request):
         Output("product-usage-cost", "value", allow_duplicate=True),
         [
             Input("product-purchase-quantity", "value"),
-            Input("product-purchase-cost", "value"),
+            Input("product-purchase-cost-ex-gst", "value"),
             Input("product-usage-quantity", "value"),
         ],
         [State("product-usage-cost", "value")],
         prevent_initial_call=True,
     )
     def calculate_usage_cost(
-        purchase_quantity, purchase_cost, usage_quantity, current_cost
+        purchase_quantity, purchase_cost_ex_gst, usage_quantity, current_cost
     ):
         """Calculate usage cost from purchase data when quantities change."""
         ctx = dash.callback_context
         if not ctx.triggered:
             raise PreventUpdate
 
-        # Calculate usage cost: (usage_quantity / purchase_quantity) * purchase_cost
+        # Calculate usage cost: (usage_quantity / purchase_quantity) * purchase_cost_ex_gst
         usage_cost = current_cost  # Preserve existing cost if calculation fails
         if (
             purchase_quantity is not None
-            and purchase_cost is not None
+            and purchase_cost_ex_gst is not None
             and usage_quantity is not None
         ):
             try:
                 purchase_qty = (
                     float(purchase_quantity) if purchase_quantity != "" else 0
                 )
-                purchase_cost_val = float(purchase_cost) if purchase_cost != "" else 0
+                purchase_cost_val = (
+                    float(purchase_cost_ex_gst) if purchase_cost_ex_gst != "" else 0
+                )
                 usage_qty = float(usage_quantity) if usage_quantity != "" else 0
 
                 if purchase_qty > 0 and usage_qty > 0:

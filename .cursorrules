@@ -1,134 +1,318 @@
 
-# Cursor Rules for TPManuf Modernisation
-# Purpose: Guide Cursor's code generation, refactors, and task execution for this repository.
-# Scope: Entire repo. Treat this file as authoritative unless brief.md explicitly overrides.
 
-[goals]
-- Migrate QuickBASIC TPManuf to Python 3.12 with FastAPI (+ Dash UI) and SQLAlchemy/Alembic.
-- Preserve legacy behaviour while improving data integrity, observability, and testability.
-- Achieve text-parity with legacy print artifacts (.PRN batch tickets, .INS invoices) via golden tests.
-- Store quantities canonically in kg; handle L ⇄ kg via density; store ABV as % (v/v).
-- Everything reproducible with: `make setup`, `make migrate`, `make run`.
-- Keep CI green (lint + tests). Golden tests may be temporarily xfail only until implemented, but remove xfail once renderers are ready.
+🧱 Cursor Rules — Alembic & SQLite Safety
 
-[tech_stack]
-- Python 3.12, FastAPI (API), Dash (UI), SQLAlchemy + Alembic (DB), Pydantic, Jinja2 (reports)
-- Dev DB: SQLite; Prod: Postgres
-- Tests: pytest
-- Tooling: ruff/black, pre-commit, GitHub Actions
+Purpose: Prevent migrations that break on SQLite (no ALTER ... ADD CONSTRAINT, limited type changes, etc.), enforce idempotency, and keep alembic check clean.
 
-[project_structure]
-- app/api: FastAPI routers
-- app/ui: Dash app (modular pages]
-- app/services: application services (stateless where possible)
-- app/domain: dataclasses/pydantic models, rules (units, FIFO, conversions)
-- app/adapters: db (SQLAlchemy session/models), legacy_io (fixed-width parsers, YAML specs)
-- app/reports: text renderers (batch tickets, invoices) later PDF
-- db/alembic: migrations
-- scripts: audit, migration, dev run
-- tests/golden: golden tests for print artifacts and other golden outputs
-- fixtures/print: legacy .PRN and .INS files
-- docs/legacy: mapping CSV and notes
-- brief.md: architectural source of truth (authoritative schema & requirements)
+Golden Rules (follow for every migration)
 
-[authoritative_sources]
-- Schema & behaviour: brief.md (v1.1)
-- Units/ABV rules: brief.md §5
-- Golden test fixtures: fixtures/print/*
-- Mapping specs produced by scripts/legacy_audit.py
+Always batch mode for SQLite
 
-[general_guidelines]
-- Prefer pure functions for domain rules; inject IO at edges.
-- Keep service functions small and composable; avoid global state.
-- Use dependency injection for DB sessions in FastAPI.
-- Validate inputs with Pydantic models; return typed responses.
-- Add logging with structured fields: ts, level, user, request_id, entity, entity_id.
-- Rounding: quantities 3 dp, money 2 dp (bankers’ rounding at commit).
-- Never silently coerce units—explicit conversions only.
-- Write idempotent migrations; use natural keys to upsert during legacy import.
-- Preserve legacy codes (SKU, batch, invoice) as dedicated columns.
+In db/alembic/env.py ensure:
 
-[database_rules]
-- SQLAlchemy models mirror DDL implied by brief.md—products, variants, formulas/lines, inventory_lot/txn, work_order/line, batch/component, qc_result, supplier/po/po_line, customer/so/so_line, invoice/invoice_line, price_list/price_list_item, customer_price, pack_unit, pack_conversion.
-- Primary keys: UUID (v7 if available; otherwise uuid4).
-- Unique constraints and FK relationships as in brief.
-- Alembic migrations must be generated and upgraded in CI.
-- Indexes for hot paths: product(sku), inventory_lot(product_id, lot_code), inventory_txn(lot_id, ts), work_order(code), batch(work_order_id, code), invoice(code), pricing lookups.
+context.configure(
+    connection=connection,
+    target_metadata=target_metadata,
+    render_as_batch=True,
+    compare_type=True,
+    compare_server_default=True,
+)
 
-[units_and_conversions]
-- Canonical quantity storage is kg.
-- For inputs in L, convert to kg using product density (kg/L). Persist the density on product records where applicable.
-- ABV stored as % v/v; when mass is needed, compute via density of the solution or product density. Keep both ABV and mass in DB.
-- Provide helper in domain.rules: `to_kg(qty, uom, density)` and `to_liters(qty_kg, density)`.
 
-[fifo_and_costing]
-- Implement FIFO issue logic in domain.rules with tests (property-based where feasible).
-- Enforce non-negative lots unless `override=True` (role: Admin), with audit note.
+At the top of each migration’s upgrade() and downgrade():
 
-[pricing_rules]
-- Resolution order: customer_price → price_list_item → error.
-- Prices are ex-GST; apply tax_rate per line (default 10% unless overridden).
-- APIs: /pricing/resolve to return unit_price_ex_tax, tax_rate, and resolution source.
+from alembic import op
+import sqlalchemy as sa
+bind = op.get_bind()
+if bind.dialect.name == "sqlite":
+    bind.execute(sa.text("PRAGMA foreign_keys=ON"))
 
-[packaging_rules]
-- Pack units: CAN, 4PK, CTN seeded.
-- Conversions are multiplicative and product-specific where required (pack_conversion table).
-- Provide service `packing.convert(product_id, qty, from_unit, to_unit)` with error on missing path.
 
-[invoicing_rules]
-- Invoice lines reflect shipped quantities (or SO confirmation as interim).
-- /invoices/{id}/print?format=text|pdf returns text (for golden tests) and later PDF.
-- Generate codes like INV-######## preserving legacy numbering where available.
+Use batch_alter_table(..., recreate="always") for ANY change to existing tables
 
-[reports_and_golden_tests]
-- Implement text renderers first to stabilise content for golden comparisons.
-- Use tests/golden/print_normalizer.py to normalize legacy and generated outputs.
-- Replace pytest xfail markers with passing assertions once implemented.
-- Keep formatting-driven differences out of business logic (separate template from calc).
+Never call op.add_column/op.drop_column/op.create_foreign_key/op.drop_constraint directly on SQLite tables.
 
-[api_guidelines]
-- Use RESTful routes; return 201 on create, 404 for missing ids, 409 for conflicts.
-- Validation errors return 422 with field-wise messages.
-- Include pagination for list endpoints; support `query` filters for name/code fields.
-- Provide OpenAPI docs at /docs.
+Wrap changes like:
 
-[ui_guidelines]
-- Dash pages for Products/Formulas, Inventory, WOs/Batches(+QC), Purchasing, Sales, Pricing, Packaging, Invoices, Reports.
-- Keep server callbacks thin; call services for logic.
+with op.batch_alter_table("table_name", recreate="always") as b:
+    # add/drop columns, change nullability, types, defaults
+    # add inline FKs via new column definitions only when recreating table
 
-[error_handling]
-- Throw explicit domain exceptions: ValidationError, NotFound, ConflictError, RuleViolation, IOError.
-- Retry transient DB errors (exponential backoff <= 3 attempts). Never retry domain violations.
 
-[security]
-- Local JWT auth with roles: Operator, Planner, Admin.
-- Protect stock adjustments and overrides behind Admin.
-- Never log secrets; scrub PII where applicable.
+Create FKs only when creating a table or during batch recreation
 
-[developer_workflow]
-- Before generating code, read brief.md and this file.
-- When adding features: write/extend tests first (especially for domain.rules).
-- When making schema changes: create Alembic migration; keep models and migrations in sync; update brief.md if contract changes.
+SQLite can’t ALTER TABLE ... ADD CONSTRAINT.
 
-[tasks_for_cursor_initial]
-- Read brief.md, generate SQLAlchemy models + initial Alembic migration for all tables.
-- Implement domain.rules units conversions and FIFO with tests.
-- Implement services: pricing, packing, invoicing (M2.5 scope).
-- Implement text renderers for batch tickets and invoices; make golden tests pass; then remove xfail marks.
-- Wire minimal FastAPI routers for the above services and a simple Dash placeholder page for navigation.
+For new tables, define FKs with sa.ForeignKey or sa.ForeignKeyConstraint inline in op.create_table(...).
 
-[commit_style]
-- Commit messages: conventional commits (feat:, fix:, refactor:, test:, docs:, chore:).
-- Include brief rationale in body; reference modules/files touched.
-- No generated lockfiles unless using poetry/uv explicitly.
+For existing tables, add the FK during batch_alter_table(..., recreate="always").
 
-[done_definition]
-- All tests pass locally and in CI.
-- Golden tests pass for both fixtures.
-- Lint/format clean (ruff/black).
-- `make setup && make migrate && make run` works on a clean checkout.
+Never rely on implicit ALTERs—recreate instead
+
+For type changes, nullability flips, default changes, or unique constraints: use batch recreate.
+
+Do not attempt primary key changes on SQLite; redesign instead.
+
+Guard every create/drop with existence checks
+
+Prevent duplicate column/index/constraint errors:
+
+bind = op.get_bind()
+insp = sa.inspect(bind)
+cols = [c["name"] for c in insp.get_columns("table_name")]
+if "new_col" not in cols:
+    with op.batch_alter_table("table_name", recreate="always") as b:
+        b.add_column(sa.Column("new_col", sa.String(50)))
+# Index guard
+existing_idx = [ix["name"] for ix in insp.get_indexes("table_name")]
+if "ix_table_col" not in existing_idx:
+    op.create_index("ix_table_col", "table_name", ["col"])
+
+
+Name constraints & indexes consistently
+
+Index: ix_<table>_<col>[__<col2>] (use op.f() if you prefer)
+
+Unique: uq_<table>_<cols>
+
+FK: fk_<table>__<localcol>__<reftable>
+
+PK: pk_<table>
+
+Keep names stable across recreations.
+
+Prefer portable column types
+
+Use String, Integer, Numeric(precision=12, scale=4), Boolean, Date, DateTime, Text.
+
+Avoid dialect-specific types and Enum (use String + check constraint if needed).
+
+Server defaults & timestamps
+
+If you need defaults, set Python-side in the model or set SQL default only during batch recreate.
+
+Keep created_at/updated_at as DateTime(); update updated_at in app layer.
+
+Never mix multiple risky ops in one statement
+
+Don’t add a column and set an FK on it with a separate create_foreign_key.
+
+Instead, add the column and FK together inside a single batch_alter_table(..., recreate="always").
+
+Idempotent removes
+
+Dropping indexes/columns/tables must not error if already gone (wrap with inspect/try-except).
+
+Run gates before commit
+
+Must pass:
+
+alembic upgrade head
+
+alembic check → “no new upgrade operations”
+
+If alembic check shows drift, update the migration (not the model) until it’s clean.
+
+Downgrades
+
+Provide a logical reverse where feasible (batch recreate again). If not reasonably safe, explicitly document that downgrade is a no-op and explain why.
+
+UUIDs & IDs
+
+Use String(36) with Python-side default (uuid4) for id columns; don’t retrofit PK type changes on SQLite.
+
+Don’t drop data silently
+
+When removing a column/table, document migration notes; if data migration is needed, do it explicitly before dropping.
+
+Migration messages
+
+Migration filenames must describe scope, e.g.
+work_orders_v2_cost_rates_batch_seq_type_fixes.
+
+Pre-PR Checklist (Cursor must enforce)
+
+Database Migrations:
+ env.py has render_as_batch=True, compare_type=True, compare_server_default=True.
+
+ Every existing-table change is within batch_alter_table(..., recreate="always").
+
+ New tables define FKs inline; existing tables add FKs only during batch recreate.
+
+ All create/drop actions are guarded (inspect/try/except) to be idempotent.
+
+ Constraint & index names match the naming scheme.
+
+ Types are portable (no dialect-only or Enum).
+
+ alembic upgrade head runs clean on SQLite.
+
+ alembic check reports no new upgrade operations.
+
+ Downgrade provided or documented as intentionally limited.
+
+ Commit message: "Migrations: <short scope> (SQLite batch-safe)".
+
+Dash Callbacks:
+ All Input/Output/State component IDs in callbacks exist in layout files (verify with grep).
+
+ No duplicate Outputs without allow_duplicate=True.
+
+ All component IDs match exactly (case-sensitive) between callbacks and layout.
+
+ Conditional components (modals, tabs) have appropriate prevent_initial_call settings.
+
+Code Snippets Cursor Should Reuse
+
+Batch alter helper:
+
+def has_column(insp, table, col):
+    return any(c["name"] == col for c in insp.get_columns(table))
+
+def has_index(insp, table, name):
+    return any(ix["name"] == name for ix in insp.get_indexes(table))
+
+
+Safe index create:
+
+bind = op.get_bind()
+insp = sa.inspect(bind)
+if not has_index(insp, "inventory_movements", "ix_movements_product_ts"):
+    op.create_index(
+        "ix_movements_product_ts",
+        "inventory_movements",
+        ["product_id", "timestamp"]
+    )
+
+
+Safe drop table:
+
+if "work_order_items" in sa.inspect(op.get_bind()).get_table_names():
+    for ix in ("ix_wo_items_batch_code","ix_wo_items_product_id","ix_wo_items_work_order_id"):
+        try: op.drop_index(ix, table_name="work_order_items")
+        except Exception: pass
+    op.drop_table("work_order_items")
 
 [anti_goals]
 - Do not generate PDF renderers before text renderers are stable and golden tests pass.
 - Do not introduce additional frameworks (ORMs, API layers) beyond the agreed stack without updating brief.md.
 - Do not bypass migrations by creating tables ad-hoc.
+
+[alembic_sqlite_safety]
+Purpose: Ensure all database migrations run safely with SQLite and do not crash Cursor agents during automated operations such as alembic check, schema upgrades, or autogeneration.
+
+Core Principles:
+- SQLite has limited DDL support: No ALTER TABLE ADD CONSTRAINT, No ALTER TABLE ALTER COLUMN, Limited type change support.
+- Table recreation (batch_alter_table(recreate="always")) works safely.
+- All migrations must use Alembic's batch mode and idempotent guards.
+
+Safe Environment Configuration:
+- In db/alembic/env.py, context.configure() MUST include: render_as_batch=True, compare_type=True, compare_server_default=True.
+- At top of file or inside run_migrations_online() add: bind = connection; if bind.dialect.name == "sqlite": bind.execute(sa.text("PRAGMA foreign_keys=ON"))
+
+Migration Rules (MUST FOLLOW):
+1. Always use batch mode for existing tables:
+   - Wrap every schema change in: with op.batch_alter_table("table_name", recreate="always") as b: ...
+   - NEVER call op.add_column(), op.drop_column(), op.create_foreign_key() directly on SQLite tables.
+
+2. Only add foreign keys when creating or recreating tables:
+   - Define FKs inline in op.create_table().
+   - For existing tables, add them only inside batch_alter_table(recreate="always") block.
+
+3. Guard against duplicates:
+   - Before adding/dropping columns, constraints, or indexes, check existence:
+     bind = op.get_bind(); insp = sa.inspect(bind); cols = [c["name"] for c in insp.get_columns("table_name")]
+     if "new_col" not in cols: ... (then add)
+
+4. Use portable SQLAlchemy types:
+   - Allowed: Integer, String, Text, Numeric(precision=12, scale=4), Boolean, DateTime, Date.
+   - Avoid: Dialect-specific types (e.g. DOUBLE PRECISION), Enum (use String + check constraints instead).
+
+5. Always name constraints consistently:
+   - PK: pk_<table>, FK: fk_<table>__<localcol>__<reftable>, Index: ix_<table>_<col>, Unique: uq_<table>_<col>
+
+6. Make every migration idempotent:
+   - If an object (column, index, table) already exists, skip creating it instead of failing.
+
+7. Don't drop data silently:
+   - If data migration is required, make it explicit with op.execute().
+
+Cursor Agent Behaviour Rules:
+- MUST use python scripts/alembic_check_safe.py instead of raw alembic check.
+- MUST use scripts/run_migrations.ps1 (Windows) or scripts/run_migrations.sh (Unix) for upgrade + check.
+- MUST guard all schema modifications with inspector checks.
+- MUST always recreate tables via batch mode when altering columns or constraints.
+- MUST log output to tmp/alembic_drift.txt.
+- MUST report but not fail when drift is detected.
+- MUST NEVER run alembic check directly.
+- MUST NEVER add/drop foreign keys outside batch mode.
+- MUST NEVER modify column types without recreation.
+- MUST NEVER leave downgrades unimplemented or unsafe.
+- MUST NEVER use SQLite-unsupported DDL.
+
+Drift Handling Workflow:
+1. If tmp/alembic_drift.txt reports drift, run: alembic revision --autogenerate -m "sync models <scope>"
+2. Edit migration for SQLite safety (batch_alter_table(recreate="always")).
+3. Run: alembic upgrade head
+4. Re-run safe check: python scripts/alembic_check_safe.py
+5. Repeat until no new operations are detected.
+
+Safe Commands Reference:
+- Upgrade DB: alembic upgrade head
+- Check drift (safe): python scripts/alembic_check_safe.py
+- Full run (Cursor): scripts/run_migrations.ps1 (Windows) or scripts/run_migrations.sh (Unix)
+
+[dash_callback_validation]
+Purpose: Prevent Dash callback errors from referencing nonexistent component IDs, duplicate callbacks, and common callback patterns that cause runtime failures.
+
+Core Principles:
+- All component IDs referenced in callbacks must exist in the layout.
+- Output IDs should not be duplicated across callbacks without allow_duplicate=True.
+- Input/Output/State IDs must match exactly (case-sensitive) between layout and callbacks.
+
+Validation Rules (MUST FOLLOW):
+1. Verify Input/Output/State IDs exist in layout:
+   - After editing callback code, verify all component IDs in Input(), Output(), and State() exist in the corresponding layout files.
+   - Use grep to search for component IDs: `grep -r "id=\"component-id\"" app/ui/`
+   - Check for typos: component IDs are case-sensitive and must match exactly.
+
+2. Check for duplicate Outputs:
+   - If multiple callbacks update the same Output, all except one must use allow_duplicate=True.
+   - Example: `Output("my-component", "value", allow_duplicate=True)`
+
+3. Verify callback dependencies:
+   - Ensure Input components are rendered before callbacks are registered.
+   - Check that conditional components (e.g., in modals) have proper prevent_initial_call settings.
+
+4. Common callback errors to check:
+   - Typo in component ID: "product-name" vs "product-name" (typo)
+   - Missing component in layout but referenced in callback
+   - Component removed from layout but callback still references it
+   - Wrong property name: "value" vs "data" vs "children"
+
+Cursor Agent Behaviour Rules:
+- AFTER editing callback code, MUST verify all Input/Output/State IDs exist in layout files.
+- MUST use grep to search for component IDs: `grep -r "id=\"<component-id>\"" app/ui/`
+- MUST check for duplicate Outputs and add allow_duplicate=True where needed.
+- MUST verify callback Input/Output/State IDs match layout component IDs exactly (case-sensitive).
+- MUST check that conditional components (modals, tabs) have proper prevent_initial_call settings.
+- MUST NEVER commit callback code without verifying component IDs exist in layout.
+
+Validation Checklist (Run after editing callbacks):
+1. Extract all Input/Output/State IDs from modified callbacks.
+2. Search for each ID in layout files using grep.
+3. Verify exact match (case-sensitive, no typos).
+4. Check for duplicate Outputs - add allow_duplicate=True if needed.
+5. Verify prevent_initial_call is set appropriately for conditional components.
+
+Example Validation:
+```python
+# After editing this callback:
+@app.callback(
+    Output("product-pricing-table", "data"),
+    [Input("product-sku", "value")],  # ← Verify "product-sku" exists in layout
+)
+
+# Run: grep -r 'id="product-sku"' app/ui/
+# Must find the component definition in a layout file.
+```

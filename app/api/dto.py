@@ -77,12 +77,24 @@ class ProductCreate(BaseModel):
     distributorcde: Optional[str] = Field(None, max_length=1)
     # Raw Material specific fields
     purchase_unit_id: Optional[str] = None  # Purchase unit from units table
-    purchase_volume: Optional[Decimal] = Field(None, ge=0)
+    purchase_format_id: Optional[str] = (
+        None  # Purchase format from purchase_formats table
+    )
+    purchase_volume: Optional[Decimal] = Field(
+        None, ge=0
+    )  # DTO uses purchase_volume, model uses purchase_quantity
+    purchase_quantity: Optional[Decimal] = Field(
+        None, ge=0
+    )  # Purchase quantity (e.g., 25 kg bag)
+    purchase_cost: Optional[Decimal] = Field(
+        None, ge=0
+    )  # Total purchase cost (e.g., $175 for the bag)
     specific_gravity: Optional[Decimal] = Field(None, ge=0)
     vol_solid: Optional[Decimal] = Field(None, ge=0)
     solid_sg: Optional[Decimal] = Field(None, ge=0)
     wt_solid: Optional[Decimal] = Field(None, ge=0)
     usage_unit: Optional[str] = Field(None, max_length=2)
+    usage_quantity: Optional[Decimal] = Field(None, ge=0)  # Usage quantity (e.g., 1 g)
     usage_cost: Optional[Decimal] = Field(None, ge=0)
     restock_level: Optional[Decimal] = Field(None, ge=0)
     used_ytd: Optional[Decimal] = Field(None, ge=0)
@@ -164,12 +176,24 @@ class ProductUpdate(BaseModel):
     distributorcde: Optional[str] = Field(None, max_length=1)
     # Raw Material specific fields
     purchase_unit_id: Optional[str] = None  # Purchase unit from units table
-    purchase_volume: Optional[Decimal] = Field(None, ge=0)
+    purchase_format_id: Optional[str] = (
+        None  # Purchase format from purchase_formats table
+    )
+    purchase_volume: Optional[Decimal] = Field(
+        None, ge=0
+    )  # DTO uses purchase_volume, model uses purchase_quantity
+    purchase_quantity: Optional[Decimal] = Field(
+        None, ge=0
+    )  # Purchase quantity (e.g., 25 kg bag)
+    purchase_cost: Optional[Decimal] = Field(
+        None, ge=0
+    )  # Total purchase cost (e.g., $175 for the bag)
     specific_gravity: Optional[Decimal] = Field(None, ge=0)
     vol_solid: Optional[Decimal] = Field(None, ge=0)
     solid_sg: Optional[Decimal] = Field(None, ge=0)
     wt_solid: Optional[Decimal] = Field(None, ge=0)
     usage_unit: Optional[str] = Field(None, max_length=2)
+    usage_quantity: Optional[Decimal] = Field(None, ge=0)  # Usage quantity (e.g., 1 g)
     usage_cost: Optional[Decimal] = Field(None, ge=0)
     restock_level: Optional[Decimal] = Field(None, ge=0)
     used_ytd: Optional[Decimal] = Field(None, ge=0)
@@ -253,12 +277,15 @@ class ProductResponse(BaseModel):
     distributorcde: Optional[str]
     # Raw Material specific fields
     purchase_unit_id: Optional[str] = None
+    purchase_format_id: Optional[str] = None
     purchase_volume: Optional[Decimal] = None
+    purchase_quantity: Optional[Decimal] = None
     specific_gravity: Optional[Decimal] = None
     vol_solid: Optional[Decimal] = None
     solid_sg: Optional[Decimal] = None
     wt_solid: Optional[Decimal] = None
     usage_unit: Optional[str] = None
+    usage_quantity: Optional[Decimal] = None
     usage_cost: Optional[Decimal] = None
     restock_level: Optional[Decimal] = None
     used_ytd: Optional[Decimal] = None
@@ -411,7 +438,7 @@ class BatchCreate(BaseModel):
     """Create batch request."""
 
     work_order_id: str
-    batch_code: str = Field(..., min_length=1, max_length=50)
+    batch_code: Optional[str] = Field(None, min_length=1, max_length=50)
     quantity_kg: Decimal = Field(..., gt=0)
     notes: Optional[str] = None
 
