@@ -46,12 +46,17 @@ class BatchReportingService:
         product = work_order.product if work_order else None
         formula = work_order.formula if work_order else None
 
-        # Get formula lines with ingredient products
+        # Get formula lines with ingredient products - filter out soft-deleted lines
         formula_lines = []
         if formula:
             formula_lines_stmt = (
                 select(FormulaLine)
-                .where(FormulaLine.formula_id == formula.id)
+                .where(
+                    FormulaLine.formula_id == formula.id,
+                    FormulaLine.deleted_at.is_(
+                        None
+                    ),  # Only include active/non-deleted lines
+                )
                 .options(joinedload(FormulaLine.ingredient_product))
                 .order_by(FormulaLine.sequence)
             )

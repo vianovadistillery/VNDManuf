@@ -141,14 +141,18 @@ def product_to_response(product: Product) -> ProductResponse:
 @router.get("/", response_model=List[ProductResponse])
 async def list_products(
     skip: int = 0,
-    limit: int = 100,
+    limit: Optional[int] = 10000,  # Default to 10,000 for non-soft-deleted products
     query: Optional[str] = None,
     is_purchase: Optional[bool] = None,  # Filter by capability
     is_sell: Optional[bool] = None,  # Filter by capability
     is_assemble: Optional[bool] = None,  # Filter by capability
     db: Session = Depends(get_db),
 ):
-    """List products with optional search and filtering."""
+    """List products with optional search and filtering.
+
+    Returns up to 10,000 non-soft-deleted products by default.
+    Set limit=0 to return all non-soft-deleted products (use with caution).
+    """
     try:
         # Use selectinload instead of joinedload to avoid duplicate row issues
         # selectinload loads variants in a separate query, avoiding JOIN duplicates
@@ -166,7 +170,14 @@ async def list_products(
         # We'll filter after fetching since these aren't database columns
         # For now, we'll apply filters after fetching
 
-        stmt = stmt.offset(skip).limit(limit)
+        # Apply limit: default to 10,000, or use specified limit (limit=0 means no limit)
+        if limit == 0:
+            # limit=0 means return all (no limit) - only apply offset
+            stmt = stmt.offset(skip)
+        else:
+            # Use specified limit or default to 10,000
+            effective_limit = limit if limit is not None else 10000
+            stmt = stmt.offset(skip).limit(effective_limit)
 
         # Execute query - no need for unique() with selectinload
         products = db.execute(stmt).scalars().all()
@@ -353,6 +364,21 @@ async def update_product(
         )
 
     # Update fields
+    if product_data.sku is not None:
+        # Check if new SKU already exists (excluding current product and soft-deleted)
+        existing = db.execute(
+            select(Product).where(
+                Product.sku == product_data.sku,
+                Product.id != product_id,
+                Product.deleted_at.is_(None),
+            )
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Product with SKU '{product_data.sku}' already exists",
+            )
+        product.sku = product_data.sku
     if product_data.name is not None:
         product.name = product_data.name
     if product_data.description is not None:

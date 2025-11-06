@@ -133,7 +133,6 @@ class ProductsPageEnhanced:
                                         },
                                         {"name": "Size", "id": "size"},
                                         {"name": "Base Unit", "id": "base_unit"},
-                                        {"name": "Pack", "id": "pack"},
                                         {
                                             "name": "Density (kg/L)",
                                             "id": "density_kg_per_l",
@@ -169,6 +168,28 @@ class ProductsPageEnhanced:
                                         "whiteSpace": "normal",
                                         "height": "auto",
                                     },
+                                    style_cell_conditional=[
+                                        {
+                                            "if": {"column_id": "name"},
+                                            "width": "250px",  # 2.5x wider (assuming default ~100px)
+                                        },
+                                        {
+                                            "if": {"column_id": "is_purchase"},
+                                            "width": "60px",  # Narrow for checkmark
+                                        },
+                                        {
+                                            "if": {"column_id": "is_sell"},
+                                            "width": "60px",  # Narrow for checkmark
+                                        },
+                                        {
+                                            "if": {"column_id": "is_assemble"},
+                                            "width": "70px",  # Narrow for checkmark
+                                        },
+                                        {
+                                            "if": {"column_id": "base_unit"},
+                                            "width": "80px",  # Narrow
+                                        },
+                                    ],
                                 )
                             ],
                             width=8,
@@ -814,6 +835,84 @@ class ProductsPageEnhanced:
                                                         "fontWeight": "bold",
                                                     },
                                                 ),
+                                                html.Hr(className="my-3"),
+                                                html.H5(
+                                                    "Assembly Summary", className="mb-3"
+                                                ),
+                                                dash_table.DataTable(
+                                                    id="product-assembly-summary-table",
+                                                    columns=[
+                                                        {
+                                                            "name": "Type",
+                                                            "id": "type",
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Total Cost",
+                                                            "id": "total_cost",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".2f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Assembly Mass (kg)",
+                                                            "id": "assembly_mass_kg",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".3f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Assembly Volume (L)",
+                                                            "id": "assembly_volume_l",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".3f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Cost per kg",
+                                                            "id": "cost_per_kg",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".4f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Cost per L",
+                                                            "id": "cost_per_l",
+                                                            "type": "numeric",
+                                                            "format": {
+                                                                "specifier": ".4f"
+                                                            },
+                                                            "editable": False,
+                                                        },
+                                                    ],
+                                                    data=[],
+                                                    editable=False,
+                                                    style_cell={
+                                                        "textAlign": "left",
+                                                        "fontSize": "12px",
+                                                    },
+                                                    style_header={
+                                                        "backgroundColor": "rgb(230, 230, 230)",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                    style_data_conditional=[
+                                                        {
+                                                            "if": {
+                                                                "filter_query": "{type} = assembly"
+                                                            },
+                                                            "backgroundColor": "rgb(240, 248, 255)",
+                                                            "fontWeight": "bold",
+                                                        },
+                                                    ],
+                                                ),
                                             ],
                                             title="Assembly",
                                             item_id="assembly",
@@ -877,6 +976,13 @@ class ProductsPageEnhanced:
                                                                     "presentation": "markdown",
                                                                     "editable": False,
                                                                 },
+                                                                {
+                                                                    "name": "Action",
+                                                                    "id": "action",
+                                                                    "presentation": "markdown",
+                                                                    "editable": False,
+                                                                    "type": "text",
+                                                                },
                                                             ],
                                                             data=[
                                                                 {
@@ -900,6 +1006,7 @@ class ProductsPageEnhanced:
                                                                     "inc_gst": None,
                                                                     "tax_included": "[Set Tax Included]",
                                                                     "tax_included_bool": False,
+                                                                    "action": "**Use Total as Usage Cost**",
                                                                 },
                                                                 {
                                                                     "cost_type": "Usage",
@@ -911,6 +1018,7 @@ class ProductsPageEnhanced:
                                                                     "inc_gst": None,
                                                                     "tax_included": "[Set Tax Included]",
                                                                     "tax_included_bool": False,
+                                                                    "action": "",
                                                                 },
                                                                 {
                                                                     "cost_type": "Manufactured Cost",
@@ -922,13 +1030,28 @@ class ProductsPageEnhanced:
                                                                     "inc_gst": None,
                                                                     "tax_included": "N/A",
                                                                     "tax_included_bool": False,
+                                                                    "action": "",
                                                                 },
                                                             ],
                                                             editable=True,
                                                             style_cell={
                                                                 "textAlign": "left",
                                                                 "fontSize": "12px",
+                                                                "minWidth": "80px",
+                                                                "width": "150px",
+                                                                "maxWidth": "200px",
                                                             },
+                                                            style_cell_conditional=[
+                                                                {
+                                                                    "if": {
+                                                                        "column_id": "action"
+                                                                    },
+                                                                    "textAlign": "center",
+                                                                    "fontWeight": "bold",
+                                                                    "color": "#007bff",
+                                                                    "cursor": "pointer",
+                                                                },
+                                                            ],
                                                             style_header={
                                                                 "backgroundColor": "rgb(230, 230, 230)",
                                                                 "fontWeight": "bold",
@@ -1036,6 +1159,21 @@ class ProductsPageEnhanced:
                                                     ],
                                                     id="sales-pricing-disabled-notice",
                                                     style={"display": "none"},
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Button(
+                                                                    "Recalculate Excise",
+                                                                    id="recalculate-excise-btn",
+                                                                    color="primary",
+                                                                    size="sm",
+                                                                    className="mb-3",
+                                                                ),
+                                                            ]
+                                                        )
+                                                    ]
                                                 ),
                                                 dash_table.DataTable(
                                                     id="product-pricing-table",
@@ -1440,6 +1578,20 @@ class ProductsPageEnhanced:
                                                             id="assembly-delete-line-btn",
                                                             color="danger",
                                                             size="sm",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "↑ Move Up",
+                                                            id="assembly-move-up-btn",
+                                                            color="secondary",
+                                                            size="sm",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "↓ Move Down",
+                                                            id="assembly-move-down-btn",
+                                                            color="secondary",
+                                                            size="sm",
                                                         ),
                                                     ],
                                                     width=12,
@@ -1457,44 +1609,29 @@ class ProductsPageEnhanced:
                                                     "editable": True,
                                                 },
                                                 {
-                                                    "name": "Product",
+                                                    "name": "Ingredient",
                                                     "id": "product_search",
                                                     "editable": False,
                                                 },
                                                 {
-                                                    "name": "Product SKU",
-                                                    "id": "product_sku",
-                                                    "editable": False,
-                                                },
-                                                {
-                                                    "name": "Product Name",
-                                                    "id": "product_name",
-                                                    "editable": False,
-                                                },
-                                                {
-                                                    "name": "Quantity",
-                                                    "id": "quantity",
-                                                    "type": "numeric",
-                                                    "format": {"specifier": ".3f"},
-                                                    "editable": True,
-                                                },
-                                                {
-                                                    "name": "Unit",
-                                                    "id": "unit",
-                                                    "editable": False,
-                                                },
-                                                {
-                                                    "name": "Calculated (kg)",
+                                                    "name": "Qty (kg)",
                                                     "id": "quantity_kg",
                                                     "type": "numeric",
                                                     "format": {"specifier": ".3f"},
                                                     "editable": False,
                                                 },
                                                 {
-                                                    "name": "Calculated (L)",
+                                                    "name": "Qty (Lt)",
                                                     "id": "quantity_l",
                                                     "type": "numeric",
                                                     "format": {"specifier": ".3f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "SG",
+                                                    "id": "density",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".6f"},
                                                     "editable": False,
                                                 },
                                                 {
@@ -1505,7 +1642,21 @@ class ProductsPageEnhanced:
                                                     "editable": False,
                                                 },
                                                 {
-                                                    "name": "Cost",
+                                                    "name": "Cost/kg",
+                                                    "id": "cost_per_kg",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".4f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Cost/L",
+                                                    "id": "cost_per_l",
+                                                    "type": "numeric",
+                                                    "format": {"specifier": ".4f"},
+                                                    "editable": False,
+                                                },
+                                                {
+                                                    "name": "Line Cost",
                                                     "id": "line_cost",
                                                     "type": "numeric",
                                                     "format": {"specifier": ".4f"},
@@ -1520,14 +1671,16 @@ class ProductsPageEnhanced:
                                             data=[],
                                             editable=True,
                                             row_selectable="single",
+                                            sort_action="native",
                                             style_cell={
                                                 "textAlign": "left",
                                                 "fontSize": "11px",
                                             },
                                             style_header={
-                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                "backgroundColor": "rgb(240, 240, 240)",
                                                 "fontWeight": "bold",
                                             },
+                                            style_table={"overflowX": "auto"},
                                         ),
                                         html.Div(
                                             id="assembly-line-edit-index",

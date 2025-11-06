@@ -12,15 +12,38 @@ def register_settings_callbacks(app):
             Output("units-tab-content", "style"),
             Output("excise-rates-tab-content", "style"),
             Output("purchase-formats-tab-content", "style"),
+            Output("work-areas-tab-content", "style"),
         ],
         Input("settings-tabs", "active_tab"),
     )
     def toggle_settings_tabs(active_tab):
         """Show/hide tab content based on active tab."""
         if active_tab == "units":
-            return {"display": "block"}, {"display": "none"}, {"display": "none"}
+            return (
+                {"display": "block"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+            )
         elif active_tab == "excise-rates":
-            return {"display": "none"}, {"display": "block"}, {"display": "none"}
+            return (
+                {"display": "none"},
+                {"display": "block"},
+                {"display": "none"},
+                {"display": "none"},
+            )
         elif active_tab == "purchase-formats":
-            return {"display": "none"}, {"display": "none"}, {"display": "block"}
+            return (
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "block"},
+                {"display": "none"},
+            )
+        elif active_tab == "work-areas":
+            return (
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "block"},
+            )
         raise PreventUpdate

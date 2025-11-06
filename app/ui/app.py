@@ -48,6 +48,7 @@ from .purchase_formats_callbacks import (  # noqa: E402
 from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa: E402
 from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
+from .work_areas_callbacks import register_work_areas_callbacks  # noqa: E402
 
 # Xero integration temporarily disabled - will re-enable later
 # from .pages.accounting_integration_page import accounting_integration_page
@@ -94,7 +95,7 @@ app.layout = dbc.Container(
                             active_tab="products",
                             children=[
                                 dbc.Tab(label="Products", tab_id="products"),
-                                dbc.Tab(label="Formulas", tab_id="formulas"),
+                                dbc.Tab(label="Assemblies", tab_id="formulas"),
                                 dbc.Tab(
                                     label="Batch Processing", tab_id="batch-processing"
                                 ),
@@ -488,7 +489,7 @@ def load_products_table(
             f"[load_products_table] Filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}"
         )
 
-        # Fetch all products
+        # Fetch all products - API now defaults to 10,000 limit
         try:
             response = make_api_request("GET", "/products/")
             print(f"[load_products_table] Response: type={type(response).__name__}")
@@ -520,8 +521,9 @@ def load_products_table(
             all_products = []
 
         # Apply OR filter logic client-side
-        # If any filter is True, show products matching ANY of those types
-        # If all filters are False/None, show all products
+        # If all filters are checked (all True), show all products (no filtering)
+        # If some filters are checked, show products matching ANY of those types
+        # If all filters are unchecked (all False/None), show all products
         active_filters = []
         if filter_purchase is True:
             active_filters.append("is_purchase")
@@ -530,18 +532,43 @@ def load_products_table(
         if filter_assemble is True:
             active_filters.append("is_assemble")
 
+        # If all three filters are checked, don't filter (show all products)
+        # This is the default state and means "show everything"
+        if len(active_filters) == 3:
+            print(
+                "[load_products_table] All filters checked - showing all products (no filtering)"
+            )
+            active_filters = []  # Clear filters to show all products
+
         if active_filters:
             print(f"[load_products_table] Applying OR filter for: {active_filters}")
             filtered_products = []
             for product in all_products:
                 # Check if product matches ANY of the active filters
+                # Note: is_purchase, is_sell, is_assemble are boolean values from API
                 matches = False
                 for filter_type in active_filters:
-                    if product.get(filter_type):
+                    # Check the actual boolean value (before it gets converted to markdown)
+                    filter_value = product.get(filter_type)
+                    # Handle boolean True, string "✓", or truthy values
+                    if filter_value is True:
+                        matches = True
+                        break
+                    # Also check for string representations (in case conversion happened)
+                    elif filter_value == "✓" or (
+                        isinstance(filter_value, str) and filter_value.strip() == "✓"
+                    ):
                         matches = True
                         break
                 if matches:
                     filtered_products.append(product)
+                else:
+                    # Debug: log products that don't match for gin42
+                    sku = product.get("sku", "")
+                    if sku and "gin42" in sku.lower():
+                        print(
+                            f"[load_products_table] DEBUG: Product {sku} filtered out - is_purchase={product.get('is_purchase')}, is_sell={product.get('is_sell')}, is_assemble={product.get('is_assemble')}, active_filters={active_filters}"
+                        )
             all_products = filtered_products
             print(
                 f"[load_products_table] After OR filter: {len(all_products)} products"
@@ -849,6 +876,7 @@ register_contacts_callbacks(app, make_api_request)
 register_units_callbacks(app, make_api_request)
 register_excise_rates_callbacks(app, make_api_request)
 register_purchase_formats_callbacks(app, make_api_request)
+register_work_areas_callbacks(app, make_api_request)
 register_settings_callbacks(app)
 
 # Register work orders callbacks

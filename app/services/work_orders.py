@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.adapters.db.models import (
     Batch,
+    Formula,
+    FormulaLine,
     InventoryMovement,
     Product,
     ProductCostRate,
@@ -75,74 +77,216 @@ class WorkOrderService:
         if not product:
             raise ValueError(f"Product {product_id} not found")
 
-        # Get assembly (primary recipe definition)
+        # Get assembly (primary recipe definition) - try Formula first, then Assembly
+        formula = None
+        assembly = None
+
         if not assembly_id:
-            # Try to get primary assembly for product
-            assembly_stmt = (
-                select(Assembly)
+            # Try to get primary formula for product
+            formula_stmt = (
+                select(Formula)
                 .where(
-                    Assembly.parent_product_id == product_id,
-                    Assembly.is_active.is_(True),
-                    Assembly.is_primary.is_(True),
+                    Formula.product_id == product_id,
+                    Formula.is_active.is_(True),
                 )
-                .order_by(Assembly.effective_from.desc())
+                .order_by(
+                    Formula.is_primary.desc().nullslast(), Formula.created_at.desc()
+                )
                 .limit(1)
             )
-            assembly = self.db.execute(assembly_stmt).scalar_one_or_none()
+            formula = self.db.execute(formula_stmt).scalar_one_or_none()
 
-            # If no primary, get any active assembly
-            if not assembly:
+            # If no formula, try to get Assembly (legacy)
+            if not formula:
                 assembly_stmt = (
                     select(Assembly)
                     .where(
                         Assembly.parent_product_id == product_id,
                         Assembly.is_active.is_(True),
+                        Assembly.is_primary.is_(True),
                     )
                     .order_by(Assembly.effective_from.desc())
                     .limit(1)
                 )
                 assembly = self.db.execute(assembly_stmt).scalar_one_or_none()
 
-            if not assembly:
-                raise ValueError(
-                    f"No active assembly found for product {product_id}. "
-                    f"Please create an assembly (recipe definition) first."
-                )
-            assembly_id = assembly.id
+                # If no primary, get any active assembly
+                if not assembly:
+                    assembly_stmt = (
+                        select(Assembly)
+                        .where(
+                            Assembly.parent_product_id == product_id,
+                            Assembly.is_active.is_(True),
+                        )
+                        .order_by(Assembly.effective_from.desc())
+                        .limit(1)
+                    )
+                    assembly = self.db.execute(assembly_stmt).scalar_one_or_none()
+
+                if assembly:
+                    assembly_id = assembly.id
+                else:
+                    raise ValueError(
+                        f"No active formula or assembly found for product {product_id}. "
+                        f"Please create a formula (recipe definition) first."
+                    )
+            else:
+                # Use formula_id as assembly_id for backward compatibility
+                assembly_id = formula.id
         else:
-            assembly = self.db.get(Assembly, assembly_id)
-            if not assembly:
-                raise ValueError(f"Assembly {assembly_id} not found")
+            # Check if it's a Formula first
+            formula = self.db.get(Formula, assembly_id)
+            if formula:
+                # Validate formula is for this product
+                if formula.product_id != product_id:
+                    raise ValueError(
+                        f"Formula {assembly_id} is for product {formula.product_id}, "
+                        f"not {product_id}"
+                    )
+            else:
+                # Try Assembly (legacy)
+                assembly = self.db.get(Assembly, assembly_id)
+                if not assembly:
+                    raise ValueError(f"Formula or Assembly {assembly_id} not found")
 
-            # Validate assembly is for this product
-            if assembly.parent_product_id != product_id:
+                # Validate assembly is for this product
+                if assembly.parent_product_id != product_id:
+                    raise ValueError(
+                        f"Assembly {assembly_id} is for product {assembly.parent_product_id}, "
+                        f"not {product_id}"
+                    )
+
+        # Ensure we have a formula when using the new system
+        # If we're using Assembly (legacy), we still need to find/create a formula or use a placeholder
+        if not formula and not assembly:
+            raise ValueError(
+                "No formula or assembly found. Cannot create work order without a recipe."
+            )
+
+        # If we have an assembly but no formula, try to find or create a formula for it
+        # For now, we'll require a formula to exist
+        if assembly and not formula:
+            # Try to find a formula for this assembly's product
+            formula_stmt = (
+                select(Formula)
+                .where(
+                    Formula.product_id == product_id,
+                    Formula.is_active.is_(True),
+                )
+                .order_by(
+                    Formula.is_primary.desc().nullslast(), Formula.created_at.desc()
+                )
+                .limit(1)
+            )
+            formula = self.db.execute(formula_stmt).scalar_one_or_none()
+
+            if not formula:
                 raise ValueError(
-                    f"Assembly {assembly_id} is for product {assembly.parent_product_id}, "
-                    f"not {product_id}"
+                    f"Assembly {assembly_id} found but no active formula exists for product {product_id}. "
+                    f"Please create a formula first."
                 )
 
-        # Generate work order code
+        # Generate work order code in format WOYY0000 (e.g., WO250001)
         now = datetime.utcnow()
-        wo_code = f"WO{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+        year_2digit = now.strftime("%y")  # e.g., "25" for 2025
 
-        # Check for duplicate code
-        existing = self.db.execute(
-            select(WorkOrder).where(WorkOrder.code == wo_code)
-        ).scalar_one_or_none()
+        # Find the highest sequence number for this year
+        year_prefix = f"WO{year_2digit}"
+        existing_wo_codes = (
+            self.db.execute(
+                select(WorkOrder).where(WorkOrder.code.like(f"{year_prefix}%"))
+            )
+            .scalars()
+            .all()
+        )
 
-        if existing:
-            counter = 1
-            while existing:
-                wo_code = (
-                    f"WO{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}-{counter}"
-                )
-                existing = self.db.execute(
-                    select(WorkOrder).where(WorkOrder.code == wo_code)
-                ).scalar_one_or_none()
-                counter += 1
+        max_seq = 0
+        for wo in existing_wo_codes:
+            if wo.code and wo.code.startswith(year_prefix):
+                try:
+                    # Extract sequence from WO code (last 4 digits)
+                    seq_part = wo.code[-4:]
+                    seq_num = int(seq_part)
+                    max_seq = max(max_seq, seq_num)
+                except (ValueError, IndexError):
+                    pass
+
+        # Start from max_seq + 1, or 1 if no existing work orders
+        seq = max_seq + 1
+
+        # Format: WO + YY + 0000 (e.g., WO250001)
+        wo_code = f"WO{year_2digit}{seq:04d}"
 
         # Generate batch code placeholder
         batch_code = self.batch_code_gen.generate_batch_code(product_id)
+
+        # Determine formula_id - must have a formula when using the new system
+        if not formula:
+            raise ValueError("Formula is required for work order creation")
+        formula_id_val = formula.id
+
+        # Calculate estimated cost from assembly/formula
+        estimated_cost = None
+        if formula:
+            # Calculate total cost from formula lines
+            formula_lines = (
+                self.db.execute(
+                    select(FormulaLine).where(
+                        FormulaLine.formula_id == formula.id,
+                        FormulaLine.deleted_at.is_(None),  # Only active lines
+                    )
+                )
+                .scalars()
+                .all()
+            )
+
+            total_cost = Decimal("0")
+            for line in formula_lines:
+                if line.quantity_kg and line.raw_material_id:
+                    # Get product cost
+                    line_product = self.db.get(Product, line.raw_material_id)
+                    if line_product:
+                        # Use usage_cost_ex_gst or purchase_cost_ex_gst
+                        unit_cost = (
+                            line_product.usage_cost_ex_gst
+                            or line_product.purchase_cost_ex_gst
+                            or Decimal("0")
+                        )
+                        line_cost = round_money(line.quantity_kg * unit_cost)
+                        total_cost += line_cost
+
+            # Scale by planned_qty (formula is typically for 1 unit)
+            estimated_cost = (
+                round_money(total_cost * planned_qty) if total_cost > 0 else None
+            )
+        elif assembly:
+            # Calculate from assembly lines (legacy)
+            assembly_lines = (
+                self.db.execute(
+                    select(AssemblyLine).where(AssemblyLine.assembly_id == assembly.id)
+                )
+                .scalars()
+                .all()
+            )
+
+            total_cost = Decimal("0")
+            for line in assembly_lines:
+                if line.quantity and line.component_product_id:
+                    component_product = self.db.get(Product, line.component_product_id)
+                    if component_product:
+                        unit_cost = (
+                            component_product.usage_cost_ex_gst
+                            or component_product.purchase_cost_ex_gst
+                            or Decimal("0")
+                        )
+                        # Convert quantity to kg if needed
+                        qty_kg = line.quantity  # Assuming already in kg
+                        line_cost = round_money(qty_kg * unit_cost)
+                        total_cost += line_cost
+
+            estimated_cost = (
+                round_money(total_cost * planned_qty) if total_cost > 0 else None
+            )
 
         # Create work order
         work_order = WorkOrder(
@@ -150,13 +294,14 @@ class WorkOrderService:
             code=wo_code,
             product_id=product_id,
             assembly_id=assembly_id,
-            formula_id=None,  # Legacy field, keep for backward compatibility
+            formula_id=formula_id_val,  # Set to formula ID if using formula, otherwise None
             quantity_kg=round_quantity(planned_qty),  # Legacy field
             planned_qty=round_quantity(planned_qty),
             uom=uom,
             work_center=work_center,
             status="draft",
             batch_code=batch_code,
+            estimated_cost=estimated_cost,
             notes=notes,
         )
 
@@ -182,53 +327,135 @@ class WorkOrderService:
         if not work_order:
             raise ValueError(f"Work order {work_order_id} not found")
 
-        # Get assembly (primary recipe source)
-        assembly = work_order.assembly
-        if not assembly:
+        # Get assembly (primary recipe source) - try Formula first, then Assembly
+        formula = None
+        assembly = None
+
+        # Try to get Formula first (new system)
+        if work_order.assembly_id:
+            formula = self.db.get(Formula, work_order.assembly_id)
+
+        # If not a Formula, try Assembly (legacy)
+        if not formula:
+            assembly = work_order.assembly
+
+        if not formula and not assembly:
             raise ValueError(
-                f"No assembly found for work order {work_order_id}. "
-                f"Work orders must use Assembly (recipe definition), not Formula."
+                f"No formula or assembly found for work order {work_order_id}. "
+                f"Work orders must use Formula (recipe definition)."
             )
 
-        # Get assembly lines (components)
-        assembly_lines = (
-            self.db.execute(
-                select(AssemblyLine)
-                .where(AssemblyLine.assembly_id == assembly.id)
-                .order_by(AssemblyLine.sequence)
-            )
-            .scalars()
-            .all()
-        )
+        # Get assembly lines (components) - from Formula or Assembly
+        assembly_lines = []
+        yield_factor = Decimal("1.0")
 
-        if not assembly_lines:
-            raise ValueError(
-                f"No assembly lines found for assembly {assembly.assembly_code}"
+        if formula:
+            # Get formula lines
+            formula_lines = (
+                self.db.execute(
+                    select(FormulaLine)
+                    .where(
+                        FormulaLine.formula_id == formula.id,
+                        FormulaLine.deleted_at.is_(None),  # Only active lines
+                    )
+                    .order_by(FormulaLine.sequence)
+                )
+                .scalars()
+                .all()
             )
+
+            if not formula_lines:
+                raise ValueError(
+                    f"No formula lines found for formula {formula.formula_code or formula.id}"
+                )
+
+            # Create a mock object with the same attributes as AssemblyLine for compatibility
+            class MockAssemblyLine:
+                def __init__(self, formula_line, db_session):
+                    self.raw_material_id = formula_line.raw_material_id
+                    self.quantity_kg = formula_line.quantity_kg
+                    self.quantity = formula_line.quantity_kg  # For scaling
+                    self.sequence = formula_line.sequence
+                    self.unit = formula_line.unit or "kg"
+                    self.is_energy_or_overhead = False  # Default to material
+                    self.notes = formula_line.notes or ""
+                    # Get component product
+                    self.component_product = (
+                        db_session.get(Product, formula_line.raw_material_id)
+                        if formula_line.raw_material_id
+                        else None
+                    )
+
+            assembly_lines = [MockAssemblyLine(fl, self.db) for fl in formula_lines]
+            # Get yield_factor from formula, default to 1.0 if not set
+            yield_factor = (
+                Decimal(str(formula.yield_factor))
+                if formula.yield_factor is not None
+                else Decimal("1.0")
+            )
+        else:
+            # Get assembly lines (legacy)
+            assembly_lines = (
+                self.db.execute(
+                    select(AssemblyLine)
+                    .where(AssemblyLine.assembly_id == assembly.id)
+                    .order_by(AssemblyLine.sequence)
+                )
+                .scalars()
+                .all()
+            )
+
+            if not assembly_lines:
+                raise ValueError(
+                    f"No assembly lines found for assembly {assembly.assembly_code}"
+                )
+
+            yield_factor = assembly.yield_factor or Decimal("1.0")
 
         # Calculate scale factor (planned_qty / assembly base qty)
         # Assembly base is typically 1 unit, so scale by planned_qty
         # Apply yield_factor if present
-        yield_factor = assembly.yield_factor or Decimal("1.0")
         scale_factor = work_order.planned_qty * yield_factor
 
         # Create work order input lines from assembly components
         for idx, assembly_line in enumerate(assembly_lines):
-            component_product = assembly_line.component_product
+            # For Formula lines (MockAssemblyLine), component_product is already set
+            if hasattr(assembly_line, "component_product"):
+                component_product = assembly_line.component_product
+            else:
+                component_product = assembly_line.component_product
+
             if not component_product:
-                continue
+                # For Formula lines, try to get product by raw_material_id
+                if (
+                    hasattr(assembly_line, "raw_material_id")
+                    and assembly_line.raw_material_id
+                ):
+                    component_product = self.db.get(
+                        Product, assembly_line.raw_material_id
+                    )
+                if not component_product:
+                    continue
 
             # Calculate required quantity: assembly_line.quantity * scale_factor
             # Assembly line quantity is per unit of parent product
-            planned_qty_scaled = round_quantity(assembly_line.quantity * scale_factor)
+            # For Formula lines, use quantity_kg; for Assembly lines, use quantity
+            if hasattr(assembly_line, "quantity_kg"):
+                qty_base = assembly_line.quantity_kg
+            else:
+                qty_base = assembly_line.quantity
+            planned_qty_scaled = round_quantity(qty_base * scale_factor)
 
             # Get UOM from assembly line or default
             uom = assembly_line.unit or "KG"
 
             # Determine line type (material vs overhead)
-            line_type = (
-                "overhead" if assembly_line.is_energy_or_overhead else "material"
-            )
+            if hasattr(assembly_line, "is_energy_or_overhead"):
+                line_type = (
+                    "overhead" if assembly_line.is_energy_or_overhead else "material"
+                )
+            else:
+                line_type = "material"  # Default for Formula lines
 
             # Create input line
             input_line = WorkOrderLine(
@@ -248,6 +475,60 @@ class WorkOrderService:
             self.db.add(input_line)
 
         self.db.flush()
+
+        # Reserve inventory for material lines (optional - can be done on release)
+        # For now, we'll reserve on creation to show availability
+        for idx, assembly_line in enumerate(assembly_lines):
+            if hasattr(assembly_line, "component_product"):
+                component_product = assembly_line.component_product
+            else:
+                component_product = assembly_line.component_product
+
+            if not component_product:
+                if (
+                    hasattr(assembly_line, "raw_material_id")
+                    and assembly_line.raw_material_id
+                ):
+                    component_product = self.db.get(
+                        Product, assembly_line.raw_material_id
+                    )
+                if not component_product:
+                    continue
+
+            # Only reserve for material lines (not overhead)
+            line_type = "material"
+            if hasattr(assembly_line, "is_energy_or_overhead"):
+                line_type = (
+                    "overhead" if assembly_line.is_energy_or_overhead else "material"
+                )
+
+            if line_type == "material":
+                # Calculate required quantity
+                if hasattr(assembly_line, "quantity_kg"):
+                    qty_base = assembly_line.quantity_kg
+                else:
+                    qty_base = assembly_line.quantity
+                planned_qty_scaled = round_quantity(qty_base * scale_factor)
+
+                # Reserve inventory (soft reservation - doesn't consume, just marks as reserved)
+                try:
+                    self.inventory_service.reserve_inventory(
+                        product_id=component_product.id,
+                        qty_kg=planned_qty_scaled,
+                        source="internal",
+                        reference_id=work_order_id,
+                    )
+                except ValueError as e:
+                    # If reservation already exists, that's okay (might be re-running)
+                    # Log but don't fail work order creation
+                    print(
+                        f"Warning: Could not reserve inventory for {component_product.sku}: {e}"
+                    )
+                except Exception as e:
+                    # Log but don't fail work order creation
+                    print(
+                        f"Warning: Error reserving inventory for {component_product.sku}: {e}"
+                    )
 
     def release_work_order(self, work_order_id: str) -> WorkOrder:
         """
@@ -293,10 +574,21 @@ class WorkOrderService:
                 # Could raise here for hard constraint
                 pass
 
-        # Lock assembly version (assembly is already selected, just validate it's still active)
-        if work_order.assembly and not work_order.assembly.is_active:
+        # Lock assembly/formula version (already selected, just validate it's still active)
+        formula = None
+        assembly = None
+        if work_order.assembly_id:
+            formula = self.db.get(Formula, work_order.assembly_id)
+        if not formula:
+            assembly = work_order.assembly
+
+        if formula and not formula.is_active:
             raise ValueError(
-                f"Assembly {work_order.assembly.assembly_code} is no longer active"
+                f"Formula {formula.formula_code or formula.id} is no longer active"
+            )
+        elif assembly and not assembly.is_active:
+            raise ValueError(
+                f"Assembly {assembly.assembly_code if hasattr(assembly, 'assembly_code') else assembly.id} is no longer active"
             )
 
         # Update status
@@ -758,10 +1050,12 @@ class WorkOrderService:
             meta_dict["genealogy"] = genealogy
             batch.meta = json.dumps(meta_dict)
 
-        # Update work order status
+        # Update work order status and costs
         work_order.status = "complete"
         work_order.end_time = datetime.utcnow()
         work_order.completed_at = datetime.utcnow()
+        work_order.actual_qty = round_quantity(qty_produced)
+        work_order.actual_cost = round_money(total_cost)
 
         self.db.flush()
 

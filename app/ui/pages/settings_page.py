@@ -28,6 +28,10 @@ class SettingsPage:
                                             label="Purchase Formats",
                                             tab_id="purchase-formats",
                                         ),
+                                        dbc.Tab(
+                                            label="Work Areas",
+                                            tab_id="work-areas",
+                                        ),
                                     ],
                                     className="mb-4",
                                 ),
@@ -633,6 +637,169 @@ class SettingsPage:
                 ),
                 # Hidden field for purchase format ID
                 html.Div(id="purchase-format-form-hidden", style={"display": "none"}),
+                # Work Areas Tab
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    [
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Button(
+                                                            "Add Work Area",
+                                                            id="add-work-area-btn",
+                                                            color="success",
+                                                            className="me-2",
+                                                        ),
+                                                        dbc.Button(
+                                                            "Edit Selected",
+                                                            id="edit-work-area-btn",
+                                                            color="primary",
+                                                            className="me-2",
+                                                            disabled=True,
+                                                        ),
+                                                        dbc.Button(
+                                                            "Delete Selected",
+                                                            id="delete-work-area-btn",
+                                                            color="danger",
+                                                            className="me-2",
+                                                            disabled=True,
+                                                        ),
+                                                        dbc.Button(
+                                                            "Refresh",
+                                                            id="work-areas-refresh",
+                                                            color="info",
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dash_table.DataTable(
+                                            id="work-areas-table",
+                                            columns=[
+                                                {"name": "Code", "id": "code"},
+                                                {"name": "Name", "id": "name"},
+                                                {
+                                                    "name": "Description",
+                                                    "id": "description",
+                                                },
+                                                {"name": "Active", "id": "is_active"},
+                                            ],
+                                            data=[],
+                                            sort_action="native",
+                                            filter_action="native",
+                                            page_action="native",
+                                            page_current=0,
+                                            page_size=20,
+                                            row_selectable="single",
+                                            style_cell={"textAlign": "left"},
+                                            style_header={
+                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                "fontWeight": "bold",
+                                            },
+                                        ),
+                                    ],
+                                    id="work-areas-list-content",
+                                )
+                            ]
+                        )
+                    ],
+                    id="work-areas-tab-content",
+                ),
+                # Work Area Form Modal
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(dbc.ModalTitle(id="work-area-modal-title")),
+                        dbc.ModalBody(
+                            [
+                                dbc.Form(
+                                    [
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Code *"),
+                                                        dbc.Input(
+                                                            id="work-area-code",
+                                                            required=True,
+                                                            maxLength=20,
+                                                        ),
+                                                    ],
+                                                    width=6,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Name *"),
+                                                        dbc.Input(
+                                                            id="work-area-name",
+                                                            required=True,
+                                                            maxLength=100,
+                                                        ),
+                                                    ],
+                                                    width=6,
+                                                ),
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Description"),
+                                                        dbc.Textarea(
+                                                            id="work-area-description",
+                                                            rows=3,
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Label("Active"),
+                                                        dbc.Switch(
+                                                            id="work-area-is-active",
+                                                            value=True,
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ]
+                                        ),
+                                    ]
+                                )
+                            ]
+                        ),
+                        dbc.ModalFooter(
+                            [
+                                dbc.Button(
+                                    "Save",
+                                    id="save-work-area-btn",
+                                    color="primary",
+                                ),
+                                dbc.Button(
+                                    "Cancel",
+                                    id="cancel-work-area-btn",
+                                    color="secondary",
+                                ),
+                            ]
+                        ),
+                    ],
+                    id="work-area-form-modal",
+                    is_open=False,
+                    size="lg",
+                ),
+                # Hidden field for work area ID
+                html.Div(id="work-area-form-hidden", style={"display": "none"}),
             ],
             fluid=True,
         )

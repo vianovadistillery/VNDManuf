@@ -141,6 +141,7 @@ class ProductCreate(BaseModel):
 class ProductUpdate(BaseModel):
     """Update product request."""
 
+    sku: Optional[str] = Field(None, min_length=1, max_length=50)
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
     # Product Capabilities
@@ -660,6 +661,11 @@ class WorkOrderResponse(BaseModel):
     status: str
     start_time: Optional[datetime]
     end_time: Optional[datetime]
+    released_at: Optional[datetime]  # Issued date
+    completed_at: Optional[datetime]  # Completed date
+    actual_qty: Optional[Decimal]  # Actual quantity produced
+    estimated_cost: Optional[Decimal]  # Estimated cost from assembly at creation
+    actual_cost: Optional[Decimal]  # Actual cost determined when completed
     batch_code: Optional[str]
     notes: Optional[str]
     created_at: datetime

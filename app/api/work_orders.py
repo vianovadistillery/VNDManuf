@@ -83,6 +83,11 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
         status=work_order.status,
         start_time=work_order.start_time,
         end_time=work_order.end_time,
+        released_at=work_order.released_at,  # Issued date
+        completed_at=work_order.completed_at,  # Completed date
+        actual_qty=work_order.actual_qty,
+        estimated_cost=work_order.estimated_cost,
+        actual_cost=work_order.actual_cost,
         batch_code=work_order.batch_code,
         notes=work_order.notes,
         created_at=work_order.created_at or datetime.utcnow(),

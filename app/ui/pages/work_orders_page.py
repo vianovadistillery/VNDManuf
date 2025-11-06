@@ -71,135 +71,160 @@ class WorkOrdersPage:
                     ],
                     style={"display": "none"},
                 ),
+                # Filters (always visible)
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                dbc.Label("Status:"),
+                                dcc.Dropdown(
+                                    id="wo-status-filter",
+                                    options=[
+                                        {
+                                            "label": "All",
+                                            "value": "",
+                                        },
+                                        {
+                                            "label": "Draft",
+                                            "value": "draft",
+                                        },
+                                        {
+                                            "label": "Released",
+                                            "value": "released",
+                                        },
+                                        {
+                                            "label": "In Progress",
+                                            "value": "in_progress",
+                                        },
+                                        {
+                                            "label": "Complete",
+                                            "value": "complete",
+                                        },
+                                        {
+                                            "label": "Hold",
+                                            "value": "hold",
+                                        },
+                                        {
+                                            "label": "Void",
+                                            "value": "void",
+                                        },
+                                    ],
+                                    value="",
+                                ),
+                            ],
+                            md=3,
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Label("Product:"),
+                                dcc.Dropdown(
+                                    id="wo-product-filter",
+                                    options=[],
+                                    value=None,
+                                ),
+                            ],
+                            md=3,
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Label("Date From:"),
+                                dbc.Input(
+                                    id="wo-date-from",
+                                    type="date",
+                                ),
+                            ],
+                            md=3,
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Label("Date To:"),
+                                dbc.Input(
+                                    id="wo-date-to",
+                                    type="date",
+                                ),
+                            ],
+                            md=3,
+                        ),
+                    ],
+                    className="mb-3",
+                ),
+                # Work Orders Table (always in layout, visibility controlled by wrapper div)
+                html.Div(
+                    id="wo-list-table-wrapper",
+                    children=[
+                        dash_table.DataTable(
+                            id="wo-list-table",
+                            columns=[
+                                {"name": "WO Number", "id": "code"},
+                                {"name": "Product", "id": "product"},
+                                {
+                                    "name": "Planned Qty",
+                                    "id": "planned_qty",
+                                },
+                                {"name": "UOM", "id": "uom"},
+                                {"name": "Status", "id": "status"},
+                                {
+                                    "name": "Issued Date",
+                                    "id": "released_at",
+                                },
+                                {
+                                    "name": "Completed Date",
+                                    "id": "completed_at",
+                                },
+                                {
+                                    "name": "Actual Qty",
+                                    "id": "actual_qty",
+                                },
+                                {
+                                    "name": "Est. Cost",
+                                    "id": "estimated_cost",
+                                },
+                                {
+                                    "name": "Act Cost",
+                                    "id": "actual_cost",
+                                },
+                                {
+                                    "name": "QC Status",
+                                    "id": "qc_status",
+                                },
+                                {
+                                    "name": "Cost/Unit",
+                                    "id": "unit_cost",
+                                },
+                            ],
+                            data=[],
+                            sort_action="native",
+                            filter_action="native",
+                            row_selectable="single",
+                            page_action="native",
+                            page_current=0,
+                            page_size=20,
+                        ),
+                    ],
+                    style={
+                        "display": "none"
+                    },  # Hidden by default, shown by tab callback
+                ),
+                html.Div(
+                    id="wo-create-btn-wrapper",
+                    children=[
+                        dbc.Button(
+                            "Create Work Order",
+                            id="wo-create-btn",
+                            color="primary",
+                            className="mt-3 mb-3",
+                        ),
+                    ],
+                    style={
+                        "display": "none"
+                    },  # Hidden by default, shown by tab callback
+                ),
                 # Tab content
                 html.Div(
                     id="wo-main-tab-content",
                     children=[
-                        # List view
-                        dbc.Card(
-                            [
-                                dbc.CardHeader("Work Orders"),
-                                dbc.CardBody(
-                                    [
-                                        # Filters
-                                        dbc.Row(
-                                            [
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Status:"),
-                                                        dcc.Dropdown(
-                                                            id="wo-status-filter",
-                                                            options=[
-                                                                {
-                                                                    "label": "All",
-                                                                    "value": "",
-                                                                },
-                                                                {
-                                                                    "label": "Draft",
-                                                                    "value": "draft",
-                                                                },
-                                                                {
-                                                                    "label": "Released",
-                                                                    "value": "released",
-                                                                },
-                                                                {
-                                                                    "label": "In Progress",
-                                                                    "value": "in_progress",
-                                                                },
-                                                                {
-                                                                    "label": "Complete",
-                                                                    "value": "complete",
-                                                                },
-                                                                {
-                                                                    "label": "Hold",
-                                                                    "value": "hold",
-                                                                },
-                                                                {
-                                                                    "label": "Void",
-                                                                    "value": "void",
-                                                                },
-                                                            ],
-                                                            value="",
-                                                        ),
-                                                    ],
-                                                    md=3,
-                                                ),
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Product:"),
-                                                        dcc.Dropdown(
-                                                            id="wo-product-filter",
-                                                            options=[],
-                                                            value=None,
-                                                        ),
-                                                    ],
-                                                    md=3,
-                                                ),
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Date From:"),
-                                                        dbc.Input(
-                                                            id="wo-date-from",
-                                                            type="date",
-                                                        ),
-                                                    ],
-                                                    md=3,
-                                                ),
-                                                dbc.Col(
-                                                    [
-                                                        dbc.Label("Date To:"),
-                                                        dbc.Input(
-                                                            id="wo-date-to",
-                                                            type="date",
-                                                        ),
-                                                    ],
-                                                    md=3,
-                                                ),
-                                            ],
-                                            className="mb-3",
-                                        ),
-                                        # Table
-                                        dash_table.DataTable(
-                                            id="wo-list-table",
-                                            columns=[
-                                                {"name": "Code", "id": "code"},
-                                                {"name": "Product", "id": "product"},
-                                                {
-                                                    "name": "Planned Qty",
-                                                    "id": "planned_qty",
-                                                },
-                                                {"name": "Status", "id": "status"},
-                                                {
-                                                    "name": "Batch Code",
-                                                    "id": "batch_code",
-                                                },
-                                                {
-                                                    "name": "QC Status",
-                                                    "id": "qc_status",
-                                                },
-                                                {
-                                                    "name": "Cost/Unit",
-                                                    "id": "unit_cost",
-                                                },
-                                            ],
-                                            data=[],
-                                            sort_action="native",
-                                            filter_action="native",
-                                            row_selectable="single",
-                                            page_action="native",
-                                            page_current=0,
-                                            page_size=20,
-                                        ),
-                                        dbc.Button(
-                                            "Create Work Order",
-                                            id="wo-create-btn",
-                                            color="primary",
-                                            className="mt-3",
-                                        ),
-                                    ]
-                                ),
-                            ]
-                        ),
+                        # List view placeholder (table is above, always in layout)
+                        html.Div("Work Orders List", id="wo-list-placeholder"),
                     ],
                 ),
                 # Create Work Order Modal
@@ -252,11 +277,12 @@ class WorkOrdersPage:
                                         dbc.Col(
                                             [
                                                 dbc.Label("Unit of Measure"),
-                                                dbc.Input(
+                                                dcc.Dropdown(
                                                     id="wo-create-uom",
-                                                    type="text",
+                                                    options=[],
                                                     value="KG",
-                                                    placeholder="KG",
+                                                    placeholder="Select unit...",
+                                                    searchable=True,
                                                 ),
                                             ],
                                             md=4,
@@ -264,10 +290,12 @@ class WorkOrdersPage:
                                         dbc.Col(
                                             [
                                                 dbc.Label("Work Center"),
-                                                dbc.Input(
+                                                dcc.Dropdown(
                                                     id="wo-create-work-center",
-                                                    type="text",
-                                                    placeholder="e.g., Still01",
+                                                    options=[],
+                                                    placeholder="Select work center...",
+                                                    searchable=True,
+                                                    clearable=True,
                                                 ),
                                             ],
                                             md=4,
@@ -316,6 +344,12 @@ class WorkOrdersPage:
                                     ],
                                     className="mb-3",
                                 ),
+                                # Assembly Details Table (shown when assembly is selected)
+                                html.Div(
+                                    id="wo-create-assembly-details",
+                                    children=[],
+                                    className="mb-3",
+                                ),
                             ]
                         ),
                         dbc.ModalFooter(
@@ -338,10 +372,13 @@ class WorkOrdersPage:
                     is_open=False,
                     size="lg",
                 ),
-                # Detail view placeholder
+                # Detail view placeholder (always in layout for callbacks)
                 html.Div(
                     id="wo-detail-content",
                     children=html.Div("Select a work order to view details"),
+                    style={
+                        "display": "none"
+                    },  # Hidden by default, shown by tab callback
                 ),
                 html.Div(id="wo-detail-wo-id", style={"display": "none"}),
                 # Toast notifications

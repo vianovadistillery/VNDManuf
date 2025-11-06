@@ -265,6 +265,9 @@ class Formula(Base, AuditMixin):
     is_active = Column(Boolean, default=True)
     is_archived = Column(Boolean, default=False, nullable=False)
     # Note: archived_at, archived_by are provided by AuditMixin
+    yield_factor = Column(
+        Numeric(10, 4), nullable=True, default=1.0
+    )  # Yield factor for scaling quantities
     notes = Column(Text, nullable=True)
     instructions = Column(Text, nullable=True)
     # Note: created_at, updated_at, deleted_at, deleted_by are provided by AuditMixin
@@ -412,8 +415,15 @@ class WorkOrder(Base, AuditMixin):
     )  # Generated batch code
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
-    released_at = Column(DateTime)
-    completed_at = Column(DateTime)
+    released_at = Column(DateTime)  # Issued date
+    completed_at = Column(DateTime)  # Completed date
+    actual_qty = Column(Numeric(12, 4), nullable=True)  # Actual quantity produced
+    estimated_cost = Column(
+        Numeric(12, 4), nullable=True
+    )  # Estimated cost from assembly at creation
+    actual_cost = Column(
+        Numeric(12, 4), nullable=True
+    )  # Actual cost determined when completed
     notes = Column(Text)
 
     # Relationships
@@ -1165,6 +1175,22 @@ class Unit(Base, AuditMixin):
         Index("ix_unit_code", "code"),
         Index("ix_unit_type", "unit_type"),
     )
+
+
+class WorkArea(Base, AuditMixin):
+    """Work areas/centers for manufacturing operations."""
+
+    __tablename__ = "work_areas"
+
+    id = uuid_column()
+    code = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    is_active = Column(Boolean, default=True)
+    # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
+    # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
+
+    __table_args__ = (Index("ix_work_area_code", "code"),)
 
 
 class PackConversion(Base, AuditMixin):

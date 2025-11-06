@@ -49,6 +49,7 @@ class FormulaCreate(BaseModel):
     formula_code: str
     formula_name: str
     version: int = 1
+    yield_factor: Optional[float] = 1.0
     is_active: bool = True
     lines: List[FormulaLineCreate] = []
 
@@ -61,21 +62,26 @@ class FormulaResponse(BaseModel):
     formula_code: str
     formula_name: str
     version: int
+    yield_factor: Optional[float] = 1.0
     is_active: bool
     created_at: str
     updated_at: str
 
     product_name: Optional[str] = None
+    product_sku: Optional[str] = None
     lines: List[FormulaLineResponse] = []
 
 
 def formula_to_response(f: Formula, db: Session) -> FormulaResponse:
     """Convert Formula model to response DTO."""
-    # Load lines with product relationship
+    # Load lines with product relationship - filter out soft-deleted lines
     stmt = (
         select(FormulaLine)
         .options(joinedload(FormulaLine.product))
-        .where(FormulaLine.formula_id == f.id)
+        .where(
+            FormulaLine.formula_id == f.id,
+            FormulaLine.deleted_at.is_(None),  # Only include active/non-deleted lines
+        )
         .order_by(FormulaLine.sequence)
     )
     lines = db.execute(stmt).scalars().unique().all()
@@ -86,9 +92,13 @@ def formula_to_response(f: Formula, db: Session) -> FormulaResponse:
         id=str(f.id),
         product_id=f.product_id,
         product_name=product.name if product else None,
+        product_sku=product.sku if product else None,
         formula_code=f.formula_code,
         formula_name=f.formula_name,
         version=f.version,
+        yield_factor=float(f.yield_factor)
+        if hasattr(f, "yield_factor") and f.yield_factor is not None
+        else 1.0,
         is_active=f.is_active,
         created_at=f.created_at.isoformat(),
         updated_at=f.updated_at.isoformat(),
@@ -232,6 +242,10 @@ async def create_formula(formula_data: FormulaCreate, db: Session = Depends(get_
         formula_code=formula_data.formula_code,
         formula_name=formula_data.formula_name,
         version=formula_data.version,
+        yield_factor=formula_data.yield_factor
+        if hasattr(formula_data, "yield_factor")
+        and formula_data.yield_factor is not None
+        else 1.0,
         is_active=formula_data.is_active,
     )
     db.add(formula)
@@ -305,6 +319,9 @@ async def create_formula_revision(
             else original.formula_name
         ),
         version=new_version,
+        yield_factor=original.yield_factor
+        if hasattr(original, "yield_factor") and original.yield_factor is not None
+        else 1.0,
         is_active=True,
     )
     db.add(new_formula)
@@ -353,6 +370,8 @@ async def update_formula(
     # Update fields
     if "formula_name" in formula_data:
         formula.formula_name = formula_data["formula_name"]
+    if "yield_factor" in formula_data:
+        formula.yield_factor = formula_data["yield_factor"]
     if "is_active" in formula_data:
         formula.is_active = formula_data["is_active"]
 
@@ -384,15 +403,29 @@ async def replace_formula_lines(
     for line in existing_lines:
         soft_delete(db, line)
 
-    # Commit the deletions before adding new lines
-    db.flush()
+    # Commit the deletions before adding new lines to ensure unique constraint is satisfied
+    # SQLite unique constraints don't exclude soft-deleted records, so we must persist the deletions
+    db.commit()
+
+    # Check existing sequences (including soft-deleted) to avoid conflicts
+    # SQLite unique constraints apply to all rows, so we need to use sequences that don't conflict
+    all_lines_stmt = select(FormulaLine).where(
+        FormulaLine.formula_id == formula.id
+    )  # Get all lines including soft-deleted
+    all_existing_lines = db.execute(all_lines_stmt).scalars().all()
+    used_sequences = {line.sequence for line in all_existing_lines}
+
+    # Find the next available sequence number
+    next_sequence = 1
+    if used_sequences:
+        next_sequence = max(used_sequences) + 1
 
     # Add new lines
     import uuid
 
     # Ensure sequences are unique and sequential
-    # Use enumerate to assign sequential sequence numbers regardless of what's in line_data
-    for idx, line_data in enumerate(lines_data, start=1):
+    # Use sequences starting from next_sequence to avoid conflicts with soft-deleted records
+    for idx, line_data in enumerate(lines_data):
         # Validate product exists
         product = db.get(Product, line_data.raw_material_id)
         if not product:
@@ -401,12 +434,15 @@ async def replace_formula_lines(
                 detail=f"Product {line_data.raw_material_id} not found",
             )
 
+        # Use next_sequence + idx to ensure no conflicts with existing (including soft-deleted) sequences
+        sequence = next_sequence + idx
+
         line = FormulaLine(
             id=str(uuid.uuid4()),
             formula_id=formula.id,
             raw_material_id=line_data.raw_material_id,
             quantity_kg=line_data.quantity_kg,
-            sequence=idx,  # Use sequential index to ensure uniqueness
+            sequence=sequence,
             notes=line_data.notes,
             unit=line_data.unit,
         )

@@ -12,9 +12,7 @@ class FormulasPage:
         return dbc.Container(
             [
                 # Header
-                dbc.Row(
-                    [dbc.Col([html.H2("Formulas & Formulations", className="mb-4")])]
-                ),
+                dbc.Row([dbc.Col([html.H2("Assemblies", className="mb-4")])]),
                 # Filter Bar
                 dbc.Row(
                     [
@@ -121,7 +119,7 @@ class FormulasPage:
                                                             "id": "version",
                                                         },
                                                         {
-                                                            "name": "Product",
+                                                            "name": "Product (SKU - Name)",
                                                             "id": "product_name",
                                                         },
                                                         {
@@ -235,112 +233,82 @@ class FormulasPage:
                                                 html.Hr(),
                                                 # Formula Lines Table
                                                 html.H6("Ingredients:"),
-                                                dash_table.DataTable(
-                                                    id="formula-lines-table",
-                                                    columns=[
-                                                        {
-                                                            "name": "Seq",
-                                                            "id": "sequence",
-                                                        },
-                                                        {
-                                                            "name": "Ingredient",
-                                                            "id": "ingredient_name",
-                                                        },
-                                                        {
-                                                            "name": "Qty (kg)",
-                                                            "id": "quantity_kg",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".3f"
+                                                html.Div(
+                                                    id="formula-lines-table-container",
+                                                    children=[
+                                                        dash_table.DataTable(
+                                                            id="formula-lines-table",
+                                                            columns=[
+                                                                {
+                                                                    "name": "SKU",
+                                                                    "id": "product_sku",
+                                                                },
+                                                                {
+                                                                    "name": "Product",
+                                                                    "id": "product_name",
+                                                                },
+                                                                {
+                                                                    "name": "Quantity",
+                                                                    "id": "quantity",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".3f"
+                                                                    },
+                                                                },
+                                                                {
+                                                                    "name": "Unit",
+                                                                    "id": "unit",
+                                                                },
+                                                                {
+                                                                    "name": "Qty (kg)",
+                                                                    "id": "quantity_kg",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".3f"
+                                                                    },
+                                                                },
+                                                                {
+                                                                    "name": "Unit Cost",
+                                                                    "id": "unit_cost",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".4f"
+                                                                    },
+                                                                },
+                                                                {
+                                                                    "name": "Line Cost",
+                                                                    "id": "line_cost",
+                                                                    "type": "numeric",
+                                                                    "format": {
+                                                                        "specifier": ".4f"
+                                                                    },
+                                                                },
+                                                            ],
+                                                            data=[],
+                                                            sort_action="native",
+                                                            style_cell={
+                                                                "textAlign": "left",
+                                                                "fontSize": "11px",
+                                                                "padding": "4px",
                                                             },
-                                                        },
-                                                        {
-                                                            "name": "Qty (Lt)",
-                                                            "id": "quantity_lt",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".3f"
+                                                            style_header={
+                                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                                "fontWeight": "bold",
                                                             },
-                                                        },
-                                                        {
-                                                            "name": "SG",
-                                                            "id": "density",
-                                                            "type": "numeric",
-                                                            "format": {
-                                                                "specifier": ".6f"
+                                                            style_table={
+                                                                "overflowX": "auto"
                                                             },
-                                                        },
-                                                        {
-                                                            "name": "Notes",
-                                                            "id": "notes",
-                                                        },
-                                                    ],
-                                                    data=[],
-                                                    sort_action="native",
-                                                    style_cell={
-                                                        "textAlign": "left",
-                                                        "fontSize": "11px",
-                                                    },
-                                                    style_header={
-                                                        "backgroundColor": "rgb(240, 240, 240)",
-                                                        "fontWeight": "bold",
-                                                    },
-                                                    style_table={"overflowX": "auto"},
-                                                ),
-                                                html.Hr(),
-                                                # Totals
-                                                dbc.Row(
-                                                    [
-                                                        dbc.Col(
-                                                            [
-                                                                html.Strong(
-                                                                    "Total Ingredients: "
-                                                                ),
-                                                                html.Span(
-                                                                    id="formula-total-lines",
-                                                                    className="text-primary",
-                                                                ),
-                                                            ],
-                                                            md=3,
                                                         ),
-                                                        dbc.Col(
-                                                            [
-                                                                html.Strong(
-                                                                    "Total Mass: "
-                                                                ),
-                                                                html.Span(
-                                                                    id="formula-total-kg",
-                                                                    className="text-success",
-                                                                ),
-                                                            ],
-                                                            md=3,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                html.Strong(
-                                                                    "Total Volume: "
-                                                                ),
-                                                                html.Span(
-                                                                    id="formula-total-lt",
-                                                                    className="text-info",
-                                                                ),
-                                                            ],
-                                                            md=3,
-                                                        ),
-                                                        dbc.Col(
-                                                            [
-                                                                html.Strong(
-                                                                    "Formula SG: "
-                                                                ),
-                                                                html.Span(
-                                                                    id="formula-total-sg",
-                                                                    className="text-warning",
-                                                                ),
-                                                            ],
-                                                            md=3,
+                                                        # Summary totals (same as product detail view)
+                                                        html.Div(
+                                                            id="formula-summary-totals",
+                                                            style={
+                                                                "fontSize": "12px",
+                                                                "fontWeight": "bold",
+                                                                "marginTop": "10px",
+                                                            },
                                                         ),
                                                     ],
-                                                    className="mt-2",
                                                 ),
                                             ]
                                         ),
@@ -455,6 +423,22 @@ class FormulasPage:
                                                 ),
                                                 dbc.Row(
                                                     [
+                                                        dbc.Col(
+                                                            [
+                                                                dbc.Label(
+                                                                    "Yield Factor:"
+                                                                ),
+                                                                dbc.Input(
+                                                                    id="formula-input-yield-factor",
+                                                                    type="number",
+                                                                    step="0.01",
+                                                                    min="0.01",
+                                                                    placeholder="1.00",
+                                                                    value=1.0,
+                                                                ),
+                                                            ],
+                                                            md=6,
+                                                        ),
                                                         dbc.Col(
                                                             [
                                                                 dbc.Label("Active:"),

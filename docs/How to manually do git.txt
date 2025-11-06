@@ -1,0 +1,16 @@
+# 1) See what’s unstaged
+git status
+
+# 2) Stage EVERYTHING (so pre-commit won’t stash)
+git add -A
+
+# 3) Run all hooks explicitly (they will change files if needed)
+pre-commit run --all-files
+
+# 4) Stage the auto-fixes the hooks just made
+git add -A
+
+# 5) Commit for real
+git commit -m "work order progress 1"
+
+git push
