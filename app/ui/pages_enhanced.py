@@ -459,7 +459,7 @@ class ProductsPageEnhanced:
                                                         ),
                                                         dbc.Col(
                                                             [
-                                                                dbc.Label("Is Active"),
+                                                                dbc.Label("Status"),
                                                                 dbc.Select(
                                                                     id="product-is-active",
                                                                     options=[
@@ -473,6 +473,12 @@ class ProductsPageEnhanced:
                                                                         },
                                                                     ],
                                                                     value="true",
+                                                                ),
+                                                                dbc.Checkbox(
+                                                                    id="product-allow-negative",
+                                                                    label="Allow negative inventory",
+                                                                    value=True,
+                                                                    className="mt-2",
                                                                 ),
                                                             ],
                                                             width=4,
@@ -1425,7 +1431,10 @@ class ProductsPageEnhanced:
                                         ),
                                         dbc.Col(
                                             [
-                                                dbc.Label("Quantity (kg) *"),
+                                                dbc.Label(
+                                                    "Quantity (kg) *",
+                                                    id="adjust-quantity-label",
+                                                ),
                                                 dbc.Input(
                                                     id="adjust-quantity",
                                                     type="number",
@@ -1483,6 +1492,10 @@ class ProductsPageEnhanced:
                                 ),
                                 html.Div(
                                     id="adjust-product-id-hidden",
+                                    style={"display": "none"},
+                                ),
+                                html.Div(
+                                    id="adjust-usage-metadata",
                                     style={"display": "none"},
                                 ),
                             ]

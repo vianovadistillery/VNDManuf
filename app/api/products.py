@@ -33,6 +33,7 @@ def product_to_response(product: Product) -> ProductResponse:
         is_purchase=getattr(product, "is_purchase", False),
         is_sell=getattr(product, "is_sell", False),
         is_assemble=getattr(product, "is_assemble", False),
+        allow_negative_inventory=getattr(product, "allow_negative_inventory", True),
         ean13=getattr(product, "ean13", None),
         supplier_id=(
             str(product.supplier_id) if getattr(product, "supplier_id", None) else None
@@ -263,6 +264,7 @@ async def create_product(product_data: ProductCreate, db: Session = Depends(get_
         is_purchase=product_data.is_purchase,
         is_sell=product_data.is_sell,
         is_assemble=product_data.is_assemble,
+        allow_negative_inventory=product_data.allow_negative_inventory,
         ean13=product_data.ean13,
         supplier_id=product_data.supplier_id,
         # raw_material_group_id removed - deprecated field
@@ -390,6 +392,8 @@ async def update_product(
         product.is_sell = product_data.is_sell
     if product_data.is_assemble is not None:
         product.is_assemble = product_data.is_assemble
+    if product_data.allow_negative_inventory is not None:
+        product.allow_negative_inventory = product_data.allow_negative_inventory
     if product_data.ean13 is not None:
         product.ean13 = product_data.ean13
     if product_data.supplier_id is not None:

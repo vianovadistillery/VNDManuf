@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from app.adapters.db.models import Product
 from app.adapters.db.models_assemblies_shopify import Assembly, AssemblyDirection
 from app.domain.rules import round_quantity
 from app.services.inventory import InventoryService
@@ -57,6 +58,12 @@ class AssemblyService:
             child_need = round_quantity(child_need)
 
             # Consume child inventory via FIFO
+            child_product = self.db.get(Product, assembly.child_product_id)
+            allow_negative = bool(
+                getattr(child_product, "allow_negative_inventory", False)
+                if child_product
+                else False
+            )
             issues = self.inventory.consume_lots_fifo(
                 product_id=assembly.child_product_id,
                 qty_kg=child_need,
@@ -64,6 +71,7 @@ class AssemblyService:
                 ref_type="ASSEMBLE",
                 ref_id=parent_product_id,
                 notes=f"Assembly: {reason}",
+                allow_negative=allow_negative,
             )
 
             # Calculate total cost consumed from this child
@@ -129,6 +137,12 @@ class AssemblyService:
             )
 
         # Consume parent via FIFO
+        parent_product = self.db.get(Product, parent_product_id)
+        allow_negative = bool(
+            getattr(parent_product, "allow_negative_inventory", False)
+            if parent_product
+            else False
+        )
         parent_issues = self.inventory.consume_lots_fifo(
             product_id=parent_product_id,
             qty_kg=parent_qty,
@@ -136,6 +150,7 @@ class AssemblyService:
             ref_type="DISASSEMBLE",
             ref_id=parent_product_id,
             notes=f"Disassembly: {reason}",
+            allow_negative=allow_negative,
         )
 
         # Calculate parent cost

@@ -18,6 +18,7 @@ from app.adapters.db.models import (
     InventoryTxn,
     Product,
 )
+from app.services.inventory import InventoryService
 
 
 def reserve_materials(batch_id: str, db: Session) -> Dict[str, any]:
@@ -36,6 +37,7 @@ def reserve_materials(batch_id: str, db: Session) -> Dict[str, any]:
 
     reservations = []
     issues = []
+    inventory_service = InventoryService(db)
 
     for component in components:
         # Get product
@@ -44,65 +46,31 @@ def reserve_materials(batch_id: str, db: Session) -> Dict[str, any]:
             issues.append(f"Product {component.ingredient_product_id} not found")
             continue
 
-        # Get available lots
-        lots_stmt = (
-            select(InventoryLot)
-            .where(
-                and_(
-                    InventoryLot.product_id == component.ingredient_product_id,
-                    InventoryLot.is_active.is_(True),
-                    InventoryLot.quantity_kg > 0,
-                )
-            )
-            .order_by(InventoryLot.received_at)
-        )
+        allow_negative = bool(getattr(product, "allow_negative_inventory", False))
 
-        lots = db.execute(lots_stmt).scalars().all()
-
-        # Use FIFO to issue materials
-        remaining_qty = component.quantity_kg
-        for lot in lots:
-            if remaining_qty <= 0:
-                break
-
-            qty_to_issue = min(remaining_qty, lot.quantity_kg)
-
-            # Decrement lot
-            lot.quantity_kg -= qty_to_issue
-
-            # Validate non-negative
-            if lot.quantity_kg < 0:
-                issues.append(f"Lot {lot.lot_code} would go negative")
-                db.rollback()
-                return {"success": False, "issues": issues}
-
-            # Create transaction record
-            txn = InventoryTxn(
-                id=str(uuid.uuid4()),
-                lot_id=lot.id,
-                transaction_type="BATCH_CONSUMPTION",
-                quantity_kg=-qty_to_issue,
-                unit_cost=lot.unit_cost,
+        try:
+            fifo_issues = inventory_service.consume_lots_fifo(
+                product_id=product.id,
+                qty_kg=component.quantity_kg,
+                reason=f"Batch {batch.batch_code}",
+                ref_type="BATCH",
+                ref_id=batch.id,
                 notes=f"Batch {batch.batch_code}",
+                allow_negative=allow_negative,
             )
-            db.add(txn)
-
-            reservations.append(
-                {
-                    "lot_id": lot.id,
-                    "material_id": product.sku,
-                    "qty_issued": qty_to_issue,
-                }
-            )
-
-            remaining_qty -= qty_to_issue
-
-        if remaining_qty > 0:
-            issues.append(
-                f"Insufficient stock for {product.name}: need {remaining_qty} kg more"
-            )
+        except ValueError as e:
+            issues.append(str(e))
             db.rollback()
             return {"success": False, "issues": issues}
+
+        for issue in fifo_issues:
+            reservations.append(
+                {
+                    "lot_id": issue.lot_id,
+                    "material_id": product.sku,
+                    "qty_issued": issue.quantity_kg,
+                }
+            )
 
     db.commit()
 

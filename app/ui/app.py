@@ -1,30 +1,34 @@
-"""Dash UI application for TPManuf Modern System."""
+"""Dash UI application for VNDManuf (tabs + callbacks mounting)."""
 
-# Import page components from old pages.py (the file, not the directory)
+from __future__ import annotations
+
+# stdlib
 import importlib.util
 import json
 import os
 import sys
 from typing import Any, Dict, Optional
 
+# third-party
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import requests
-from dash import Input, Output, State, html
 
-# Load pages.py as a module
-spec = importlib.util.spec_from_file_location(
-    "pages_old", os.path.join(os.path.dirname(__file__), "pages.py")
+# (…rest of your file…)
+# stdlib/third-party imports first
+from dash import (
+    Input,
+    Output,
+    State,
+    html,  # keep whatever you already import
 )
-pages_old = importlib.util.module_from_spec(spec)
-sys.modules["pages_old"] = pages_old
-spec.loader.exec_module(pages_old)
 
-# Access functions from old pages.py
-batches_page = pages_old.batches_page
-inventory_page = pages_old.inventory_page
-reports_page = pages_old.reports_page
+# local imports (after third-party)
+from apps.vndmanuf_sales.ui.sales_tab import layout as sales_tab_layout
+from apps.vndmanuf_sales.ui.sales_tab import (
+    register_callbacks as register_sales_callbacks,
+)
 
 from .contacts_callbacks import register_contacts_callbacks  # noqa: E402
 from .excise_rates_callbacks import register_excise_rates_callbacks  # noqa: E402
@@ -42,16 +46,37 @@ from .pages.work_orders_page import WorkOrdersPage  # noqa: E402
 from .pages_enhanced import products_page_enhanced  # noqa: E402
 from .product_section_callbacks import register_product_section_callbacks  # noqa: E402
 from .products_callbacks import register_product_callbacks  # noqa: E402
-from .purchase_formats_callbacks import (  # noqa: E402
-    register_purchase_formats_callbacks,
+from .purchase_formats_callbacks import (
+    register_purchase_formats_callbacks,  # noqa: E402
 )
 from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa: E402
 from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
 from .work_areas_callbacks import register_work_areas_callbacks  # noqa: E402
 
+# Register work orders callbacks
+from .work_orders_callbacks import register_work_orders_callbacks  # noqa: E402
+
+# Load pages.py as a module
+spec = importlib.util.spec_from_file_location(
+    "pages_old", os.path.join(os.path.dirname(__file__), "pages.py")
+)
+pages_old = importlib.util.module_from_spec(spec)
+sys.modules["pages_old"] = pages_old
+spec.loader.exec_module(pages_old)
+
+# Access functions from old pages.py
+batches_page = pages_old.batches_page
+inventory_page = pages_old.inventory_page
+reports_page = pages_old.reports_page
+
+
 # Xero integration temporarily disabled - will re-enable later
 # from .pages.accounting_integration_page import accounting_integration_page
+
+# Integration link configuration
+COMPINTEL_ENABLED = os.getenv("COMPINTEL_ENABLED", "false").lower() == "true"
+COMPINTEL_URL = os.getenv("COMPINTEL_URL", "http://127.0.0.1:8060")
 
 # Initialize Dash app with Bootstrap theme
 app = dash.Dash(
@@ -63,6 +88,35 @@ app = dash.Dash(
 # API base URL
 API_BASE_URL = "http://127.0.0.1:8000/api/v1"
 
+# Header content helper
+header_children = [
+    html.H1("VNDManuf", className="text-center mb-4"),
+    dbc.Alert(
+        id="demo-mode-alert",
+        children="Connecting to API...",
+        color="info",
+        dismissable=True,
+        className="mb-3",
+        style={"display": "none"},
+    ),
+]
+
+if COMPINTEL_ENABLED:
+    header_children.append(
+        dbc.Button(
+            "Open Competitor Intel →",
+            id="open-competitor-intel",
+            color="info",
+            href=COMPINTEL_URL,
+            external_link=True,
+            target="_blank",
+            className="mb-3",
+            title="Open Competitor Intel in a new tab",
+        )
+    )
+
+header_children.append(html.Hr())
+
 # App layout
 app.layout = dbc.Container(
     [
@@ -71,16 +125,7 @@ app.layout = dbc.Container(
             [
                 dbc.Col(
                     [
-                        html.H1("VNDManuf", className="text-center mb-4"),
-                        dbc.Alert(
-                            id="demo-mode-alert",
-                            children="Connecting to API...",
-                            color="info",
-                            dismissable=True,
-                            className="mb-3",
-                            style={"display": "none"},
-                        ),
-                        html.Hr(),
+                        *header_children,
                     ]
                 )
             ]
@@ -108,6 +153,7 @@ app.layout = dbc.Container(
                                 dbc.Tab(label="Conditions", tab_id="conditions"),
                                 dbc.Tab(label="Settings", tab_id="settings"),
                                 dbc.Tab(label="Reports", tab_id="reports"),
+                                dbc.Tab(label="Sales", tab_id="sales"),
                                 # Xero integration temporarily disabled - will re-enable later
                                 # dbc.Tab(label="Accounting", tab_id="accounting"),
                             ],
@@ -442,6 +488,10 @@ def render_tab_content(active_tab):
     elif active_tab == "reports":
         layout = reports_page.get_layout()
         print("Reports layout created")  # Debug print
+        return layout
+    elif active_tab == "sales":
+        layout = sales_tab_layout()
+        print("Sales layout created")  # Debug print
         return layout
     # Xero integration temporarily disabled - will re-enable later
     # elif active_tab == "accounting":
@@ -878,9 +928,8 @@ register_excise_rates_callbacks(app, make_api_request)
 register_purchase_formats_callbacks(app, make_api_request)
 register_work_areas_callbacks(app, make_api_request)
 register_settings_callbacks(app)
+register_sales_callbacks(app)
 
-# Register work orders callbacks
-from .work_orders_callbacks import register_work_orders_callbacks  # noqa: E402
 
 register_work_orders_callbacks(app, API_BASE_URL)
 

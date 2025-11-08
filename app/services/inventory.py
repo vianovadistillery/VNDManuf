@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.adapters.db.models import InventoryLot, InventoryTxn
+from app.adapters.db.models import InventoryLot, InventoryTxn, Product
 from app.adapters.db.models_assemblies_shopify import InventoryReservation
 from app.domain.rules import FifoIssue, fifo_issue, round_quantity
 
@@ -80,6 +80,32 @@ class InventoryService:
 
         return lots
 
+    def _get_or_create_negative_lot(self, product_id: str) -> InventoryLot:
+        """Get or create a placeholder lot used to track negative inventory."""
+        lot = (
+            self.db.query(InventoryLot)
+            .filter(
+                InventoryLot.product_id == product_id,
+                InventoryLot.lot_code == "__AUTO_NEGATIVE__",
+                InventoryLot.is_active.is_(True),
+            )
+            .first()
+        )
+
+        if not lot:
+            lot = InventoryLot(
+                product_id=product_id,
+                lot_code="__AUTO_NEGATIVE__",
+                quantity_kg=round_quantity(Decimal("0")),
+                unit_cost=Decimal("0"),
+                received_at=datetime.utcnow(),
+                is_active=True,
+            )
+            self.db.add(lot)
+            self.db.flush()
+
+        return lot
+
     def consume_lots_fifo(
         self,
         product_id: str,
@@ -88,6 +114,7 @@ class InventoryService:
         ref_type: str,
         ref_id: Optional[str],
         notes: Optional[str] = None,
+        allow_negative: bool = False,
     ) -> List[FifoIssue]:
         """
         Consume inventory using FIFO logic.
@@ -109,7 +136,26 @@ class InventoryService:
         lots = self.get_lots_fifo(product_id)
 
         # Use domain FIFO logic
-        issues = fifo_issue(lots, qty_kg, override_negative=False)
+        issues = fifo_issue(lots, qty_kg, override_negative=allow_negative)
+
+        issued_total = sum(issue.quantity_kg for issue in issues)
+        if allow_negative and issued_total < qty_kg:
+            deficit = round_quantity(qty_kg - issued_total)
+            if deficit > 0:
+                negative_lot = self._get_or_create_negative_lot(product_id)
+                if negative_lot not in lots:
+                    lots.append(negative_lot)
+
+                starting_qty = negative_lot.quantity_kg or Decimal("0")
+                remaining_qty = round_quantity(starting_qty - deficit)
+                issues.append(
+                    FifoIssue(
+                        lot_id=negative_lot.id,
+                        quantity_kg=deficit,
+                        unit_cost=negative_lot.unit_cost or Decimal("0"),
+                        remaining_quantity_kg=remaining_qty,
+                    )
+                )
 
         # Update lots and write transactions
         for issue in issues:
@@ -287,6 +333,11 @@ class InventoryService:
             raise ValueError(f"Reservation {reservation_id} is not active")
 
         # Consume via FIFO
+        product = self.db.get(Product, reservation.product_id)
+        allow_negative = bool(
+            getattr(product, "allow_negative_inventory", False) if product else False
+        )
+
         self.consume_lots_fifo(
             product_id=reservation.product_id,
             qty_kg=reservation.qty_canonical,
@@ -294,6 +345,7 @@ class InventoryService:
             ref_type=reservation.source.upper(),
             ref_id=reservation.reference_id,
             notes=f"Committed reservation {reservation_id}",
+            allow_negative=allow_negative,
         )
 
         # Mark as committed

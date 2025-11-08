@@ -3,12 +3,306 @@
 
 import json
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import dash
 import dash_bootstrap_components as dbc
 import requests
 from dash import Input, Output, State, dash_table, dcc, html, no_update
+from dash.dash_table.Format import Format, Scheme
 from dash.exceptions import PreventUpdate
+
+
+def safe_float(value: Optional[Any], default: Optional[float] = 0.0) -> Optional[float]:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def get_product_details(
+    product_id: Optional[str], api_base_url: str, cache: Dict[str, Dict[str, Any]]
+) -> Dict[str, Any]:
+    if not product_id:
+        return {
+            "label": "",
+            "density": None,
+            "base_unit": None,
+            "default_uom": None,
+            "data": {},
+        }
+
+    if product_id in cache:
+        return cache[product_id]
+
+    details = {
+        "label": product_id,
+        "density": None,
+        "base_unit": None,
+        "default_uom": None,
+        "data": {},
+    }
+
+    try:
+        prod_url = f"{api_base_url}/products/{product_id}"
+        prod_response = requests.get(prod_url, timeout=5)
+        if prod_response.status_code == 200:
+            product = prod_response.json()
+            sku = product.get("sku", "")
+            name = product.get("name", "")
+            if sku and name:
+                details["label"] = f"{sku} - {name}"
+            elif name:
+                details["label"] = name
+            elif sku:
+                details["label"] = sku
+
+            details["density"] = safe_float(product.get("density_kg_per_l"), None)
+            details["base_unit"] = product.get("base_unit")
+            details["default_uom"] = (
+                product.get("usage_unit")
+                or product.get("base_unit")
+                or product.get("purchase_unit")
+            )
+            details["data"] = product
+    except Exception:
+        details["label"] = product_id
+
+    cache[product_id] = details
+    return details
+
+
+MASS_FACTORS = {
+    "KG": 1,
+    "KILOGRAM": 1,
+    "KILOGRAMS": 1,
+    "G": 1000,
+    "GRAM": 1000,
+    "GRAMS": 1000,
+    "MG": 1_000_000,
+    "LB": 2.20462262185,
+    "LBS": 2.20462262185,
+    "POUND": 2.20462262185,
+    "POUNDS": 2.20462262185,
+}
+
+VOLUME_UOMS = {
+    "L": ("L", 1),
+    "LITER": ("L", 1),
+    "LITRE": ("L", 1),
+    "ML": ("ML", 1000),
+    "MILLILITER": ("ML", 1000),
+    "MILLILITRE": ("ML", 1000),
+}
+
+
+def convert_from_kg(
+    value_kg: Optional[float], uom: Optional[str], product_details: Dict[str, Any]
+) -> Optional[float]:
+    if value_kg is None:
+        return None
+
+    numeric = safe_float(value_kg, default=None)
+    if numeric is None:
+        return None
+
+    uom_clean = (uom or "").strip().upper()
+    if not uom_clean:
+        return round(numeric, 3)
+
+    if uom_clean in MASS_FACTORS:
+        return round(numeric * MASS_FACTORS[uom_clean], 3)
+
+    if uom_clean in VOLUME_UOMS:
+        density = product_details.get("density")
+        if not density or density == 0:
+            return round(numeric, 3)
+        base_unit, multiplier = VOLUME_UOMS[uom_clean]
+        litres = numeric / density
+        if base_unit == "ML":
+            return round(litres * multiplier, 3)
+        return round(litres * multiplier, 3)
+
+    return round(numeric, 3)
+
+
+def build_input_rows(
+    wo: Dict[str, Any],
+    api_base_url: str,
+    product_cache: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+    cache = product_cache if product_cache is not None else {}
+    inputs = wo.get("inputs", []) or []
+    rows: List[Dict[str, Any]] = []
+    options: List[Dict[str, str]] = []
+    option_ids: Set[str] = set()
+
+    sorted_inputs = sorted(
+        inputs,
+        key=lambda item: (
+            item.get("sequence") is None,
+            safe_float(item.get("sequence")),
+        ),
+    )
+
+    for idx, inp in enumerate(sorted_inputs):
+        component_id = inp.get("component_product_id")
+        details = get_product_details(component_id, api_base_url, cache)
+        label = details["label"]
+
+        planned_display = safe_float(inp.get("planned_qty"))
+        planned_canonical = safe_float(inp.get("required_quantity_kg"))
+        actual_canonical = safe_float(inp.get("actual_qty"))
+        if actual_canonical is None:
+            actual_canonical = safe_float(inp.get("allocated_quantity_kg"))
+        if actual_canonical is None:
+            actual_canonical = 0.0
+
+        uom = (
+            inp.get("uom")
+            or details.get("default_uom")
+            or details.get("base_unit")
+            or ""
+        ).strip()
+
+        planned_qty_display = planned_display
+        if planned_qty_display is None and planned_canonical is not None:
+            converted_planned = convert_from_kg(planned_canonical, uom, details)
+            planned_qty_display = (
+                converted_planned
+                if converted_planned is not None
+                else planned_canonical
+            )
+
+        actual_qty_display = convert_from_kg(actual_canonical, uom, details)
+        if actual_qty_display is None:
+            actual_qty_display = actual_canonical
+
+        remaining_canonical = None
+        if planned_canonical is not None:
+            remaining_canonical = max(planned_canonical - actual_canonical, 0.0)
+        remaining_qty_display = (
+            convert_from_kg(remaining_canonical, uom, details)
+            if remaining_canonical is not None
+            else None
+        )
+        if remaining_qty_display is None and remaining_canonical is not None:
+            remaining_qty_display = remaining_canonical
+
+        rows.append(
+            {
+                "id": inp.get("id") or f"input-{idx}",
+                "component_label": label or component_id or "",
+                "component_product_id": component_id,
+                "planned_qty": planned_qty_display,
+                "planned_qty_canonical": planned_canonical,
+                "uom": uom,
+                "actual_qty": actual_qty_display,
+                "actual_qty_canonical": actual_canonical,
+                "remaining_qty": remaining_qty_display,
+                "remaining_qty_canonical": remaining_canonical,
+                "batch": inp.get("source_batch_id", "") or "",
+            }
+        )
+
+        if component_id and component_id not in option_ids:
+            option_ids.add(component_id)
+            options.append({"label": label or component_id, "value": component_id})
+
+    return rows, options
+
+
+def build_output_rows(
+    wo: Dict[str, Any],
+    api_base_url: str,
+    product_cache: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
+    cache = product_cache if product_cache is not None else {}
+    outputs = wo.get("outputs", []) or []
+    rows: List[Dict[str, Any]] = []
+    planned_total_display = safe_float(wo.get("planned_qty"))
+    planned_total_canonical = safe_float(wo.get("quantity_kg"))
+    primary_product_id = wo.get("product_id")
+    wo_uom = (wo.get("uom") or "").strip()
+
+    if not outputs and primary_product_id:
+        details = get_product_details(primary_product_id, api_base_url, cache)
+        label = details["label"]
+        if planned_total_display is not None:
+            planned_display = planned_total_display
+        elif planned_total_canonical is not None:
+            converted = convert_from_kg(planned_total_canonical, wo_uom, details)
+            planned_display = (
+                converted if converted is not None else planned_total_canonical
+            )
+        else:
+            planned_display = 0.0
+        rows.append(
+            {
+                "id": "planned-output",
+                "product_label": label or primary_product_id,
+                "product_id": primary_product_id,
+                "planned_qty": planned_display,
+                "planned_qty_canonical": planned_total_canonical
+                if planned_total_canonical is not None
+                else planned_display,
+                "actual_qty": 0.0,
+                "uom": wo_uom,
+                "batch": "",
+            }
+        )
+        return rows
+
+    for idx, out in enumerate(outputs):
+        product_id = out.get("product_id")
+        details = get_product_details(product_id, api_base_url, cache)
+        label = details["label"]
+        actual_display = safe_float(out.get("qty_produced"))
+        uom = (
+            out.get("uom")
+            or wo_uom
+            or details.get("default_uom")
+            or details.get("base_unit")
+            or ""
+        )
+
+        if product_id == primary_product_id:
+            planned_canonical = planned_total_canonical
+            planned_display = planned_total_display
+        else:
+            planned_canonical = None
+            planned_display = None
+
+        if planned_display is None and planned_canonical is not None:
+            converted = convert_from_kg(planned_canonical, uom, details)
+            planned_display = converted if converted is not None else planned_canonical
+        if planned_display is None:
+            planned_display = 0.0
+
+        if actual_display is None:
+            actual_display = 0.0
+
+        actual_canonical = None
+
+        rows.append(
+            {
+                "id": out.get("id") or f"output-{idx}",
+                "product_label": label or product_id or "",
+                "product_id": product_id,
+                "planned_qty": planned_display,
+                "planned_qty_canonical": planned_canonical
+                if planned_canonical is not None
+                else planned_display,
+                "actual_qty": actual_display,
+                "actual_qty_canonical": actual_canonical,
+                "uom": uom,
+                "batch": out.get("batch_id", "") or "",
+            }
+        )
+
+    return rows
 
 
 def register_work_orders_callbacks(
@@ -261,32 +555,7 @@ def register_work_orders_callbacks(
 
             if response.status_code == 200:
                 wo = response.json()
-                inputs = wo.get("inputs", [])
-                options = []
-                for inp in inputs:
-                    if (
-                        inp.get("component_product_id")
-                        and inp.get("line_type") == "material"
-                    ):
-                        # Get product name
-                        product_id = inp.get("component_product_id")
-                        try:
-                            prod_url = f"{api_base_url}/products/{product_id}"
-                            prod_response = requests.get(prod_url, timeout=5)
-                            if prod_response.status_code == 200:
-                                product = prod_response.json()
-                                label = f"{product.get('sku', '')} - {product.get('name', '')}"
-                            else:
-                                label = product_id
-                        except (ValueError, TypeError, AttributeError):
-                            label = product_id
-
-                        options.append(
-                            {
-                                "label": label,
-                                "value": product_id,
-                            }
-                        )
+                _, options = build_input_rows(wo, api_base_url)
                 return options
             else:
                 return []
@@ -1147,15 +1416,22 @@ def register_work_orders_callbacks(
             Output("wo-detail-content", "style"),
             Output("wo-detail-wo-id", "data"),
             Output("wo-main-tabs", "active_tab", allow_duplicate=True),
+            Output("wo-detail-active-tab", "data", allow_duplicate=True),
         ],
         [
             Input("wo-list-table", "selected_rows"),
             Input("wo-main-tabs", "active_tab"),
         ],
-        [State("wo-list-table", "data"), State("wo-detail-wo-id", "data")],
+        [
+            State("wo-list-table", "data"),
+            State("wo-detail-wo-id", "data"),
+            State("wo-detail-active-tab", "data"),
+        ],
         prevent_initial_call="initial_duplicate",
     )
-    def load_work_order_detail(selected_rows, active_tab, table_data, current_wo_id):
+    def load_work_order_detail(
+        selected_rows, active_tab, table_data, current_wo_id, current_detail_tab
+    ):
         """Load work order detail when selected or detail tab is active."""
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -1179,33 +1455,66 @@ def register_work_orders_callbacks(
                         if response.status_code == 200:
                             wo = response.json()
                             return (
-                                create_work_order_detail_layout(wo),
-                                {"display": "block"},
-                                wo_id,
-                                "detail",
-                            )
-                        else:
-                            return (
-                                html.Div(
-                                    f"Error loading work order: {response.status_code}"
+                                create_work_order_detail_layout(
+                                    wo, api_base_url, active_tab="wo-detail-inputs"
                                 ),
                                 {"display": "block"},
                                 wo_id,
                                 "detail",
+                                "wo-detail-inputs",
+                            )
+                        else:
+                            return (
+                                html.Div(
+                                    [
+                                        html.P(
+                                            f"Error loading work order: {response.status_code}"
+                                        ),
+                                        build_detail_tab_content(
+                                            {},
+                                            api_base_url,
+                                            "wo-detail-inputs",
+                                        ),
+                                    ]
+                                ),
+                                {"display": "block"},
+                                wo_id,
+                                "detail",
+                                "wo-detail-inputs",
                             )
                     except Exception as e:
                         return (
-                            html.Div(f"Error: {str(e)}"),
+                            html.Div(
+                                [
+                                    html.P(f"Error: {str(e)}"),
+                                    build_detail_tab_content(
+                                        {},
+                                        api_base_url,
+                                        "wo-detail-inputs",
+                                    ),
+                                ]
+                            ),
                             {"display": "block"},
                             wo_id,
                             "detail",
+                            "wo-detail-inputs",
                         )
             # No row selected - show message
             return (
-                html.Div("Select a work order from the list to view details"),
+                html.Div(
+                    [
+                        html.P("Select a work order from the list to view details"),
+                        build_detail_tab_content(
+                            {},
+                            api_base_url,
+                            current_detail_tab or "wo-detail-inputs",
+                        ),
+                    ]
+                ),
                 {"display": "block"},
                 None,
                 "detail",
+                current_detail_tab or "wo-detail-inputs",
             )
 
         # If detail tab was activated, try to load current work order or selected one
@@ -1221,16 +1530,32 @@ def register_work_orders_callbacks(
                             if response.status_code == 200:
                                 wo = response.json()
                                 return (
-                                    create_work_order_detail_layout(wo),
+                                    create_work_order_detail_layout(
+                                        wo,
+                                        api_base_url,
+                                        active_tab=current_detail_tab
+                                        or "wo-detail-inputs",
+                                    ),
                                     {"display": "block"},
                                     wo_id,
+                                    no_update,
                                     no_update,
                                 )
                         except Exception as e:
                             return (
-                                html.Div(f"Error: {str(e)}"),
+                                html.Div(
+                                    [
+                                        html.P(f"Error: {str(e)}"),
+                                        build_detail_tab_content(
+                                            {},
+                                            api_base_url,
+                                            current_detail_tab or "wo-detail-inputs",
+                                        ),
+                                    ]
+                                ),
                                 {"display": "block"},
                                 wo_id,
+                                no_update,
                                 no_update,
                             )
                 # Otherwise try current_wo_id
@@ -1241,23 +1566,38 @@ def register_work_orders_callbacks(
                         if response.status_code == 200:
                             wo = response.json()
                             return (
-                                create_work_order_detail_layout(wo),
+                                create_work_order_detail_layout(
+                                    wo,
+                                    api_base_url,
+                                    active_tab=current_detail_tab or "wo-detail-inputs",
+                                ),
                                 {"display": "block"},
                                 current_wo_id,
+                                no_update,
                                 no_update,
                             )
                     except (ValueError, TypeError, AttributeError):
                         pass
                 # Default: show message
                 return (
-                    html.Div("Select a work order from the list to view details"),
+                    html.Div(
+                        [
+                            html.P("Select a work order from the list to view details"),
+                            build_detail_tab_content(
+                                {},
+                                api_base_url,
+                                current_detail_tab or "wo-detail-inputs",
+                            ),
+                        ]
+                    ),
                     {"display": "block"},
                     None,
+                    no_update,
                     no_update,
                 )
             else:
                 # Hide detail content when not on detail tab
-                return no_update, {"display": "none"}, no_update, no_update
+                return no_update, {"display": "none"}, no_update, no_update, no_update
 
         # Default: prevent update
         raise PreventUpdate
@@ -1275,11 +1615,10 @@ def register_work_orders_callbacks(
             State("wo-issue-component-dropdown", "value"),
             State("wo-issue-qty", "value"),
             State("wo-issue-batch-dropdown", "value"),
-            State("wo-issue-uom", "value"),
         ],
         prevent_initial_call=True,
     )
-    def issue_material(n_clicks, wo_id, component_id, qty, batch_id, uom):
+    def issue_material(n_clicks, wo_id, component_id, qty, batch_id):
         """Issue material for work order."""
         if not n_clicks or not wo_id:
             raise PreventUpdate
@@ -1296,7 +1635,7 @@ def register_work_orders_callbacks(
                 "component_product_id": component_id,
                 "qty": float(qty),
                 "source_batch_id": batch_id,
-                "uom": uom,
+                "uom": None,
             }
 
             url = f"{api_base_url}/work-orders/{wo_id}/issues"
@@ -1322,12 +1661,237 @@ def register_work_orders_callbacks(
                 f"Failed to issue material: {str(e)}",
             )
 
+    @app.callback(
+        [
+            Output("wo-issue-component-dropdown", "value", allow_duplicate=True),
+            Output("wo-issue-qty", "value", allow_duplicate=True),
+            Output("wo-issue-batch-dropdown", "value", allow_duplicate=True),
+        ],
+        Input("wo-inputs-edit-btn", "n_clicks"),
+        State("wo-inputs-table", "selected_rows"),
+        State("wo-inputs-table", "data"),
+        prevent_initial_call=True,
+    )
+    def prefill_issue_form(edit_clicks, selected_rows, table_data):
+        """Prefill the issue material form from the selected input line."""
+        if not edit_clicks:
+            raise PreventUpdate
+
+        if not table_data or not selected_rows:
+            return no_update, no_update, no_update
+
+        row_index = selected_rows[0]
+        if row_index >= len(table_data):
+            return no_update, no_update, no_update
+
+        row = table_data[row_index]
+        component_id = row.get("component_product_id")
+        remaining_display = row.get("remaining_qty")
+        if remaining_display is not None:
+            remaining_display = round(safe_float(remaining_display), 3)
+            if remaining_display <= 0:
+                remaining_display = None
+
+        return (
+            component_id,
+            remaining_display,
+            row.get("batch") or None,
+        )
+
     # Record QC
+    @app.callback(
+        Output("wo-qc-type-options", "data"),
+        Input("wo-main-tabs", "active_tab"),
+        prevent_initial_call=True,
+    )
+    def load_qc_types(active_tab):
+        """Load QC test type settings when entering detail view."""
+        if active_tab != "detail":
+            raise PreventUpdate
+
+        try:
+            url = f"{api_base_url}/work-orders/qc-test-types"
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                return response.json()
+            return dash.no_update
+        except Exception as e:
+            print(f"Error loading QC test types: {e}")
+            return dash.no_update
+
+    @app.callback(
+        Output("wo-qc-test-type", "options"),
+        Input("wo-qc-type-options", "data"),
+        prevent_initial_call=True,
+    )
+    def set_qc_type_options(type_data):
+        """Populate QC test type dropdown options."""
+        if not type_data:
+            return []
+
+        options = []
+        for item in type_data:
+            label = item.get("code") or item.get("name") or "Unknown"
+            unit = item.get("unit")
+            if unit:
+                label = f"{label} ({unit})"
+            options.append({"label": label, "value": item.get("id")})
+        return options
+
+    @app.callback(
+        Output("wo-qc-unit-display", "children"),
+        Input("wo-qc-test-type", "value"),
+        State("wo-qc-type-options", "data"),
+        prevent_initial_call=True,
+    )
+    def update_qc_unit_display(selected_type_id, type_data):
+        """Display the unit for the selected QC test type."""
+        if not selected_type_id or not type_data:
+            return "—"
+        for item in type_data:
+            if item.get("id") == selected_type_id:
+                unit = item.get("unit")
+                return unit if unit else "—"
+        return "—"
+
+    @app.callback(
+        [
+            Output("wo-qc-edit-btn", "disabled"),
+            Output("wo-qc-delete-btn", "disabled"),
+        ],
+        Input("wo-qc-table", "selected_rows"),
+        prevent_initial_call=True,
+    )
+    def toggle_qc_action_buttons(selected_rows):
+        """Enable QC edit/delete buttons when a row is selected."""
+        has_selection = bool(selected_rows)
+        disabled = not has_selection
+        return disabled, disabled
+
+    @app.callback(
+        [
+            Output("wo-qc-test-type", "value", allow_duplicate=True),
+            Output("wo-qc-result-value", "value", allow_duplicate=True),
+            Output("wo-qc-result-text", "value", allow_duplicate=True),
+            Output("wo-qc-status", "value", allow_duplicate=True),
+            Output("wo-qc-tester", "value", allow_duplicate=True),
+            Output("wo-qc-note", "value", allow_duplicate=True),
+            Output("wo-qc-current-id", "data", allow_duplicate=True),
+        ],
+        Input("wo-qc-edit-btn", "n_clicks"),
+        State("wo-qc-table", "selected_rows"),
+        State("wo-qc-table", "data"),
+        State("wo-qc-type-options", "data"),
+        prevent_initial_call=True,
+    )
+    def prefill_qc_form(edit_clicks, selected_rows, table_data, type_data):
+        """Prefill QC form for editing."""
+        if not edit_clicks:
+            raise PreventUpdate
+
+        if not selected_rows:
+            raise PreventUpdate
+
+        row_index = selected_rows[0]
+        if table_data is None or row_index >= len(table_data):
+            raise PreventUpdate
+
+        row = table_data[row_index]
+        type_id = row.get("test_type_id")
+
+        if not type_id and type_data:
+            row_test_type = (row.get("test_type") or "").upper()
+            for item in type_data:
+                if (item.get("code") or "").upper() == row_test_type:
+                    type_id = item.get("id")
+                    break
+
+        return (
+            type_id,
+            row.get("result_value"),
+            row.get("result_text"),
+            (row.get("status_raw") or "pending").lower() or "pending",
+            row.get("tester"),
+            row.get("note"),
+            row.get("id"),
+        )
+
     @app.callback(
         [
             Output("wo-qc-toast", "is_open", allow_duplicate=True),
             Output("wo-qc-toast", "header", allow_duplicate=True),
             Output("wo-qc-toast", "children", allow_duplicate=True),
+            Output("wo-qc-current-id", "data", allow_duplicate=True),
+        ],
+        Input("wo-qc-delete-btn", "n_clicks"),
+        [
+            State("wo-detail-wo-id", "data"),
+            State("wo-qc-table", "selected_rows"),
+            State("wo-qc-table", "data"),
+            State("wo-qc-current-id", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def delete_qc_result(
+        delete_clicks, wo_id, selected_rows, table_data, current_qc_id
+    ):
+        """Soft delete a QC test result."""
+        if not delete_clicks or not wo_id:
+            raise PreventUpdate
+
+        if not selected_rows:
+            return (
+                True,
+                "Error",
+                "Select a QC result to delete",
+                current_qc_id,
+            )
+
+        row_index = selected_rows[0]
+        if table_data is None or row_index >= len(table_data):
+            raise PreventUpdate
+
+        qc_id = table_data[row_index].get("id")
+        if not qc_id:
+            return (
+                True,
+                "Error",
+                "Invalid QC result selected",
+                current_qc_id,
+            )
+
+        try:
+            url = f"{api_base_url}/work-orders/{wo_id}/qc/{qc_id}"
+            response = requests.delete(url, timeout=10)
+            if response.status_code == 204:
+                return (
+                    True,
+                    "Success",
+                    "QC result deleted",
+                    None if current_qc_id == qc_id else current_qc_id,
+                )
+            else:
+                error_msg = response.json().get("detail", "Unknown error")
+                return (
+                    True,
+                    "Error",
+                    f"Failed to delete QC result: {error_msg}",
+                    current_qc_id,
+                )
+        except Exception as e:
+            return (
+                True,
+                "Error",
+                f"Failed to delete QC result: {str(e)}",
+                current_qc_id,
+            )
+
+    @app.callback(
+        [
+            Output("wo-qc-toast", "is_open", allow_duplicate=True),
+            Output("wo-qc-toast", "header", allow_duplicate=True),
+            Output("wo-qc-toast", "children", allow_duplicate=True),
+            Output("wo-qc-current-id", "data", allow_duplicate=True),
         ],
         [Input("wo-qc-submit-btn", "n_clicks")],
         [
@@ -1335,67 +1899,80 @@ def register_work_orders_callbacks(
             State("wo-qc-test-type", "value"),
             State("wo-qc-result-value", "value"),
             State("wo-qc-result-text", "value"),
-            State("wo-qc-unit", "value"),
             State("wo-qc-status", "value"),
             State("wo-qc-tester", "value"),
             State("wo-qc-note", "value"),
+            State("wo-qc-current-id", "data"),
         ],
         prevent_initial_call=True,
     )
     def record_qc(
         n_clicks,
         wo_id,
-        test_type,
+        test_type_id,
         result_value,
         result_text,
-        unit,
         qc_status,
         tester,
         note,
+        current_qc_id,
     ):
-        """Record QC test result."""
+        """Create or update a QC test result."""
         if not n_clicks or not wo_id:
             raise PreventUpdate
 
-        if not test_type:
+        if not test_type_id:
             return (
                 True,
                 "Error",
                 "Test type is required",
+                dash.no_update,
             )
 
+        payload = {
+            "test_type_id": test_type_id,
+            "result_value": float(result_value)
+            if result_value not in (None, "")
+            else None,
+            "result_text": result_text,
+            "status": qc_status or "pending",
+            "tester": tester,
+            "note": note,
+        }
+
         try:
-            data = {
-                "test_type": test_type,
-                "result_value": float(result_value) if result_value else None,
-                "result_text": result_text,
-                "unit": unit,
-                "status": qc_status or "pending",
-                "tester": tester,
-                "note": note,
-            }
+            if current_qc_id:
+                url = f"{api_base_url}/work-orders/{wo_id}/qc/{current_qc_id}"
+                response = requests.patch(url, json=payload, timeout=10)
+                success_code = 200
+                success_message = "QC test updated successfully"
+            else:
+                url = f"{api_base_url}/work-orders/{wo_id}/qc"
+                response = requests.post(url, json=payload, timeout=10)
+                success_code = 201
+                success_message = "QC test recorded successfully"
 
-            url = f"{api_base_url}/work-orders/{wo_id}/qc"
-            response = requests.post(url, json=data, timeout=10)
-
-            if response.status_code == 201:
+            if response.status_code == success_code:
                 return (
                     True,
                     "Success",
-                    "QC test recorded successfully",
+                    success_message,
+                    None,
                 )
             else:
                 error_msg = response.json().get("detail", "Unknown error")
                 return (
                     True,
                     "Error",
-                    f"Failed to record QC: {error_msg}",
+                    f"Failed to save QC result: {error_msg}",
+                    current_qc_id,
                 )
         except Exception as e:
             return (
                 True,
                 "Error",
-                f"Failed to record QC: {str(e)}",
+                f"Failed to save QC result: {str(e)}",
+                current_qc_id,
             )
 
     # Complete work order
@@ -1566,14 +2143,20 @@ def register_work_orders_callbacks(
 
         try:
             if button_id == "wo-release-btn":
+                if not release_clicks:
+                    raise PreventUpdate
                 url = f"{api_base_url}/work-orders/{wo_id}/release"
                 action = "released"
                 data = {}
             elif button_id == "wo-start-btn":
+                if not start_clicks:
+                    raise PreventUpdate
                 url = f"{api_base_url}/work-orders/{wo_id}/start"
                 action = "started"
                 data = {}
             elif button_id == "wo-void-btn":
+                if not void_clicks:
+                    raise PreventUpdate
                 url = f"{api_base_url}/work-orders/{wo_id}/void"
                 action = "voided"
                 data = {"reason": "Voided from UI"}
@@ -1694,22 +2277,25 @@ def register_work_orders_callbacks(
         [
             Input("wo-issue-submit-btn", "n_clicks"),
             Input("wo-qc-submit-btn", "n_clicks"),
+            Input("wo-qc-delete-btn", "n_clicks"),
             Input("wo-complete-submit-btn", "n_clicks"),
             Input("wo-release-btn", "n_clicks"),
             Input("wo-start-btn", "n_clicks"),
             Input("wo-void-btn", "n_clicks"),
         ],
-        [State("wo-detail-wo-id", "data")],
+        [State("wo-detail-wo-id", "data"), State("wo-detail-active-tab", "data")],
         prevent_initial_call="initial_duplicate",
     )
     def refresh_detail_view(
         issue_clicks,
         qc_clicks,
+        _delete_qc_clicks,
         complete_clicks,
         release_clicks,
         start_clicks,
         void_clicks,
         wo_id,
+        current_detail_tab,
     ):
         """Refresh detail view after actions."""
         ctx = dash.callback_context
@@ -1722,7 +2308,15 @@ def register_work_orders_callbacks(
 
             if response.status_code == 200:
                 wo = response.json()
-                return create_work_order_detail_layout(wo), {"display": "block"}, wo_id
+                return (
+                    create_work_order_detail_layout(
+                        wo,
+                        api_base_url,
+                        active_tab=current_detail_tab or "wo-detail-inputs",
+                    ),
+                    {"display": "block"},
+                    wo_id,
+                )
             else:
                 return no_update, no_update, no_update
         except Exception as e:
@@ -1731,7 +2325,10 @@ def register_work_orders_callbacks(
 
     # Detail tab content switching
     @app.callback(
-        Output("wo-detail-tab-content", "children"),
+        [
+            Output("wo-detail-tab-content", "children"),
+            Output("wo-detail-active-tab", "data"),
+        ],
         [Input("wo-detail-tabs", "active_tab")],
         [State("wo-detail-wo-id", "data")],
         prevent_initial_call=True,
@@ -1739,396 +2336,583 @@ def register_work_orders_callbacks(
     def switch_detail_tabs(active_tab, wo_id):
         """Switch between detail view tabs."""
         if not wo_id:
-            return html.Div("No work order selected")
+            return build_detail_tab_content({}, api_base_url, active_tab), active_tab
 
         try:
             url = f"{api_base_url}/work-orders/{wo_id}"
             response = requests.get(url, timeout=5)
 
             if response.status_code != 200:
-                return html.Div(f"Error loading work order: {response.status_code}")
-
-            wo = response.json()
-
-            if active_tab == "wo-detail-inputs":
-                # Inputs tab
-                inputs = wo.get("inputs", [])
-                table_data = []
-                for inp in inputs:
-                    # Convert to float safely
-                    planned_qty_val = inp.get("planned_qty")
-                    try:
-                        planned_qty_str = (
-                            f"{float(planned_qty_val):.3f}"
-                            if planned_qty_val is not None
-                            else "0"
-                        )
-                    except (ValueError, TypeError):
-                        planned_qty_str = "0"
-
-                    actual_qty_val = inp.get("actual_qty")
-                    try:
-                        actual_qty_str = (
-                            f"{float(actual_qty_val):.3f}"
-                            if actual_qty_val is not None
-                            else "0"
-                        )
-                    except (ValueError, TypeError):
-                        actual_qty_str = "0"
-
-                    unit_cost_val = inp.get("unit_cost")
-                    try:
-                        unit_cost_str = (
-                            f"${float(unit_cost_val):.2f}"
-                            if unit_cost_val is not None
-                            else "N/A"
-                        )
-                    except (ValueError, TypeError):
-                        unit_cost_str = "N/A"
-
-                    table_data.append(
-                        {
-                            "id": inp.get("id"),
-                            "component": inp.get("component_product_id", ""),
-                            "planned": planned_qty_str,
-                            "actual": actual_qty_str,
-                            "uom": inp.get("uom", "KG"),
-                            "unit_cost": unit_cost_str,
-                            "batch": inp.get("source_batch_id", ""),
-                        }
-                    )
-
-                return dbc.Card(
-                    [
-                        dbc.CardHeader("Input Materials"),
-                        dbc.CardBody(
-                            [
-                                dash_table.DataTable(
-                                    id="wo-inputs-table",
-                                    columns=[
-                                        {"name": "Component", "id": "component"},
-                                        {"name": "Planned", "id": "planned"},
-                                        {"name": "Actual", "id": "actual"},
-                                        {"name": "UOM", "id": "uom"},
-                                        {"name": "Unit Cost", "id": "unit_cost"},
-                                        {"name": "Batch", "id": "batch"},
-                                    ],
-                                    data=table_data,
-                                    row_selectable="single",
-                                ),
-                                html.Hr(),
-                                html.H5("Issue Material"),
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Component"),
-                                                dcc.Dropdown(
-                                                    id="wo-issue-component-dropdown",
-                                                    options=[],
-                                                ),
-                                            ],
-                                            md=4,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Quantity"),
-                                                dbc.Input(
-                                                    id="wo-issue-qty",
-                                                    type="number",
-                                                    step=0.001,
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Batch (optional)"),
-                                                dcc.Dropdown(
-                                                    id="wo-issue-batch-dropdown",
-                                                    options=[],
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("UOM"),
-                                                dbc.Input(
-                                                    id="wo-issue-uom",
-                                                    type="text",
-                                                    value="KG",
-                                                ),
-                                            ],
-                                            md=2,
-                                        ),
-                                    ],
-                                    className="mb-3",
-                                ),
-                                dbc.Button(
-                                    "Issue Material",
-                                    id="wo-issue-submit-btn",
-                                    color="primary",
-                                ),
-                            ]
-                        ),
-                    ]
+                return (
+                    html.Div(f"Error loading work order: {response.status_code}"),
+                    no_update,
                 )
 
-            elif active_tab == "wo-detail-outputs":
-                # Outputs tab
-                outputs = wo.get("outputs", [])
-                if not outputs:
-                    return dbc.Card(
+            wo = response.json()
+            return build_detail_tab_content(wo, api_base_url, active_tab), active_tab
+        except Exception as e:
+            return (
+                html.Div(
+                    [
+                        html.P(f"Error: {str(e)}"),
+                        build_detail_tab_content({}, api_base_url, active_tab),
+                    ]
+                ),
+                no_update,
+            )
+
+
+def create_complete_form(visible: bool = False, uom: Optional[str] = None) -> html.Div:
+    """Create the work order completion form."""
+
+    uom_display = f" ({uom})" if uom else ""
+
+    return html.Div(
+        [
+            html.Hr(),
+            html.H5("Complete Work Order"),
+            dbc.Row(
+                [
+                    dbc.Col(
                         [
-                            dbc.CardHeader("Outputs"),
-                            dbc.CardBody(
+                            dbc.Label(f"Quantity Produced{uom_display} *"),
+                            dbc.Input(
+                                id="wo-complete-qty",
+                                type="number",
+                                step=0.001,
+                                min=0,
+                            ),
+                        ],
+                        md=6,
+                    ),
+                ],
+                className="mb-3",
+            ),
+            dbc.Button(
+                "Complete Work Order",
+                id="wo-complete-submit-btn",
+                color="success",
+            ),
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
+
+
+def create_qc_section(
+    table_data: Optional[List[Dict[str, Any]]] = None, visible: bool = False
+) -> html.Div:
+    """Create the QC section, optionally hidden when not on the QC tab."""
+
+    table_data = table_data or []
+    qty_format = Format(precision=4, scheme=Scheme.fixed)
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardHeader("QC Tests"),
+                    dbc.CardBody(
+                        [
+                            dash_table.DataTable(
+                                id="wo-qc-table",
+                                columns=[
+                                    {"name": "Test Type", "id": "test_type"},
+                                    {
+                                        "name": "Result Value",
+                                        "id": "result_value",
+                                        "type": "numeric",
+                                        "format": qty_format,
+                                    },
+                                    {"name": "Result Text", "id": "result_text"},
+                                    {"name": "Unit", "id": "unit"},
+                                    {"name": "Status", "id": "status"},
+                                    {"name": "Tested At", "id": "tested_at"},
+                                    {"name": "Tester", "id": "tester"},
+                                    {"name": "Note", "id": "note"},
+                                ],
+                                data=table_data,
+                                row_selectable="single",
+                                style_table={"overflowX": "auto"},
+                                style_cell={"padding": "0.5rem"},
+                                hidden_columns=[
+                                    "id",
+                                    "test_type_id",
+                                    "status_raw",
+                                    "tested_at_raw",
+                                ],
+                                sort_action="native",
+                            ),
+                            html.Div(
                                 [
-                                    html.P(
-                                        "No outputs yet. Complete the work order to create outputs."
-                                    ),
-                                    html.Hr(),
-                                    html.H5("Complete Work Order"),
-                                    dbc.Row(
-                                        [
-                                            dbc.Col(
-                                                [
-                                                    dbc.Label("Quantity Produced *"),
-                                                    dbc.Input(
-                                                        id="wo-complete-qty",
-                                                        type="number",
-                                                        step=0.001,
-                                                    ),
-                                                ],
-                                                md=6,
-                                            ),
-                                        ],
-                                        className="mb-3",
+                                    dbc.Button(
+                                        "Edit Selected",
+                                        id="wo-qc-edit-btn",
+                                        outline=True,
+                                        color="secondary",
+                                        size="sm",
+                                        className="me-2 mt-3",
+                                        disabled=True,
                                     ),
                                     dbc.Button(
-                                        "Complete Work Order",
-                                        id="wo-complete-submit-btn",
-                                        color="success",
+                                        "Delete Selected",
+                                        id="wo-qc-delete-btn",
+                                        outline=True,
+                                        color="danger",
+                                        size="sm",
+                                        className="mt-3",
+                                        disabled=True,
                                     ),
                                 ]
                             ),
-                        ]
-                    )
-
-                table_data = []
-                for out in outputs:
-                    # Convert to float safely
-                    qty_produced_val = out.get("qty_produced")
-                    try:
-                        qty_produced_str = (
-                            f"{float(qty_produced_val):.3f}"
-                            if qty_produced_val is not None
-                            else "0"
-                        )
-                    except (ValueError, TypeError):
-                        qty_produced_str = "0"
-
-                    unit_cost_val = out.get("unit_cost")
-                    try:
-                        unit_cost_str = (
-                            f"${float(unit_cost_val):.2f}"
-                            if unit_cost_val is not None
-                            else "N/A"
-                        )
-                    except (ValueError, TypeError):
-                        unit_cost_str = "N/A"
-
-                    table_data.append(
-                        {
-                            "id": out.get("id"),
-                            "product": out.get("product_id", ""),
-                            "qty_produced": qty_produced_str,
-                            "uom": out.get("uom", "KG"),
-                            "batch": out.get("batch_id", ""),
-                            "unit_cost": unit_cost_str,
-                        }
-                    )
-
-                return dbc.Card(
-                    [
-                        dbc.CardHeader("Outputs"),
-                        dbc.CardBody(
-                            dash_table.DataTable(
-                                id="wo-outputs-table",
-                                columns=[
-                                    {"name": "Product", "id": "product"},
-                                    {"name": "Qty Produced", "id": "qty_produced"},
-                                    {"name": "UOM", "id": "uom"},
-                                    {"name": "Batch", "id": "batch"},
-                                    {"name": "Unit Cost", "id": "unit_cost"},
+                            html.Hr(),
+                            html.H5("Record QC Test"),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Test Type *"),
+                                            dcc.Dropdown(
+                                                id="wo-qc-test-type",
+                                                options=[],
+                                                placeholder="Select test type",
+                                            ),
+                                        ],
+                                        md=4,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Unit"),
+                                            html.Div(
+                                                id="wo-qc-unit-display",
+                                                className="mt-2 text-muted",
+                                                children="—",
+                                            ),
+                                        ],
+                                        md=2,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Result Value"),
+                                            dbc.Input(
+                                                id="wo-qc-result-value",
+                                                type="number",
+                                                step=0.01,
+                                            ),
+                                        ],
+                                        md=3,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Result Text"),
+                                            dbc.Input(
+                                                id="wo-qc-result-text",
+                                                type="text",
+                                            ),
+                                        ],
+                                        md=3,
+                                    ),
                                 ],
-                                data=table_data,
+                                className="mb-3",
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Status"),
+                                            dcc.Dropdown(
+                                                id="wo-qc-status",
+                                                options=[
+                                                    {
+                                                        "label": "Pending",
+                                                        "value": "pending",
+                                                    },
+                                                    {"label": "Pass", "value": "pass"},
+                                                    {"label": "Fail", "value": "fail"},
+                                                ],
+                                                value="pending",
+                                            ),
+                                        ],
+                                        md=4,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Tester"),
+                                            dbc.Input(id="wo-qc-tester", type="text"),
+                                        ],
+                                        md=4,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Note"),
+                                            dbc.Input(id="wo-qc-note", type="text"),
+                                        ],
+                                        md=4,
+                                    ),
+                                ],
+                                className="mb-3",
+                            ),
+                            dbc.Button(
+                                "Save QC Result",
+                                id="wo-qc-submit-btn",
+                                color="primary",
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
+
+
+def create_costs_section(
+    visible: bool = False,
+) -> html.Div:
+    """Render the costs section (placeholder until detailed data is available)."""
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardHeader("Costs"),
+                    dbc.CardBody(
+                        [
+                            html.P(
+                                "Cost summary will appear here once calculations are implemented.",
+                                className="text-muted",
                             )
-                        ),
-                    ]
-                )
-
-            elif active_tab == "wo-detail-qc":
-                # QC Tests tab
-                qc_tests = wo.get("qc_tests", [])
-                table_data = []
-                for qc in qc_tests:
-                    # Format result value safely
-                    result_value = qc.get("result_value")
-                    if result_value is not None:
-                        try:
-                            result_str = f"{float(result_value):.4f}"
-                        except (ValueError, TypeError):
-                            result_str = str(result_value) if result_value else ""
-                    else:
-                        result_str = qc.get("result_text", "")
-
-                    table_data.append(
-                        {
-                            "id": qc.get("id"),
-                            "test_type": qc.get("test_type", ""),
-                            "result": result_str,
-                            "unit": qc.get("unit", ""),
-                            "status": qc.get("status", "").title(),
-                            "tested_at": qc.get("tested_at", ""),
-                            "tester": qc.get("tester", ""),
-                        }
-                    )
-
-                return dbc.Card(
-                    [
-                        dbc.CardHeader("QC Tests"),
-                        dbc.CardBody(
-                            [
-                                dash_table.DataTable(
-                                    id="wo-qc-table",
-                                    columns=[
-                                        {"name": "Test Type", "id": "test_type"},
-                                        {"name": "Result", "id": "result"},
-                                        {"name": "Unit", "id": "unit"},
-                                        {"name": "Status", "id": "status"},
-                                        {"name": "Tested At", "id": "tested_at"},
-                                        {"name": "Tester", "id": "tester"},
-                                    ],
-                                    data=table_data,
-                                ),
-                                html.Hr(),
-                                html.H5("Record QC Test"),
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Test Type *"),
-                                                dbc.Input(
-                                                    id="wo-qc-test-type",
-                                                    type="text",
-                                                    placeholder="e.g., ABV",
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Result Value"),
-                                                dbc.Input(
-                                                    id="wo-qc-result-value",
-                                                    type="number",
-                                                    step=0.01,
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Result Text"),
-                                                dbc.Input(
-                                                    id="wo-qc-result-text", type="text"
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Unit"),
-                                                dbc.Input(
-                                                    id="wo-qc-unit",
-                                                    type="text",
-                                                    placeholder="%, pH",
-                                                ),
-                                            ],
-                                            md=3,
-                                        ),
-                                    ],
-                                    className="mb-3",
-                                ),
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Status"),
-                                                dcc.Dropdown(
-                                                    id="wo-qc-status",
-                                                    options=[
-                                                        {
-                                                            "label": "Pending",
-                                                            "value": "pending",
-                                                        },
-                                                        {
-                                                            "label": "Pass",
-                                                            "value": "pass",
-                                                        },
-                                                        {
-                                                            "label": "Fail",
-                                                            "value": "fail",
-                                                        },
-                                                    ],
-                                                    value="pending",
-                                                ),
-                                            ],
-                                            md=4,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Tester"),
-                                                dbc.Input(
-                                                    id="wo-qc-tester", type="text"
-                                                ),
-                                            ],
-                                            md=4,
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Label("Note"),
-                                                dbc.Input(id="wo-qc-note", type="text"),
-                                            ],
-                                            md=4,
-                                        ),
-                                    ],
-                                    className="mb-3",
-                                ),
-                                dbc.Button(
-                                    "Record QC Test",
-                                    id="wo-qc-submit-btn",
-                                    color="primary",
-                                ),
-                            ]
-                        ),
-                    ]
-                )
-
-            elif active_tab == "wo-detail-costs":
-                return html.Div(id="wo-costs-content")
-
-            elif active_tab == "wo-detail-genealogy":
-                return html.Div(id="wo-genealogy-content")
-
-        except Exception as e:
-            return html.Div(f"Error: {str(e)}")
-
-        return html.Div()
+                        ]
+                    ),
+                ]
+            )
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
 
 
-def create_work_order_detail_layout(wo: dict) -> html.Div:
+def create_genealogy_section(
+    visible: bool = False,
+) -> html.Div:
+    """Render the genealogy section (placeholder until data is wired in)."""
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardHeader("Genealogy"),
+                    dbc.CardBody(
+                        [
+                            html.P(
+                                "Genealogy details will be shown here once tracking is available.",
+                                className="text-muted",
+                            )
+                        ]
+                    ),
+                ]
+            )
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
+
+
+def build_detail_tab_content(
+    wo: Optional[Dict[str, Any]],
+    api_base_url: str,
+    active_tab: str,
+    raw_status: Optional[str] = None,
+) -> html.Div:
+    """Compose the detail tab content with appropriate visibility and data."""
+
+    wo = wo or {}
+    product_cache: Dict[str, Dict[str, Any]] = {}
+    inputs_data, _ = build_input_rows(wo, api_base_url, product_cache)
+    outputs_data = build_output_rows(wo, api_base_url, product_cache)
+
+    status = raw_status if raw_status is not None else (wo.get("status") or "").lower()
+    allow_issue_edit = status not in {"complete", "void"}
+    allow_complete = status not in {"draft", "void", "complete"}
+    output_uom = wo.get("uom") or ""
+
+    qc_tests = wo.get("qc_tests", []) or []
+    qc_table_data: List[Dict[str, Any]] = []
+    for qc in qc_tests:
+        tested_at_raw = qc.get("tested_at")
+        if tested_at_raw:
+            try:
+                tested_at_display = datetime.fromisoformat(
+                    tested_at_raw.rstrip("Z")
+                ).strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                tested_at_display = tested_at_raw
+        else:
+            tested_at_display = ""
+
+        qc_table_data.append(
+            {
+                "id": qc.get("id"),
+                "test_type": qc.get("test_type", ""),
+                "test_type_id": qc.get("test_type_id"),
+                "result_value": safe_float(qc.get("result_value")),
+                "result_text": qc.get("result_text", ""),
+                "unit": qc.get("unit", "") or "",
+                "status": (qc.get("status") or "").title(),
+                "status_raw": qc.get("status", ""),
+                "tested_at": tested_at_display,
+                "tested_at_raw": tested_at_raw,
+                "tester": qc.get("tester", "") or "",
+                "note": qc.get("note", "") or "",
+            }
+        )
+
+    return html.Div(
+        [
+            create_issue_section(
+                table_data=inputs_data,
+                visible=active_tab == "wo-detail-inputs",
+                allow_edit=allow_issue_edit,
+            ),
+            create_outputs_section(
+                table_data=outputs_data,
+                visible=active_tab == "wo-detail-outputs",
+            ),
+            create_qc_section(
+                table_data=qc_table_data,
+                visible=active_tab == "wo-detail-qc",
+            ),
+            create_costs_section(visible=active_tab == "wo-detail-costs"),
+            create_genealogy_section(visible=active_tab == "wo-detail-genealogy"),
+            create_complete_form(
+                visible=active_tab == "wo-detail-outputs" and allow_complete,
+                uom=output_uom,
+            ),
+        ],
+        id="wo-detail-tab-panels",
+    )
+
+
+def create_issue_section(
+    table_data: Optional[List[Dict[str, Any]]] = None,
+    visible: bool = False,
+    allow_edit: bool = True,
+) -> html.Div:
+    """Create the inputs/issue material section with planned vs actual visibility."""
+
+    table_data = table_data or []
+    qty_format = Format(precision=3, scheme=Scheme.fixed)
+
+    header_row = dbc.Row(
+        [
+            dbc.Col(html.H5("Input Materials"), md=6),
+            dbc.Col(
+                dbc.Button(
+                    "Edit Selected",
+                    id="wo-inputs-edit-btn",
+                    outline=True,
+                    color="secondary",
+                    size="sm",
+                    className="float-end",
+                    disabled=not allow_edit,
+                ),
+                md=6,
+            ),
+        ],
+        align="center",
+        className="mb-3",
+    )
+
+    table = dash_table.DataTable(
+        id="wo-inputs-table",
+        columns=[
+            {"name": "Component", "id": "component_label"},
+            {
+                "name": "Planned Qty",
+                "id": "planned_qty",
+                "type": "numeric",
+                "format": qty_format,
+                "editable": False,
+            },
+            {
+                "name": "Actual Issued",
+                "id": "actual_qty",
+                "type": "numeric",
+                "format": qty_format,
+                "editable": False,
+            },
+            {
+                "name": "Remaining",
+                "id": "remaining_qty",
+                "type": "numeric",
+                "format": qty_format,
+                "editable": False,
+            },
+            {"name": "UOM", "id": "uom", "editable": False},
+            {"name": "Batch", "id": "batch", "editable": False},
+        ],
+        data=table_data,
+        hidden_columns=[
+            "component_product_id",
+            "planned_qty_canonical",
+            "actual_qty_canonical",
+            "remaining_qty_canonical",
+        ],
+        row_selectable="single",
+        style_table={"overflowX": "auto"},
+        style_cell={"padding": "0.5rem"},
+        sort_action="native",
+    )
+
+    body_children: List[Any] = [header_row]
+
+    if not table_data:
+        body_children.append(
+            dbc.Alert(
+                "No input components defined for this work order.",
+                color="info",
+                className="mb-3",
+            )
+        )
+
+    body_children.extend(
+        [
+            table,
+            html.Hr(className="my-3"),
+            html.H6("Add Additional Material"),
+            html.P(
+                "Record extra material usage or top up planned quantities. "
+                "Select a component to prefill the form, then issue the additional amount.",
+                className="text-muted",
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Label("Component"),
+                            dcc.Dropdown(
+                                id="wo-issue-component-dropdown",
+                                options=[],
+                                placeholder="Select component",
+                                disabled=not allow_edit,
+                            ),
+                        ],
+                        md=5,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Label("Quantity"),
+                            dbc.Input(
+                                id="wo-issue-qty",
+                                type="number",
+                                step=0.001,
+                                min=0,
+                                disabled=not allow_edit,
+                            ),
+                        ],
+                        md=3,
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Label("Batch (optional)"),
+                            dcc.Dropdown(
+                                id="wo-issue-batch-dropdown",
+                                options=[],
+                                placeholder="Select batch",
+                                disabled=not allow_edit,
+                                clearable=True,
+                            ),
+                        ],
+                        md=4,
+                    ),
+                ],
+                className="mb-3",
+            ),
+            dbc.Button(
+                "Issue Material",
+                id="wo-issue-submit-btn",
+                color="primary",
+                disabled=not allow_edit,
+            ),
+        ]
+    )
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardBody(body_children),
+                ]
+            )
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
+
+
+def create_outputs_section(
+    table_data: Optional[List[Dict[str, Any]]] = None,
+    visible: bool = False,
+) -> html.Div:
+    """Render the outputs table for the work order."""
+
+    table_data = table_data or []
+    qty_format = Format(precision=3, scheme=Scheme.fixed)
+
+    outputs_table = dash_table.DataTable(
+        id="wo-outputs-table",
+        columns=[
+            {"name": "Product", "id": "product_label"},
+            {
+                "name": "Planned Qty",
+                "id": "planned_qty",
+                "type": "numeric",
+                "format": qty_format,
+            },
+            {
+                "name": "Actual Qty",
+                "id": "actual_qty",
+                "type": "numeric",
+                "format": qty_format,
+            },
+            {"name": "UOM", "id": "uom"},
+            {"name": "Batch", "id": "batch"},
+        ],
+        data=table_data,
+        hidden_columns=[
+            "product_id",
+            "planned_qty_canonical",
+            "actual_qty_canonical",
+        ],
+        style_table={"overflowX": "auto"},
+        style_cell={"padding": "0.5rem"},
+        sort_action="native",
+    )
+
+    body_children: List[Any] = []
+    if not table_data:
+        body_children.append(
+            dbc.Alert(
+                "No outputs recorded yet. Complete the work order to add outputs.",
+                color="info",
+                className="mb-3",
+            )
+        )
+
+    body_children.append(outputs_table)
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardHeader("Outputs"),
+                    dbc.CardBody(body_children),
+                ]
+            )
+        ],
+        style={"display": "block"} if visible else {"display": "none"},
+    )
+
+
+def create_work_order_detail_layout(
+    wo: dict, api_base_url: str, active_tab: str = "wo-detail-inputs"
+) -> html.Div:
     """Create detailed layout for work order."""
     status_colors = {
         "draft": "secondary",
@@ -2139,8 +2923,13 @@ def create_work_order_detail_layout(wo: dict) -> html.Div:
         "void": "dark",
     }
 
-    status = wo.get("status", "").lower()
-    badge_color = status_colors.get(status, "secondary")
+    raw_status = (wo.get("status") or "").lower()
+    badge_color = status_colors.get(raw_status, "secondary")
+    status_display = (wo.get("status") or "").replace("_", " ").title()
+
+    tab_content = build_detail_tab_content(
+        wo, api_base_url, active_tab, raw_status=raw_status
+    )
 
     return dbc.Container(
         [
@@ -2151,7 +2940,7 @@ def create_work_order_detail_layout(wo: dict) -> html.Div:
                         [
                             html.H4(f"Work Order: {wo.get('code', '')}"),
                             dbc.Badge(
-                                wo.get("status", "").title(),
+                                status_display,
                                 color=badge_color,
                                 className="ms-2",
                             ),
@@ -2203,25 +2992,25 @@ def create_work_order_detail_layout(wo: dict) -> html.Div:
                     dbc.Col(
                         [
                             dbc.Button(
-                                "Release",
+                                "Release Work Order",
                                 id="wo-release-btn",
                                 color="primary",
                                 className="me-2",
-                                disabled=status != "draft",
+                                disabled=raw_status not in {"draft", "hold"},
                             ),
                             dbc.Button(
-                                "Start",
+                                "Start Work Order",
                                 id="wo-start-btn",
                                 color="success",
                                 className="me-2",
-                                disabled=status not in ["released", "hold"],
+                                disabled=raw_status not in ["released"],
                             ),
                             dbc.Button(
-                                "Void",
+                                "Void Work Order",
                                 id="wo-void-btn",
                                 color="danger",
                                 className="me-2",
-                                disabled=status in ["complete", "void"],
+                                disabled=raw_status in ["complete", "void"],
                             ),
                         ]
                     )
@@ -2238,10 +3027,10 @@ def create_work_order_detail_layout(wo: dict) -> html.Div:
                     dbc.Tab(label="Genealogy", tab_id="wo-detail-genealogy"),
                 ],
                 id="wo-detail-tabs",
-                active_tab="wo-detail-inputs",
+                active_tab=active_tab,
                 className="mb-3",
             ),
-            html.Div(id="wo-detail-tab-content"),
+            html.Div(tab_content, id="wo-detail-tab-content"),
         ],
         fluid=True,
     )

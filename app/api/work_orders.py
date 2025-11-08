@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ from app.adapters.db.models import (
 )
 from app.api.dto import (
     GenealogyResponse,
+    QcTestTypeResponse,
     WorkOrderCompleteRequest,
     WorkOrderCostResponse,
     WorkOrderCreate,
@@ -28,6 +29,7 @@ from app.api.dto import (
     WorkOrderOverheadRequest,
     WorkOrderQcRequest,
     WorkOrderQcResponse,
+    WorkOrderQcUpdateRequest,
     WorkOrderReleaseRequest,
     WorkOrderResponse,
     WorkOrderStartRequest,
@@ -53,6 +55,8 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
             unit_cost=line.unit_cost,
             line_type=line.line_type or "material",
             sequence=line.sequence,
+            required_quantity_kg=line.required_quantity_kg,
+            allocated_quantity_kg=line.allocated_quantity_kg,
         )
         for line in work_order.lines
     ]
@@ -71,6 +75,24 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
         for output in work_order.outputs
     ]
 
+    qc_tests = [
+        WorkOrderQcResponse(
+            id=qc.id,
+            work_order_id=qc.work_order_id,
+            test_type=qc.test_type,
+            test_type_id=qc.test_type_id,
+            result_value=qc.result_value,
+            result_text=qc.result_text,
+            unit=qc.unit,
+            status=qc.status,
+            tested_at=qc.tested_at,
+            tester=qc.tester,
+            note=qc.note,
+        )
+        for qc in work_order.qc_tests
+        if qc.deleted_at is None
+    ]
+
     return WorkOrderResponse(
         id=work_order.id,
         code=work_order.code,
@@ -78,6 +100,7 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
         assembly_id=work_order.assembly_id,  # Primary recipe
         formula_id=work_order.formula_id,  # Legacy
         planned_qty=work_order.planned_qty or work_order.quantity_kg,
+        quantity_kg=work_order.quantity_kg,
         uom=work_order.uom,
         work_center=work_order.work_center,
         status=work_order.status,
@@ -93,6 +116,7 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
         created_at=work_order.created_at or datetime.utcnow(),
         inputs=inputs,
         outputs=outputs,
+        qc_tests=qc_tests,
     )
 
 
@@ -155,6 +179,16 @@ async def list_work_orders(
     work_orders = db.execute(stmt).scalars().all()
 
     return [work_order_to_response(wo) for wo in work_orders]
+
+
+@router.get("/qc-test-types", response_model=List[QcTestTypeResponse])
+async def list_qc_test_types(
+    include_inactive: bool = False, db: Session = Depends(get_db)
+):
+    """List available QC test types."""
+    service = WorkOrderService(db)
+    qc_types = service.list_qc_test_types(include_inactive=include_inactive)
+    return qc_types
 
 
 @router.get("/{work_order_id}", response_model=WorkOrderResponse)
@@ -267,10 +301,10 @@ async def record_qc(
         service = WorkOrderService(db)
         qc_test = service.record_qc(
             work_order_id=work_order_id,
+            test_type_id=qc_data.test_type_id,
             test_type=qc_data.test_type,
             result_value=qc_data.result_value,
             result_text=qc_data.result_text,
-            unit=qc_data.unit,
             status=qc_data.status,
             tester=qc_data.tester,
             note=qc_data.note,
@@ -279,7 +313,9 @@ async def record_qc(
         db.refresh(qc_test)
         return WorkOrderQcResponse(
             id=qc_test.id,
+            work_order_id=qc_test.work_order_id,
             test_type=qc_test.test_type,
+            test_type_id=qc_test.test_type_id,
             result_value=qc_test.result_value,
             result_text=qc_test.result_text,
             unit=qc_test.unit,
@@ -297,6 +333,84 @@ async def record_qc(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to record QC: {str(e)}",
+        )
+
+
+@router.patch(
+    "/{work_order_id}/qc/{qc_test_id}",
+    response_model=WorkOrderQcResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_qc_result(
+    work_order_id: str,
+    qc_test_id: str,
+    qc_data: WorkOrderQcUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """Update an existing QC test result."""
+    try:
+        service = WorkOrderService(db)
+        qc_test = service.update_qc_test(
+            qc_test_id=qc_test_id,
+            work_order_id=work_order_id,
+            test_type_id=qc_data.test_type_id,
+            result_value=qc_data.result_value,
+            result_text=qc_data.result_text,
+            status=qc_data.status,
+            tester=qc_data.tester,
+            note=qc_data.note,
+        )
+        db.commit()
+        db.refresh(qc_test)
+        return WorkOrderQcResponse(
+            id=qc_test.id,
+            work_order_id=qc_test.work_order_id,
+            test_type=qc_test.test_type,
+            test_type_id=qc_test.test_type_id,
+            result_value=qc_test.result_value,
+            result_text=qc_test.result_text,
+            unit=qc_test.unit,
+            status=qc_test.status,
+            tested_at=qc_test.tested_at,
+            tester=qc_test.tester,
+            note=qc_test.note,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update QC: {str(e)}",
+        )
+
+
+@router.delete(
+    "/{work_order_id}/qc/{qc_test_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_qc_result(
+    work_order_id: str,
+    qc_test_id: str,
+    db: Session = Depends(get_db),
+):
+    """Soft delete a QC test result."""
+    try:
+        service = WorkOrderService(db)
+        service.soft_delete_qc_test(qc_test_id=qc_test_id, work_order_id=work_order_id)
+        db.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete QC: {str(e)}",
         )
 
 

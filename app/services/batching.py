@@ -227,8 +227,13 @@ class BatchingService:
         if not lot:
             raise ValueError(f"Inventory lot {component.lot_id} not found")
 
+        product = self.db.get(Product, lot.product_id)
+        allow_negative = bool(
+            getattr(product, "allow_negative_inventory", False) if product else False
+        )
+
         # Check sufficient stock
-        if lot.quantity_kg < qty_kg:
+        if lot.quantity_kg < qty_kg and not allow_negative:
             raise ValueError(
                 f"Insufficient stock: lot {lot.lot_code} has {lot.quantity_kg} kg, "
                 f"required {qty_kg} kg"
@@ -236,7 +241,12 @@ class BatchingService:
 
         # Issue from inventory
         lot.quantity_kg -= qty_kg
-        validate_non_negative_lot(lot, override=False)
+        audit_note = (
+            f"Batch {batch_id} component issue allowed negative inventory"
+            if allow_negative
+            else ""
+        )
+        validate_non_negative_lot(lot, override=allow_negative, audit_note=audit_note)
 
         # Write transaction
         txn = InventoryTxn(

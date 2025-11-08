@@ -4,7 +4,7 @@
 import json
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -17,6 +17,7 @@ from app.adapters.db.models import (
     InventoryMovement,
     Product,
     ProductCostRate,
+    QcTestType,
     WoQcTest,
     WorkOrder,
     WorkOrderLine,
@@ -288,6 +289,28 @@ class WorkOrderService:
                 round_money(total_cost * planned_qty) if total_cost > 0 else None
             )
 
+        # Determine output UOM and canonical planned quantity in kg
+        output_product = product  # already fetched earlier
+        output_uom = (
+            (uom or "").strip()
+            or (output_product.usage_unit if output_product else None)
+            or (output_product.base_unit if output_product else None)
+            or (output_product.purchase_unit if output_product else None)
+            or "KG"
+        )
+        output_uom_upper = output_uom.upper()
+        density = output_product.density_kg_per_l if output_product else None
+
+        try:
+            planned_conversion = to_kg(planned_qty, output_uom_upper, density)
+            planned_qty_kg = planned_conversion.quantity_kg
+        except ValueError:
+            if output_uom_upper != "KG":
+                raise ValueError(
+                    f"Cannot convert planned quantity from {output_uom} without density for product {product_id}"
+                )
+            planned_qty_kg = planned_qty
+
         # Create work order
         work_order = WorkOrder(
             id=str(uuid4()),
@@ -295,9 +318,9 @@ class WorkOrderService:
             product_id=product_id,
             assembly_id=assembly_id,
             formula_id=formula_id_val,  # Set to formula ID if using formula, otherwise None
-            quantity_kg=round_quantity(planned_qty),  # Legacy field
+            quantity_kg=round_quantity(planned_qty_kg),
             planned_qty=round_quantity(planned_qty),
-            uom=uom,
+            uom=output_uom_upper,
             work_center=work_center,
             status="draft",
             batch_code=batch_code,
@@ -444,10 +467,22 @@ class WorkOrderService:
                 qty_base = assembly_line.quantity_kg
             else:
                 qty_base = assembly_line.quantity
-            planned_qty_scaled = round_quantity(qty_base * scale_factor)
+            planned_qty_display = round_quantity(qty_base * scale_factor)
 
             # Get UOM from assembly line or default
             uom = assembly_line.unit or "KG"
+            uom_upper = (uom or "").upper()
+
+            # Determine canonical kg quantity for storage/reservations
+            density = component_product.density_kg_per_l if component_product else None
+            qty_canonical_kg = planned_qty_display
+            try:
+                qty_canonical_kg = round_quantity(
+                    to_kg(planned_qty_display, uom_upper, density).quantity_kg
+                )
+            except ValueError:
+                # Unsupported conversion (e.g., EA) - fall back to original behaviour
+                qty_canonical_kg = planned_qty_display
 
             # Determine line type (material vs overhead)
             if hasattr(assembly_line, "is_energy_or_overhead"):
@@ -463,8 +498,8 @@ class WorkOrderService:
                 work_order_id=work_order_id,
                 component_product_id=component_product.id,
                 ingredient_product_id=component_product.id,  # Legacy compatibility
-                required_quantity_kg=planned_qty_scaled,  # Legacy
-                planned_qty=planned_qty_scaled,
+                required_quantity_kg=qty_canonical_kg,
+                planned_qty=planned_qty_display,
                 actual_qty=None,
                 uom=uom,
                 line_type=line_type,
@@ -478,57 +513,36 @@ class WorkOrderService:
 
         # Reserve inventory for material lines (optional - can be done on release)
         # For now, we'll reserve on creation to show availability
-        for idx, assembly_line in enumerate(assembly_lines):
-            if hasattr(assembly_line, "component_product"):
-                component_product = assembly_line.component_product
-            else:
-                component_product = assembly_line.component_product
-
-            if not component_product:
-                if (
-                    hasattr(assembly_line, "raw_material_id")
-                    and assembly_line.raw_material_id
-                ):
-                    component_product = self.db.get(
-                        Product, assembly_line.raw_material_id
-                    )
-                if not component_product:
-                    continue
-
-            # Only reserve for material lines (not overhead)
-            line_type = "material"
-            if hasattr(assembly_line, "is_energy_or_overhead"):
-                line_type = (
-                    "overhead" if assembly_line.is_energy_or_overhead else "material"
+        material_lines = (
+            self.db.execute(
+                select(WorkOrderLine).where(
+                    WorkOrderLine.work_order_id == work_order_id,
+                    WorkOrderLine.line_type == "material",
                 )
+            )
+            .scalars()
+            .all()
+        )
 
-            if line_type == "material":
-                # Calculate required quantity
-                if hasattr(assembly_line, "quantity_kg"):
-                    qty_base = assembly_line.quantity_kg
-                else:
-                    qty_base = assembly_line.quantity
-                planned_qty_scaled = round_quantity(qty_base * scale_factor)
+        for line in material_lines:
+            if not line.component_product_id or not line.required_quantity_kg:
+                continue
 
-                # Reserve inventory (soft reservation - doesn't consume, just marks as reserved)
-                try:
-                    self.inventory_service.reserve_inventory(
-                        product_id=component_product.id,
-                        qty_kg=planned_qty_scaled,
-                        source="internal",
-                        reference_id=work_order_id,
-                    )
-                except ValueError as e:
-                    # If reservation already exists, that's okay (might be re-running)
-                    # Log but don't fail work order creation
-                    print(
-                        f"Warning: Could not reserve inventory for {component_product.sku}: {e}"
-                    )
-                except Exception as e:
-                    # Log but don't fail work order creation
-                    print(
-                        f"Warning: Error reserving inventory for {component_product.sku}: {e}"
-                    )
+            try:
+                self.inventory_service.reserve_inventory(
+                    product_id=line.component_product_id,
+                    qty_kg=line.required_quantity_kg,
+                    source="internal",
+                    reference_id=work_order_id,
+                )
+            except ValueError as e:
+                print(
+                    f"Warning: Could not reserve inventory for {line.component_product_id}: {e}"
+                )
+            except Exception as e:
+                print(
+                    f"Warning: Error reserving inventory for {line.component_product_id}: {e}"
+                )
 
     def release_work_order(self, work_order_id: str) -> WorkOrder:
         """
@@ -569,7 +583,8 @@ class WorkOrderService:
             lots = self.inventory_service.get_lots_fifo(line.component_product_id)
             available = sum(lot.quantity_kg for lot in lots if lot.quantity_kg > 0)
 
-            if available < (line.planned_qty or Decimal("0")):
+            required_qty = line.required_quantity_kg or Decimal("0")
+            if available < required_qty:
                 # Soft validation - just log warning
                 # Could raise here for hard constraint
                 pass
@@ -683,6 +698,9 @@ class WorkOrderService:
         # Convert to kg if needed
         product = self.db.get(Product, component_product_id)
         density = product.density_kg_per_l if product else None
+        allow_negative_inventory = bool(
+            getattr(product, "allow_negative_inventory", False) if product else False
+        )
 
         if issue_uom.upper() in ["L", "ML", "LITRE", "LITER"]:
             if not density:
@@ -712,6 +730,7 @@ class WorkOrderService:
             reason=f"Work order {work_order.code} material issue",
             ref_type="work_orders",
             ref_id=work_order_id,
+            allow_negative=allow_negative_inventory,
         )
 
         # Create inventory movement
@@ -723,8 +742,9 @@ class WorkOrderService:
             product_id=component_product_id,
             batch_id=source_batch_id,
             qty=-abs(qty_kg),  # Negative for issues
-            unit=issue_uom,
-            uom=issue_uom,
+            unit=issue_uom or input_line.uom or "KG",
+            uom=issue_uom or input_line.uom or "KG",
+            direction="OUT",
             move_type="wo_issue",
             ref_table="work_orders",
             ref_id=work_order_id,
@@ -738,6 +758,7 @@ class WorkOrderService:
         if input_line.actual_qty is None:
             input_line.actual_qty = Decimal("0")
         input_line.actual_qty += qty_kg
+        input_line.allocated_quantity_kg = input_line.actual_qty
         input_line.unit_cost = unit_cost
         if source_batch_id:
             input_line.source_batch_id = source_batch_id
@@ -749,7 +770,8 @@ class WorkOrderService:
     def record_qc(
         self,
         work_order_id: str,
-        test_type: str,
+        test_type_id: Optional[str] = None,
+        test_type: Optional[str] = None,
         result_value: Optional[Decimal] = None,
         result_text: Optional[str] = None,
         unit: Optional[str] = None,
@@ -762,10 +784,11 @@ class WorkOrderService:
 
         Args:
             work_order_id: Work order ID
-            test_type: Test type (e.g., 'ABV', 'fill')
+            test_type_id: ID of QC test type
+            test_type: Test type code/name (fallback if ID not provided)
             result_value: Numeric result
             result_text: Text result (for non-numeric)
-            unit: Unit (%, pH, etc.)
+            unit: Unit override (will default from QC test type if available)
             status: Test status (pending, pass, fail)
             tester: Tester name
             note: Optional note
@@ -780,10 +803,24 @@ class WorkOrderService:
         if not work_order:
             raise ValueError(f"Work order {work_order_id} not found")
 
+        qc_type: Optional[QcTestType] = None
+        if test_type_id:
+            qc_type = self.db.get(QcTestType, test_type_id)
+            if not qc_type or qc_type.deleted_at is not None:
+                raise ValueError("QC test type not found")
+            if not qc_type.is_active:
+                raise ValueError("QC test type is inactive")
+            test_type = qc_type.code or qc_type.name
+            unit = qc_type.unit or unit
+
+        if not test_type:
+            raise ValueError("QC test type is required")
+
         qc_test = WoQcTest(
             id=str(uuid4()),
             work_order_id=work_order_id,
             test_type=test_type,
+            test_type_id=qc_type.id if qc_type else test_type_id,
             result_value=result_value,
             result_text=result_text,
             unit=unit,
@@ -797,6 +834,73 @@ class WorkOrderService:
         self.db.flush()
 
         return qc_test
+
+    def update_qc_test(
+        self,
+        qc_test_id: str,
+        work_order_id: str,
+        test_type_id: Optional[str] = None,
+        result_value: Optional[Decimal] = None,
+        result_text: Optional[str] = None,
+        status: Optional[str] = None,
+        tester: Optional[str] = None,
+        note: Optional[str] = None,
+    ) -> WoQcTest:
+        """Update an existing QC test."""
+
+        qc_test = self.db.get(WoQcTest, qc_test_id)
+        if not qc_test or qc_test.deleted_at is not None:
+            raise ValueError("QC test not found")
+
+        if qc_test.work_order_id != work_order_id:
+            raise ValueError("QC test does not belong to this work order")
+
+        if test_type_id:
+            qc_type = self.db.get(QcTestType, test_type_id)
+            if not qc_type or qc_type.deleted_at is not None:
+                raise ValueError("QC test type not found")
+            if not qc_type.is_active:
+                raise ValueError("QC test type is inactive")
+            qc_test.test_type_id = qc_type.id
+            qc_test.test_type = qc_type.code or qc_type.name
+            qc_test.unit = qc_type.unit
+
+        if result_value is not None:
+            qc_test.result_value = result_value
+        if result_text is not None:
+            qc_test.result_text = result_text
+        if tester is not None:
+            qc_test.tester = tester
+        if note is not None:
+            qc_test.note = note
+        if status is not None:
+            qc_test.status = status
+            qc_test.tested_at = datetime.utcnow() if status != "pending" else None
+
+        self.db.flush()
+        return qc_test
+
+    def soft_delete_qc_test(self, qc_test_id: str, work_order_id: str) -> None:
+        """Soft delete a QC test result."""
+
+        qc_test = self.db.get(WoQcTest, qc_test_id)
+        if not qc_test or qc_test.deleted_at is not None:
+            raise ValueError("QC test not found")
+
+        if qc_test.work_order_id != work_order_id:
+            raise ValueError("QC test does not belong to this work order")
+
+        qc_test.deleted_at = datetime.utcnow()
+        self.db.flush()
+
+    def list_qc_test_types(self, include_inactive: bool = False) -> List[QcTestType]:
+        """Return configured QC test types."""
+
+        stmt = select(QcTestType).where(QcTestType.deleted_at.is_(None))
+        if not include_inactive:
+            stmt = stmt.where(QcTestType.is_active.is_(True))
+        stmt = stmt.order_by(QcTestType.code)
+        return self.db.execute(stmt).scalars().all()
 
     def apply_overhead(
         self,
@@ -933,6 +1037,26 @@ class WorkOrderService:
                     f"Required QC test '{test.test_type}' failed - cannot complete"
                 )
 
+        # Determine output UOM and convert to kg for inventory/batch tracking
+        output_product = self.db.get(Product, work_order.product_id)
+        output_uom = (
+            (work_order.uom or "").strip()
+            or (output_product.usage_unit if output_product else None)
+            or (output_product.base_unit if output_product else None)
+            or (output_product.purchase_unit if output_product else None)
+            or "KG"
+        )
+        output_uom = output_uom.upper()
+        density = output_product.density_kg_per_l if output_product else None
+
+        try:
+            conversion = to_kg(qty_produced, output_uom, density)
+            qty_produced_kg = conversion.quantity_kg
+        except ValueError:
+            if output_uom != "KG":
+                raise
+            qty_produced_kg = round_quantity(qty_produced)
+
         # Cost roll-up
         # Material cost
         input_lines = (
@@ -993,8 +1117,9 @@ class WorkOrderService:
             product_id=work_order.product_id,
             work_order_id=work_order_id,
             batch_code=work_order.batch_code
+            or work_order.code
             or self.batch_code_gen.generate_batch_code(work_order.product_id),
-            quantity_kg=round_quantity(qty_produced),
+            quantity_kg=round_quantity(qty_produced_kg),
             mfg_date=(batch_attrs or {}).get("mfg_date") or date.today(),
             exp_date=(batch_attrs or {}).get("exp_date"),
             status="released",
@@ -1010,7 +1135,7 @@ class WorkOrderService:
             work_order_id=work_order_id,
             product_id=work_order.product_id,
             qty_produced=round_quantity(qty_produced),
-            uom=work_order.uom or "KG",
+            uom=output_uom,
             batch_id=batch.id,
             unit_cost=unit_cost,
             note="Work order completion",
@@ -1026,9 +1151,10 @@ class WorkOrderService:
             date=datetime.utcnow().strftime("%Y-%m-%d"),
             product_id=work_order.product_id,
             batch_id=batch.id,
-            qty=abs(qty_produced),
-            unit=work_order.uom or "KG",
-            uom=work_order.uom or "KG",
+            qty=abs(qty_produced_kg),
+            unit=output_uom,
+            uom=output_uom,
+            direction="IN",
             move_type="wo_completion",
             ref_table="work_orders",
             ref_id=work_order_id,
@@ -1109,6 +1235,7 @@ class WorkOrderService:
                 qty=-move.qty,  # Reverse the sign
                 unit=move.unit,
                 uom=move.uom,
+                direction="IN" if -move.qty > 0 else "OUT",
                 move_type="wo_void",
                 ref_table="work_orders",
                 ref_id=work_order_id,

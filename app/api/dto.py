@@ -1,5 +1,6 @@
-# app/api/dto.py
 """Pydantic DTOs for API requests and responses."""
+
+from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
@@ -48,6 +49,7 @@ class ProductCreate(BaseModel):
     is_purchase: bool = False
     is_sell: bool = False
     is_assemble: bool = False
+    allow_negative_inventory: bool = True
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
     raw_material_group_id: Optional[str] = None
@@ -148,6 +150,7 @@ class ProductUpdate(BaseModel):
     is_purchase: Optional[bool] = None
     is_sell: Optional[bool] = None
     is_assemble: Optional[bool] = None
+    allow_negative_inventory: Optional[bool] = None
     ean13: Optional[str] = Field(None, max_length=20)
     supplier_id: Optional[str] = None
     raw_material_group_id: Optional[str] = None
@@ -249,6 +252,7 @@ class ProductResponse(BaseModel):
     is_purchase: bool
     is_sell: bool
     is_assemble: bool
+    allow_negative_inventory: bool
     ean13: Optional[str]
     supplier_id: Optional[str]
     raw_material_group_id: Optional[str]
@@ -626,6 +630,8 @@ class WorkOrderInputResponse(BaseModel):
     unit_cost: Optional[Decimal]
     line_type: Optional[str]
     sequence: int
+    required_quantity_kg: Optional[Decimal] = None
+    allocated_quantity_kg: Optional[Decimal] = None
 
     class Config:
         from_attributes = True
@@ -656,6 +662,7 @@ class WorkOrderResponse(BaseModel):
     assembly_id: Optional[str]  # Primary recipe definition (Assembly)
     formula_id: Optional[str] = None  # Legacy, kept for backward compatibility
     planned_qty: Optional[Decimal]
+    quantity_kg: Optional[Decimal] = None
     uom: Optional[str]
     work_center: Optional[str]
     status: str
@@ -671,6 +678,7 @@ class WorkOrderResponse(BaseModel):
     created_at: datetime
     inputs: List[WorkOrderInputResponse] = []
     outputs: List[WorkOrderOutputResponse] = []
+    qc_tests: List["WorkOrderQcResponse"] = []
 
     class Config:
         from_attributes = True
@@ -700,10 +708,10 @@ class WorkOrderIssueRequest(BaseModel):
 class WorkOrderQcRequest(BaseModel):
     """Record QC test request."""
 
-    test_type: str
+    test_type_id: Optional[str] = None
+    test_type: Optional[str] = None  # Backwards compatibility / fall-back label
     result_value: Optional[Decimal] = None
     result_text: Optional[str] = None
-    unit: Optional[str] = None
     status: str = "pending"
     tester: Optional[str] = None
     note: Optional[str] = None
@@ -713,7 +721,9 @@ class WorkOrderQcResponse(BaseModel):
     """QC test response."""
 
     id: str
+    work_order_id: str
     test_type: str
+    test_type_id: Optional[str]
     result_value: Optional[Decimal]
     result_text: Optional[str]
     unit: Optional[str]
@@ -721,6 +731,31 @@ class WorkOrderQcResponse(BaseModel):
     tested_at: Optional[datetime]
     tester: Optional[str]
     note: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class WorkOrderQcUpdateRequest(BaseModel):
+    """Update QC test request."""
+
+    test_type_id: Optional[str] = None
+    result_value: Optional[Decimal] = None
+    result_text: Optional[str] = None
+    status: Optional[str] = None
+    tester: Optional[str] = None
+    note: Optional[str] = None
+
+
+class QcTestTypeResponse(BaseModel):
+    """Response DTO for QC test types."""
+
+    id: str
+    code: str
+    name: str
+    unit: Optional[str]
+    description: Optional[str]
+    is_active: bool
 
     class Config:
         from_attributes = True

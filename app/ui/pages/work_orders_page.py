@@ -35,42 +35,6 @@ class WorkOrdersPage:
                         )
                     ]
                 ),
-                # Hidden placeholder buttons for callbacks (must be outside dynamic content)
-                html.Div(
-                    [
-                        dbc.Button(
-                            "Issue Material",
-                            id="wo-issue-submit-btn",
-                            style={"display": "none"},
-                        ),
-                        dbc.Button(
-                            "Record QC Test",
-                            id="wo-qc-submit-btn",
-                            style={"display": "none"},
-                        ),
-                        dbc.Button(
-                            "Complete Work Order",
-                            id="wo-complete-submit-btn",
-                            style={"display": "none"},
-                        ),
-                        dbc.Button(
-                            "Release",
-                            id="wo-release-btn",
-                            style={"display": "none"},
-                        ),
-                        dbc.Button(
-                            "Start",
-                            id="wo-start-btn",
-                            style={"display": "none"},
-                        ),
-                        dbc.Button(
-                            "Void",
-                            id="wo-void-btn",
-                            style={"display": "none"},
-                        ),
-                    ],
-                    style={"display": "none"},
-                ),
                 # Filters (always visible)
                 dbc.Row(
                     [
@@ -380,7 +344,10 @@ class WorkOrdersPage:
                         "display": "none"
                     },  # Hidden by default, shown by tab callback
                 ),
-                html.Div(id="wo-detail-wo-id", style={"display": "none"}),
+                dcc.Store(id="wo-detail-wo-id"),
+                dcc.Store(id="wo-detail-active-tab", data="wo-detail-inputs"),
+                dcc.Store(id="wo-qc-type-options", data=[]),
+                dcc.Store(id="wo-qc-current-id"),
                 # Toast notifications
                 dbc.Toast(
                     id="wo-issue-toast",

@@ -3,8 +3,19 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "== alembic upgrade head =="
-alembic upgrade head
+Write-Host "== alembic upgrade (all apps) =="
+
+# Core branch
+alembic upgrade core@head
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# VNDManuf Sales branch
+alembic upgrade vndmanuf_sales@head
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# Competitor Intel (separate env)
+alembic -c apps/competitor_intel/alembic.ini upgrade head
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "`n== alembic check (safe) =="
 python scripts/alembic_check_safe.py

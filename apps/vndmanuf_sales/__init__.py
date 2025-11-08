@@ -1,0 +1,1 @@
+"""VNDManuf Sales application package."""

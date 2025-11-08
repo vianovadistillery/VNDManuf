@@ -16,6 +16,7 @@ from app.api import (
     purchase_formats,
     raw_materials,
     reports,
+    sales,
     shopify,
     suppliers,
     units,
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(purchase_formats.router, prefix="/api/v1")
     app.include_router(work_areas.router, prefix="/api/v1")
     app.include_router(work_orders.router, prefix="/api/v1")
+    app.include_router(sales.router, prefix="/api/v1")
 
     # Health check endpoint
     @app.get("/health")

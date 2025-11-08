@@ -14,3 +14,33 @@ git add -A
 git commit -m "work order progress 1"
 
 git push
+
+
+
+
+Your commit got blocked by commitizen. Everything else passed; now you just need a Conventional Commit–style message that matches the pattern:
+
+(build|bump|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\S+\))?!?: <summary>
+
+Quick fix — do one of these
+
+Option A: Commit with a proper message
+
+git commit -m "feat(work-orders): add WO flow and fix formatting"
+
+
+Other valid examples
+
+git commit -m "refactor(db): normalize line endings and EOF fixes"
+git commit -m "docs(vndmanuf): add WO spec and current build status"
+git commit -m "chore(pre-commit): apply ruff-format and end-of-file-fixer changes"
+
+
+Option B: Use Commitizen’s interactive prompt
+
+cz commit
+# or
+git cz
+
+
+(Commitizen will ask questions and build a valid message.)

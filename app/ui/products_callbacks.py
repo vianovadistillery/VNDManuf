@@ -1,5 +1,7 @@
 """CRUD callbacks for products page."""
 
+import json
+
 import dash
 from dash import Input, Output, State, dash_table, html, no_update
 from dash.exceptions import PreventUpdate
@@ -112,6 +114,7 @@ def register_product_callbacks(app, make_api_request):
             Output("product-is-purchase", "value", allow_duplicate=True),
             Output("product-is-sell", "value", allow_duplicate=True),
             Output("product-is-assemble", "value", allow_duplicate=True),
+            Output("product-allow-negative", "value", allow_duplicate=True),
             Output("product-pricing-table", "data", allow_duplicate=True),
             Output("product-cost-table", "data", allow_duplicate=True),
             Output("product-size", "value", allow_duplicate=True),
@@ -256,6 +259,7 @@ def register_product_callbacks(app, make_api_request):
                 False,  # is_purchase
                 False,  # is_sell
                 False,  # is_assemble
+                True,  # allow_negative_inventory
                 pricing_data,  # pricing_table
                 cost_data,  # cost_table
                 None,  # size
@@ -360,6 +364,7 @@ def register_product_callbacks(app, make_api_request):
             is_purchase = to_bool(product.get("is_purchase"))
             is_sell = to_bool(product.get("is_sell"))
             is_assemble = to_bool(product.get("is_assemble"))
+            allow_negative_flag = to_bool(product.get("allow_negative_inventory", True))
 
             # Get usage costs for COGS calculations
             usage_cost_ex_gst = safe_float(product.get("usage_cost_ex_gst"), 0.0)
@@ -686,6 +691,7 @@ def register_product_callbacks(app, make_api_request):
                 is_purchase,
                 is_sell,
                 is_assemble,
+                allow_negative_flag,
                 pricing_data,
                 cost_data,
                 product.get("size") or "",
@@ -793,6 +799,7 @@ def register_product_callbacks(app, make_api_request):
             State("product-is-purchase", "value"),
             State("product-is-sell", "value"),
             State("product-is-assemble", "value"),
+            State("product-allow-negative", "value"),
             State("product-pricing-table", "data"),
             State("product-cost-table", "data"),
             State("product-size", "value"),
@@ -828,6 +835,7 @@ def register_product_callbacks(app, make_api_request):
             is_purchase,
             is_sell,
             is_assemble,
+            allow_negative,
             pricing_data,
             cost_data,
             size,
@@ -939,6 +947,17 @@ def register_product_callbacks(app, make_api_request):
                     or (
                         isinstance(is_assemble, str)
                         and is_assemble.lower() in ("true", "1", "yes", "y")
+                    )
+                )
+                else False
+            ),
+            "allow_negative_inventory": (
+                True
+                if (
+                    allow_negative is True
+                    or (
+                        isinstance(allow_negative, str)
+                        and allow_negative.lower() in ("true", "1", "yes", "y")
                     )
                 )
                 else False
@@ -4216,6 +4235,8 @@ def register_product_callbacks(app, make_api_request):
             Output("adjust-lot-code", "value", allow_duplicate=True),
             Output("adjust-notes", "value", allow_duplicate=True),
             Output("adjust-type", "value", allow_duplicate=True),
+            Output("adjust-quantity-label", "children", allow_duplicate=True),
+            Output("adjust-usage-metadata", "children", allow_duplicate=True),
         ],
         [Input("adjust-inventory-btn", "n_clicks")],
         [State("products-table", "selected_rows"), State("products-table", "data")],
@@ -4244,6 +4265,34 @@ def register_product_callbacks(app, make_api_request):
                 print(f"Error fetching stock: {e}")
                 current_stock = "Unknown"
 
+        # Determine usage unit and supporting metadata for conversions
+        usage_unit_raw = product.get("usage_unit")
+        usage_unit_display = (
+            str(usage_unit_raw).strip().upper() if usage_unit_raw else "KG"
+        )
+        if not usage_unit_display:
+            usage_unit_display = "KG"
+
+        def _safe_float(value):
+            if value is None or value == "":
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        density_value = _safe_float(product.get("density_kg_per_l"))
+        weight_value = _safe_float(product.get("weight_kg"))
+
+        quantity_label = f"Quantity ({usage_unit_display}) *"
+        usage_metadata = json.dumps(
+            {
+                "usage_unit": usage_unit_display,
+                "density_kg_per_l": density_value,
+                "weight_kg": weight_value,
+            }
+        )
+
         return (
             True,  # is_open
             product_name,  # product_name
@@ -4254,6 +4303,8 @@ def register_product_callbacks(app, make_api_request):
             None,  # lot_code
             "",  # notes
             "INCREASE",  # adjustment_type
+            quantity_label,  # quantity label
+            usage_metadata,  # usage metadata for conversions
         )
 
     # Close inventory adjustment modal
@@ -4288,11 +4339,19 @@ def register_product_callbacks(app, make_api_request):
             State("adjust-unit-cost", "value"),
             State("adjust-lot-code", "value"),
             State("adjust-notes", "value"),
+            State("adjust-usage-metadata", "children"),
         ],
         prevent_initial_call=True,
     )
     def apply_inventory_adjustment(
-        n_clicks, product_id, adjustment_type, quantity, unit_cost, lot_code, notes
+        n_clicks,
+        product_id,
+        adjustment_type,
+        quantity,
+        unit_cost,
+        lot_code,
+        notes,
+        usage_metadata,
     ):
         """Apply inventory adjustment."""
         if not n_clicks:
@@ -4305,10 +4364,107 @@ def register_product_callbacks(app, make_api_request):
             return True, "Error", "Adjustment Type and Quantity are required", no_update
 
         try:
+            quantity_value = float(quantity)
+        except (TypeError, ValueError):
+            return True, "Error", "Quantity must be a number", no_update
+
+        def _safe_float(value):
+            if value in (None, "", "null"):
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        usage_unit = None
+        density_val = None
+        weight_val = None
+        if usage_metadata:
+            try:
+                metadata = json.loads(usage_metadata)
+            except (TypeError, json.JSONDecodeError):
+                metadata = {}
+            else:
+                usage_unit = metadata.get("usage_unit")
+                density_val = _safe_float(metadata.get("density_kg_per_l"))
+                weight_val = _safe_float(metadata.get("weight_kg"))
+
+        usage_unit_display = str(usage_unit).strip().upper() if usage_unit else "KG"
+
+        def convert_quantity_to_kg(qty, unit_code, density_value, weight_value):
+            if qty is None:
+                return None, "Quantity is required"
+
+            unit = (unit_code or "").strip().upper()
+            if unit in ("", "KG", "KILOGRAM", "KILOGRAMS"):
+                return qty, None
+
+            mass_to_kg = {
+                "MG": 0.000001,
+                "G": 0.001,
+                "GRAM": 0.001,
+                "GRAMS": 0.001,
+                "KG": 1.0,
+                "KILOGRAM": 1.0,
+                "KILOGRAMS": 1.0,
+                "TON": 1000.0,
+                "TONNE": 1000.0,
+                "TONNES": 1000.0,
+            }
+            if unit in mass_to_kg:
+                return qty * mass_to_kg[unit], None
+
+            volume_to_l = {
+                "ML": 0.001,
+                "MILLILITER": 0.001,
+                "MILLILITRE": 0.001,
+                "L": 1.0,
+                "LT": 1.0,
+                "LTR": 1.0,
+                "LITRE": 1.0,
+                "LITER": 1.0,
+            }
+            if unit in volume_to_l:
+                if density_value and density_value > 0:
+                    liters = qty * volume_to_l[unit]
+                    return liters * density_value, None
+                return (
+                    None,
+                    "Cannot convert quantity without density (kg/L). Please set the product density or enter quantity in kg.",
+                )
+
+            each_units = {"EA", "EACH", "UNIT", "UNITS", "ITEM", "CTN", "CARTON"}
+            if unit in each_units:
+                if weight_value and weight_value > 0:
+                    return qty * weight_value, None
+                return (
+                    None,
+                    "Cannot convert quantity without weight per unit. Please set the product weight or enter quantity in kg.",
+                )
+
+            return (
+                None,
+                f"Unsupported usage unit '{unit}'. Please enter quantity in kg or update unit configuration.",
+            )
+
+        quantity_kg, conversion_error = convert_quantity_to_kg(
+            quantity_value, usage_unit_display, density_val, weight_val
+        )
+
+        if quantity_kg is None:
+            return True, "Error", conversion_error, no_update
+
+        conversion_note = None
+        if usage_unit_display not in ("", "KG", "KILOGRAM", "KILOGRAMS"):
+            conversion_note = (
+                f"{quantity_value:g} {usage_unit_display} -> {quantity_kg:.3f} kg"
+            )
+
+        try:
             adjustment_data = {
                 "product_id": product_id,
                 "adjustment_type": adjustment_type,
-                "quantity_kg": float(quantity),
+                "quantity_kg": float(quantity_kg),
                 "unit_cost": float(unit_cost) if unit_cost else None,
                 "lot_id": None,  # Let API create new lot or use existing based on lot_code if needed
                 "notes": notes.strip() if notes else None,
@@ -4342,12 +4498,13 @@ def register_product_callbacks(app, make_api_request):
             except (ValueError, KeyError, TypeError):
                 new_stock = no_update
 
-            return (
-                True,
-                "Success",
-                f"Inventory adjusted successfully. New stock: {new_stock if isinstance(new_stock, str) else 'updated'}",
-                new_stock,
-            )
+            success_message = "Inventory adjusted successfully."
+            if conversion_note:
+                success_message += f" Converted {conversion_note}."
+            if isinstance(new_stock, str):
+                success_message += f" New stock: {new_stock}"
+
+            return (True, "Success", success_message, new_stock)
 
         except Exception as e:
             return True, "Error", f"Failed to adjust inventory: {str(e)}", no_update

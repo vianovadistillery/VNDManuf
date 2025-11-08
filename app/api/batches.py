@@ -141,6 +141,10 @@ async def add_batch_component(
             status_code=status.HTTP_404_NOT_FOUND, detail="Ingredient product not found"
         )
 
+    allow_negative = bool(
+        getattr(ingredient_product, "allow_negative_inventory", False)
+    )
+
     # Validate lot exists and has sufficient quantity
     lot = db.get(InventoryLot, component_data.lot_id)
     if not lot:
@@ -155,7 +159,7 @@ async def add_batch_component(
         )
 
     # Check if lot has sufficient quantity
-    if lot.quantity_kg < component_data.quantity_kg:
+    if lot.quantity_kg < component_data.quantity_kg and not allow_negative:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Insufficient stock: lot {lot.lot_code} has {lot.quantity_kg} kg, requested {component_data.quantity_kg} kg",

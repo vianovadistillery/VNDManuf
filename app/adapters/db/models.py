@@ -4,7 +4,9 @@
 import enum
 import uuid
 from datetime import datetime
+from typing import Optional
 
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     Column,
@@ -33,6 +35,36 @@ class ContactType(str, enum.Enum):
     CUSTOMER = "CUSTOMER"
     SUPPLIER = "SUPPLIER"
     OTHER = "OTHER"
+
+
+class CustomerType(str, enum.Enum):
+    """Sales customer classification."""
+
+    BOTTLE_SHOP = "bottle_shop"
+    BAR = "bar"
+    RESTAURANT = "restaurant"
+    VENUE = "venue"
+    RETAILER = "retailer"
+    DISTRIBUTOR = "distributor"
+    DIRECT_CUSTOMER = "direct_customer"
+    OTHER = "other"
+
+
+class SalesOrderStatus(str, enum.Enum):
+    """Lifecycle status for sales orders."""
+
+    DRAFT = "draft"
+    CONFIRMED = "confirmed"
+    FULFILLED = "fulfilled"
+    CANCELLED = "cancelled"
+
+
+class SalesOrderSource(str, enum.Enum):
+    """Source system for the sales order."""
+
+    MANUAL = "manual"
+    IMPORTED = "imported"
+    API = "api"
 
 
 def uuid_column(nullable: bool = False):
@@ -70,6 +102,7 @@ class Product(Base, AuditMixin):
     is_assemble = Column(Boolean, nullable=True, default=False)
     is_tracked = Column(Boolean, nullable=True, default=False)
     sellable = Column(Boolean, nullable=True, default=False)
+    allow_negative_inventory = Column(Boolean, nullable=False, default=True)
     is_archived = Column(Boolean, nullable=True, default=False)
     # Note: archived_at and archived_by are provided by AuditMixin
 
@@ -221,6 +254,7 @@ class Product(Base, AuditMixin):
     pack_conversions = relationship("PackConversion", back_populates="product")
     price_list_items = relationship("PriceListItem", back_populates="product")
     customer_prices = relationship("CustomerPrice", back_populates="product")
+    pricebook_items = relationship("PricebookItem", back_populates="product")
 
     __table_args__ = (
         Index("ix_products_sku", "sku"),
@@ -738,6 +772,25 @@ class WorkOrderOutput(Base, AuditMixin):
     __table_args__ = (Index("ix_wo_output_wo_id", "work_order_id"),)
 
 
+# QC Test Types (settings)
+class QcTestType(Base, AuditMixin):
+    """Lookup table for QC test types and default units."""
+
+    __tablename__ = "qc_test_types"
+
+    id = uuid_column()
+    code = Column(String(50), nullable=False, unique=True, index=True)
+    name = Column(String(100), nullable=False)
+    unit = Column(String(20), nullable=True)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    # Relationships
+    qc_tests = relationship("WoQcTest", back_populates="test_type_ref")
+
+    __table_args__ = (Index("ix_qc_test_types_active", "is_active"),)
+
+
 # Work Order QC Tests
 class WoQcTest(Base, AuditMixin):
     """QC tests linked to work orders (separate from batch QC)."""
@@ -747,6 +800,7 @@ class WoQcTest(Base, AuditMixin):
     id = uuid_column()
     work_order_id = Column(String(36), ForeignKey("work_orders.id"), nullable=False)
     test_type = Column(String(50), nullable=False)  # 'ABV', 'fill', 'pH', etc.
+    test_type_id = Column(String(36), ForeignKey("qc_test_types.id"), nullable=True)
     result_value = Column(Numeric(12, 4), nullable=True)  # Numeric result
     result_text = Column(Text, nullable=True)  # Text result (for non-numeric)
     unit = Column(String(20), nullable=True)  # %, pH, NTU, etc.
@@ -761,8 +815,12 @@ class WoQcTest(Base, AuditMixin):
 
     # Relationships
     work_order = relationship("WorkOrder", back_populates="qc_tests")
+    test_type_ref = relationship("QcTestType", back_populates="qc_tests")
 
-    __table_args__ = (Index("ix_wo_qc_test_wo_id", "work_order_id"),)
+    __table_args__ = (
+        Index("ix_wo_qc_test_wo_id", "work_order_id"),
+        Index("ix_wo_qc_tests_test_type_id", "test_type_id"),
+    )
 
 
 # Work Order Timers (telemetry costing)
@@ -952,6 +1010,11 @@ class Customer(Base, AuditMixin):
     id = uuid_column()
     code = Column(String(50), unique=True, nullable=False, index=True)
     name = Column(String(200), nullable=False)
+    customer_type = Column(
+        String(32),
+        nullable=False,
+        default=CustomerType.OTHER.value,
+    )
     contact_person = Column(String(100))
     email = Column(String(200))
     phone = Column(String(50))
@@ -960,6 +1023,8 @@ class Customer(Base, AuditMixin):
     xero_contact_id = Column(String(100))  # Xero Contact UUID
     last_sync = Column(DateTime)  # Last successful sync to Xero
     is_active = Column(Boolean, default=True)
+    abn = Column(String(20), nullable=True)
+    notes = Column(Text, nullable=True)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
@@ -967,8 +1032,18 @@ class Customer(Base, AuditMixin):
     sales_orders = relationship("SalesOrder", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
     customer_prices = relationship("CustomerPrice", back_populates="customer")
+    customer_sites = relationship(
+        "CustomerSite", back_populates="customer", cascade="all, delete-orphan"
+    )
 
-    __table_args__ = (Index("ix_customer_code", "code"),)
+    __table_args__ = (
+        Index("ix_customer_code", "code"),
+        Index("ix_customers_name", "name"),
+        sa.CheckConstraint(
+            "customer_type IN ('bottle_shop','bar','restaurant','venue','retailer','distributor','direct_customer','other')",
+            name="ck_customers_type",
+        ),
+    )
 
 
 class SalesOrder(Base, AuditMixin):
@@ -976,43 +1051,217 @@ class SalesOrder(Base, AuditMixin):
 
     id = uuid_column()
     customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
-    so_number = Column(String(50), unique=True, nullable=False, index=True)
+    channel_id = Column(String(36), ForeignKey("sales_channels.id"), nullable=True)
+    customer_site_id = Column(
+        String(36), ForeignKey("customer_sites.id"), nullable=True
+    )
+    pricebook_id = Column(String(36), ForeignKey("pricebooks.id"), nullable=True)
+    order_ref = Column(String(50), nullable=True, index=True)
     status = Column(
-        String(20), default="DRAFT"
-    )  # DRAFT, CONFIRMED, SHIPPED, INVOICED, CANCELLED
-    order_date = Column(DateTime, default=datetime.utcnow)
+        String(20),
+        nullable=False,
+        default=SalesOrderStatus.DRAFT.value,
+    )
+    source = Column(
+        String(20),
+        nullable=False,
+        default=SalesOrderSource.MANUAL.value,
+    )
+    order_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     requested_date = Column(DateTime)
     shipped_date = Column(DateTime)
+    entered_by = Column(String(100))
+    total_ex_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    total_inc_gst = Column(Numeric(12, 2), nullable=False, default=0)
     notes = Column(Text)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
     # Relationships
     customer = relationship("Customer", back_populates="sales_orders")
-    lines = relationship("SoLine", back_populates="sales_order")
+    channel = relationship("SalesChannel", back_populates="orders")
+    customer_site = relationship("CustomerSite", back_populates="orders")
+    pricebook = relationship("Pricebook")
+    lines = relationship(
+        "SalesOrderLine",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
     invoices = relationship("Invoice", back_populates="sales_order")
+    order_tags = relationship(
+        "SalesOrderTag",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
 
-    __table_args__ = (Index("ix_sales_order_so_number", "so_number"),)
+    @property
+    def so_number(self) -> Optional[str]:
+        """Backward compatibility accessor for legacy code paths."""
+        return self.order_ref
+
+    @so_number.setter
+    def so_number(self, value: Optional[str]) -> None:
+        self.order_ref = value
+
+    @property
+    def tags(self) -> list["SalesTag"]:
+        """Convenience accessor returning SalesTag entities."""
+        return [link.tag for link in self.order_tags if link.tag is not None]
+
+    __table_args__ = (
+        Index("ix_sales_orders_order_date", "order_date"),
+        Index("ix_sales_orders_channel", "channel_id"),
+        Index("ix_sales_orders_customer", "customer_id"),
+        Index("ix_sales_orders_pricebook", "pricebook_id"),
+        sa.CheckConstraint(
+            "status IN ('draft','confirmed','fulfilled','cancelled')",
+            name="ck_sales_orders_status",
+        ),
+        sa.CheckConstraint(
+            "source IN ('manual','imported','api')",
+            name="ck_sales_orders_source",
+        ),
+    )
 
 
-class SoLine(Base, AuditMixin):
-    __tablename__ = "so_lines"
+class SalesChannel(Base, AuditMixin):
+    __tablename__ = "sales_channels"
 
     id = uuid_column()
-    sales_order_id = Column(String(36), ForeignKey("sales_orders.id"), nullable=False)
-    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
-    quantity_kg = Column(Numeric(12, 3), nullable=False)
-    unit_price_ex_tax = Column(Numeric(10, 2), nullable=False)
-    tax_rate = Column(Numeric(5, 2), nullable=False)
-    line_total_ex_tax = Column(Numeric(12, 2), nullable=False)
-    line_total_inc_tax = Column(Numeric(12, 2), nullable=False)
-    sequence = Column(Integer, nullable=False)
-    # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
-    # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
+    code = Column(String(50), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
 
-    # Relationships
-    sales_order = relationship("SalesOrder", back_populates="lines")
+    orders = relationship("SalesOrder", back_populates="channel")
+
+    __table_args__ = (Index("ix_sales_channels_name", "name"),)
+
+
+class CustomerSite(Base, AuditMixin):
+    __tablename__ = "customer_sites"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    site_name = Column(String(120), nullable=False)
+    state = Column(String(8), nullable=False)
+    suburb = Column(String(120), nullable=True)
+    postcode = Column(String(10), nullable=True)
+    latitude = Column(Numeric(10, 6), nullable=True)
+    longitude = Column(Numeric(10, 6), nullable=True)
+
+    customer = relationship("Customer", back_populates="customer_sites")
+    orders = relationship("SalesOrder", back_populates="customer_site")
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "customer_id",
+            "site_name",
+            "state",
+            "suburb",
+            name="uq_customer_sites_customer_site_state_suburb",
+        ),
+        Index("ix_customer_sites_customer", "customer_id"),
+    )
+
+
+class SalesOrderLine(Base, AuditMixin):
+    __tablename__ = "sales_order_lines"
+
+    id = uuid_column()
+    order_id = Column(String(36), ForeignKey("sales_orders.id"), nullable=False)
+    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
+    qty = Column(Numeric(12, 3), nullable=False)
+    uom = Column(String(20), nullable=False, default="unit")
+    unit_price_ex_gst = Column(Numeric(12, 2), nullable=False)
+    unit_price_inc_gst = Column(Numeric(12, 2), nullable=True)
+    discount_ex_gst = Column(Numeric(12, 2), nullable=True)
+    tax_rate = Column(Numeric(5, 2), nullable=True)
+    line_total_ex_gst = Column(Numeric(12, 2), nullable=False)
+    line_total_inc_gst = Column(Numeric(12, 2), nullable=False)
+    sequence = Column(Integer, nullable=False)
+
+    order = relationship("SalesOrder", back_populates="lines")
     product = relationship("Product")
+
+    __table_args__ = (
+        Index("ix_sales_order_lines_order", "order_id"),
+        Index("ix_sales_order_lines_product", "product_id"),
+    )
+
+    # Backward compatibility attributes for legacy code paths
+    @property
+    def sales_order_id(self) -> str:
+        return self.order_id
+
+    @sales_order_id.setter
+    def sales_order_id(self, value: str) -> None:
+        self.order_id = value
+
+    @property
+    def quantity_kg(self):
+        return self.qty
+
+    @quantity_kg.setter
+    def quantity_kg(self, value):
+        self.qty = value
+
+    @property
+    def unit_price_ex_tax(self):
+        return self.unit_price_ex_gst
+
+    @unit_price_ex_tax.setter
+    def unit_price_ex_tax(self, value):
+        self.unit_price_ex_gst = value
+
+    @property
+    def line_total_ex_tax(self):
+        return self.line_total_ex_gst
+
+    @line_total_ex_tax.setter
+    def line_total_ex_tax(self, value):
+        self.line_total_ex_gst = value
+
+    @property
+    def line_total_inc_tax(self):
+        return self.line_total_inc_gst
+
+    @line_total_inc_tax.setter
+    def line_total_inc_tax(self, value):
+        self.line_total_inc_gst = value
+
+
+class SalesTag(Base, AuditMixin):
+    __tablename__ = "sales_tags"
+
+    id = uuid_column()
+    slug = Column(String(100), unique=True, nullable=False, index=True)
+    label = Column(String(120), nullable=False)
+    description = Column(Text, nullable=True)
+
+    order_links = relationship(
+        "SalesOrderTag", back_populates="tag", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (Index("ix_sales_tags_label", "label"),)
+
+
+class SalesOrderTag(Base, AuditMixin):
+    __tablename__ = "sales_order_tags"
+
+    id = uuid_column()
+    order_id = Column(String(36), ForeignKey("sales_orders.id"), nullable=False)
+    tag_id = Column(String(36), ForeignKey("sales_tags.id"), nullable=False)
+
+    order = relationship("SalesOrder", back_populates="order_tags")
+    tag = relationship("SalesTag", back_populates="order_links")
+
+    __table_args__ = (
+        sa.UniqueConstraint("order_id", "tag_id", name="uq_sales_order_tags_order_tag"),
+    )
+
+
+# Backwards compatibility alias
+SoLine = SalesOrderLine
 
 
 # Invoice Models
@@ -1064,6 +1313,43 @@ class InvoiceLine(Base, AuditMixin):
 
 
 # Pricing Models
+class Pricebook(Base, AuditMixin):
+    __tablename__ = "pricebooks"
+
+    id = uuid_column()
+    name = Column(String(120), nullable=False, unique=True)
+    currency = Column(String(8), nullable=False, default="AUD")
+    active_from = Column(Date, nullable=False)
+    active_to = Column(Date, nullable=True)
+
+    items = relationship(
+        "PricebookItem", back_populates="pricebook", cascade="all, delete-orphan"
+    )
+    orders = relationship("SalesOrder", back_populates="pricebook")
+
+    __table_args__ = (Index("ix_pricebooks_active_from", "active_from"),)
+
+
+class PricebookItem(Base, AuditMixin):
+    __tablename__ = "pricebook_items"
+
+    id = uuid_column()
+    pricebook_id = Column(String(36), ForeignKey("pricebooks.id"), nullable=False)
+    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
+    sku_code = Column(String(50), nullable=True)
+    unit_price_ex_gst = Column(Numeric(12, 2), nullable=False)
+    unit_price_inc_gst = Column(Numeric(12, 2), nullable=True)
+
+    pricebook = relationship("Pricebook", back_populates="items")
+    product = relationship("Product", back_populates="pricebook_items")
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "pricebook_id", "product_id", name="uq_pricebook_items_pricebook_product"
+        ),
+    )
+
+
 class PriceList(Base, AuditMixin):
     __tablename__ = "price_lists"
 
