@@ -6,7 +6,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:  # pragma: no cover
-    from apps.competitor_intel.app.models.manufacturing_cost import ManufacturingCost
+    from apps.competitor_intel.app.models.purchase_price import PurchasePrice
     from apps.competitor_intel.app.models.sku import SKU
 
 MONEY_QUANT = Decimal("0.01")
@@ -167,10 +167,10 @@ def compute_price_metrics(
     )
 
 
-def _select_cost_record(sku: "SKU") -> Optional["ManufacturingCost"]:
+def _select_cost_record(sku: "SKU") -> Optional["PurchasePrice"]:
     records = [
         c
-        for c in getattr(sku, "manufacturing_costs", [])
+        for c in getattr(sku, "purchase_prices", [])
         if getattr(c, "deleted_at", None) is None
     ]
     if not records:

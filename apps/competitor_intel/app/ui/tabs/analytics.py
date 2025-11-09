@@ -10,6 +10,7 @@ from dash import Input, Output, dcc, html
 from sqlalchemy import select
 
 from ...models import SKU, Brand, PriceObservation, Product
+from ...models.product import PRODUCT_FORMATS, PRODUCT_SPIRITS, categories_for
 from ...services import (
     ObservationFilters,
     get_filtered_counts,
@@ -23,6 +24,8 @@ BRAND_FILTER_ID = "analytics-filter-brand"
 SKU_FILTER_ID = "analytics-filter-sku"
 CHANNEL_FILTER_ID = "analytics-filter-channel"
 DATE_FILTER_ID = "analytics-filter-date"
+SPIRIT_FILTER_ID = "analytics-filter-spirit"
+FORMAT_FILTER_ID = "analytics-filter-format"
 TIME_SERIES_GRAPH_ID = "analytics-time-series"
 DISTRIBUTION_GRAPH_ID = "analytics-distribution"
 SUMMARY_CONTAINER_ID = "analytics-summary"
@@ -67,6 +70,29 @@ def layout() -> dbc.Container:
                                 ),
                             ],
                             className="g-3",
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    filter_dropdown(
+                                        SPIRIT_FILTER_ID,
+                                        "Spirit",
+                                        options["spirits"],
+                                        placeholder="All spirits",
+                                    ),
+                                    md=6,
+                                ),
+                                dbc.Col(
+                                    filter_dropdown(
+                                        FORMAT_FILTER_ID,
+                                        "Format",
+                                        options["formats"],
+                                        placeholder="All formats",
+                                    ),
+                                    md=6,
+                                ),
+                            ],
+                            className="g-3 mt-2",
                         ),
                         dbc.Row(
                             [
@@ -134,14 +160,31 @@ def register_callbacks(app):  # pragma: no cover - Dash wiring
         Output(SUMMARY_CONTAINER_ID, "children"),
         Input(BRAND_FILTER_ID, "value"),
         Input(SKU_FILTER_ID, "value"),
+        Input(SPIRIT_FILTER_ID, "value"),
+        Input(FORMAT_FILTER_ID, "value"),
         Input(CHANNEL_FILTER_ID, "value"),
         Input(DATE_FILTER_ID, "start_date"),
         Input(DATE_FILTER_ID, "end_date"),
     )
-    def update_analytics(brand_ids, sku_ids, channels, start_date, end_date):
+    def update_analytics(
+        brand_ids, sku_ids, spirits, formats, channels, start_date, end_date
+    ):
+        categories = (
+            categories_for(spirits or None, formats or None)
+            if (spirits or formats)
+            else []
+        )
+        package_types = []
+        if formats:
+            if "bottle" in formats:
+                package_types.append("bottle")
+            if "rtd" in formats:
+                package_types.append("can")
         filters = ObservationFilters(
             brand_ids=brand_ids or [],
             sku_ids=sku_ids or [],
+            categories=categories,
+            package_types=package_types,
             channels=channels or [],
             start_dt=_to_datetime(start_date),
             end_dt=_to_datetime(end_date),
@@ -167,10 +210,20 @@ def _build_time_series_figure(rows: List[dict]):
         )
         return fig
     df = pd.DataFrame(rows)
-    # Convert ISO-style "YYYY-WW" strings into timestamps representing the Monday of each week
-    df["period"] = pd.to_datetime(
-        df["period"] + "-1", format="%Y-%W-%w", errors="coerce"
+    # Convert ISO-style "YYYY-WW" strings (or missing values) into timestamps
+    df["period"] = df["period"].apply(
+        lambda value: f"{value}-1" if isinstance(value, str) and value else None
     )
+    df["period"] = pd.to_datetime(df["period"], format="%Y-%W-%w", errors="coerce")
+    df = df.dropna(subset=["period"]).copy()
+    if df.empty:
+        fig = px.line()
+        fig.update_layout(
+            title="No observations match the selected filters",
+            xaxis_title="Week",
+            yaxis_title="Avg Price (inc GST)",
+        )
+        return fig
     df.sort_values(["period", "sku_label"], inplace=True)
     fig = px.line(
         df,
@@ -258,7 +311,18 @@ def _load_filter_options() -> Dict[str, List[dict]]:
             )
             if channel
         ]
-    return {"brands": brands, "skus": skus, "channels": channels}
+    return {
+        "brands": brands,
+        "skus": skus,
+        "channels": channels,
+        "spirits": [
+            {"label": spirit.title(), "value": spirit} for spirit in PRODUCT_SPIRITS
+        ],
+        "formats": [
+            {"label": "RTD" if fmt == "rtd" else fmt.title(), "value": fmt}
+            for fmt in PRODUCT_FORMATS
+        ],
+    }
 
 
 def _to_datetime(value: str | None) -> datetime | None:

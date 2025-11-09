@@ -14,6 +14,7 @@ from .tabs import (
     locations,
     observations,
     overview,
+    purchase_prices,
     settings,
     skus,
 )
@@ -23,6 +24,7 @@ TABS: Dict[str, Callable[[], dbc.Container]] = {
     "overview": overview.layout,
     "skus": skus.layout,
     "locations": locations.layout,
+    "purchase_prices": purchase_prices.layout,
     "observations": observations.layout,
     "analytics": analytics.layout,
     "map": map_tab.layout,
@@ -74,7 +76,11 @@ def create_app() -> Dash:
                                                             value="locations",
                                                         ),
                                                         dcc.Tab(
-                                                            label="Observations",
+                                                            label="Purchase Prices",
+                                                            value="purchase_prices",
+                                                        ),
+                                                        dcc.Tab(
+                                                            label="Retail Observations",
                                                             value="observations",
                                                         ),
                                                         dcc.Tab(
@@ -116,6 +122,7 @@ def create_app() -> Dash:
 
     _register_callbacks(app)
     overview.register_callbacks(app)
+    purchase_prices.register_callbacks(app)
     observations.register_callbacks(app)
     skus.register_callbacks(app)
     locations.register_callbacks(app)

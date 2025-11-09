@@ -13,7 +13,39 @@ if TYPE_CHECKING:  # pragma: no cover
     from .sku import SKU
 
 
-PRODUCT_CATEGORIES = ("gin_bottle", "rtd_can")
+PRODUCT_CATEGORIES = (
+    "gin_bottle",
+    "gin_rtd",
+    "vodka_bottle",
+    "vodka_rtd",
+)
+
+PRODUCT_CATEGORY_DETAILS = {
+    "gin_bottle": {"spirit": "gin", "format": "bottle"},
+    "gin_rtd": {"spirit": "gin", "format": "rtd"},
+    "vodka_bottle": {"spirit": "vodka", "format": "bottle"},
+    "vodka_rtd": {"spirit": "vodka", "format": "rtd"},
+}
+
+PRODUCT_SPIRITS = tuple(
+    sorted({detail["spirit"] for detail in PRODUCT_CATEGORY_DETAILS.values()})
+)
+PRODUCT_FORMATS = tuple(
+    sorted({detail["format"] for detail in PRODUCT_CATEGORY_DETAILS.values()})
+)
+
+
+def categories_for(
+    spirits: tuple[str, ...] | list[str] | None = None,
+    formats: tuple[str, ...] | list[str] | None = None,
+) -> list[str]:
+    allowed_spirits = set(spirits or PRODUCT_SPIRITS)
+    allowed_formats = set(formats or PRODUCT_FORMATS)
+    return [
+        category
+        for category, detail in PRODUCT_CATEGORY_DETAILS.items()
+        if detail["spirit"] in allowed_spirits and detail["format"] in allowed_formats
+    ]
 
 
 class Product(UUIDStringMixin, TimestampMixin, Base):
@@ -35,7 +67,7 @@ class Product(UUIDStringMixin, TimestampMixin, Base):
     __table_args__ = (
         sa.UniqueConstraint("brand_id", "name", name="uq_products_brand_name"),
         sa.CheckConstraint(
-            "category IN ('gin_bottle','rtd_can')",
+            "category IN ('gin_bottle','gin_rtd','vodka_bottle','vodka_rtd')",
             name="ck_products_category",
         ),
     )

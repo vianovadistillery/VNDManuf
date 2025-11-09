@@ -23,14 +23,26 @@ def kpi_card(card_id: str, title: str, icon: str | None = None) -> dbc.Card:
     )
 
 
-def data_table(table_id: str, columns: list[dict], **kwargs) -> DataTable:
+def data_table(
+    table_id: str,
+    columns: list[dict],
+    *,
+    paginated: bool = False,
+    page_size: int = 25,
+    **kwargs,
+) -> DataTable:
     default_kwargs = dict(
         style_table={"overflowX": "auto"},
         style_header={"fontWeight": "600"},
         style_cell={"padding": "0.5rem"},
-        page_action="none",
         sort_action="none",
     )
+    if paginated:
+        default_kwargs["page_action"] = "native"
+        default_kwargs["page_size"] = page_size
+        default_kwargs.setdefault("page_current", 0)
+    else:
+        default_kwargs["page_action"] = "none"
     default_kwargs.update(kwargs)
     return DataTable(id=table_id, columns=columns, **default_kwargs)
 

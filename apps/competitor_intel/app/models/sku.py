@@ -8,10 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, TimestampMixin, UUIDStringMixin
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .manufacturing_cost import ManufacturingCost
     from .package_spec import PackageSpec
     from .price_observation import PriceObservation
     from .product import Product
+    from .purchase_price import PurchasePrice
     from .sku_carton import SKUCarton
     from .sku_pack import SKUPack
 
@@ -43,8 +43,8 @@ class SKU(UUIDStringMixin, TimestampMixin, Base):
     pack_assignment: Mapped[Optional["SKUPack"]] = relationship(
         "SKUPack", back_populates="sku", cascade="all, delete-orphan", uselist=False
     )
-    manufacturing_costs: Mapped[list["ManufacturingCost"]] = relationship(
-        "ManufacturingCost", back_populates="sku", cascade="all, delete-orphan"
+    purchase_prices: Mapped[list["PurchasePrice"]] = relationship(
+        "PurchasePrice", back_populates="sku", cascade="all, delete-orphan"
     )
 
     __table_args__ = (

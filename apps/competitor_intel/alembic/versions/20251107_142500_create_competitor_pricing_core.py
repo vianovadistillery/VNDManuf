@@ -53,7 +53,8 @@ def upgrade() -> None:
         ),
         sa.UniqueConstraint("brand_id", "name", name="uq_products_brand_name"),
         sa.CheckConstraint(
-            "category IN ('gin_bottle','rtd_can')", name="ck_products_category"
+            "category IN ('gin_bottle','gin_rtd','vodka_bottle','vodka_rtd')",
+            name="ck_products_category",
         ),
     )
 

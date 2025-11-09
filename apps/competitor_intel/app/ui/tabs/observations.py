@@ -10,6 +10,7 @@ from dash import Input, Output, State, dcc, html, no_update
 from sqlalchemy import select
 
 from ...models import SKU, Brand, Company, Location, PriceObservation, Product
+from ...models.product import PRODUCT_FORMATS, PRODUCT_SPIRITS, categories_for
 from ...services import ObservationFilters, fetch_observations
 from ...services.db import session_scope
 from ...services.dedupe import apply_hash_to_observation
@@ -20,6 +21,8 @@ FILTER_BRAND_ID = "observations-filter-brand"
 FILTER_CHANNEL_ID = "observations-filter-channel"
 FILTER_DATE_ID = "observations-filter-date"
 FILTER_BASIS_ID = "observations-filter-basis"
+FILTER_SPIRIT_ID = "observations-filter-spirit"
+FILTER_FORMAT_ID = "observations-filter-format"
 TABLE_ID = "observations-table"
 PAGINATION_ID = "observations-pagination"
 STORE_ID = "observations-store"
@@ -60,6 +63,18 @@ def layout() -> dbc.Container:
                                         "Brands",
                                         options["brands"],
                                         placeholder="All brands",
+                                    ),
+                                    filter_dropdown(
+                                        FILTER_SPIRIT_ID,
+                                        "Spirit",
+                                        options["spirits"],
+                                        placeholder="All spirits",
+                                    ),
+                                    filter_dropdown(
+                                        FILTER_FORMAT_ID,
+                                        "Format",
+                                        options["formats"],
+                                        placeholder="All formats",
                                     ),
                                     filter_dropdown(
                                         FILTER_CHANNEL_ID,
@@ -185,6 +200,8 @@ def register_callbacks(app) -> None:  # pragma: no cover - Dash wiring
         Output(PAGINATION_ID, "active_page"),
         Output(STORE_ID, "data"),
         Input(FILTER_BRAND_ID, "value"),
+        Input(FILTER_SPIRIT_ID, "value"),
+        Input(FILTER_FORMAT_ID, "value"),
         Input(FILTER_CHANNEL_ID, "value"),
         Input(FILTER_BASIS_ID, "value"),
         Input(FILTER_DATE_ID, "start_date"),
@@ -193,10 +210,20 @@ def register_callbacks(app) -> None:  # pragma: no cover - Dash wiring
         State(STORE_ID, "data"),
     )
     def update_table(
-        brand_ids, channels, bases, start_date, end_date, active_page, store_state
+        brand_ids,
+        spirits,
+        formats,
+        channels,
+        bases,
+        start_date,
+        end_date,
+        active_page,
+        store_state,
     ):
         store_state = store_state or {"page": 1, "page_size": 25}
-        filters = _build_filters(brand_ids, channels, bases, start_date, end_date)
+        filters = _build_filters(
+            brand_ids, spirits, formats, channels, bases, start_date, end_date
+        )
         page = active_page or store_state.get("page", 1)
         page_size = store_state.get("page_size", 25)
         with session_scope() as session:
@@ -210,6 +237,10 @@ def register_callbacks(app) -> None:  # pragma: no cover - Dash wiring
                 "page_size": page_size,
                 "filters": {
                     "brand_ids": filters.brand_ids,
+                    "categories": filters.categories,
+                    "package_types": filters.package_types,
+                    "spirits": spirits or [],
+                    "formats": formats or [],
                     "channels": filters.channels,
                     "price_bases": filters.price_bases,
                     "start_dt": filters.start_dt.isoformat()
@@ -238,6 +269,8 @@ def register_callbacks(app) -> None:  # pragma: no cover - Dash wiring
 
     @app.callback(
         Output(FILTER_BRAND_ID, "value"),
+        Output(FILTER_SPIRIT_ID, "value"),
+        Output(FILTER_FORMAT_ID, "value"),
         Output(FILTER_CHANNEL_ID, "value"),
         Output(FILTER_BASIS_ID, "value"),
         Output(FILTER_DATE_ID, "start_date"),
@@ -246,7 +279,7 @@ def register_callbacks(app) -> None:  # pragma: no cover - Dash wiring
         prevent_initial_call=True,
     )
     def reset_filters(_):
-        return [], [], [], None, None
+        return [], [], [], [], [], None, None
 
     @app.callback(
         Output(ADD_MODAL_ID, "is_open", allow_duplicate=True),
@@ -440,6 +473,13 @@ def _load_filter_options() -> Dict[str, List[dict]]:
         ).all()
     return {
         "brands": [{"label": name, "value": id_} for id_, name in brands],
+        "spirits": [
+            {"label": spirit.title(), "value": spirit} for spirit in PRODUCT_SPIRITS
+        ],
+        "formats": [
+            {"label": "RTD" if fmt == "rtd" else fmt.title(), "value": fmt}
+            for fmt in PRODUCT_FORMATS
+        ],
         "channels": _build_channel_options([row[0] for row in channels if row[0]]),
         "channel_default": CHANNEL_DEFAULT,
         "basis": _build_basis_options([row[0] for row in bases if row[0]]),
@@ -490,10 +530,25 @@ def _build_basis_options(existing: List[str]) -> List[dict]:
 
 
 def _build_filters(
-    brand_ids, channels, bases, start_date, end_date
+    brand_ids, spirits, formats, channels, bases, start_date, end_date
 ) -> ObservationFilters:
+    spirit_values = spirits or []
+    format_values = formats or []
+    categories = (
+        categories_for(spirit_values or None, format_values or None)
+        if spirit_values or format_values
+        else []
+    )
+    package_types = []
+    if format_values:
+        if "bottle" in format_values:
+            package_types.append("bottle")
+        if "rtd" in format_values:
+            package_types.append("can")
     return ObservationFilters(
         brand_ids=brand_ids or [],
+        categories=categories,
+        package_types=package_types,
         channels=channels or [],
         price_bases=bases or [],
         start_dt=datetime.fromisoformat(start_date) if start_date else None,
@@ -506,6 +561,8 @@ def _filters_from_store(data: Dict) -> ObservationFilters:
     end = data.get("end_dt")
     return ObservationFilters(
         brand_ids=data.get("brand_ids", []),
+        categories=data.get("categories", []),
+        package_types=data.get("package_types", []),
         channels=data.get("channels", []),
         price_bases=data.get("price_bases", []),
         start_dt=datetime.fromisoformat(start) if start else None,

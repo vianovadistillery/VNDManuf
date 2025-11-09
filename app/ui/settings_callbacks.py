@@ -12,6 +12,7 @@ def register_settings_callbacks(app):
             Output("units-tab-content", "style"),
             Output("excise-rates-tab-content", "style"),
             Output("purchase-formats-tab-content", "style"),
+            Output("qc-tests-tab-content", "style"),
             Output("work-areas-tab-content", "style"),
         ],
         Input("settings-tabs", "active_tab"),
@@ -24,11 +25,13 @@ def register_settings_callbacks(app):
                 {"display": "none"},
                 {"display": "none"},
                 {"display": "none"},
+                {"display": "none"},
             )
         elif active_tab == "excise-rates":
             return (
                 {"display": "none"},
                 {"display": "block"},
+                {"display": "none"},
                 {"display": "none"},
                 {"display": "none"},
             )
@@ -38,9 +41,19 @@ def register_settings_callbacks(app):
                 {"display": "none"},
                 {"display": "block"},
                 {"display": "none"},
+                {"display": "none"},
+            )
+        elif active_tab == "qc-tests":
+            return (
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "none"},
+                {"display": "block"},
+                {"display": "none"},
             )
         elif active_tab == "work-areas":
             return (
+                {"display": "none"},
                 {"display": "none"},
                 {"display": "none"},
                 {"display": "none"},

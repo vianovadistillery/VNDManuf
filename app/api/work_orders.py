@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 from app.adapters.db import get_db
 from app.adapters.db.models import (
     Batch,
+    InventoryMovement,
+    Product,
     WorkOrder,
     WorkOrderLine,
     WorkOrderOutput,
@@ -21,8 +23,10 @@ from app.api.dto import (
     GenealogyResponse,
     QcTestTypeResponse,
     WorkOrderCompleteRequest,
+    WorkOrderCostMaterialLine,
     WorkOrderCostResponse,
     WorkOrderCreate,
+    WorkOrderInputCreate,
     WorkOrderInputResponse,
     WorkOrderIssueRequest,
     WorkOrderOutputResponse,
@@ -31,10 +35,13 @@ from app.api.dto import (
     WorkOrderQcResponse,
     WorkOrderQcUpdateRequest,
     WorkOrderReleaseRequest,
+    WorkOrderReopenRequest,
     WorkOrderResponse,
     WorkOrderStartRequest,
+    WorkOrderUpdateRequest,
     WorkOrderVoidRequest,
 )
+from app.domain.rules import round_money
 from app.services.work_orders import WorkOrderService
 
 router = APIRouter(prefix="/work-orders", tags=["work-orders"])
@@ -93,10 +100,17 @@ def work_order_to_response(work_order: WorkOrder) -> WorkOrderResponse:
         if qc.deleted_at is None
     ]
 
+    product_name = None
+    if work_order.product:
+        product_name = (
+            work_order.product.name or work_order.product.code or work_order.product_id
+        )
+
     return WorkOrderResponse(
         id=work_order.id,
         code=work_order.code,
         product_id=work_order.product_id,
+        product_name=product_name,
         assembly_id=work_order.assembly_id,  # Primary recipe
         formula_id=work_order.formula_id,  # Legacy
         planned_qty=work_order.planned_qty or work_order.quantity_kg,
@@ -148,6 +162,41 @@ async def create_work_order(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create work order: {str(e)}",
+        )
+
+
+@router.patch("/{work_order_id}", response_model=WorkOrderResponse)
+async def update_work_order(
+    work_order_id: str,
+    update_data: WorkOrderUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """Update work order details (planned quantity, UOM)."""
+    if update_data.planned_qty is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="planned_qty is required",
+        )
+
+    try:
+        service = WorkOrderService(db)
+        work_order = service.update_planned_quantity(
+            work_order_id=work_order_id,
+            planned_qty=update_data.planned_qty,
+            uom=update_data.uom,
+        )
+        db.commit()
+        db.refresh(work_order)
+        return work_order_to_response(work_order)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update work order: {str(e)}",
         )
 
 
@@ -256,6 +305,80 @@ async def start_work_order(
         )
 
 
+@router.post("/{work_order_id}/reopen", response_model=WorkOrderResponse)
+async def reopen_work_order(
+    work_order_id: str,
+    request: WorkOrderReopenRequest,
+    db: Session = Depends(get_db),
+):
+    """Reopen a completed work order."""
+    try:
+        service = WorkOrderService(db)
+        work_order = service.reopen_work_order(work_order_id, request.reason)
+        db.commit()
+        db.refresh(work_order)
+        return work_order_to_response(work_order)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to reopen work order: {str(e)}",
+        )
+
+
+@router.post(
+    "/{work_order_id}/inputs",
+    response_model=WorkOrderInputResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_work_order_input_line(
+    work_order_id: str,
+    input_data: WorkOrderInputCreate,
+    db: Session = Depends(get_db),
+):
+    """Add a new input line to a work order."""
+    try:
+        service = WorkOrderService(db)
+        line = service.add_input_line(
+            work_order_id=work_order_id,
+            component_product_id=input_data.component_product_id,
+            planned_qty=input_data.planned_qty,
+            uom=input_data.uom,
+            line_type=input_data.line_type,
+            sequence=input_data.sequence,
+            note=input_data.note,
+        )
+        db.commit()
+        db.refresh(line)
+        return WorkOrderInputResponse(
+            id=line.id,
+            component_product_id=line.component_product_id or "",
+            planned_qty=line.planned_qty,
+            actual_qty=line.actual_qty,
+            uom=line.uom,
+            source_batch_id=line.source_batch_id,
+            unit_cost=line.unit_cost,
+            line_type=line.line_type,
+            sequence=line.sequence,
+            required_quantity_kg=line.required_quantity_kg,
+            allocated_quantity_kg=line.allocated_quantity_kg,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add input line: {str(e)}",
+        )
+
+
 @router.post("/{work_order_id}/issues", status_code=status.HTTP_201_CREATED)
 async def issue_material(
     work_order_id: str,
@@ -273,7 +396,8 @@ async def issue_material(
             uom=issue_data.uom,
         )
         db.commit()
-        return {"move_id": move_id, "message": "Material issued successfully"}
+        action = "returned" if issue_data.qty < 0 else "issued"
+        return {"move_id": move_id, "message": f"Material {action} successfully"}
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
@@ -458,10 +582,16 @@ async def complete_work_order(
             batch_attrs=complete_data.batch_attrs,
         )
         db.commit()
+        qty_value = complete_data.qty_produced
+        message = (
+            "Work order completion recorded (negative adjustment)"
+            if qty_value < 0
+            else "Work order completed successfully"
+        )
         return {
             "move_id": move_id,
             "batch_id": batch_id,
-            "message": "Work order completed successfully",
+            "message": message,
         }
     except ValueError as e:
         raise HTTPException(
@@ -514,8 +644,7 @@ async def get_work_order_costs(
             status_code=status.HTTP_404_NOT_FOUND, detail="Work order not found"
         )
 
-    # Calculate material cost
-    material_lines = (
+    material_lines_models = (
         db.execute(
             select(WorkOrderLine).where(
                 WorkOrderLine.work_order_id == work_order_id,
@@ -527,14 +656,38 @@ async def get_work_order_costs(
     )
 
     material_cost = Decimal("0")
-    for line in material_lines:
-        if line.actual_qty and line.unit_cost:
-            material_cost += Decimal(str(line.actual_qty)) * Decimal(
-                str(line.unit_cost)
-            )
+    material_details = []
+    for line in material_lines_models:
+        actual_qty = Decimal(str(line.actual_qty or line.allocated_quantity_kg or 0))
+        actual_qty = abs(actual_qty)
+        if actual_qty == 0:
+            continue
 
-    # Calculate overhead cost
-    overhead_lines = (
+        product = line.component_product
+        component_label = ""
+        if product:
+            component_label = getattr(product, "name", "") or product.id
+
+        unit_cost = line.unit_cost
+        if unit_cost is None and product:
+            unit_cost = product.usage_cost_ex_gst or product.purchase_cost_ex_gst
+        unit_cost = Decimal(str(unit_cost)) if unit_cost is not None else Decimal("0")
+
+        line_cost = round_money(Decimal(str(actual_qty)) * unit_cost)
+        material_cost += line_cost
+
+        material_details.append(
+            WorkOrderCostMaterialLine(
+                component_product_id=line.component_product_id,
+                component_label=component_label,
+                actual_qty=actual_qty,
+                uom=line.uom,
+                unit_cost=unit_cost,
+                cost=line_cost,
+            )
+        )
+
+    overhead_lines_models = (
         db.execute(
             select(WorkOrderLine).where(
                 WorkOrderLine.work_order_id == work_order_id,
@@ -546,7 +699,7 @@ async def get_work_order_costs(
     )
 
     overhead_cost = Decimal("0")
-    for line in overhead_lines:
+    for line in overhead_lines_models:
         if line.actual_qty and line.unit_cost:
             overhead_cost += Decimal(str(line.actual_qty)) * Decimal(
                 str(line.unit_cost)
@@ -564,27 +717,20 @@ async def get_work_order_costs(
             overhead_cost += Decimal(str(timer.cost))
 
     total_cost = material_cost + overhead_cost
-
-    # Get qty_produced
-    outputs = (
-        db.execute(
-            select(WorkOrderOutput).where(
-                WorkOrderOutput.work_order_id == work_order_id
-            )
-        )
-        .scalars()
-        .all()
+    qty_produced_decimal = Decimal(str(work_order.actual_qty or 0))
+    unit_cost_actual = (
+        round_money(total_cost / qty_produced_decimal)
+        if qty_produced_decimal and qty_produced_decimal != 0
+        else None
     )
 
-    qty_produced = sum(output.qty_produced for output in outputs) if outputs else None
-    unit_cost = total_cost / qty_produced if qty_produced and qty_produced > 0 else None
-
     return WorkOrderCostResponse(
-        material_cost=material_cost,
-        overhead_cost=overhead_cost,
-        total_cost=total_cost,
-        qty_produced=qty_produced,
-        unit_cost=unit_cost,
+        material_cost=round_money(material_cost),
+        overhead_cost=round_money(overhead_cost),
+        total_cost=round_money(total_cost),
+        qty_produced=work_order.actual_qty,
+        unit_cost=unit_cost_actual,
+        material_lines=material_details,
     )
 
 
@@ -652,9 +798,57 @@ async def get_work_order_genealogy(
         except (TypeError, ValueError, json.JSONDecodeError):
             pass
 
+    movements = (
+        db.execute(
+            select(InventoryMovement)
+            .where(
+                InventoryMovement.ref_table == "work_orders",
+                InventoryMovement.ref_id == work_order_id,
+            )
+            .order_by(InventoryMovement.timestamp)
+        )
+        .scalars()
+        .all()
+    )
+
+    product_ids = {m.product_id for m in movements if m.product_id}
+    products = {}
+    if product_ids:
+        products = {
+            p.id: p
+            for p in db.execute(
+                select(Product).where(Product.id.in_(product_ids))
+            ).scalars()
+        }
+
+    movement_items = []
+    for move in movements:
+        product = products.get(move.product_id)
+        product_name = None
+        if product:
+            product_name = getattr(product, "name", None) or getattr(
+                product, "code", None
+            )
+
+        movement_items.append(
+            {
+                "id": move.id,
+                "product_id": move.product_id,
+                "product_name": product_name,
+                "qty": Decimal(str(move.qty)),
+                "unit": move.uom,
+                "unit_cost": Decimal(str(move.unit_cost or 0)),
+                "direction": move.direction,
+                "move_type": move.move_type,
+                "timestamp": move.timestamp,
+                "note": move.note,
+            }
+        )
+
     return GenealogyResponse(
         batch_id=batch.id,
         batch_code=batch.batch_code,
         input_batch_ids=input_batch_ids,
         genealogy=genealogy,
+        movements=movement_items,
     )

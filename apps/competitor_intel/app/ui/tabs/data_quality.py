@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 from sqlalchemy import select
 
-from ...models import SKU, Brand, Company, ManufacturingCost, PriceObservation, Product
+from ...models import SKU, Brand, Company, PriceObservation, Product, PurchasePrice
 from ...services import (
     ObservationFilters,
     get_duplicate_overview,
@@ -293,18 +293,18 @@ def _get_cost_gaps(session) -> List[dict]:
     known_ids = {
         row[0]
         for row in session.execute(
-            select(ManufacturingCost.sku_id).where(
-                ManufacturingCost.deleted_at.is_(None),
-                ManufacturingCost.cost_type == "known",
+            select(PurchasePrice.sku_id).where(
+                PurchasePrice.deleted_at.is_(None),
+                PurchasePrice.cost_type == "known",
             )
         ).all()
     }
     estimated_ids = {
         row[0]
         for row in session.execute(
-            select(ManufacturingCost.sku_id).where(
-                ManufacturingCost.deleted_at.is_(None),
-                ManufacturingCost.cost_type == "estimated",
+            select(PurchasePrice.sku_id).where(
+                PurchasePrice.deleted_at.is_(None),
+                PurchasePrice.cost_type == "estimated",
             )
         ).all()
     }

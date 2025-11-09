@@ -1,10 +1,10 @@
 # Competitor Intel
 
-Standalone Dash application for capturing, normalising and visualising competitor pricing for gin bottles and RTD cans. The app is fully isolated under `apps/competitor_intel` with its own database, migrations and UI.
+Standalone Dash application for capturing, normalising and visualising competitor pricing for gin and vodka products across bottles and RTDs. The app is fully isolated under `apps/competitor_intel` with its own database, migrations and UI.
 
 ## Features
 
-- Rich schema covering brands, products, SKUs, package specs, **pack specs**, carton specs, manufacturing costs, companies, locations, observations and attachments
+- Rich schema covering brands, products, SKUs, package specs, **pack specs**, carton specs, purchase prices, companies, locations, observations and attachments
 - Service layer for GST normalisation, derived metrics (per litre, pure alcohol, standard drinks) plus pack/carton price derivation and gross profit calculations
 - CSV importers with downloadable templates, optional entity auto-creation and run summaries surfaced in the UI
 - Sample data generator providing ≥10 SKUs and ≥100 observations seeded with pack hierarchies and cost records so analytics and map views have immediate signal
@@ -51,7 +51,7 @@ The app listens on `http://127.0.0.1:8060`. Override host/port/GST/currency/evid
 ## CSV Import/Export
 
 - Templates reside in `data_templates/` and are downloadable from the Import/Export tab.
-- **SKU CSV** now includes columns for `pack_units`, `pack_gtin`, `carton_units/carton_pack_count`, and manufacturing cost fields (`cost_type`, `cost_per_*`, `cost_effective_date`, `cost_notes`).
+- **SKU CSV** now includes columns for `pack_units`, `pack_gtin`, `carton_units/carton_pack_count`, and purchase price fields (`purchase_price_type`, `purchase_price_per_*`, `purchase_price_effective_date`, `purchase_price_notes`).
 - **Observations CSV** supports `is_pack_price` (price basis), optional carton units, and records derived margin columns.
 - Command-line importers:
   ```bash

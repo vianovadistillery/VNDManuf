@@ -28,6 +28,7 @@ class SettingsPage:
                                             label="Purchase Formats",
                                             tab_id="purchase-formats",
                                         ),
+                                        dbc.Tab(label="QC Tests", tab_id="qc-tests"),
                                         dbc.Tab(
                                             label="Work Areas",
                                             tab_id="work-areas",
@@ -637,6 +638,64 @@ class SettingsPage:
                 ),
                 # Hidden field for purchase format ID
                 html.Div(id="purchase-format-form-hidden", style={"display": "none"}),
+                # QC Tests Tab
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    [
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        dbc.Button(
+                                                            "Refresh",
+                                                            id="qc-test-types-refresh",
+                                                            color="info",
+                                                        ),
+                                                    ],
+                                                    width=12,
+                                                )
+                                            ],
+                                            className="mb-3",
+                                        ),
+                                        dash_table.DataTable(
+                                            id="qc-test-types-table",
+                                            columns=[
+                                                {"name": "Code", "id": "code"},
+                                                {"name": "Name", "id": "name"},
+                                                {"name": "Unit", "id": "unit"},
+                                                {
+                                                    "name": "Description",
+                                                    "id": "description",
+                                                },
+                                                {"name": "Active", "id": "is_active"},
+                                            ],
+                                            data=[],
+                                            sort_action="native",
+                                            filter_action="native",
+                                            page_action="native",
+                                            page_current=0,
+                                            page_size=20,
+                                            style_cell={
+                                                "textAlign": "left",
+                                                "whiteSpace": "normal",
+                                                "height": "auto",
+                                            },
+                                            style_header={
+                                                "backgroundColor": "rgb(230, 230, 230)",
+                                                "fontWeight": "bold",
+                                            },
+                                        ),
+                                    ],
+                                    id="qc-test-types-list-content",
+                                )
+                            ]
+                        )
+                    ],
+                    id="qc-tests-tab-content",
+                ),
                 # Work Areas Tab
                 dbc.Row(
                     [

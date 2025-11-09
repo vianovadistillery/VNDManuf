@@ -1,9 +1,9 @@
 from .costs import (
-    CostRecord,
+    PurchasePriceRecord,
+    create_purchase_price,
     get_active_cost,
     list_costs,
     soft_delete_cost,
-    upsert_cost,
 )
 from .db import Session, session_scope
 from .dedupe import (
@@ -40,10 +40,10 @@ __all__ = [
     "NormalizedPrices",
     "normalize_price",
     "normalize_gst_prices",
-    "CostRecord",
+    "PurchasePriceRecord",
     "get_active_cost",
     "list_costs",
-    "upsert_cost",
+    "create_purchase_price",
     "soft_delete_cost",
     "ObservationFilters",
     "fetch_observations",

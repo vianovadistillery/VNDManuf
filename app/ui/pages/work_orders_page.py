@@ -339,7 +339,74 @@ class WorkOrdersPage:
                 # Detail view placeholder (always in layout for callbacks)
                 html.Div(
                     id="wo-detail-content",
-                    children=html.Div("Select a work order to view details"),
+                    children=[
+                        html.Div("Select a work order to view details"),
+                        dbc.Button(
+                            id="wo-issue-submit-btn",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                dash_table.DataTable(
+                                    id="wo-qc-table",
+                                    columns=[],
+                                    data=[],
+                                ),
+                                dbc.Button(
+                                    id="wo-qc-edit-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-qc-delete-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-inputs-add-btn",
+                                    style={"display": "none"},
+                                ),
+                                dcc.Dropdown(id="wo-qc-test-type", options=[]),
+                                html.Div(id="wo-qc-unit-display"),
+                                dbc.Input(id="wo-qc-result-value"),
+                                dbc.Input(id="wo-qc-result-text"),
+                                dcc.Dropdown(
+                                    id="wo-qc-status",
+                                    options=[
+                                        {"label": "Pending", "value": "pending"},
+                                        {"label": "Pass", "value": "pass"},
+                                        {"label": "Fail", "value": "fail"},
+                                    ],
+                                ),
+                                dbc.Input(id="wo-qc-tester"),
+                                dbc.Input(id="wo-qc-note"),
+                                dbc.Button(
+                                    id="wo-qc-submit-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-start-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-reopen-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-release-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Button(
+                                    id="wo-void-btn",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Input(id="wo-complete-qty"),
+                                dbc.Button(
+                                    id="wo-complete-submit-btn",
+                                    style={"display": "none"},
+                                ),
+                            ],
+                            style={"display": "none"},
+                        ),
+                    ],
                     style={
                         "display": "none"
                     },  # Hidden by default, shown by tab callback
@@ -348,6 +415,89 @@ class WorkOrdersPage:
                 dcc.Store(id="wo-detail-active-tab", data="wo-detail-inputs"),
                 dcc.Store(id="wo-qc-type-options", data=[]),
                 dcc.Store(id="wo-qc-current-id"),
+                dcc.Store(id="wo-detail-refresh-trigger"),
+                dcc.Store(id="wo-planned-qty-refresh"),
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(dbc.ModalTitle("Add Input Line")),
+                        dbc.ModalBody(
+                            [
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("Component *"),
+                                                dcc.Dropdown(
+                                                    id="wo-add-input-component-dropdown",
+                                                    options=[],
+                                                    placeholder="Select component",
+                                                    searchable=True,
+                                                ),
+                                            ],
+                                            md=7,
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("Planned Qty"),
+                                                dbc.Input(
+                                                    id="wo-add-input-planned-qty",
+                                                    type="number",
+                                                    step=0.001,
+                                                    min=0,
+                                                ),
+                                            ],
+                                            md=3,
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("UOM"),
+                                                dbc.Input(
+                                                    id="wo-add-input-uom",
+                                                    type="text",
+                                                    placeholder="KG",
+                                                ),
+                                            ],
+                                            md=2,
+                                        ),
+                                    ],
+                                    className="mb-3",
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("Note"),
+                                                dbc.Textarea(
+                                                    id="wo-add-input-note",
+                                                    placeholder="Optional note",
+                                                ),
+                                            ]
+                                        )
+                                    ],
+                                    className="mb-3",
+                                ),
+                            ]
+                        ),
+                        dbc.ModalFooter(
+                            [
+                                dbc.Button(
+                                    "Cancel",
+                                    id="wo-add-input-cancel-btn",
+                                    color="secondary",
+                                    className="me-2",
+                                ),
+                                dbc.Button(
+                                    "Add Line",
+                                    id="wo-add-input-submit-btn",
+                                    color="primary",
+                                ),
+                            ]
+                        ),
+                    ],
+                    id="wo-add-input-modal",
+                    is_open=False,
+                    size="lg",
+                ),
                 # Toast notifications
                 dbc.Toast(
                     id="wo-issue-toast",

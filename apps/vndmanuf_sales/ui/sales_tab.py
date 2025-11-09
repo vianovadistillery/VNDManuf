@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dash import Input, Output, State, dcc, html
+from dash import Input, Output, dcc, html
 
 from apps.vndmanuf_sales.ui.pages import (
     analytics,
@@ -60,20 +60,6 @@ def register_callbacks(app):
     def render_subtab(subtab_value):
         layout_factory = SUB_TAB_COMPONENTS.get(subtab_value, overview.layout)
         return layout_factory()
-
-    @app.callback(
-        Output("sales-orders-modal", "is_open"),
-        [
-            Input("sales-orders-new-order", "n_clicks"),
-            Input("sales-orders-modal-close", "n_clicks"),
-        ],
-        State("sales-orders-modal", "is_open"),
-        prevent_initial_call=True,
-    )
-    def toggle_new_order_modal(open_clicks, close_clicks, is_open):
-        if open_clicks or close_clicks:
-            return not is_open
-        return is_open
 
     @app.callback(
         Output("sales-import-summary-store", "data"),

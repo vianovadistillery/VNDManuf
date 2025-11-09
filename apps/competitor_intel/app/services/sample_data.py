@@ -16,11 +16,11 @@ from ..models import (
     CartonSpec,
     Company,
     Location,
-    ManufacturingCost,
     PackageSpec,
     PackSpec,
     PriceObservation,
     Product,
+    PurchasePrice,
     SKUCarton,
     SKUPack,
 )
@@ -97,7 +97,7 @@ BRAND_DEFINITIONS = [
         "products": [
             {
                 "name": "Lemon Gin RTD",
-                "category": "rtd_can",
+                "category": "gin_rtd",
                 "abv": Decimal("6.5"),
                 "packages": [
                     {
@@ -122,7 +122,7 @@ BRAND_DEFINITIONS = [
         "products": [
             {
                 "name": "Blood Orange Gin Spritz",
-                "category": "rtd_can",
+                "category": "gin_rtd",
                 "abv": Decimal("5.5"),
                 "packages": [
                     {
@@ -141,7 +141,7 @@ BRAND_DEFINITIONS = [
         "products": [
             {
                 "name": "London Dry Gin",
-                "category": "gin_bottle",
+                "category": "vodka_bottle",
                 "abv": Decimal("43.1"),
                 "packages": [
                     {
@@ -159,7 +159,7 @@ BRAND_DEFINITIONS = [
         "products": [
             {
                 "name": "Lunar Gin",
-                "category": "gin_bottle",
+                "category": "vodka_bottle",
                 "abv": Decimal("43.4"),
                 "packages": [
                     {
@@ -177,7 +177,7 @@ BRAND_DEFINITIONS = [
         "products": [
             {
                 "name": "Cucumber Lime Gin Fizz",
-                "category": "rtd_can",
+                "category": "vodka_rtd",
                 "abv": Decimal("5.8"),
                 "packages": [
                     {
@@ -396,7 +396,7 @@ class SampleDataBuilder:
         base_price: Decimal,
     ) -> None:
         existing = self.session.execute(
-            select(ManufacturingCost.id).where(ManufacturingCost.sku_id == sku.id)
+            select(PurchasePrice.id).where(PurchasePrice.sku_id == sku.id)
         ).first()
         if existing:
             return
@@ -416,7 +416,7 @@ class SampleDataBuilder:
         carton_est = unit_est * carton_units
         carton_known = unit_known * carton_units
         today = datetime.now(timezone.utc).date()
-        estimated = ManufacturingCost(
+        estimated = PurchasePrice(
             sku=sku,
             cost_type="estimated",
             cost_currency="AUD",
@@ -428,7 +428,7 @@ class SampleDataBuilder:
             effective_date=today - timedelta(days=45),
             notes="Seed estimated manufacturing cost",
         )
-        known = ManufacturingCost(
+        known = PurchasePrice(
             sku=sku,
             cost_type="known",
             cost_currency="AUD",

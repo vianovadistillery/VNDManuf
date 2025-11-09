@@ -3,7 +3,7 @@
 
 import json
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
 from uuid import uuid4
 
@@ -24,7 +24,11 @@ from app.adapters.db.models import (
     WorkOrderOutput,
     WoTimer,
 )
-from app.adapters.db.models_assemblies_shopify import Assembly, AssemblyLine
+from app.adapters.db.models_assemblies_shopify import (
+    Assembly,
+    AssemblyLine,
+    InventoryReservation,
+)
 from app.domain.rules import (
     fifo_peek_cost,
     round_money,
@@ -46,6 +50,120 @@ class WorkOrderService:
         self.db = db
         self.inventory_service = InventoryService(db)
         self.batch_code_gen = BatchCodeGenerator(db)
+
+    def _handle_material_return(
+        self,
+        component_product_id: str,
+        qty_kg: Decimal,
+        work_order: WorkOrder,
+        source_batch_id: Optional[str],
+        input_line: WorkOrderLine,
+    ) -> Decimal:
+        """
+        Receive returned material back into inventory.
+
+        Args:
+            component_product_id: Component product ID being returned.
+            qty_kg: Positive quantity (in KG) being returned.
+            work_order: Work order instance.
+            source_batch_id: Optional production batch identifier.
+            input_line: Work order input line being adjusted.
+
+        Returns:
+            Unit cost applied to the return.
+        """
+
+        unit_cost = input_line.unit_cost or Decimal("0")
+
+        lot_code = f"WO-{work_order.code}-RET-{uuid4().hex[:8]}"
+        lot = self.inventory_service.add_lot(
+            product_id=component_product_id,
+            lot_code=lot_code,
+            qty_kg=qty_kg,
+            unit_cost=unit_cost,
+        )
+
+        applied_unit_cost = lot.unit_cost or unit_cost
+
+        if lot.transactions:
+            latest_txn = lot.transactions[-1]
+            latest_txn.reference_type = "work_orders"
+            latest_txn.reference_id = work_order.id
+            latest_txn.notes = f"Material return for WO {work_order.code}"
+
+        if source_batch_id and not input_line.source_batch_id:
+            input_line.source_batch_id = source_batch_id
+
+        return applied_unit_cost
+
+    def _recalculate_actual_cost(self, work_order_id: str) -> Decimal:
+        """
+        Recalculate and persist the actual cost for the given work order.
+
+        Args:
+            work_order_id: Work order ID.
+
+        Returns:
+            Updated actual cost as Decimal.
+
+        Raises:
+            ValueError: If the work order is not found.
+        """
+        work_order = self.db.get(WorkOrder, work_order_id)
+        if not work_order:
+            raise ValueError(f"Work order {work_order_id} not found")
+
+        material_lines = (
+            self.db.execute(
+                select(WorkOrderLine).where(
+                    WorkOrderLine.work_order_id == work_order_id,
+                    WorkOrderLine.line_type == "material",
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        material_cost = Decimal("0")
+        for line in material_lines:
+            if line.actual_qty is not None and line.unit_cost is not None:
+                qty = Decimal(str(line.actual_qty))
+                unit_cost = Decimal(str(line.unit_cost))
+                material_cost += round_money(abs(qty) * unit_cost)
+
+        overhead_lines = (
+            self.db.execute(
+                select(WorkOrderLine).where(
+                    WorkOrderLine.work_order_id == work_order_id,
+                    WorkOrderLine.line_type == "overhead",
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        overhead_cost = Decimal("0")
+        for line in overhead_lines:
+            if line.actual_qty is not None and line.unit_cost is not None:
+                qty = Decimal(str(line.actual_qty))
+                unit_cost = Decimal(str(line.unit_cost))
+                overhead_cost += round_money(abs(qty) * unit_cost)
+
+        timers = (
+            self.db.execute(
+                select(WoTimer).where(WoTimer.work_order_id == work_order_id)
+            )
+            .scalars()
+            .all()
+        )
+
+        for timer in timers:
+            if timer.cost is not None:
+                overhead_cost += round_money(Decimal(str(timer.cost)))
+
+        total_cost = material_cost + overhead_cost
+        work_order.actual_cost = round_money(total_cost)
+        return work_order.actual_cost
 
     def create_work_order(
         self,
@@ -226,40 +344,12 @@ class WorkOrderService:
             raise ValueError("Formula is required for work order creation")
         formula_id_val = formula.id
 
-        # Calculate estimated cost from assembly/formula
         estimated_cost = None
         if formula:
-            # Calculate total cost from formula lines
-            formula_lines = (
-                self.db.execute(
-                    select(FormulaLine).where(
-                        FormulaLine.formula_id == formula.id,
-                        FormulaLine.deleted_at.is_(None),  # Only active lines
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            total_cost = Decimal("0")
-            for line in formula_lines:
-                if line.quantity_kg and line.raw_material_id:
-                    # Get product cost
-                    line_product = self.db.get(Product, line.raw_material_id)
-                    if line_product:
-                        # Use usage_cost_ex_gst or purchase_cost_ex_gst
-                        unit_cost = (
-                            line_product.usage_cost_ex_gst
-                            or line_product.purchase_cost_ex_gst
-                            or Decimal("0")
-                        )
-                        line_cost = round_money(line.quantity_kg * unit_cost)
-                        total_cost += line_cost
-
-            # Scale by planned_qty (formula is typically for 1 unit)
-            estimated_cost = (
-                round_money(total_cost * planned_qty) if total_cost > 0 else None
-            )
+            # Pull a planned quantity (kg) from the instance if available.
+            qty_kg = getattr(self, "planned_qty_kg", None)
+            if qty_kg is not None:
+                estimated_cost = self._calculate_estimated_cost(formula, qty_kg)
         elif assembly:
             # Calculate from assembly lines (legacy)
             assembly_lines = (
@@ -301,8 +391,12 @@ class WorkOrderService:
         output_uom_upper = output_uom.upper()
         density = output_product.density_kg_per_l if output_product else None
 
+        # Treat missing density as 1.0 kg/L so we can still create the work order.
+        conversion_density = density or Decimal("1")
         try:
-            planned_conversion = to_kg(planned_qty, output_uom_upper, density)
+            planned_conversion = to_kg(
+                planned_qty, output_uom_upper, conversion_density
+            )
             planned_qty_kg = planned_conversion.quantity_kg
         except ValueError:
             if output_uom_upper != "KG":
@@ -333,6 +427,99 @@ class WorkOrderService:
 
         # Explode assembly to inputs
         self.explode_assembly_to_inputs(work_order.id)
+
+        return work_order
+
+    def update_planned_quantity(
+        self,
+        work_order_id: str,
+        planned_qty: Decimal,
+        uom: Optional[str] = None,
+    ) -> WorkOrder:
+        """
+        Update planned quantity for a draft work order and recalculate inputs.
+
+        Args:
+            work_order_id: Work order ID.
+            planned_qty: New planned quantity.
+            uom: Optional unit override (defaults to existing work order UOM).
+
+        Returns:
+            Updated WorkOrder instance.
+
+        Raises:
+            ValueError: If work order not found, not in draft status, or quantity invalid.
+        """
+
+        work_order = self.db.get(WorkOrder, work_order_id)
+        if not work_order:
+            raise ValueError(f"Work order {work_order_id} not found")
+
+        if work_order.status != "draft":
+            raise ValueError(
+                "Planned quantity can only be adjusted while work order is in draft status"
+            )
+
+        try:
+            planned_qty_value = round_quantity(Decimal(str(planned_qty)))
+        except (InvalidOperation, TypeError):
+            raise ValueError("Invalid planned quantity")
+
+        if planned_qty_value <= 0:
+            raise ValueError("Planned quantity must be greater than zero")
+
+        if uom:
+            work_order.uom = uom.upper()
+
+        product = self.db.get(Product, work_order.product_id)
+        output_uom = (work_order.uom or "KG").upper()
+        density = product.density_kg_per_l if product else None
+        conversion_density = density or Decimal("1")
+
+        try:
+            planned_conversion = to_kg(
+                planned_qty_value, output_uom, conversion_density
+            )
+            planned_qty_kg = planned_conversion.quantity_kg
+        except ValueError:
+            if output_uom != "KG":
+                raise ValueError(
+                    f"Cannot convert planned quantity from {output_uom} without density for product {work_order.product_id}"
+                )
+            planned_qty_kg = planned_qty_value
+
+        work_order.planned_qty = planned_qty_value
+        work_order.quantity_kg = round_quantity(planned_qty_kg)
+
+        # Release existing reservations for this work order prior to recalculating inputs.
+        self._release_active_reservations(work_order_id)
+
+        # Remove existing input lines so they can be recalculated.
+        existing_lines = (
+            self.db.execute(
+                select(WorkOrderLine).where(
+                    WorkOrderLine.work_order_id == work_order_id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for line in existing_lines:
+            self.db.delete(line)
+        self.db.flush()
+
+        # Recalculate inputs based on new planned quantity.
+        self.explode_assembly_to_inputs(work_order_id)
+
+        formula = (
+            self.db.get(Formula, work_order.formula_id)
+            if work_order.formula_id
+            else None
+        )
+        if formula:
+            work_order.estimated_cost = self._calculate_estimated_cost(
+                formula, work_order.quantity_kg
+            )
 
         return work_order
 
@@ -435,10 +622,17 @@ class WorkOrderService:
 
             yield_factor = assembly.yield_factor or Decimal("1.0")
 
-        # Calculate scale factor (planned_qty / assembly base qty)
-        # Assembly base is typically 1 unit, so scale by planned_qty
-        # Apply yield_factor if present
-        scale_factor = work_order.planned_qty * yield_factor
+        # Calculate scale factor relative to formula/assembly base yield.
+        # yield_factor represents the base output quantity for the recipe. If it's zero or missing,
+        # treat as 1. Divide the planned quantity by the base to determine scaling.
+        base_yield = yield_factor if yield_factor and yield_factor > 0 else Decimal("1")
+        if base_yield <= 0:
+            base_yield = Decimal("1")
+
+        wo_qty_kg = work_order.quantity_kg or Decimal("0")
+        scale_factor = wo_qty_kg / base_yield if base_yield else Decimal("1")
+        if scale_factor <= 0:
+            scale_factor = Decimal("1")
 
         # Create work order input lines from assembly components
         for idx, assembly_line in enumerate(assembly_lines):
@@ -639,6 +833,155 @@ class WorkOrderService:
         self.db.flush()
         return work_order
 
+    def reopen_work_order(
+        self, work_order_id: str, reason: Optional[str] = None
+    ) -> WorkOrder:
+        """
+        Reopen a completed work order by moving it back to in_progress.
+
+        Args:
+            work_order_id: Work order ID.
+            reason: Optional reason for reopening.
+
+        Returns:
+            Updated WorkOrder.
+
+        Raises:
+            ValueError: If the work order is not found or not in a reopenable state.
+        """
+        work_order = self.db.get(WorkOrder, work_order_id)
+        if not work_order:
+            raise ValueError(f"Work order {work_order_id} not found")
+
+        if work_order.status != "complete":
+            raise ValueError(
+                f"Can only reopen work orders in 'complete' status (current: '{work_order.status}')"
+            )
+
+        validate_wo_status_transition(work_order.status, "in_progress")
+
+        self._rollback_completion_artifacts(work_order)
+
+        work_order.status = "in_progress"
+        work_order.completed_at = None
+        work_order.end_time = None
+        work_order.actual_qty = None
+        work_order.actual_cost = None
+
+        if reason:
+            timestamp = datetime.utcnow().isoformat(timespec="seconds")
+            note_entry = f"[Reopened {timestamp}] {reason}"
+            work_order.notes = (
+                f"{work_order.notes}\n{note_entry}" if work_order.notes else note_entry
+            )
+
+        self.db.flush()
+        return work_order
+
+    def add_input_line(
+        self,
+        work_order_id: str,
+        component_product_id: str,
+        planned_qty: Optional[Decimal] = None,
+        uom: Optional[str] = None,
+        line_type: str = "material",
+        sequence: Optional[int] = None,
+        note: Optional[str] = None,
+    ) -> WorkOrderLine:
+        """
+        Add a new input line to an existing work order.
+
+        Args:
+            work_order_id: Work order ID.
+            component_product_id: Product ID to add as input.
+            planned_qty: Optional planned quantity in provided UOM.
+            uom: Optional unit of measure (defaults from product).
+            line_type: Line classification ('material' or 'overhead').
+            sequence: Optional explicit sequence.
+            note: Optional note.
+
+        Returns:
+            Created WorkOrderLine.
+
+        Raises:
+            ValueError: If work order or product not found or invalid data provided.
+        """
+        work_order = self.db.get(WorkOrder, work_order_id)
+        if not work_order:
+            raise ValueError(f"Work order {work_order_id} not found")
+
+        if work_order.status in ["complete", "void"]:
+            raise ValueError(
+                f"Cannot add input lines when work order status is '{work_order.status}'"
+            )
+
+        product = self.db.get(Product, component_product_id)
+        if not product:
+            raise ValueError(f"Product {component_product_id} not found")
+
+        line_type_normalized = (line_type or "material").lower()
+        if line_type_normalized not in {"material", "overhead"}:
+            raise ValueError(f"Unsupported line_type '{line_type}'")
+
+        resolved_uom = (
+            (uom or "").strip()
+            or product.usage_unit
+            or product.base_unit
+            or product.purchase_unit
+            or "KG"
+        )
+        resolved_uom = resolved_uom.upper()
+
+        planned_qty_value: Optional[Decimal] = None
+        canonical_qty_kg: Optional[Decimal] = None
+
+        if planned_qty is not None:
+            try:
+                planned_qty_value = round_quantity(Decimal(str(planned_qty)))
+            except (InvalidOperation, TypeError):
+                raise ValueError("Invalid planned quantity")
+            if planned_qty_value < 0:
+                raise ValueError("Planned quantity must be non-negative")
+
+            density = product.density_kg_per_l if product else None
+            try:
+                canonical_qty_kg = round_quantity(
+                    to_kg(planned_qty_value, resolved_uom, density).quantity_kg
+                )
+            except ValueError:
+                if resolved_uom != "KG":
+                    raise
+                canonical_qty_kg = planned_qty_value
+
+        if sequence is None:
+            max_sequence = self.db.execute(
+                select(WorkOrderLine.sequence)
+                .where(WorkOrderLine.work_order_id == work_order_id)
+                .order_by(WorkOrderLine.sequence.desc())
+                .limit(1)
+            ).scalar()
+            sequence = (max_sequence or 0) + 1
+
+        input_line = WorkOrderLine(
+            id=str(uuid4()),
+            work_order_id=work_order_id,
+            component_product_id=component_product_id,
+            ingredient_product_id=component_product_id,
+            required_quantity_kg=canonical_qty_kg,
+            planned_qty=planned_qty_value,
+            actual_qty=None,
+            allocated_quantity_kg=Decimal("0"),
+            uom=resolved_uom,
+            unit_cost=None,
+            line_type=line_type_normalized,
+            sequence=sequence,
+            note=note,
+        )
+
+        self.db.add(input_line)
+        self.db.flush()
+        return input_line
+
     def issue_material(
         self,
         work_order_id: str,
@@ -693,76 +1036,129 @@ class WorkOrderService:
             )
 
         # Get UOM
-        issue_uom = uom or input_line.uom or "KG"
+        issue_uom = (uom or input_line.uom or "KG").upper()
 
-        # Convert to kg if needed
+        # Convert to kg (use absolute quantity for conversion)
         product = self.db.get(Product, component_product_id)
         density = product.density_kg_per_l if product else None
         allow_negative_inventory = bool(
             getattr(product, "allow_negative_inventory", False) if product else False
         )
 
-        if issue_uom.upper() in ["L", "ML", "LITRE", "LITER"]:
-            if not density:
-                raise ValueError(
-                    f"Density required for liquid conversion from {issue_uom}"
-                )
-            conversion_result = to_kg(qty, issue_uom, density)
-            qty_kg = conversion_result.quantity_kg
+        if qty == 0:
+            raise ValueError("Quantity must not be zero")
+
+        is_return = qty < 0
+        qty_abs = abs(qty)
+
+        if issue_uom in ["L", "ML", "LITRE", "LITER"]:
+            conversion_density = density or Decimal("1")
+            conversion_result = to_kg(qty_abs, issue_uom, conversion_density)
+            qty_kg_abs = conversion_result.quantity_kg
         else:
             # Assume mass unit
-            qty_kg = round_quantity(qty)
+            qty_kg_abs = round_quantity(qty_abs)
 
-        # Get FIFO cost
-        lots = self.inventory_service.get_lots_fifo(component_product_id)
-        if source_batch_id:
-            unit_cost = fifo_peek_cost(lots, source_batch_id)
+        qty_kg_abs = round_quantity(qty_kg_abs)
+        if qty_kg_abs <= 0:
+            raise ValueError("Quantity is too small after unit conversion.")
+        qty_kg_signed = qty_kg_abs if not is_return else -qty_kg_abs
+
+        if is_return:
+            current_actual = round_quantity(input_line.actual_qty or Decimal("0"))
+            if qty_kg_abs > current_actual:
+                raise ValueError(
+                    "Cannot return more material than has been issued for this line."
+                )
+
+            unit_cost = self._handle_material_return(
+                component_product_id=component_product_id,
+                qty_kg=qty_kg_abs,
+                work_order=work_order,
+                source_batch_id=source_batch_id,
+                input_line=input_line,
+            )
+
+            input_line.unit_cost = unit_cost
+
+            move = InventoryMovement(
+                id=str(uuid4()),
+                ts=datetime.utcnow(),
+                timestamp=datetime.utcnow(),
+                date=datetime.utcnow().strftime("%Y-%m-%d"),
+                product_id=component_product_id,
+                batch_id=source_batch_id,
+                qty=qty_kg_abs,
+                unit=issue_uom or input_line.uom or "KG",
+                uom=issue_uom or input_line.uom or "KG",
+                direction="IN",
+                move_type="wo_return",
+                ref_table="work_orders",
+                ref_id=work_order_id,
+                unit_cost=unit_cost,
+                note=f"Material return for WO {work_order.code}",
+            )
+            self.db.add(move)
         else:
-            unit_cost = fifo_peek_cost(lots)
+            # Get FIFO cost
+            lots = self.inventory_service.get_lots_fifo(component_product_id)
+            if source_batch_id:
+                unit_cost = fifo_peek_cost(lots, source_batch_id)
+            else:
+                unit_cost = fifo_peek_cost(lots)
 
-        if unit_cost is None:
-            unit_cost = Decimal("0")
+            if unit_cost is None or unit_cost == Decimal("0"):
+                fallback_cost = (
+                    (product.usage_cost_ex_gst or product.purchase_cost_ex_gst)
+                    if product
+                    else Decimal("0")
+                )
+                unit_cost = fallback_cost or Decimal("0")
 
-        # Issue from inventory using FIFO
-        self.inventory_service.consume_lots_fifo(
-            product_id=component_product_id,
-            qty_kg=qty_kg,
-            reason=f"Work order {work_order.code} material issue",
-            ref_type="work_orders",
-            ref_id=work_order_id,
-            allow_negative=allow_negative_inventory,
-        )
+            self.inventory_service.consume_lots_fifo(
+                product_id=component_product_id,
+                qty_kg=qty_kg_abs,
+                reason=f"Work order {work_order.code} material issue",
+                ref_type="work_orders",
+                ref_id=work_order_id,
+                allow_negative=allow_negative_inventory,
+            )
 
-        # Create inventory movement
-        move = InventoryMovement(
-            id=str(uuid4()),
-            ts=datetime.utcnow(),
-            timestamp=datetime.utcnow(),
-            date=datetime.utcnow().strftime("%Y-%m-%d"),
-            product_id=component_product_id,
-            batch_id=source_batch_id,
-            qty=-abs(qty_kg),  # Negative for issues
-            unit=issue_uom or input_line.uom or "KG",
-            uom=issue_uom or input_line.uom or "KG",
-            direction="OUT",
-            move_type="wo_issue",
-            ref_table="work_orders",
-            ref_id=work_order_id,
-            unit_cost=unit_cost,
-            note=f"Material issue for WO {work_order.code}",
-        )
+            move = InventoryMovement(
+                id=str(uuid4()),
+                ts=datetime.utcnow(),
+                timestamp=datetime.utcnow(),
+                date=datetime.utcnow().strftime("%Y-%m-%d"),
+                product_id=component_product_id,
+                batch_id=source_batch_id,
+                qty=-qty_kg_abs,
+                unit=issue_uom or input_line.uom or "KG",
+                uom=issue_uom or input_line.uom or "KG",
+                direction="OUT",
+                move_type="wo_issue",
+                ref_table="work_orders",
+                ref_id=work_order_id,
+                unit_cost=unit_cost,
+                note=f"Material issue for WO {work_order.code}",
+            )
+            self.db.add(move)
 
-        self.db.add(move)
+            input_line.unit_cost = unit_cost or input_line.unit_cost
+            if source_batch_id:
+                input_line.source_batch_id = source_batch_id
 
-        # Update input line
+        # Update input line (applies to both issue and return)
         if input_line.actual_qty is None:
             input_line.actual_qty = Decimal("0")
-        input_line.actual_qty += qty_kg
-        input_line.allocated_quantity_kg = input_line.actual_qty
-        input_line.unit_cost = unit_cost
-        if source_batch_id:
-            input_line.source_batch_id = source_batch_id
+        updated_actual = round_quantity(input_line.actual_qty + qty_kg_signed)
+        if updated_actual < 0:
+            updated_actual = Decimal("0")
+        input_line.actual_qty = updated_actual
+        input_line.allocated_quantity_kg = updated_actual
 
+        self.db.flush()
+
+        self._recalculate_actual_cost(work_order_id)
         self.db.flush()
 
         return move.id
@@ -960,6 +1356,8 @@ class WorkOrderService:
 
             self.db.add(timer)
             self.db.flush()
+            self._recalculate_actual_cost(work_order_id)
+            self.db.flush()
             return timer.id
 
         else:
@@ -985,6 +1383,8 @@ class WorkOrderService:
             )
 
             self.db.add(input_line)
+            self.db.flush()
+            self._recalculate_actual_cost(work_order_id)
             self.db.flush()
             return input_line.id
 
@@ -1012,7 +1412,7 @@ class WorkOrderService:
         if not work_order:
             raise ValueError(f"Work order {work_order_id} not found")
 
-        if work_order.status != "in_progress":
+        if work_order.status not in {"in_progress", "reopened"}:
             raise ValueError(
                 f"Cannot complete work order with status '{work_order.status}'"
             )
@@ -1049,13 +1449,22 @@ class WorkOrderService:
         output_uom = output_uom.upper()
         density = output_product.density_kg_per_l if output_product else None
 
+        conversion_density = density or Decimal("1")
         try:
-            conversion = to_kg(qty_produced, output_uom, density)
-            qty_produced_kg = conversion.quantity_kg
+            conversion = to_kg(abs(qty_produced), output_uom, conversion_density)
+            qty_produced_kg_abs = conversion.quantity_kg
         except ValueError:
             if output_uom != "KG":
                 raise
-            qty_produced_kg = round_quantity(qty_produced)
+            qty_produced_kg_abs = round_quantity(abs(qty_produced))
+
+        qty_produced_kg_abs = round_quantity(qty_produced_kg_abs)
+        if qty_produced_kg_abs == 0:
+            raise ValueError("Quantity produced must not be zero.")
+
+        qty_produced_signed = (
+            qty_produced_kg_abs if qty_produced >= 0 else -qty_produced_kg_abs
+        )
 
         # Cost roll-up
         # Material cost
@@ -1072,8 +1481,30 @@ class WorkOrderService:
 
         material_cost = Decimal("0")
         for line in input_lines:
-            if line.actual_qty and line.unit_cost:
-                material_cost += round_money(abs(line.actual_qty) * line.unit_cost)
+            actual_qty = Decimal(
+                str(line.actual_qty or line.allocated_quantity_kg or 0)
+            )
+            actual_qty = abs(actual_qty)
+            if actual_qty == 0:
+                continue
+
+            line_product = self.db.get(Product, line.component_product_id)
+            unit_cost_value = line.unit_cost or (
+                (line_product.usage_cost_ex_gst or line_product.purchase_cost_ex_gst)
+                if line_product
+                else None
+            )
+
+            if unit_cost_value is None:
+                unit_cost_value = Decimal("0")
+
+            unit_cost_decimal = (
+                unit_cost_value
+                if isinstance(unit_cost_value, Decimal)
+                else Decimal(str(unit_cost_value))
+            )
+            line.unit_cost = unit_cost_decimal
+            material_cost += round_money(actual_qty * unit_cost_decimal)
 
         # Overhead cost (from input lines and timers)
         overhead_lines = (
@@ -1107,27 +1538,34 @@ class WorkOrderService:
 
         # Total cost and unit cost
         total_cost = material_cost + overhead_cost
+        qty_produced_decimal = round_quantity(abs(qty_produced))
         unit_cost = (
-            round_money(total_cost / qty_produced) if qty_produced > 0 else Decimal("0")
+            round_money(total_cost / qty_produced_decimal)
+            if qty_produced_decimal > 0
+            else Decimal("0")
         )
 
         # Create batch
-        batch = Batch(
-            id=str(uuid4()),
-            product_id=work_order.product_id,
-            work_order_id=work_order_id,
-            batch_code=work_order.batch_code
-            or work_order.code
-            or self.batch_code_gen.generate_batch_code(work_order.product_id),
-            quantity_kg=round_quantity(qty_produced_kg),
-            mfg_date=(batch_attrs or {}).get("mfg_date") or date.today(),
-            exp_date=(batch_attrs or {}).get("exp_date"),
-            status="released",
-            meta=json.dumps(batch_attrs.get("meta") if batch_attrs else {}),
-        )
+        batch = None
+        batch_id: Optional[str] = None
+        if qty_produced_signed > 0:
+            batch = Batch(
+                id=str(uuid4()),
+                product_id=work_order.product_id,
+                work_order_id=work_order_id,
+                batch_code=work_order.batch_code
+                or work_order.code
+                or self.batch_code_gen.generate_batch_code(work_order.product_id),
+                quantity_kg=round_quantity(qty_produced_kg_abs),
+                mfg_date=(batch_attrs or {}).get("mfg_date") or date.today(),
+                exp_date=(batch_attrs or {}).get("exp_date"),
+                status="released",
+                meta=json.dumps(batch_attrs.get("meta") if batch_attrs else {}),
+            )
 
-        self.db.add(batch)
-        self.db.flush()
+            self.db.add(batch)
+            self.db.flush()
+            batch_id = batch.id
 
         # Create work order output
         output = WorkOrderOutput(
@@ -1136,45 +1574,49 @@ class WorkOrderService:
             product_id=work_order.product_id,
             qty_produced=round_quantity(qty_produced),
             uom=output_uom,
-            batch_id=batch.id,
+            batch_id=batch_id,
             unit_cost=unit_cost,
             note="Work order completion",
         )
 
         self.db.add(output)
 
-        # Post inventory movement (positive)
-        move = InventoryMovement(
-            id=str(uuid4()),
-            ts=datetime.utcnow(),
-            timestamp=datetime.utcnow(),
-            date=datetime.utcnow().strftime("%Y-%m-%d"),
-            product_id=work_order.product_id,
-            batch_id=batch.id,
-            qty=abs(qty_produced_kg),
-            unit=output_uom,
-            uom=output_uom,
-            direction="IN",
-            move_type="wo_completion",
-            ref_table="work_orders",
-            ref_id=work_order_id,
-            unit_cost=unit_cost,
-            note=f"Work order {work_order.code} completion",
-        )
+        # Post inventory movement (direction based on sign)
+        move_id: Optional[str] = None
+        if qty_produced_signed != 0:
+            move = InventoryMovement(
+                id=str(uuid4()),
+                ts=datetime.utcnow(),
+                timestamp=datetime.utcnow(),
+                date=datetime.utcnow().strftime("%Y-%m-%d"),
+                product_id=work_order.product_id,
+                batch_id=batch_id,
+                qty=qty_produced_signed,
+                unit=output_uom,
+                uom=output_uom,
+                direction="IN" if qty_produced_signed > 0 else "OUT",
+                move_type="wo_completion",
+                ref_table="work_orders",
+                ref_id=work_order_id,
+                unit_cost=unit_cost,
+                note=f"Work order {work_order.code} completion",
+            )
 
-        self.db.add(move)
+            self.db.add(move)
+            move_id = move.id
 
         # Store genealogy in batch meta
-        genealogy = []
-        for line in input_lines:
-            if line.source_batch_id:
-                genealogy.append(line.source_batch_id)
+        if batch:
+            genealogy = []
+            for line in input_lines:
+                if line.source_batch_id:
+                    genealogy.append(line.source_batch_id)
 
-        if genealogy:
-            meta = batch.meta or "{}"
-            meta_dict = json.loads(meta) if isinstance(meta, str) else meta
-            meta_dict["genealogy"] = genealogy
-            batch.meta = json.dumps(meta_dict)
+            if genealogy:
+                meta = batch.meta or "{}"
+                meta_dict = json.loads(meta) if isinstance(meta, str) else meta
+                meta_dict["genealogy"] = genealogy
+                batch.meta = json.dumps(meta_dict)
 
         # Update work order status and costs
         work_order.status = "complete"
@@ -1183,9 +1625,11 @@ class WorkOrderService:
         work_order.actual_qty = round_quantity(qty_produced)
         work_order.actual_cost = round_money(total_cost)
 
+        self._release_active_reservations(work_order_id)
+
         self.db.flush()
 
-        return move.id, batch.id
+        return move_id, batch_id
 
     def void_work_order(self, work_order_id: str, reason: str) -> WorkOrder:
         """
@@ -1256,3 +1700,111 @@ class WorkOrderService:
         self.db.flush()
 
         return work_order
+
+    def _calculate_estimated_cost(
+        self, formula: Formula, planned_qty_kg: Decimal
+    ) -> Optional[Decimal]:
+        """Calculate estimated material cost for a formula and planned quantity."""
+
+        formula_lines = (
+            self.db.execute(
+                select(FormulaLine).where(
+                    FormulaLine.formula_id == formula.id,
+                    FormulaLine.deleted_at.is_(None),
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        total_cost = Decimal("0")
+        for line in formula_lines:
+            if line.quantity_kg and line.raw_material_id:
+                line_product = self.db.get(Product, line.raw_material_id)
+                if line_product:
+                    unit_cost = (
+                        line_product.usage_cost_ex_gst
+                        or line_product.purchase_cost_ex_gst
+                        or Decimal("0")
+                    )
+                    total_cost += round_money(line.quantity_kg * unit_cost)
+
+        if total_cost <= 0:
+            return None
+
+        yield_factor = (
+            Decimal(str(formula.yield_factor)) if formula.yield_factor else Decimal("1")
+        )
+        if yield_factor <= 0:
+            yield_factor = Decimal("1")
+
+        scale_multiplier = planned_qty_kg / yield_factor
+        if scale_multiplier <= 0:
+            return None
+
+        return round_money(total_cost * scale_multiplier)
+
+    def _release_active_reservations(self, work_order_id: str) -> None:
+        """Release any active inventory reservations tied to a work order."""
+
+        reservations = (
+            self.db.query(InventoryReservation)
+            .filter(
+                InventoryReservation.reference_id == work_order_id,
+                InventoryReservation.source == "internal",
+                InventoryReservation.status == "ACTIVE",
+            )
+            .all()
+        )
+
+        for reservation in reservations:
+            try:
+                self.inventory_service.release_reservation(reservation.id)
+            except Exception:
+                pass
+
+    def _rollback_completion_artifacts(self, work_order: WorkOrder) -> None:
+        """Remove completion-generated artifacts so a work order can be re-completed."""
+
+        # Remove outputs and associated batches
+        outputs = list(work_order.outputs or [])
+        for output in outputs:
+            batch_id = output.batch_id
+            self.db.delete(output)
+            if batch_id:
+                batch = self.db.get(Batch, batch_id)
+                if batch:
+                    self.db.delete(batch)
+
+        # Remove completion inventory movements
+        completion_moves = (
+            self.db.execute(
+                select(InventoryMovement).where(
+                    InventoryMovement.ref_table == "work_orders",
+                    InventoryMovement.ref_id == work_order.id,
+                    InventoryMovement.move_type == "wo_completion",
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for move in completion_moves:
+            self.db.delete(move)
+
+        # Reset work order lines
+        lines = (
+            self.db.execute(
+                select(WorkOrderLine).where(
+                    WorkOrderLine.work_order_id == work_order.id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for line in lines:
+            line.actual_qty = None
+            line.allocated_quantity_kg = None
+            line.unit_cost = None
+
+        # Release any active reservations
+        self._release_active_reservations(work_order.id)

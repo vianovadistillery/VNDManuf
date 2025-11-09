@@ -677,7 +677,7 @@ VALID_WO_STATUS_TRANSITIONS = {
     "released": ["in_progress", "hold", "void"],
     "in_progress": ["hold", "complete"],
     "hold": ["released", "in_progress", "void"],
-    "complete": [],  # Terminal state
+    "complete": ["in_progress"],  # Allow reopen
     "void": [],  # Terminal state
 }
 

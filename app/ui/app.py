@@ -21,13 +21,17 @@ from dash import (
     Input,
     Output,
     State,
+    dcc,
     html,  # keep whatever you already import
 )
 
 # local imports (after third-party)
-from apps.vndmanuf_sales.ui.sales_tab import layout as sales_tab_layout
+from apps.vndmanuf_sales.ui.orders_callbacks import register_sales_orders_callbacks
 from apps.vndmanuf_sales.ui.sales_tab import (
-    register_callbacks as register_sales_callbacks,
+    layout as sales_tab_layout,
+)
+from apps.vndmanuf_sales.ui.sales_tab import (
+    register_callbacks as register_sales_tab_callbacks,
 )
 
 from .contacts_callbacks import register_contacts_callbacks  # noqa: E402
@@ -50,6 +54,7 @@ from .purchase_formats_callbacks import (
     register_purchase_formats_callbacks,  # noqa: E402
 )
 from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa: E402
+from .qc_test_types_callbacks import register_qc_test_types_callbacks  # noqa: E402
 from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
 from .work_areas_callbacks import register_work_areas_callbacks  # noqa: E402
@@ -186,6 +191,28 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
+)
+
+app.validation_layout = html.Div(
+    [
+        app.layout,
+        html.Button(id="wo-issue-submit-btn"),
+        dcc.Store(id="wo-detail-refresh-trigger"),
+        dcc.Store(id="wo-planned-qty-refresh"),
+        dcc.Store(id="wo-detail-allow-input-edit"),
+        html.Div(
+            [
+                dbc.Button(id="wo-release-btn"),
+                dbc.Button(id="wo-start-btn"),
+                dbc.Button(id="wo-void-btn"),
+                dbc.Button(id="wo-reopen-btn"),
+                dbc.Button(id="wo-planned-qty-save"),
+                dbc.Input(id="wo-planned-qty-input"),
+                html.Div(id="wo-detail-tab-content"),
+            ],
+            style={"display": "none"},
+        ),
+    ]
 )
 
 
@@ -926,12 +953,14 @@ register_contacts_callbacks(app, make_api_request)
 register_units_callbacks(app, make_api_request)
 register_excise_rates_callbacks(app, make_api_request)
 register_purchase_formats_callbacks(app, make_api_request)
+register_qc_test_types_callbacks(app, make_api_request)
 register_work_areas_callbacks(app, make_api_request)
 register_settings_callbacks(app)
-register_sales_callbacks(app)
+register_sales_tab_callbacks(app)
+register_sales_orders_callbacks(app, make_api_request)
 
 
-register_work_orders_callbacks(app, API_BASE_URL)
+register_work_orders_callbacks(app, API_BASE_URL, make_api_request)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth

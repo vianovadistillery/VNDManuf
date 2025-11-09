@@ -306,9 +306,51 @@ def build_output_rows(
 
 
 def register_work_orders_callbacks(
-    app, api_base_url: str = "http://127.0.0.1:8000/api/v1"
+    app,
+    api_base_url: str = "http://127.0.0.1:8000/api/v1",
+    make_api_request=None,
 ):
     """Register all work order callbacks."""
+
+    def _fetch_qc_test_types() -> Optional[List[Dict[str, Any]]]:
+        """Fetch QC test type definitions from settings."""
+        try:
+            if make_api_request:
+                response = make_api_request("GET", "/work-orders/qc-test-types")
+                if isinstance(response, dict) and response.get("error"):
+                    return None
+            else:
+                url = f"{api_base_url}/work-orders/qc-test-types"
+                response = requests.get(url, timeout=5)
+                if response.status_code != 200:
+                    return None
+                response = response.json()
+
+            if isinstance(response, dict):
+                if response.get("error"):
+                    return None
+                raw_items = (
+                    response.get("qc_test_types")
+                    or response.get("items")
+                    or response.get("data")
+                    or []
+                )
+            elif isinstance(response, list):
+                raw_items = response
+            else:
+                raw_items = []
+
+            results: List[Dict[str, Any]] = []
+            for item in raw_items:
+                if not isinstance(item, dict):
+                    continue
+                if item.get("is_active") is False:
+                    continue
+                results.append(item)
+            return results
+        except Exception as exc:  # pragma: no cover - defensive logging
+            print(f"Error fetching QC test types: {exc}")
+            return None
 
     # Load work orders list
     @app.callback(
@@ -450,7 +492,9 @@ def register_work_orders_callbacks(
                         try:
                             estimated_cost_str = f"${float(estimated_cost_val):.2f}"
                         except (ValueError, TypeError):
-                            estimated_cost_str = ""
+                            estimated_cost_str = "N/A"
+                    else:
+                        estimated_cost_str = "N/A"
 
                     # Format actual_cost
                     actual_cost_val = wo.get("actual_cost")
@@ -541,872 +585,365 @@ def register_work_orders_callbacks(
     # Load components for issue material dropdown
     @app.callback(
         Output("wo-issue-component-dropdown", "options"),
-        [Input("wo-detail-wo-id", "data")],
-        prevent_initial_call=True,
+        [
+            Input("wo-detail-wo-id", "data"),
+            Input("wo-inputs-table", "data"),
+            Input("wo-add-input-submit-btn", "n_clicks"),
+        ],
+        prevent_initial_call=False,
     )
-    def load_components_for_issue(wo_id):
+    def load_components_for_issue(wo_id, inputs_data, _add_input_clicks):
         """Load components for issue material dropdown."""
         if not wo_id:
             return []
 
+        options: List[Dict[str, str]] = []
+        seen: Set[str] = set()
+
+        for row in inputs_data or []:
+            component_id = row.get("component_product_id")
+            if not component_id or component_id in seen:
+                continue
+            label = row.get("component_label") or component_id
+            options.append({"label": label, "value": component_id})
+            seen.add(component_id)
+
+        if options:
+            return options
+
         try:
             url = f"{api_base_url}/work-orders/{wo_id}"
             response = requests.get(url, timeout=5)
-
             if response.status_code == 200:
                 wo = response.json()
-                _, options = build_input_rows(wo, api_base_url)
-                return options
-            else:
-                return []
+                _, api_options = build_input_rows(wo, api_base_url)
+                return api_options
+            return []
         except Exception as e:
             print(f"Error loading components: {e}")
             return []
 
-    # Refresh work orders list after actions
     @app.callback(
-        Output("wo-list-table", "data", allow_duplicate=True),
-        [
-            Input("wo-create-submit-btn", "n_clicks"),
-            Input("wo-issue-submit-btn", "n_clicks"),
-            Input("wo-qc-submit-btn", "n_clicks"),
-            Input("wo-complete-submit-btn", "n_clicks"),
-            Input("wo-release-btn", "n_clicks"),
-            Input("wo-start-btn", "n_clicks"),
-            Input("wo-void-btn", "n_clicks"),
-        ],
-        [
-            State("wo-status-filter", "value"),
-            State("wo-product-filter", "value"),
-            State("wo-date-from", "value"),
-            State("wo-date-to", "value"),
-        ],
+        Output("wo-add-input-component-dropdown", "options"),
+        Input("wo-add-input-modal", "is_open"),
         prevent_initial_call=True,
     )
-    def refresh_work_orders_list(
-        create_clicks,
-        issue_clicks,
-        qc_clicks,
-        complete_clicks,
-        release_clicks,
-        start_clicks,
-        void_clicks,
-        status_filter,
-        product_filter,
-        date_from,
-        date_to,
-    ):
-        """Refresh work orders list after any action."""
-        ctx = dash.callback_context
-        if not ctx.triggered:
+    def load_add_input_components(is_open):
+        """Load component options for adding input lines."""
+        if not is_open:
             raise PreventUpdate
 
         try:
-            params = {}
-            if status_filter:
-                params["status"] = status_filter
-            if product_filter:
-                params["product_id"] = product_filter
-            if date_from:
-                params["date_from"] = date_from
-            if date_to:
-                params["date_to"] = date_to
-
-            url = f"{api_base_url}/work-orders/"
-            response = requests.get(url, params=params, timeout=5)
-
-            if response.status_code == 200:
-                work_orders = response.json()
-
-                table_data = []
-                for wo in work_orders:
-                    qc_status = "N/A"
-                    if wo.get("qc_tests"):
-                        qc_tests = wo.get("qc_tests", [])
-                        pending = [t for t in qc_tests if t.get("status") == "pending"]
-                        failed = [t for t in qc_tests if t.get("status") == "fail"]
-                        if failed:
-                            qc_status = "Failed"
-                        elif pending:
-                            qc_status = "Pending"
-                        else:
-                            qc_status = "Passed"
-
-                    unit_cost = None
-                    outputs = wo.get("outputs", [])
-                    if outputs:
-                        unit_cost = outputs[0].get("unit_cost")
-
-                    # Format planned_qty - convert to float first
-                    planned_qty_val = wo.get("planned_qty")
-                    if planned_qty_val is not None:
-                        try:
-                            planned_qty_str = f"{float(planned_qty_val):.3f}"
-                        except (ValueError, TypeError):
-                            planned_qty_str = "0"
-                    else:
-                        planned_qty_str = "0"
-
-                    # Format unit_cost - convert to float first
-                    if unit_cost is not None:
-                        try:
-                            unit_cost_str = f"${float(unit_cost):.2f}"
-                        except (ValueError, TypeError):
-                            unit_cost_str = "N/A"
-                    else:
-                        unit_cost_str = "N/A"
-
-                    # Get product name
-                    product_id = wo.get("product_id", "")
-                    product_name = product_id  # Default to ID if fetch fails
-                    if product_id:
-                        try:
-                            product_url = f"{api_base_url}/products/{product_id}"
-                            product_response = requests.get(product_url, timeout=5)
-                            if product_response.status_code == 200:
-                                product_data = product_response.json()
-                                product_name = f"{product_data.get('sku', '')} - {product_data.get('name', product_id)}"
-                        except Exception:
-                            pass  # Keep default product_id if fetch fails
-
-                    # Format dates
-                    from datetime import datetime
-
-                    released_at = wo.get("released_at")
-                    released_at_str = ""
-                    if released_at:
-                        try:
-                            if isinstance(released_at, str):
-                                dt = datetime.fromisoformat(
-                                    released_at.replace("Z", "+00:00")
-                                )
-                            else:
-                                dt = released_at
-                            released_at_str = dt.strftime("%Y-%m-%d")
-                        except Exception:
-                            released_at_str = ""
-
-                    completed_at = wo.get("completed_at")
-                    completed_at_str = ""
-                    if completed_at:
-                        try:
-                            if isinstance(completed_at, str):
-                                dt = datetime.fromisoformat(
-                                    completed_at.replace("Z", "+00:00")
-                                )
-                            else:
-                                dt = completed_at
-                            completed_at_str = dt.strftime("%Y-%m-%d")
-                        except Exception:
-                            completed_at_str = ""
-
-                    # Format actual_qty
-                    actual_qty_val = wo.get("actual_qty")
-                    actual_qty_str = ""
-                    if actual_qty_val is not None:
-                        try:
-                            actual_qty_str = f"{float(actual_qty_val):.3f}"
-                        except (ValueError, TypeError):
-                            actual_qty_str = ""
-
-                    # Format estimated_cost
-                    estimated_cost_val = wo.get("estimated_cost")
-                    estimated_cost_str = ""
-                    if estimated_cost_val is not None:
-                        try:
-                            estimated_cost_str = f"${float(estimated_cost_val):.2f}"
-                        except (ValueError, TypeError):
-                            estimated_cost_str = ""
-
-                    # Format actual_cost
-                    actual_cost_val = wo.get("actual_cost")
-                    actual_cost_str = ""
-                    if actual_cost_val is not None:
-                        try:
-                            actual_cost_str = f"${float(actual_cost_val):.2f}"
-                        except (ValueError, TypeError):
-                            actual_cost_str = ""
-
-                    table_data.append(
-                        {
-                            "id": wo.get("id"),
-                            "code": wo.get("code", ""),
-                            "product": product_name,
-                            "planned_qty": planned_qty_str,
-                            "uom": wo.get("uom", "KG"),
-                            "status": wo.get("status", "").title(),
-                            "released_at": released_at_str,
-                            "completed_at": completed_at_str,
-                            "actual_qty": actual_qty_str,
-                            "estimated_cost": estimated_cost_str,
-                            "actual_cost": actual_cost_str,
-                            "qc_status": qc_status,
-                            "unit_cost": unit_cost_str,
-                        }
-                    )
-
-                return table_data
-            else:
-                return no_update
-        except Exception as e:
-            print(f"Error refreshing work orders: {e}")
-            return no_update
-
-    # Load products and assemblies for create modal
-    @app.callback(
-        [
-            Output("wo-create-product-dropdown", "options"),
-            Output("wo-create-product-dropdown", "value"),
-            Output("wo-create-assembly-dropdown", "options"),
-            Output("wo-create-assembly-dropdown", "value"),
-            Output("wo-create-work-center", "options"),
-            Output("wo-create-uom", "options"),
-            Output("wo-create-batch-code", "value"),
-        ],
-        [Input("wo-create-modal", "is_open")],
-        prevent_initial_call=True,
-    )
-    def load_create_modal_dropdowns(modal_is_open):
-        """Load products and assemblies for create modal, and generate batch code."""
-        if not modal_is_open:
-            raise PreventUpdate
-
-        try:
-            # Load products that have assembly capability (is_assemble=True)
-            products_url = f"{api_base_url}/products/?is_active=true&is_assemble=true"
-            products_response = requests.get(products_url, timeout=5)
-            products = []
-            if products_response.status_code == 200:
-                products_data = products_response.json()
-                products = (
-                    products_data
-                    if isinstance(products_data, list)
-                    else products_data.get("products", [])
-                )
-
-            # Filter to only include products with is_assemble=True
-            products = [p for p in products if p.get("is_assemble", False)]
-
-            product_options = [
-                {
-                    "label": f"{p.get('sku', '')} - {p.get('name', '')}",
-                    "value": p.get("id", ""),
-                }
-                for p in products
-            ]
-
-            # Generate batch code (client-side generation matching server logic)
-            # This is a preview - actual code will be generated server-side on save
-            today = datetime.utcnow()
-            year_2digit = today.strftime("%y")  # e.g., "25" for 2025
-
-            # Get existing batch codes from work orders to find max sequence
-            # Note: This is a preview - actual code will be generated server-side on save
-            # But we can generate a likely next code for display
-            try:
-                work_orders_response = requests.get(
-                    f"{api_base_url}/work-orders/", timeout=5
-                )
-
-                max_seq = 0
-                year_prefix = f"B{year_2digit}"
-
-                # Check work orders for batch codes
-                if work_orders_response.status_code == 200:
-                    work_orders = work_orders_response.json()
-                    for wo in work_orders:
-                        batch_code = wo.get("batch_code", "")
-                        if batch_code and batch_code.startswith(year_prefix):
-                            try:
-                                seq_part = batch_code[-4:]
-                                seq_num = int(seq_part)
-                                max_seq = max(max_seq, seq_num)
-                            except (ValueError, IndexError):
-                                pass
-
-                seq = max_seq + 1
-                batch_code = f"B{year_2digit}{seq:04d}"
-            except Exception:
-                # Fallback: generate a simple code
-                batch_code = f"B{year_2digit}0001"
-
-            # Load work areas/centers (for now, use a simple list or API endpoint)
-            # TODO: Create work_areas API endpoint
-            work_area_options = [
-                {"label": "Still01", "value": "Still01"},
-                {"label": "Canning01", "value": "Canning01"},
-                {"label": "Bottling01", "value": "Bottling01"},
-                {"label": "Packaging01", "value": "Packaging01"},
-            ]
-
-            # Try to load from API if endpoint exists
-            try:
-                work_areas_url = f"{api_base_url}/work-areas/"
-                work_areas_response = requests.get(work_areas_url, timeout=5)
-                if work_areas_response.status_code == 200:
-                    work_areas_data = work_areas_response.json()
-                    work_areas = (
-                        work_areas_data
-                        if isinstance(work_areas_data, list)
-                        else work_areas_data.get("work_areas", [])
-                    )
-                    work_area_options = [
-                        {
-                            "label": f"{wa.get('code', '')} - {wa.get('name', '')}",
-                            "value": wa.get("code", ""),
-                        }
-                        for wa in work_areas
-                        if wa.get("is_active", True)
-                    ]
-            except Exception:
-                # If API doesn't exist yet, use default list
-                pass
-
-            # Load units from units API
-            unit_options = [{"label": "KG", "value": "KG"}]  # Default
-            try:
-                units_url = f"{api_base_url}/units/?is_active=true"
-                units_response = requests.get(units_url, timeout=5)
-                if units_response.status_code == 200:
-                    units_data = units_response.json()
-                    units = (
-                        units_data
-                        if isinstance(units_data, list)
-                        else units_data.get("units", [])
-                    )
-                    unit_options = [
-                        {
-                            "label": f"{u.get('code', '')} - {u.get('name', '')}",
-                            "value": u.get("code", ""),
-                        }
-                        for u in units
-                        if u.get("is_active", True)
-                    ]
-                    # Ensure KG is in the list
-                    if not any(
-                        u.get("code") == "KG" for u in units if u.get("is_active", True)
-                    ):
-                        unit_options.insert(
-                            0, {"label": "KG - Kilogram", "value": "KG"}
-                        )
-            except Exception:
-                # If API doesn't exist yet, use default list
-                pass
-
-            # Reset both dropdowns when modal opens
-            return (
-                product_options,
-                None,
-                [],
-                None,
-                work_area_options,
-                unit_options,
-                batch_code,
+            response = requests.get(
+                f"{api_base_url}/products/?is_active=true", timeout=5
             )
-        except Exception as e:
-            print(f"Error loading dropdowns: {e}")
-            return [], None, [], None, [], [{"label": "KG", "value": "KG"}], ""
+            if response.status_code != 200:
+                return []
 
-    # Update assembly dropdown when product is selected
+            products_data = response.json()
+            products = (
+                products_data
+                if isinstance(products_data, list)
+                else products_data.get("products", [])
+            )
+
+            options = []
+            for prod in products:
+                product_id = prod.get("id")
+                if not product_id:
+                    continue
+                sku = (prod.get("sku") or "").strip()
+                name = (prod.get("name") or "").strip()
+                label_parts = [part for part in (sku, name) if part]
+                label = " - ".join(label_parts) if label_parts else product_id
+                options.append({"label": label, "value": product_id})
+            return options
+        except Exception as e:
+            print(f"Error loading product options: {e}")
+            return []
+
     @app.callback(
-        [
-            Output("wo-create-assembly-dropdown", "options", allow_duplicate=True),
-            Output("wo-create-assembly-dropdown", "value", allow_duplicate=True),
-            Output("wo-create-assembly-details", "children"),
-        ],
-        [
-            Input("wo-create-product-dropdown", "value"),
-            Input("wo-create-assembly-dropdown", "value"),
-            Input("wo-create-planned-qty", "value"),
-        ],
+        Output("wo-add-input-uom", "value", allow_duplicate=True),
+        Input("wo-add-input-component-dropdown", "value"),
         prevent_initial_call=True,
     )
-    def update_assembly_dropdown(product_id, assembly_id, planned_qty):
-        """Update assembly dropdown based on selected product and show assembly details."""
+    def set_add_input_default_uom(component_id):
+        """Prefill UOM based on selected component."""
+        if not component_id:
+            raise PreventUpdate
+
+        details = get_product_details(component_id, api_base_url, {})
+        return (
+            details.get("default_uom") or details.get("base_unit") or ""
+        ).strip() or "KG"
+
+    @app.callback(
+        [
+            Output("wo-add-input-modal", "is_open", allow_duplicate=True),
+            Output("wo-action-toast", "is_open", allow_duplicate=True),
+            Output("wo-action-toast", "header", allow_duplicate=True),
+            Output("wo-action-toast", "children", allow_duplicate=True),
+        ],
+        [
+            Input("wo-inputs-add-btn", "n_clicks"),
+            Input("wo-add-input-cancel-btn", "n_clicks"),
+        ],
+        [State("wo-add-input-modal", "is_open"), State("wo-detail-wo-id", "data")],
+        prevent_initial_call="initial_duplicate",
+    )
+    def toggle_add_input_modal(add_clicks, cancel_clicks, is_open, wo_id):
+        """Open/close the add input modal."""
         ctx = dash.callback_context
         if not ctx.triggered:
             raise PreventUpdate
 
-        trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-        # If product changed, update dropdown options
-        if trigger_id == "wo-create-product-dropdown":
-            if not product_id:
-                return [], None, html.Div()
-
-            try:
-                # Load formulas (assemblies) filtered by product_id
-                formulas_url = (
-                    f"{api_base_url}/formulas/?product_id={product_id}&is_active=true"
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        if button_id == "wo-inputs-add-btn":
+            if not add_clicks:
+                raise PreventUpdate
+            if not wo_id:
+                return (
+                    is_open,
+                    True,
+                    "Error",
+                    "Select a work order before adding input lines.",
                 )
-                formulas_response = requests.get(formulas_url, timeout=5)
-                formulas = []
-                if formulas_response.status_code == 200:
-                    formulas_data = formulas_response.json()
-                    # Handle both list and dict responses
-                    if isinstance(formulas_data, list):
-                        formulas = formulas_data
-                    elif isinstance(formulas_data, dict):
-                        formulas = formulas_data.get("formulas", [])
+            return True, False, no_update, no_update
 
-                assembly_options = [
-                    {
-                        "label": f"{f.get('formula_code', '')} - {f.get('formula_name', '')}",
-                        "value": f.get("id", ""),
-                    }
-                    for f in formulas
-                ]
+        if button_id == "wo-add-input-cancel-btn" and is_open:
+            if not cancel_clicks:
+                raise PreventUpdate
+            return False, False, no_update, no_update
 
-                # Clear the selected value if assemblies changed
-                return assembly_options, None, html.Div()
-            except Exception as e:
-                print(f"Error loading formulas for product {product_id}: {e}")
-                return [], None, html.Div()
+        raise PreventUpdate
 
-        # If assembly selected or planned_qty changed, show/update details
-        elif (trigger_id == "wo-create-assembly-dropdown" and assembly_id) or (
-            trigger_id == "wo-create-planned-qty" and assembly_id
-        ):
-            try:
-                # Fetch formula details
-                formula_url = f"{api_base_url}/formulas/{assembly_id}"
-                formula_response = requests.get(formula_url, timeout=5)
+    @app.callback(
+        Output("wo-inputs-add-btn", "disabled", allow_duplicate=True),
+        Input("wo-detail-wo-id", "data"),
+        State("wo-detail-allow-input-edit", "data"),
+        prevent_initial_call="initial_duplicate",
+    )
+    def sync_add_button_state(wo_id, allow_edit):
+        """Disable add button when editing isn't allowed or no work order is selected."""
+        if allow_edit is False:
+            return True
+        return not bool(wo_id)
 
-                if formula_response.status_code != 200:
-                    return no_update, no_update, html.Div()
+    @app.callback(
+        Output("wo-inputs-edit-btn", "disabled", allow_duplicate=True),
+        Input("wo-inputs-table", "selected_rows"),
+        State("wo-detail-wo-id", "data"),
+        State("wo-detail-allow-input-edit", "data"),
+        prevent_initial_call="initial_duplicate",
+    )
+    def sync_edit_button_state(selected_rows, wo_id, allow_edit):
+        """Enable edit button only when editing is allowed and a row is selected."""
+        if allow_edit is False:
+            return True
+        if not wo_id:
+            return True
+        if not selected_rows:
+            return True
+        return False
 
-                formula_data = formula_response.json()
-
-                # Get yield factor and planned quantity for scaling
-                yield_factor = float(formula_data.get("yield_factor", 1.0) or 1.0)
-                planned_qty_float = 0.0
-                if planned_qty:
-                    try:
-                        planned_qty_float = float(planned_qty)
-                    except (ValueError, TypeError):
-                        planned_qty_float = 0.0
-                scale_factor = (
-                    planned_qty_float * yield_factor if planned_qty_float > 0 else 1.0
-                )
-
-                # Get parent product for density
-                parent_product_id = formula_data.get("product_id")
-                parent_density = 0.0
-                if parent_product_id:
-                    try:
-                        parent_resp = requests.get(
-                            f"{api_base_url}/products/{parent_product_id}", timeout=5
-                        )
-                        if parent_resp.status_code == 200:
-                            parent_data = parent_resp.json()
-                            density_val = parent_data.get("density_kg_per_l", 0) or 0
-                            try:
-                                parent_density = float(density_val)
-                            except (ValueError, TypeError):
-                                pass
-                    except Exception:
-                        pass
-
-                lines_data = []
-                total_cost = 0.0
-                total_quantity_kg = 0.0
-                total_quantity_l = 0.0
-
-                for line in formula_data.get("lines", []):
-                    line_product_id = line.get("raw_material_id")
-                    product_sku = ""
-                    product_name = line.get("ingredient_name", "")
-                    density = 0.0
-                    product_usage_unit = None
-                    product_usage_cost = 0.0
-
-                    if line_product_id:
-                        try:
-                            product_resp = requests.get(
-                                f"{api_base_url}/products/{line_product_id}", timeout=5
-                            )
-                            if product_resp.status_code == 200:
-                                product_data = product_resp.json()
-                                product_sku = product_data.get("sku", "")
-                                product_name = product_data.get("name", product_name)
-
-                                density_val = (
-                                    product_data.get("density_kg_per_l", 0) or 0
-                                )
-                                try:
-                                    density = float(density_val)
-                                except (ValueError, TypeError):
-                                    density = 0.0
-
-                                product_usage_unit = (
-                                    product_data.get("usage_unit", "").upper()
-                                    if product_data.get("usage_unit")
-                                    else None
-                                )
-
-                                # Get cost (use same logic as formulas page)
-                                cost_val = (
-                                    product_data.get("usage_cost_ex_gst")
-                                    or product_data.get("purchase_cost_ex_gst")
-                                    or product_data.get("usage_cost_inc_gst")
-                                    or product_data.get("purchase_cost_inc_gst")
-                                    or 0
-                                )
-                                if cost_val:
-                                    try:
-                                        product_usage_cost = round(float(cost_val), 4)
-                                    except (ValueError, TypeError):
-                                        product_usage_cost = 0.0
-                        except Exception:
-                            pass
-
-                    quantity_kg = float(line.get("quantity_kg", 0.0) or 0.0)
-                    unit = line.get("unit", "kg")
-
-                    # Convert quantity_kg back to display unit
-                    unit_upper = unit.upper() if unit else "KG"
-                    quantity_display = quantity_kg
-
-                    if unit_upper in ["G", "GRAM", "GRAMS"]:
-                        quantity_display = quantity_kg * 1000.0
-                    elif unit_upper in ["L", "LT", "LTR", "LITER", "LITRE"]:
-                        if density > 0:
-                            quantity_display = quantity_kg / density
-                    elif unit_upper in ["ML", "MILLILITER", "MILLILITRE"]:
-                        if density > 0:
-                            quantity_l = quantity_kg / density
-                            quantity_display = quantity_l * 1000.0
-
-                    quantity_l = quantity_kg / density if density > 0 else 0.0
-
-                    # Calculate line cost
-                    line_cost = 0.0
-                    if product_usage_cost > 0:
-                        if product_usage_unit and product_usage_unit in [
-                            "KG",
-                            "KILOGRAM",
-                            "KILOGRAMS",
-                        ]:
-                            line_cost = quantity_kg * product_usage_cost
-                        elif product_usage_unit and product_usage_unit in [
-                            "G",
-                            "GRAM",
-                            "GRAMS",
-                        ]:
-                            line_cost = quantity_kg * product_usage_cost * 1000.0
-                        elif product_usage_unit and product_usage_unit in [
-                            "L",
-                            "LT",
-                            "LTR",
-                            "LITER",
-                            "LITRE",
-                        ]:
-                            if density > 0:
-                                line_cost = quantity_kg * product_usage_cost / density
-                            else:
-                                line_cost = quantity_l * product_usage_cost
-                        else:
-                            line_cost = quantity_kg * product_usage_cost
-
-                    # Calculate display unit cost
-                    display_unit_cost = 0.0
-                    if product_usage_cost > 0 and quantity_display > 0:
-                        if unit_upper == product_usage_unit:
-                            display_unit_cost = product_usage_cost
-                        elif unit_upper in [
-                            "G",
-                            "GRAM",
-                            "GRAMS",
-                        ] and product_usage_unit in ["KG", "KILOGRAM", "KILOGRAMS"]:
-                            display_unit_cost = product_usage_cost / 1000.0
-                        elif unit_upper in [
-                            "KG",
-                            "KILOGRAM",
-                            "KILOGRAMS",
-                        ] and product_usage_unit in ["G", "GRAM", "GRAMS"]:
-                            display_unit_cost = product_usage_cost * 1000.0
-                        else:
-                            display_unit_cost = (
-                                line_cost / quantity_display
-                                if quantity_display > 0
-                                else 0.0
-                            )
-
-                    # Calculate quantity required (scaled by planned quantity and yield factor)
-                    quantity_required = quantity_display * scale_factor
-                    quantity_required_kg = quantity_kg * scale_factor
-
-                    # Calculate scaled line cost
-                    scaled_line_cost = line_cost * scale_factor
-
-                    total_cost += scaled_line_cost
-                    total_quantity_kg += quantity_required_kg
-                    total_quantity_l += quantity_l * scale_factor
-
-                    lines_data.append(
-                        {
-                            "product_sku": product_sku,
-                            "product_name": product_name,
-                            "quantity": round(quantity_display, 3),
-                            "unit": unit,
-                            "quantity_kg": round(quantity_kg, 3),
-                            "quantity_required": round(quantity_required, 3),
-                            "quantity_required_kg": round(quantity_required_kg, 3),
-                            "unit_cost": round(display_unit_cost, 4),
-                            "line_cost": round(scaled_line_cost, 4),
-                        }
-                    )
-
-                if lines_data:
-                    # Calculate totals
-                    if parent_density > 0 and total_quantity_kg > 0:
-                        total_quantity_l = total_quantity_kg / parent_density
-
-                    cost_per_kg = (
-                        total_cost / total_quantity_kg if total_quantity_kg > 0 else 0.0
-                    )
-                    cost_per_l = (
-                        total_cost / total_quantity_l if total_quantity_l > 0 else 0.0
-                    )
-
-                    # Create table
-                    lines_table = dash_table.DataTable(
-                        data=lines_data,
-                        columns=[
-                            {"name": "SKU", "id": "product_sku"},
-                            {"name": "Product", "id": "product_name"},
-                            {
-                                "name": "Quantity",
-                                "id": "quantity",
-                                "type": "numeric",
-                                "format": {"specifier": ".3f"},
-                            },
-                            {"name": "Unit", "id": "unit"},
-                            {
-                                "name": "Qty (kg)",
-                                "id": "quantity_kg",
-                                "type": "numeric",
-                                "format": {"specifier": ".3f"},
-                            },
-                            {
-                                "name": "Qty Required",
-                                "id": "quantity_required",
-                                "type": "numeric",
-                                "format": {"specifier": ".3f"},
-                            },
-                            {
-                                "name": "Qty Req (kg)",
-                                "id": "quantity_required_kg",
-                                "type": "numeric",
-                                "format": {"specifier": ".3f"},
-                            },
-                            {
-                                "name": "Unit Cost",
-                                "id": "unit_cost",
-                                "type": "numeric",
-                                "format": {"specifier": ".4f"},
-                            },
-                            {
-                                "name": "Line Cost",
-                                "id": "line_cost",
-                                "type": "numeric",
-                                "format": {"specifier": ".4f"},
-                            },
-                        ],
-                        style_cell={
-                            "textAlign": "left",
-                            "fontSize": "11px",
-                            "padding": "4px",
-                        },
-                        style_header={
-                            "backgroundColor": "rgb(230, 230, 230)",
-                            "fontWeight": "bold",
-                        },
-                        style_cell_conditional=[
-                            {
-                                "if": {"column_id": "quantity_required"},
-                                "backgroundColor": "rgb(230, 250, 230)",
-                                "fontWeight": "bold",
-                            },
-                            {
-                                "if": {"column_id": "quantity_required_kg"},
-                                "backgroundColor": "rgb(230, 250, 230)",
-                                "fontWeight": "bold",
-                            },
-                        ],
-                    )
-
-                    # Create summary
-                    summary = html.Div(
-                        [
-                            html.Hr(),
-                            html.Div(
-                                [
-                                    html.Strong("Totals: "),
-                                    f"Total Cost: ${total_cost:.2f} | ",
-                                    f"Total kg: {total_quantity_kg:.3f} | ",
-                                    f"Total L: {total_quantity_l:.3f} | ",
-                                    f"Cost/kg: ${cost_per_kg:.4f} | ",
-                                    f"$/L: ${cost_per_l:.4f}",
-                                ],
-                                style={
-                                    "fontSize": "12px",
-                                    "fontWeight": "bold",
-                                    "marginTop": "10px",
-                                },
-                            ),
-                        ]
-                    )
-
-                    return (
-                        no_update,
-                        no_update,
-                        html.Div(
-                            [
-                                html.H5("Assembly Details", className="mb-2"),
-                                lines_table,
-                                summary,
-                            ]
-                        ),
-                    )
-                else:
-                    return no_update, no_update, html.Div()
-            except Exception as e:
-                print(f"Error loading assembly details: {e}")
-                return no_update, no_update, html.Div()
-
-        # If assembly cleared, clear details
-        elif trigger_id == "wo-create-assembly-dropdown" and not assembly_id:
-            return no_update, no_update, html.Div()
-
-        # If planned_qty changed but no assembly selected, do nothing
-        elif trigger_id == "wo-create-planned-qty" and not assembly_id:
-            return no_update, no_update, html.Div()
-
-        return no_update, no_update, html.Div()
-
-    # Create work order
     @app.callback(
         [
-            Output("wo-create-modal", "is_open", allow_duplicate=True),
-            Output("toast", "is_open", allow_duplicate=True),
-            Output("toast", "header", allow_duplicate=True),
-            Output("toast", "children", allow_duplicate=True),
-            Output("toast", "icon", allow_duplicate=True),
+            Output("wo-action-toast", "is_open", allow_duplicate=True),
+            Output("wo-action-toast", "header", allow_duplicate=True),
+            Output("wo-action-toast", "children", allow_duplicate=True),
+            Output("wo-add-input-modal", "is_open", allow_duplicate=True),
+            Output("wo-add-input-component-dropdown", "value", allow_duplicate=True),
+            Output("wo-add-input-planned-qty", "value", allow_duplicate=True),
+            Output("wo-add-input-uom", "value", allow_duplicate=True),
+            Output("wo-add-input-note", "value", allow_duplicate=True),
         ],
-        [Input("wo-create-submit-btn", "n_clicks")],
+        Input("wo-add-input-submit-btn", "n_clicks"),
         [
-            State("wo-create-product-dropdown", "value"),
-            State("wo-create-planned-qty", "value"),
-            State("wo-create-uom", "value"),
-            State("wo-create-work-center", "value"),
-            State("wo-create-assembly-dropdown", "value"),
-            State("wo-create-batch-code", "value"),
-            State("wo-create-notes", "value"),
+            State("wo-detail-wo-id", "data"),
+            State("wo-add-input-component-dropdown", "value"),
+            State("wo-add-input-planned-qty", "value"),
+            State("wo-add-input-uom", "value"),
+            State("wo-add-input-note", "value"),
         ],
         prevent_initial_call=True,
     )
-    def create_work_order(
-        n_clicks,
-        product_id,
-        planned_qty,
-        uom,
-        work_center,
-        assembly_id,
-        batch_code,
-        notes,
+    def submit_add_input_line(
+        submit_clicks, wo_id, component_id, planned_qty, uom, note
     ):
-        """Create a new work order."""
-        if not n_clicks:
+        """Submit a new input line for the work order."""
+        if not submit_clicks:
             raise PreventUpdate
 
-        if not product_id or not planned_qty:
+        if not wo_id:
             return (
-                no_update,
                 True,
                 "Error",
-                "Product and planned quantity are required",
-                "danger",
+                "Select a work order before adding input lines.",
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
             )
 
-        try:
-            # Only include assembly_id if it's provided and not empty
-            data = {
-                "product_id": product_id,
-                "planned_qty": float(planned_qty),
-                "uom": uom or "KG",
-                "work_center": work_center,
-                "notes": notes,
-            }
-            # Only add assembly_id if it's provided and not empty
-            # Also validate that the assembly_id is not just whitespace or "None"
-            if (
-                assembly_id
-                and str(assembly_id).strip()
-                and str(assembly_id).strip().lower() != "none"
-            ):
-                # Verify the formula exists before sending
-                try:
-                    # Quick validation - check if formula exists in the formulas list for this product
-                    formulas_check = requests.get(
-                        f"{api_base_url}/formulas/?product_id={product_id}&is_active=true",
-                        timeout=5,
-                    )
-                    if formulas_check.status_code == 200:
-                        formulas_list_data = formulas_check.json()
-                        # Handle both list and dict responses
-                        if isinstance(formulas_list_data, list):
-                            formulas_list = formulas_list_data
-                        elif isinstance(formulas_list_data, dict):
-                            formulas_list = formulas_list_data.get("formulas", [])
-                        else:
-                            formulas_list = []
-                        assembly_ids = [f.get("id") for f in formulas_list]
-                        if assembly_id in assembly_ids:
-                            data["assembly_id"] = assembly_id
-                        else:
-                            # Assembly doesn't exist or doesn't belong to this product, don't send it
-                            print(
-                                f"Warning: Assembly {assembly_id} not found for product {product_id}, skipping"
-                            )
-                    else:
-                        # Can't validate, skip sending assembly_id
-                        print(
-                            f"Warning: Could not validate assembly {assembly_id}: API error"
-                        )
-                except Exception as e:
-                    # If validation fails, skip sending assembly_id
-                    print(f"Warning: Could not validate assembly {assembly_id}: {e}")
-            # Note: batch_code is generated server-side, so we don't send it here
-            # The server will generate it using BatchCodeGenerator
+        if not component_id:
+            return (
+                True,
+                "Error",
+                "Component is required.",
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
 
-            url = f"{api_base_url}/work-orders/"
-            response = requests.post(url, json=data, timeout=10)
+        payload = {"component_product_id": component_id}
+        if planned_qty is not None:
+            payload["planned_qty"] = float(planned_qty)
+        if uom:
+            payload["uom"] = uom
+        if note:
+            payload["note"] = note
+
+        try:
+            url = f"{api_base_url}/work-orders/{wo_id}/inputs"
+            response = requests.post(url, json=payload, timeout=10)
 
             if response.status_code == 201:
                 return (
-                    False,  # Close modal
-                    True,  # Show toast
-                    "Success",
-                    f"Work order created successfully: {response.json().get('code', '')}",
-                    "success",
-                )
-            else:
-                error_msg = response.json().get("detail", "Unknown error")
-                return (
-                    no_update,
                     True,
-                    "Error",
-                    f"Failed to create work order: {error_msg}",
-                    "danger",
+                    "Success",
+                    "Input line added successfully.",
+                    False,
+                    None,
+                    None,
+                    None,
+                    None,
                 )
-        except Exception as e:
+
+            try:
+                detail = response.json().get("detail", "Unknown error")
+            except Exception:
+                detail = response.text or "Unknown error"
             return (
-                no_update,
                 True,
                 "Error",
-                f"Failed to create work order: {str(e)}",
-                "danger",
+                f"Failed to add input line: {detail}",
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+        except Exception as e:
+            return (
+                True,
+                "Error",
+                f"Failed to add input line: {str(e)}",
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+
+    # Refresh work orders list after actions
+    @app.callback(
+        [
+            Output("wo-action-toast", "is_open", allow_duplicate=True),
+            Output("wo-action-toast", "header", allow_duplicate=True),
+            Output("wo-action-toast", "children", allow_duplicate=True),
+            Output("wo-detail-refresh-trigger", "data", allow_duplicate=True),
+            Output("wo-planned-qty-refresh", "data", allow_duplicate=True),
+        ],
+        Input("wo-planned-qty-save", "n_clicks"),
+        [
+            State("wo-detail-wo-id", "data"),
+            State("wo-planned-qty-input", "value"),
+            State("wo-detail-refresh-trigger", "data"),
+            State("wo-planned-qty-refresh", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def update_planned_quantity(
+        save_clicks, wo_id, planned_qty_value, current_refresh, planned_refresh
+    ):
+        """Update planned quantity for draft work order."""
+        if not save_clicks:
+            raise PreventUpdate
+
+        if not wo_id:
+            return (
+                True,
+                "Error",
+                "Select a work order first.",
+                dash.no_update,
+                dash.no_update,
+            )
+
+        if planned_qty_value in (None, ""):
+            return (
+                True,
+                "Error",
+                "Enter a planned quantity before saving.",
+                dash.no_update,
+                dash.no_update,
+            )
+
+        try:
+            data = {"planned_qty": float(planned_qty_value)}
+            url = f"{api_base_url}/work-orders/{wo_id}"
+            response = requests.patch(url, json=data, timeout=10)
+
+            if response.status_code == 200:
+                return (
+                    True,
+                    "Success",
+                    "Planned quantity updated successfully.",
+                    (current_refresh or 0) + 1,
+                    (planned_refresh or 0) + 1,
+                )
+
+            try:
+                error_payload = response.json()
+            except ValueError:
+                error_payload = {}
+
+            detail = (
+                error_payload.get("detail")
+                if isinstance(error_payload, dict)
+                else error_payload
+            )
+
+            if isinstance(detail, list):
+                detail_msg = "; ".join(
+                    item.get("msg", json.dumps(item))
+                    if isinstance(item, dict)
+                    else str(item)
+                    for item in detail
+                )
+            elif isinstance(detail, dict):
+                detail_msg = detail.get("message") or json.dumps(detail)
+            elif detail:
+                detail_msg = str(detail)
+            else:
+                detail_msg = "Unknown error"
+
+            return (
+                True,
+                "Error",
+                f"Failed to update planned quantity: {detail_msg}",
+                dash.no_update,
+                dash.no_update,
+            )
+        except Exception as exc:
+            return (
+                True,
+                "Error",
+                f"Failed to update planned quantity: {str(exc)}",
+                dash.no_update,
+                dash.no_update,
             )
 
     # Load work order detail when row selected or detail tab active
@@ -1417,6 +954,7 @@ def register_work_orders_callbacks(
             Output("wo-detail-wo-id", "data"),
             Output("wo-main-tabs", "active_tab", allow_duplicate=True),
             Output("wo-detail-active-tab", "data", allow_duplicate=True),
+            Output("wo-qc-type-options", "data", allow_duplicate=True),
         ],
         [
             Input("wo-list-table", "selected_rows"),
@@ -1444,6 +982,35 @@ def register_work_orders_callbacks(
         if table_data is None:
             table_data = []
 
+        _QC_SENTINEL = object()
+
+        def build_return(
+            children,
+            style,
+            wo_id_val,
+            main_tab_val,
+            detail_tab_val,
+            qc_data=_QC_SENTINEL,
+        ):
+            if qc_data is _QC_SENTINEL:
+                fetched_types = _fetch_qc_test_types()
+                qc_payload = (
+                    fetched_types if fetched_types is not None else dash.no_update
+                )
+            else:
+                fetched_types = qc_data
+                qc_payload = (
+                    fetched_types if fetched_types is not None else dash.no_update
+                )
+            return (
+                children,
+                style,
+                wo_id_val,
+                main_tab_val,
+                detail_tab_val,
+                qc_payload,
+            )
+
         # If a row was selected, switch to detail tab and load the work order
         if triggered == "wo-list-table.selected_rows":
             if selected_rows and table_data and len(selected_rows) > 0:
@@ -1454,7 +1021,7 @@ def register_work_orders_callbacks(
                         response = requests.get(url, timeout=5)
                         if response.status_code == 200:
                             wo = response.json()
-                            return (
+                            return build_return(
                                 create_work_order_detail_layout(
                                     wo, api_base_url, active_tab="wo-detail-inputs"
                                 ),
@@ -1464,7 +1031,7 @@ def register_work_orders_callbacks(
                                 "wo-detail-inputs",
                             )
                         else:
-                            return (
+                            return build_return(
                                 html.Div(
                                     [
                                         html.P(
@@ -1483,7 +1050,7 @@ def register_work_orders_callbacks(
                                 "wo-detail-inputs",
                             )
                     except Exception as e:
-                        return (
+                        return build_return(
                             html.Div(
                                 [
                                     html.P(f"Error: {str(e)}"),
@@ -1500,7 +1067,7 @@ def register_work_orders_callbacks(
                             "wo-detail-inputs",
                         )
             # No row selected - show message
-            return (
+            return build_return(
                 html.Div(
                     [
                         html.P("Select a work order from the list to view details"),
@@ -1529,7 +1096,7 @@ def register_work_orders_callbacks(
                             response = requests.get(url, timeout=5)
                             if response.status_code == 200:
                                 wo = response.json()
-                                return (
+                                return build_return(
                                     create_work_order_detail_layout(
                                         wo,
                                         api_base_url,
@@ -1542,7 +1109,7 @@ def register_work_orders_callbacks(
                                     no_update,
                                 )
                         except Exception as e:
-                            return (
+                            return build_return(
                                 html.Div(
                                     [
                                         html.P(f"Error: {str(e)}"),
@@ -1565,7 +1132,7 @@ def register_work_orders_callbacks(
                         response = requests.get(url, timeout=5)
                         if response.status_code == 200:
                             wo = response.json()
-                            return (
+                            return build_return(
                                 create_work_order_detail_layout(
                                     wo,
                                     api_base_url,
@@ -1579,7 +1146,7 @@ def register_work_orders_callbacks(
                     except (ValueError, TypeError, AttributeError):
                         pass
                 # Default: show message
-                return (
+                return build_return(
                     html.Div(
                         [
                             html.P("Select a work order from the list to view details"),
@@ -1597,7 +1164,14 @@ def register_work_orders_callbacks(
                 )
             else:
                 # Hide detail content when not on detail tab
-                return no_update, {"display": "none"}, no_update, no_update, no_update
+                return build_return(
+                    no_update,
+                    {"display": "none"},
+                    no_update,
+                    no_update,
+                    no_update,
+                    qc_data=dash.no_update,
+                )
 
         # Default: prevent update
         raise PreventUpdate
@@ -1642,30 +1216,44 @@ def register_work_orders_callbacks(
             response = requests.post(url, json=data, timeout=10)
 
             if response.status_code == 201:
-                return (
-                    True,
-                    "Success",
-                    "Material issued successfully",
+                payload = response.json()
+                message = payload.get("message")
+                if not message:
+                    message = (
+                        "Material returned successfully"
+                        if qty and float(qty) < 0
+                        else "Material issued successfully"
+                    )
+                return True, "Success", message
+
+            try:
+                error_payload = response.json()
+            except ValueError:
+                error_payload = {}
+
+            detail = error_payload.get("detail", "Unknown error")
+            if isinstance(detail, list):
+                detail = "; ".join(
+                    item.get("msg", json.dumps(item))
+                    if isinstance(item, dict)
+                    else str(item)
+                    for item in detail
                 )
-            else:
-                error_msg = response.json().get("detail", "Unknown error")
-                return (
-                    True,
-                    "Error",
-                    f"Failed to issue material: {error_msg}",
-                )
-        except Exception as e:
-            return (
-                True,
-                "Error",
-                f"Failed to issue material: {str(e)}",
-            )
+            elif isinstance(detail, dict):
+                detail = detail.get("message") or json.dumps(detail)
+
+            return True, "Error", f"Failed to issue material: {detail}"
+        except Exception as exc:
+            return True, "Error", f"Failed to issue material: {str(exc)}"
 
     @app.callback(
         [
             Output("wo-issue-component-dropdown", "value", allow_duplicate=True),
             Output("wo-issue-qty", "value", allow_duplicate=True),
             Output("wo-issue-batch-dropdown", "value", allow_duplicate=True),
+            Output("wo-issue-toast", "is_open", allow_duplicate=True),
+            Output("wo-issue-toast", "header", allow_duplicate=True),
+            Output("wo-issue-toast", "children", allow_duplicate=True),
         ],
         Input("wo-inputs-edit-btn", "n_clicks"),
         State("wo-inputs-table", "selected_rows"),
@@ -1678,46 +1266,43 @@ def register_work_orders_callbacks(
             raise PreventUpdate
 
         if not table_data or not selected_rows:
-            return no_update, no_update, no_update
+            return (
+                no_update,
+                no_update,
+                no_update,
+                True,
+                "Error",
+                "Select an input line to edit.",
+            )
 
         row_index = selected_rows[0]
         if row_index >= len(table_data):
-            return no_update, no_update, no_update
+            return (
+                no_update,
+                no_update,
+                no_update,
+                True,
+                "Error",
+                "Selected row is out of range.",
+            )
 
         row = table_data[row_index]
         component_id = row.get("component_product_id")
-        remaining_display = row.get("remaining_qty")
-        if remaining_display is not None:
-            remaining_display = round(safe_float(remaining_display), 3)
-            if remaining_display <= 0:
-                remaining_display = None
-
+        qty_value = safe_float(row.get("remaining_qty"))
+        if qty_value is None:
+            qty_value = safe_float(row.get("planned_qty"))
+        if qty_value is None:
+            qty_value = safe_float(row.get("remaining_qty_canonical"))
+        if qty_value is not None:
+            qty_value = round(qty_value, 3)
         return (
             component_id,
-            remaining_display,
+            qty_value,
             row.get("batch") or None,
+            True,
+            "Info",
+            "Line details loaded below. Adjust quantity and issue material.",
         )
-
-    # Record QC
-    @app.callback(
-        Output("wo-qc-type-options", "data"),
-        Input("wo-main-tabs", "active_tab"),
-        prevent_initial_call=True,
-    )
-    def load_qc_types(active_tab):
-        """Load QC test type settings when entering detail view."""
-        if active_tab != "detail":
-            raise PreventUpdate
-
-        try:
-            url = f"{api_base_url}/work-orders/qc-test-types"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                return response.json()
-            return dash.no_update
-        except Exception as e:
-            print(f"Error loading QC test types: {e}")
-            return dash.no_update
 
     @app.callback(
         Output("wo-qc-test-type", "options"),
@@ -1726,16 +1311,32 @@ def register_work_orders_callbacks(
     )
     def set_qc_type_options(type_data):
         """Populate QC test type dropdown options."""
+        if type_data in (None, dash.no_update):
+            raise PreventUpdate
+
         if not type_data:
             return []
 
         options = []
         for item in type_data:
-            label = item.get("code") or item.get("name") or "Unknown"
-            unit = item.get("unit")
+            code = (item.get("code") or "").strip()
+            name = (item.get("name") or "").strip()
+            unit = (item.get("unit") or "").strip()
+
+            label_parts: List[str] = []
+            if code:
+                label_parts.append(code.upper())
+            if name and name.upper() != code.upper():
+                label_parts.append(name)
+            label = " — ".join(part for part in label_parts if part) or "Unknown"
             if unit:
                 label = f"{label} ({unit})"
-            options.append({"label": label, "value": item.get("id")})
+
+            option = {
+                "label": label,
+                "value": item.get("id"),
+            }
+            options.append(option)
         return options
 
     @app.callback(
@@ -1822,6 +1423,12 @@ def register_work_orders_callbacks(
             Output("wo-qc-toast", "header", allow_duplicate=True),
             Output("wo-qc-toast", "children", allow_duplicate=True),
             Output("wo-qc-current-id", "data", allow_duplicate=True),
+            Output("wo-qc-test-type", "value", allow_duplicate=True),
+            Output("wo-qc-result-value", "value", allow_duplicate=True),
+            Output("wo-qc-result-text", "value", allow_duplicate=True),
+            Output("wo-qc-status", "value", allow_duplicate=True),
+            Output("wo-qc-tester", "value", allow_duplicate=True),
+            Output("wo-qc-note", "value", allow_duplicate=True),
         ],
         Input("wo-qc-delete-btn", "n_clicks"),
         [
@@ -1892,6 +1499,12 @@ def register_work_orders_callbacks(
             Output("wo-qc-toast", "header", allow_duplicate=True),
             Output("wo-qc-toast", "children", allow_duplicate=True),
             Output("wo-qc-current-id", "data", allow_duplicate=True),
+            Output("wo-qc-test-type", "value", allow_duplicate=True),
+            Output("wo-qc-result-value", "value", allow_duplicate=True),
+            Output("wo-qc-result-text", "value", allow_duplicate=True),
+            Output("wo-qc-status", "value", allow_duplicate=True),
+            Output("wo-qc-tester", "value", allow_duplicate=True),
+            Output("wo-qc-note", "value", allow_duplicate=True),
         ],
         [Input("wo-qc-submit-btn", "n_clicks")],
         [
@@ -1927,6 +1540,12 @@ def register_work_orders_callbacks(
                 "Error",
                 "Test type is required",
                 dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
             )
 
         payload = {
@@ -1958,21 +1577,39 @@ def register_work_orders_callbacks(
                     "Success",
                     success_message,
                     None,
+                    None,
+                    None,
+                    "",
+                    "pending",
+                    "",
+                    "",
                 )
-            else:
-                error_msg = response.json().get("detail", "Unknown error")
-                return (
-                    True,
-                    "Error",
-                    f"Failed to save QC result: {error_msg}",
-                    current_qc_id,
-                )
-        except Exception as e:
+
+            error_msg = response.json().get("detail", "Unknown error")
             return (
                 True,
                 "Error",
-                f"Failed to save QC result: {str(e)}",
+                f"Failed to save QC result: {error_msg}",
                 current_qc_id,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+            )
+        except Exception as exc:
+            return (
+                True,
+                "Error",
+                f"Failed to save QC result: {str(exc)}",
+                current_qc_id,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
             )
 
     # Complete work order
@@ -1994,7 +1631,7 @@ def register_work_orders_callbacks(
         if not n_clicks or not wo_id:
             raise PreventUpdate
 
-        if not qty_produced:
+        if qty_produced in (None, ""):
             return (
                 True,
                 "Error",
@@ -2002,8 +1639,10 @@ def register_work_orders_callbacks(
             )
 
         try:
+            qty_value = float(qty_produced)
+
             data = {
-                "qty_produced": float(qty_produced),
+                "qty_produced": qty_value,
                 "batch_attrs": {},
             }
 
@@ -2011,18 +1650,45 @@ def register_work_orders_callbacks(
             response = requests.post(url, json=data, timeout=10)
 
             if response.status_code == 200:
+                payload = response.json()
+                message_body = payload.get("message") or (
+                    "Work order completion recorded"
+                    if qty_value < 0
+                    else "Work order completed successfully"
+                )
+                header = "Warning" if qty_value < 0 else "Success"
                 return (
                     True,
-                    "Success",
-                    "Work order completed successfully",
+                    header,
+                    message_body,
                 )
             else:
-                error_msg = response.json().get("detail", "Unknown error")
-                return (
-                    True,
-                    "Error",
-                    f"Failed to complete work order: {error_msg}",
+                try:
+                    error_payload = response.json()
+                except ValueError:
+                    error_payload = {}
+
+                detail = (
+                    error_payload.get("detail")
+                    if isinstance(error_payload, dict)
+                    else error_payload
                 )
+
+                if isinstance(detail, list):
+                    error_msg = "; ".join(
+                        item.get("msg", json.dumps(item))
+                        if isinstance(item, dict)
+                        else str(item)
+                        for item in detail
+                    )
+                elif isinstance(detail, dict):
+                    error_msg = detail.get("message") or json.dumps(detail)
+                elif detail:
+                    error_msg = str(detail)
+                else:
+                    error_msg = "Unknown error"
+
+                return (True, "Error", f"Failed to complete work order: {error_msg}")
         except Exception as e:
             return (
                 True,
@@ -2129,11 +1795,14 @@ def register_work_orders_callbacks(
             Input("wo-release-btn", "n_clicks"),
             Input("wo-start-btn", "n_clicks"),
             Input("wo-void-btn", "n_clicks"),
+            Input("wo-reopen-btn", "n_clicks"),
         ],
         [State("wo-detail-wo-id", "data")],
         prevent_initial_call=True,
     )
-    def work_order_actions(release_clicks, start_clicks, void_clicks, wo_id):
+    def work_order_actions(
+        release_clicks, start_clicks, void_clicks, reopen_clicks, wo_id
+    ):
         """Handle work order actions (release, start, void)."""
         ctx = dash.callback_context
         if not ctx.triggered or not wo_id:
@@ -2160,6 +1829,12 @@ def register_work_orders_callbacks(
                 url = f"{api_base_url}/work-orders/{wo_id}/void"
                 action = "voided"
                 data = {"reason": "Voided from UI"}
+            elif button_id == "wo-reopen-btn":
+                if not reopen_clicks:
+                    raise PreventUpdate
+                url = f"{api_base_url}/work-orders/{wo_id}/reopen"
+                action = "reopened"
+                data = {"reason": "Reopened from UI"}
             else:
                 raise PreventUpdate
 
@@ -2178,6 +1853,8 @@ def register_work_orders_callbacks(
                     "Error",
                     f"Failed to {action} work order: {error_msg}",
                 )
+        except PreventUpdate:
+            raise
         except Exception as e:
             return (
                 True,
@@ -2273,29 +1950,36 @@ def register_work_orders_callbacks(
             Output("wo-detail-content", "children", allow_duplicate=True),
             Output("wo-detail-content", "style", allow_duplicate=True),
             Output("wo-detail-wo-id", "data", allow_duplicate=True),
+            Output("wo-qc-type-options", "data", allow_duplicate=True),
         ],
         [
             Input("wo-issue-submit-btn", "n_clicks"),
+            Input("wo-add-input-submit-btn", "n_clicks"),
             Input("wo-qc-submit-btn", "n_clicks"),
             Input("wo-qc-delete-btn", "n_clicks"),
             Input("wo-complete-submit-btn", "n_clicks"),
             Input("wo-release-btn", "n_clicks"),
             Input("wo-start-btn", "n_clicks"),
             Input("wo-void-btn", "n_clicks"),
+            Input("wo-reopen-btn", "n_clicks"),
+            Input("wo-detail-refresh-trigger", "data"),
         ],
         [State("wo-detail-wo-id", "data"), State("wo-detail-active-tab", "data")],
         prevent_initial_call="initial_duplicate",
     )
     def refresh_detail_view(
         issue_clicks,
+        add_input_clicks,
         qc_clicks,
         _delete_qc_clicks,
         complete_clicks,
         release_clicks,
         start_clicks,
         void_clicks,
+        reopen_clicks,
+        _refresh_trigger,
         wo_id,
-        current_detail_tab,
+        current_detail_tab=None,
     ):
         """Refresh detail view after actions."""
         ctx = dash.callback_context
@@ -2308,6 +1992,10 @@ def register_work_orders_callbacks(
 
             if response.status_code == 200:
                 wo = response.json()
+                fetched_types = _fetch_qc_test_types()
+                qc_type_options = (
+                    fetched_types if fetched_types is not None else dash.no_update
+                )
                 return (
                     create_work_order_detail_layout(
                         wo,
@@ -2316,12 +2004,13 @@ def register_work_orders_callbacks(
                     ),
                     {"display": "block"},
                     wo_id,
+                    qc_type_options,
                 )
             else:
-                return no_update, no_update, no_update
+                return no_update, no_update, no_update, dash.no_update
         except Exception as e:
             print(f"Error refreshing detail: {e}")
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, dash.no_update
 
     # Detail tab content switching
     @app.callback(
@@ -2380,7 +2069,7 @@ def create_complete_form(visible: bool = False, uom: Optional[str] = None) -> ht
                                 id="wo-complete-qty",
                                 type="number",
                                 step=0.001,
-                                min=0,
+                                placeholder="Enter quantity (negative allowed)",
                             ),
                         ],
                         md=6,
@@ -2416,7 +2105,7 @@ def create_qc_section(
                             dash_table.DataTable(
                                 id="wo-qc-table",
                                 columns=[
-                                    {"name": "Test Type", "id": "test_type"},
+                                    {"name": "Test Type", "id": "test_type_display"},
                                     {
                                         "name": "Result Value",
                                         "id": "result_value",
@@ -2436,9 +2125,11 @@ def create_qc_section(
                                 style_cell={"padding": "0.5rem"},
                                 hidden_columns=[
                                     "id",
+                                    "test_type",
                                     "test_type_id",
                                     "status_raw",
                                     "tested_at_raw",
+                                    "sequence_index",
                                 ],
                                 sort_action="native",
                             ),
@@ -2566,9 +2257,64 @@ def create_qc_section(
 
 
 def create_costs_section(
-    visible: bool = False,
+    cost_data: Optional[Dict[str, Any]], visible: bool = False
 ) -> html.Div:
-    """Render the costs section (placeholder until detailed data is available)."""
+    """Render the costs section with actual material and overhead details."""
+
+    cost_data = cost_data or {}
+    material_lines = cost_data.get("material_lines") or []
+    material_cost = cost_data.get("material_cost")
+    overhead_cost = cost_data.get("overhead_cost")
+    total_cost = cost_data.get("total_cost")
+    qty_produced = cost_data.get("qty_produced")
+    unit_cost = cost_data.get("unit_cost")
+
+    material_table = dash_table.DataTable(
+        columns=[
+            {"name": "Component", "id": "component_label"},
+            {"name": "Product ID", "id": "component_product_id"},
+            {"name": "Actual Qty", "id": "actual_qty", "type": "numeric"},
+            {"name": "UOM", "id": "uom"},
+            {
+                "name": "Unit Cost",
+                "id": "unit_cost",
+                "type": "numeric",
+                "format": {"specifier": ".2f"},
+            },
+            {
+                "name": "Cost",
+                "id": "cost",
+                "type": "numeric",
+                "format": {"specifier": ".2f"},
+            },
+        ],
+        data=[
+            {
+                "component_label": line.get("component_label", ""),
+                "component_product_id": line.get("component_product_id", ""),
+                "actual_qty": line.get("actual_qty", 0),
+                "uom": line.get("uom", ""),
+                "unit_cost": float(line.get("unit_cost" or 0)),
+                "cost": float(line.get("cost" or 0)),
+            }
+            for line in material_lines
+        ],
+        style_table={"overflowX": "auto"},
+        style_cell={"padding": "0.5rem"},
+        sort_action="native",
+    )
+
+    summary_items = []
+    if material_cost is not None:
+        summary_items.append(html.Li(f"Material Cost: ${float(material_cost):.2f}"))
+    if overhead_cost is not None:
+        summary_items.append(html.Li(f"Overhead Cost: ${float(overhead_cost):.2f}"))
+    if total_cost is not None:
+        summary_items.append(html.Li(f"Total Cost: ${float(total_cost):.2f}"))
+    if qty_produced is not None:
+        summary_items.append(html.Li(f"Quantity Produced: {float(qty_produced):.3f}"))
+    if unit_cost is not None:
+        summary_items.append(html.Li(f"Unit Cost: ${float(unit_cost):.2f}"))
 
     return html.Div(
         [
@@ -2577,10 +2323,15 @@ def create_costs_section(
                     dbc.CardHeader("Costs"),
                     dbc.CardBody(
                         [
-                            html.P(
-                                "Cost summary will appear here once calculations are implemented.",
-                                className="text-muted",
-                            )
+                            html.H6("Materials", className="fw-bold"),
+                            material_table
+                            if material_lines
+                            else html.P("No material usage recorded."),
+                            html.Hr(),
+                            html.H6("Summary", className="fw-bold"),
+                            html.Ul(summary_items)
+                            if summary_items
+                            else html.P("No cost summary available."),
                         ]
                     ),
                 ]
@@ -2591,9 +2342,65 @@ def create_costs_section(
 
 
 def create_genealogy_section(
-    visible: bool = False,
+    genealogy_data: Optional[Dict[str, Any]], visible: bool = False
 ) -> html.Div:
-    """Render the genealogy section (placeholder until data is wired in)."""
+    """Render genealogy section with inventory movements."""
+
+    genealogy_data = genealogy_data or {}
+    movements = genealogy_data.get("movements") or []
+
+    movement_table = dash_table.DataTable(
+        columns=[
+            {"name": "Product", "id": "product_name"},
+            {"name": "Product ID", "id": "product_id"},
+            {
+                "name": "Quantity",
+                "id": "qty",
+                "type": "numeric",
+                "format": {"specifier": ".4f"},
+            },
+            {"name": "UOM", "id": "unit"},
+            {
+                "name": "Unit Cost",
+                "id": "unit_cost",
+                "type": "numeric",
+                "format": {"specifier": ".4f"},
+            },
+            {
+                "name": "Cost",
+                "id": "line_cost",
+                "type": "numeric",
+                "format": {"specifier": ".4f"},
+            },
+            {"name": "Direction", "id": "direction"},
+            {"name": "Type", "id": "move_type"},
+            {"name": "Timestamp", "id": "timestamp"},
+            {"name": "Note", "id": "note"},
+        ],
+        data=[
+            {
+                "product_name": move.get("product_name")
+                or move.get("product_id")
+                or "",
+                "product_id": move.get("product_id", ""),
+                "qty": abs(float(move.get("qty", 0))),
+                "unit": move.get("unit", ""),
+                "unit_cost": float(move.get("unit_cost", 0)),
+                "line_cost": abs(float(move.get("qty", 0)))
+                * float(move.get("unit_cost", 0)),
+                "direction": move.get("direction", ""),
+                "move_type": move.get("move_type", ""),
+                "timestamp": move.get("timestamp", ""),
+                "note": move.get("note", ""),
+            }
+            for move in movements
+        ],
+        style_table={"overflowX": "auto"},
+        style_cell={"padding": "0.5rem"},
+        sort_action="native",
+    )
+
+    style = {"display": "block" if visible else "none"}
 
     return html.Div(
         [
@@ -2602,16 +2409,16 @@ def create_genealogy_section(
                     dbc.CardHeader("Genealogy"),
                     dbc.CardBody(
                         [
-                            html.P(
-                                "Genealogy details will be shown here once tracking is available.",
-                                className="text-muted",
-                            )
+                            html.H6("Inventory Movements", className="fw-bold"),
+                            movement_table
+                            if movements
+                            else html.P("No inventory movements recorded."),
                         ]
                     ),
                 ]
             )
         ],
-        style={"display": "block"} if visible else {"display": "none"},
+        style=style,
     )
 
 
@@ -2630,11 +2437,12 @@ def build_detail_tab_content(
 
     status = raw_status if raw_status is not None else (wo.get("status") or "").lower()
     allow_issue_edit = status not in {"complete", "void"}
-    allow_complete = status not in {"draft", "void", "complete"}
+    allow_complete = status not in {"draft", "void"}  # allow complete when reopened
     output_uom = wo.get("uom") or ""
 
     qc_tests = wo.get("qc_tests", []) or []
     qc_table_data: List[Dict[str, Any]] = []
+    type_instances: Dict[str, int] = {}
     for qc in qc_tests:
         tested_at_raw = qc.get("tested_at")
         if tested_at_raw:
@@ -2647,10 +2455,20 @@ def build_detail_tab_content(
         else:
             tested_at_display = ""
 
+        type_key = f"{qc.get('test_type_id') or ''}__{(qc.get('test_type') or '').strip().lower()}"
+        instance_index = type_instances.get(type_key, 0) + 1
+        type_instances[type_key] = instance_index
+
+        raw_test_type = qc.get("test_type", "") or ""
+        display_test_type = raw_test_type
+        if instance_index > 1:
+            display_test_type = f"{raw_test_type} #{instance_index}".strip()
+
         qc_table_data.append(
             {
                 "id": qc.get("id"),
-                "test_type": qc.get("test_type", ""),
+                "test_type_display": display_test_type,
+                "test_type": raw_test_type,
                 "test_type_id": qc.get("test_type_id"),
                 "result_value": safe_float(qc.get("result_value")),
                 "result_text": qc.get("result_text", ""),
@@ -2661,8 +2479,29 @@ def build_detail_tab_content(
                 "tested_at_raw": tested_at_raw,
                 "tester": qc.get("tester", "") or "",
                 "note": qc.get("note", "") or "",
+                "sequence_index": instance_index,
             }
         )
+
+    cost_data = None
+    genealogy_data = None
+    wo_id = wo.get("id")
+    if wo_id:
+        try:
+            cost_url = f"{api_base_url}/work-orders/{wo_id}/costs"
+            cost_response = requests.get(cost_url, timeout=5)
+            if cost_response.status_code == 200:
+                cost_data = cost_response.json()
+        except Exception:
+            cost_data = None
+
+        try:
+            genealogy_url = f"{api_base_url}/work-orders/{wo_id}/genealogy"
+            genealogy_response = requests.get(genealogy_url, timeout=5)
+            if genealogy_response.status_code == 200:
+                genealogy_data = genealogy_response.json()
+        except Exception:
+            genealogy_data = None
 
     return html.Div(
         [
@@ -2679,8 +2518,13 @@ def build_detail_tab_content(
                 table_data=qc_table_data,
                 visible=active_tab == "wo-detail-qc",
             ),
-            create_costs_section(visible=active_tab == "wo-detail-costs"),
-            create_genealogy_section(visible=active_tab == "wo-detail-genealogy"),
+            create_costs_section(
+                cost_data=cost_data, visible=active_tab == "wo-detail-costs"
+            ),
+            create_genealogy_section(
+                genealogy_data=genealogy_data,
+                visible=active_tab == "wo-detail-genealogy",
+            ),
             create_complete_form(
                 visible=active_tab == "wo-detail-outputs" and allow_complete,
                 uom=output_uom,
@@ -2704,14 +2548,26 @@ def create_issue_section(
         [
             dbc.Col(html.H5("Input Materials"), md=6),
             dbc.Col(
-                dbc.Button(
-                    "Edit Selected",
-                    id="wo-inputs-edit-btn",
-                    outline=True,
-                    color="secondary",
-                    size="sm",
-                    className="float-end",
-                    disabled=not allow_edit,
+                html.Div(
+                    [
+                        dbc.Button(
+                            "Add Line",
+                            id="wo-inputs-add-btn",
+                            color="info",
+                            size="sm",
+                            className="me-2",
+                            disabled=not allow_edit,
+                        ),
+                        dbc.Button(
+                            "Edit Selected",
+                            id="wo-inputs-edit-btn",
+                            outline=True,
+                            color="secondary",
+                            size="sm",
+                            disabled=not allow_edit,
+                        ),
+                    ],
+                    className="d-flex justify-content-end",
                 ),
                 md=6,
             ),
@@ -2775,6 +2631,21 @@ def create_issue_section(
     body_children.extend(
         [
             table,
+            html.Div(
+                [
+                    html.Strong("Totals:"),
+                    html.Span(
+                        f" Planned {sum(safe_float(row.get('planned_qty')) or 0 for row in table_data):.3f}"
+                    ),
+                    html.Span(
+                        f" Actual {sum(safe_float(row.get('actual_qty')) or 0 for row in table_data):.3f}"
+                    ),
+                    html.Span(
+                        f" Remaining {sum(safe_float(row.get('remaining_qty')) or 0 for row in table_data):.3f}"
+                    ),
+                ],
+                className="d-flex gap-3 mb-2 fw-semibold",
+            ),
             html.Hr(className="my-3"),
             html.H6("Add Additional Material"),
             html.P(
@@ -2803,7 +2674,7 @@ def create_issue_section(
                                 id="wo-issue-qty",
                                 type="number",
                                 step=0.001,
-                                min=0,
+                                placeholder="Use negative to reduce issued qty",
                                 disabled=not allow_edit,
                             ),
                         ],
@@ -2926,6 +2797,7 @@ def create_work_order_detail_layout(
     raw_status = (wo.get("status") or "").lower()
     badge_color = status_colors.get(raw_status, "secondary")
     status_display = (wo.get("status") or "").replace("_", " ").title()
+    allow_issue_edit = raw_status not in {"complete", "void"}
 
     tab_content = build_detail_tab_content(
         wo, api_base_url, active_tab, raw_status=raw_status
@@ -2956,7 +2828,12 @@ def create_work_order_detail_layout(
                         dbc.Card(
                             [
                                 dbc.CardHeader("Product"),
-                                dbc.CardBody(html.P(wo.get("product_id", ""))),
+                                dbc.CardBody(
+                                    html.P(
+                                        wo.get("product_name")
+                                        or wo.get("product_id", "")
+                                    )
+                                ),
                             ]
                         ),
                         md=4,
@@ -3006,6 +2883,13 @@ def create_work_order_detail_layout(
                                 disabled=raw_status not in ["released"],
                             ),
                             dbc.Button(
+                                "Reopen Work Order",
+                                id="wo-reopen-btn",
+                                color="warning",
+                                className="me-2",
+                                disabled=raw_status != "complete",
+                            ),
+                            dbc.Button(
                                 "Void Work Order",
                                 id="wo-void-btn",
                                 color="danger",
@@ -3031,6 +2915,45 @@ def create_work_order_detail_layout(
                 className="mb-3",
             ),
             html.Div(tab_content, id="wo-detail-tab-content"),
+            dcc.Store(id="wo-detail-allow-input-edit", data=allow_issue_edit),
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label(
+                                        "Adjust Planned Quantity", className="fw-bold"
+                                    ),
+                                    dbc.Input(
+                                        id="wo-planned-qty-input",
+                                        type="number",
+                                        step=0.001,
+                                        value=float(wo.get("planned_qty", 0) or 0),
+                                        disabled=raw_status != "draft",
+                                    ),
+                                    dbc.FormText(f"UOM: {wo.get('uom', 'KG')}"),
+                                ],
+                                md=6,
+                            ),
+                            dbc.Col(
+                                dbc.Button(
+                                    "Save Planned Quantity",
+                                    id="wo-planned-qty-save",
+                                    color="primary",
+                                    className="mt-4",
+                                    disabled=raw_status != "draft",
+                                ),
+                                md=3,
+                            ),
+                        ],
+                        className="mb-3",
+                        style={"display": "flex" if raw_status == "draft" else "none"},
+                    ),
+                ],
+                id="wo-planned-qty-wrapper",
+                style={"display": "block" if raw_status == "draft" else "none"},
+            ),
         ],
         fluid=True,
     )

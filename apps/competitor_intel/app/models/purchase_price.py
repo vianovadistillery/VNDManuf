@@ -13,7 +13,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .sku import SKU
 
 
-class ManufacturingCost(UUIDStringMixin, TimestampMixin, Base):
+class PurchasePrice(UUIDStringMixin, TimestampMixin, Base):
     __tablename__ = "manufacturing_costs"
 
     sku_id: Mapped[str] = mapped_column(
@@ -29,19 +29,14 @@ class ManufacturingCost(UUIDStringMixin, TimestampMixin, Base):
     effective_date: Mapped[date] = mapped_column(sa.Date, nullable=False)
     notes: Mapped[str | None] = mapped_column(sa.Text())
 
-    sku: Mapped["SKU"] = relationship("SKU", back_populates="manufacturing_costs")
+    sku: Mapped["SKU"] = relationship("SKU", back_populates="purchase_prices")
 
     __table_args__ = (
         sa.CheckConstraint(
-            "cost_type IN ('estimated','known')", name="ck_manufacturing_costs_type"
-        ),
-        sa.UniqueConstraint(
-            "sku_id",
-            "cost_type",
-            "effective_date",
-            name="uq_manufacturing_costs_sku_type_effective",
+            "cost_type IN ('estimated','known')",
+            name="ck_manufacturing_costs_type",
         ),
     )
 
 
-__all__ = ["ManufacturingCost"]
+__all__ = ["PurchasePrice"]

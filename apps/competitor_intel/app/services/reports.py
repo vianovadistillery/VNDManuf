@@ -15,10 +15,10 @@ from ..models import (
     Brand,
     Company,
     Location,
-    ManufacturingCost,
     PackageSpec,
     PriceObservation,
     Product,
+    PurchasePrice,
 )
 from .dedupe import find_duplicate_groups
 
@@ -115,15 +115,15 @@ def get_kpis(session: Session) -> dict[str, int]:
         .count()
     )
     known_costs = session.execute(
-        select(func.count(func.distinct(ManufacturingCost.sku_id))).where(
-            ManufacturingCost.deleted_at.is_(None),
-            ManufacturingCost.cost_type == "known",
+        select(func.count(func.distinct(PurchasePrice.sku_id))).where(
+            PurchasePrice.deleted_at.is_(None),
+            PurchasePrice.cost_type == "known",
         )
     ).scalar_one()
     estimated_costs = session.execute(
-        select(func.count(func.distinct(ManufacturingCost.sku_id))).where(
-            ManufacturingCost.deleted_at.is_(None),
-            ManufacturingCost.cost_type == "estimated",
+        select(func.count(func.distinct(PurchasePrice.sku_id))).where(
+            PurchasePrice.deleted_at.is_(None),
+            PurchasePrice.cost_type == "estimated",
         )
     ).scalar_one()
     return {
@@ -240,9 +240,7 @@ def get_price_time_series(session: Session, filters: ObservationFilters) -> list
             "sku_id": sku_id,
             "sku_label": f"{brand_name} - {product_name}",
             "avg_price": float(avg_price) if avg_price is not None else None,
-            "avg_gp_pct": float(avg_gp_pct * Decimal("100"))
-            if avg_gp_pct is not None
-            else None,
+            "avg_gp_pct": float(avg_gp_pct) * 100 if avg_gp_pct is not None else None,
             "samples": samples,
         }
         for period, sku_id, product_name, brand_name, avg_price, avg_gp_pct, samples in rows
@@ -268,9 +266,7 @@ def get_price_distribution(session: Session, filters: ObservationFilters) -> lis
         {
             "company": company or "Unknown",
             "avg_price_per_litre": float(avg_price) if avg_price is not None else None,
-            "avg_gp_pct": float(avg_gp_pct * Decimal("100"))
-            if avg_gp_pct is not None
-            else None,
+            "avg_gp_pct": float(avg_gp_pct) * 100 if avg_gp_pct is not None else None,
             "samples": samples,
         }
         for company, avg_price, avg_gp_pct, samples in rows

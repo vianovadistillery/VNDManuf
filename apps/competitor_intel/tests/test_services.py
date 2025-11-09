@@ -132,7 +132,7 @@ def test_normalize_price_includes_costs():
         product=product,
         package_spec=package_spec,
         pack_assignment=SimpleNamespace(pack_spec=pack_spec),
-        manufacturing_costs=[estimated_cost, known_cost],
+        purchase_prices=[estimated_cost, known_cost],
     )
     normalized = normalize_price(
         sku=sku,

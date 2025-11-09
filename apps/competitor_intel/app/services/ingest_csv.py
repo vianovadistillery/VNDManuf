@@ -24,7 +24,7 @@ from ..models import (
     SKUPack,
 )
 from . import normalize
-from .costs import upsert_cost
+from .costs import create_purchase_price
 from .dedupe import apply_hash_to_observation
 
 
@@ -114,7 +114,7 @@ class SKUImporter:
             package_spec.can_form_factor = row["can_form_factor"].strip()
         pack_spec = self._handle_pack_configuration(sku, package_spec, row)
         self._handle_carton_configuration(sku, package_spec, pack_spec, row)
-        self._handle_costs(sku, row)
+        self._handle_purchase_prices(sku, row)
         return created
 
     def _get_or_create_brand(self, name: str) -> Brand:
@@ -248,40 +248,44 @@ class SKUImporter:
         if spec is not None:
             self._ensure_sku_carton(sku, spec)
 
-    def _handle_costs(self, sku: SKU, row: dict) -> None:
-        cost_type_raw = self._optional_str(row.get("cost_type"))
-        if not cost_type_raw:
+    def _handle_purchase_prices(self, sku: SKU, row: dict) -> None:
+        price_type_raw = self._optional_str(row.get("purchase_price_type"))
+        if not price_type_raw:
             return
-        effective_date_value = self._optional_str(row.get("cost_effective_date"))
+        effective_date_value = self._optional_str(
+            row.get("purchase_price_effective_date")
+        )
         if not effective_date_value:
             raise ValueError(
-                "cost_effective_date is required when cost_type is provided"
+                "purchase_price_effective_date is required when purchase_price_type is provided"
             )
         if getattr(sku, "id", None) is None:
             self.session.flush([sku])
-        cost_per_unit = self._optional_decimal(
-            row.get("cost_per_unit"), quant=Decimal("0.0001")
+        price_per_unit = self._optional_decimal(
+            row.get("purchase_price_per_unit"), quant=Decimal("0.0001")
         )
-        cost_per_pack = self._optional_decimal(
-            row.get("cost_per_pack"), quant=Decimal("0.0001")
+        price_per_pack = self._optional_decimal(
+            row.get("purchase_price_per_pack"), quant=Decimal("0.0001")
         )
-        cost_per_carton = self._optional_decimal(
-            row.get("cost_per_carton"), quant=Decimal("0.0001")
+        price_per_carton = self._optional_decimal(
+            row.get("purchase_price_per_carton"), quant=Decimal("0.0001")
         )
-        cost_currency = (self._optional_str(row.get("cost_currency")) or "AUD").upper()
-        notes = self._optional_str(row.get("cost_notes"))
-        cost = upsert_cost(
+        currency = (
+            self._optional_str(row.get("purchase_price_currency")) or "AUD"
+        ).upper()
+        notes = self._optional_str(row.get("purchase_price_notes"))
+        price = create_purchase_price(
             self.session,
             sku_id=sku.id,
-            cost_type=cost_type_raw,
+            cost_type=price_type_raw,
             effective_date=self._parse_date(effective_date_value),
-            cost_currency=cost_currency,
-            cost_per_unit=cost_per_unit,
-            cost_per_pack=cost_per_pack,
-            cost_per_carton=cost_per_carton,
+            cost_currency=currency,
+            cost_per_unit=price_per_unit,
+            cost_per_pack=price_per_pack,
+            cost_per_carton=price_per_carton,
             notes=notes,
         )
-        self.session.flush([cost])
+        self.session.flush([price])
 
     def _get_or_create_pack_spec(
         self,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
 
@@ -15,7 +15,6 @@ from ...models import (
     Brand,
     CartonSpec,
     Company,
-    ManufacturingCost,
     PackageSpec,
     PackSpec,
     PriceObservation,
@@ -23,7 +22,7 @@ from ...models import (
     SKUCarton,
     SKUPack,
 )
-from ...services.costs import upsert_cost
+from ...models.product import PRODUCT_CATEGORY_DETAILS
 from ...services.db import session_scope
 from ..components import data_table, loading_wrapper, modal_form
 
@@ -33,7 +32,6 @@ PACKAGE_TABLE_ID = "skus-table-packages"
 SKU_TABLE_ID = "skus-table-skus"
 CARTON_TABLE_ID = "skus-table-cartons"
 PACK_TABLE_ID = "skus-table-packs"
-COST_TABLE_ID = "skus-table-costs"
 
 REFRESH_STORE_ID = "skus-refresh-store"
 
@@ -53,6 +51,270 @@ BASIS_OPTIONS = [
 ALLOWED_CAN_FORM_FACTORS = {"slim", "sleek", "classic"}
 
 
+def _accordion_header_actions(title: str, buttons: List[dbc.Button]) -> html.Div:
+    return html.Div(
+        [
+            html.Div(title, className="fw-semibold"),
+            dbc.ButtonGroup(buttons, className="ms-auto"),
+        ],
+        className="d-flex align-items-center justify-content-between mb-3",
+    )
+
+
+def _normalize_category_value(category: str | None) -> str:
+    if not category:
+        return ""
+    if category == "rtd_can":
+        return "gin_rtd"
+    return category
+
+
+def _format_category_label(category: str | None) -> str:
+    normalized = _normalize_category_value(category)
+    detail = PRODUCT_CATEGORY_DETAILS.get(normalized)
+    if detail:
+        spirit = detail["spirit"].title()
+        fmt = detail["format"]
+        format_label = "RTD" if fmt == "rtd" else fmt.title()
+        return f"{spirit} {format_label}"
+    if normalized:
+        return normalized.replace("_", " ").title()
+    return ""
+
+
+def _product_modal() -> dbc.Modal:
+    options = _load_filter_options()
+    body = [
+        dbc.Select(
+            id="skus-add-product-brand",
+            options=options["brands"],
+            placeholder="Select brand",
+        ),
+        dbc.Input(
+            id="skus-add-product-name",
+            placeholder="Product name",
+            className="mt-3",
+        ),
+        dbc.Select(
+            id="skus-add-product-category",
+            options=[
+                {"label": "Gin Bottle", "value": "gin_bottle"},
+                {"label": "Gin RTD", "value": "gin_rtd"},
+                {"label": "Vodka Bottle", "value": "vodka_bottle"},
+                {"label": "Vodka RTD", "value": "vodka_rtd"},
+            ],
+            placeholder="Category",
+            className="mt-3",
+        ),
+        dbc.Input(
+            id="skus-add-product-abv",
+            type="number",
+            step=0.1,
+            placeholder="ABV %",
+            className="mt-3",
+        ),
+    ]
+    return modal_form(
+        "skus-add-product-modal",
+        "Add Product",
+        body,
+        submit_id="skus-add-product-submit",
+        close_id="skus-add-product-cancel",
+        size="md",
+    )
+
+
+def _package_modal() -> dbc.Modal:
+    body = [
+        dbc.RadioItems(
+            id="skus-add-package-type",
+            options=[
+                {"label": "Bottle", "value": "bottle"},
+                {"label": "Can", "value": "can"},
+            ],
+            value="bottle",
+            inline=True,
+        ),
+        dbc.Input(
+            id="skus-add-package-volume",
+            type="number",
+            placeholder="Container volume (mL)",
+            className="mt-3",
+        ),
+        dbc.Select(
+            id="skus-add-package-form",
+            options=[
+                {"label": "Slim", "value": "slim"},
+                {"label": "Sleek", "value": "sleek"},
+                {"label": "Classic", "value": "classic"},
+            ],
+            placeholder="Can form factor",
+            className="mt-3",
+        ),
+    ]
+    return modal_form(
+        "skus-add-package-modal",
+        "Add Package Spec",
+        body,
+        submit_id="skus-add-package-submit",
+        close_id="skus-add-package-cancel",
+        size="md",
+    )
+
+
+def _sku_modal() -> dbc.Modal:
+    options = _load_filter_options()
+    body = [
+        dbc.Select(
+            id="skus-add-sku-product",
+            options=options["products"],
+            placeholder="Select product",
+        ),
+        dbc.Select(
+            id="skus-add-sku-package",
+            options=options["packages"],
+            placeholder="Select package spec",
+            className="mt-3",
+        ),
+        dbc.Input(
+            id="skus-add-sku-gtin",
+            placeholder="SKU GTIN",
+            className="mt-3",
+        ),
+        dbc.Checklist(
+            id="skus-add-sku-active",
+            options=[{"label": "Active", "value": 1}],
+            value=[1],
+            className="mt-3",
+            switch=True,
+        ),
+        dbc.Select(
+            id="skus-add-sku-carton",
+            options=options["cartons"],
+            placeholder="Link carton spec (optional)",
+            className="mt-3",
+        ),
+    ]
+    return modal_form(
+        "skus-add-sku-modal",
+        "Add SKU",
+        body,
+        submit_id="skus-add-sku-submit",
+        close_id="skus-add-sku-cancel",
+        size="md",
+    )
+
+
+def _pack_modal() -> dbc.Modal:
+    options = _load_filter_options()
+    body = [
+        dbc.Select(
+            id="skus-add-pack-package",
+            options=options["packages"],
+            placeholder="Select package spec",
+        ),
+        dbc.Input(
+            id="skus-add-pack-units",
+            type="number",
+            placeholder="Units per pack",
+            className="mt-3",
+        ),
+        dbc.Input(
+            id="skus-add-pack-gtin",
+            placeholder="Pack GTIN",
+            className="mt-3",
+        ),
+        dbc.Textarea(
+            id="skus-add-pack-notes",
+            placeholder="Notes",
+            className="mt-3",
+        ),
+    ]
+    return modal_form(
+        "skus-add-pack-modal",
+        "Add Pack Spec",
+        body,
+        submit_id="skus-add-pack-submit",
+        close_id="skus-add-pack-cancel",
+        size="md",
+    )
+
+
+def _carton_modal() -> dbc.Modal:
+    options = _load_filter_options()
+    body = [
+        dbc.RadioItems(
+            id="skus-add-carton-mode",
+            options=[
+                {"label": "Unit carton", "value": "unit"},
+                {"label": "Pack carton", "value": "pack"},
+            ],
+            value="unit",
+            inline=True,
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Select(
+                        id="skus-add-carton-package",
+                        options=options["packages"],
+                        placeholder="Package spec (unit cartons)",
+                    ),
+                    md=6,
+                ),
+                dbc.Col(
+                    dbc.Select(
+                        id="skus-add-carton-pack",
+                        options=options["packs"],
+                        placeholder="Pack spec (pack cartons)",
+                    ),
+                    md=6,
+                ),
+            ],
+            className="mt-3 g-2",
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Input(
+                        id="skus-add-carton-units",
+                        type="number",
+                        placeholder="Units per carton",
+                    ),
+                    md=6,
+                ),
+                dbc.Col(
+                    dbc.Input(
+                        id="skus-add-carton-pack-count",
+                        type="number",
+                        placeholder="Pack count",
+                    ),
+                    md=6,
+                ),
+            ],
+            className="mt-3 g-2",
+        ),
+        dbc.Input(
+            id="skus-add-carton-gtin",
+            placeholder="Carton GTIN",
+            className="mt-3",
+        ),
+        dbc.Textarea(
+            id="skus-add-carton-notes",
+            placeholder="Notes",
+            className="mt-3",
+        ),
+    ]
+    return modal_form(
+        "skus-add-carton-modal",
+        "Add Carton Spec",
+        body,
+        submit_id="skus-add-carton-submit",
+        close_id="skus-add-carton-cancel",
+        size="md",
+    )
+
+
 def layout() -> dbc.Container:
     data = _load_table_data()
     brand_options_full = _load_brand_options(include_deleted=True)
@@ -61,393 +323,253 @@ def layout() -> dbc.Container:
     sku_options_full = _load_sku_options(include_deleted=True)
     pack_options_full = _load_pack_options(include_deleted=True)
     carton_options_full = _load_carton_options(include_deleted=True)
-    cost_options_full = _load_cost_options(include_deleted=True)
     return dbc.Container(
         [
             dcc.Store(id=REFRESH_STORE_ID, data={"ts": datetime.utcnow().isoformat()}),
             html.H2("Catalog Management", className="mb-4"),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Brand",
-                            id="skus-open-add-brand",
-                            color="primary",
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Edit Brand",
-                            id="skus-open-edit-brand",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Product",
-                            id="skus-open-add-product",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Package Spec",
-                            id="skus-open-add-package",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add SKU",
-                            id="skus-open-add-sku",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Carton Spec",
-                            id="skus-open-add-carton",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Pack Spec",
-                            id="skus-open-add-pack",
-                            color="primary",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Add Manufacturing Cost",
-                            id="skus-open-add-cost",
-                            color="success",
-                            outline=True,
-                            className="mb-2",
-                        ),
-                        md="auto",
-                    ),
-                ],
-                className="g-2 mb-3",
-            ),
             dbc.Accordion(
                 [
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-brands-wrapper",
-                            data_table(
-                                BRAND_TABLE_ID,
-                                columns=[
-                                    {"id": "name", "name": "Name"},
-                                    {"id": "owner_company", "name": "Owner"},
-                                    {"id": "product_count", "name": "Products"},
-                                ],
-                                data=data["brands"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Brands", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-brand",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-brand",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "Brands",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-brand",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-brand",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
+                                    ),
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-brands-wrapper",
+                                data_table(
+                                    BRAND_TABLE_ID,
+                                    columns=[
+                                        {"id": "name", "name": "Name"},
+                                        {"id": "owner_company", "name": "Owner"},
+                                        {"id": "product_count", "name": "Products"},
+                                    ],
+                                    data=data["brands"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="Brands",
                     ),
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-products-wrapper",
-                            data_table(
-                                PRODUCT_TABLE_ID,
-                                columns=[
-                                    {"id": "name", "name": "Product"},
-                                    {"id": "brand", "name": "Brand"},
-                                    {"id": "category", "name": "Category"},
-                                    {"id": "abv_percent", "name": "ABV %"},
-                                ],
-                                data=data["products"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Products", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-product",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-product",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "Products",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-product",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-product",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
+                                    ),
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-products-wrapper",
+                                data_table(
+                                    PRODUCT_TABLE_ID,
+                                    columns=[
+                                        {"id": "name", "name": "Product"},
+                                        {"id": "brand", "name": "Brand"},
+                                        {"id": "category", "name": "Category"},
+                                        {"id": "abv_percent", "name": "ABV %"},
+                                    ],
+                                    data=data["products"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="Products",
                     ),
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-packages-wrapper",
-                            data_table(
-                                PACKAGE_TABLE_ID,
-                                columns=[
-                                    {"id": "type", "name": "Type"},
-                                    {"id": "container_ml", "name": "Container (mL)"},
-                                    {"id": "can_form_factor", "name": "Form Factor"},
-                                ],
-                                data=data["packages"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Package Specs", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-package",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-package",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "Package Specs",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-package",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-package",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
+                                    ),
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-packages-wrapper",
+                                data_table(
+                                    PACKAGE_TABLE_ID,
+                                    columns=[
+                                        {"id": "type", "name": "Type"},
+                                        {
+                                            "id": "container_ml",
+                                            "name": "Container (mL)",
+                                        },
+                                        {
+                                            "id": "can_form_factor",
+                                            "name": "Form Factor",
+                                        },
+                                    ],
+                                    data=data["packages"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="Package Specs",
                     ),
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-packs-wrapper",
-                            data_table(
-                                PACK_TABLE_ID,
-                                columns=[
-                                    {"id": "package", "name": "Package"},
-                                    {"id": "units_per_pack", "name": "Units per Pack"},
-                                    {"id": "gtin", "name": "Pack GTIN"},
-                                    {"id": "sku_count", "name": "Linked SKUs"},
-                                    {"id": "carton_variants", "name": "Cartons"},
-                                ],
-                                data=data["packs"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Pack Specs", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-pack",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-pack",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "Pack Specs",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-pack",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-pack",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
+                                    ),
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-packs-wrapper",
+                                data_table(
+                                    PACK_TABLE_ID,
+                                    columns=[
+                                        {"id": "package", "name": "Package"},
+                                        {
+                                            "id": "units_per_pack",
+                                            "name": "Units per Pack",
+                                        },
+                                        {"id": "gtin", "name": "Pack GTIN"},
+                                        {"id": "sku_count", "name": "Linked SKUs"},
+                                        {"id": "carton_variants", "name": "Cartons"},
+                                    ],
+                                    data=data["packs"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="Pack Specs",
                     ),
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-skus-wrapper",
-                            data_table(
-                                SKU_TABLE_ID,
-                                columns=[
-                                    {"id": "product", "name": "Product"},
-                                    {"id": "package", "name": "Package"},
-                                    {"id": "gtin", "name": "GTIN"},
-                                    {"id": "is_active", "name": "Active"},
-                                ],
-                                data=data["skus"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("SKUs", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-sku",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-sku",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "SKUs",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-sku",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-sku",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
+                                    ),
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-skus-wrapper",
+                                data_table(
+                                    SKU_TABLE_ID,
+                                    columns=[
+                                        {"id": "product", "name": "Product"},
+                                        {"id": "package", "name": "Package"},
+                                        {"id": "gtin", "name": "GTIN"},
+                                        {"id": "is_active", "name": "Active"},
+                                    ],
+                                    data=data["skus"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="SKUs",
                     ),
                     dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-cartons-wrapper",
-                            data_table(
-                                CARTON_TABLE_ID,
-                                columns=[
-                                    {
-                                        "id": "units_per_carton",
-                                        "name": "Units per Carton",
-                                    },
-                                    {"id": "notes", "name": "Notes"},
-                                ],
-                                data=data["cartons"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Carton Specs", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-carton",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-carton",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                        [
+                            _accordion_header_actions(
+                                "Carton Specs",
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="skus-open-add-carton",
+                                        color="primary",
+                                        size="sm",
                                     ),
-                                    width="auto",
-                                ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
-                    ),
-                    dbc.AccordionItem(
-                        loading_wrapper(
-                            "skus-costs-wrapper",
-                            data_table(
-                                COST_TABLE_ID,
-                                columns=[
-                                    {"id": "sku", "name": "SKU"},
-                                    {"id": "cost_type", "name": "Type"},
-                                    {"id": "effective_date", "name": "Effective"},
-                                    {"id": "unit_cost", "name": "Unit Cost"},
-                                    {"id": "pack_cost", "name": "Pack Cost"},
-                                    {"id": "carton_cost", "name": "Carton Cost"},
-                                    {"id": "currency", "name": "Currency"},
-                                ],
-                                data=data["costs"],
-                            ),
-                        ),
-                        title=dbc.Row(
-                            [
-                                dbc.Col("Manufacturing Costs", className="fw-semibold"),
-                                dbc.Col(
-                                    dbc.ButtonGroup(
-                                        [
-                                            dbc.Button(
-                                                "Add",
-                                                id="skus-open-add-cost",
-                                                color="primary",
-                                                size="sm",
-                                            ),
-                                            dbc.Button(
-                                                "Edit",
-                                                id="skus-open-edit-cost",
-                                                color="secondary",
-                                                outline=True,
-                                                size="sm",
-                                            ),
-                                        ]
+                                    dbc.Button(
+                                        "Edit",
+                                        id="skus-open-edit-carton",
+                                        color="secondary",
+                                        outline=True,
+                                        size="sm",
                                     ),
-                                    width="auto",
+                                ],
+                            ),
+                            loading_wrapper(
+                                "skus-cartons-wrapper",
+                                data_table(
+                                    CARTON_TABLE_ID,
+                                    columns=[
+                                        {"id": "mode", "name": "Mode"},
+                                        {"id": "package_label", "name": "Package Spec"},
+                                        {"id": "pack_label", "name": "Pack Spec"},
+                                        {"id": "pack_count", "name": "Pack Count"},
+                                        {
+                                            "id": "units_per_carton",
+                                            "name": "Units / Carton",
+                                        },
+                                        {"id": "gtin", "name": "GTIN"},
+                                        {"id": "notes", "name": "Notes"},
+                                    ],
+                                    data=data["cartons"],
+                                    paginated=True,
+                                    page_size=25,
                                 ),
-                            ],
-                            align="center",
-                            className="g-2",
-                        ),
+                            ),
+                        ],
+                        title="Carton Specs",
                     ),
                 ],
                 start_collapsed=False,
@@ -468,8 +590,6 @@ def layout() -> dbc.Container:
             ),
             _pack_modal(),
             _edit_pack_modal(package_options_full, pack_options_full),
-            _cost_modal(),
-            _edit_cost_modal(cost_options_full, sku_options_full),
             dbc.Toast(
                 id="skus-toast",
                 header="Catalog",
@@ -491,15 +611,14 @@ def register_callbacks(app):  # pragma: no cover - Dash wiring
         Output(SKU_TABLE_ID, "data"),
         Output(PACK_TABLE_ID, "data"),
         Output(CARTON_TABLE_ID, "data"),
-        Output(COST_TABLE_ID, "data"),
         Output("skus-edit-brand-select", "options"),
         Output("skus-edit-product-select", "options"),
         Output("skus-edit-package-select", "options"),
         Output("skus-edit-sku-select", "options"),
         Output("skus-edit-pack-select", "options"),
         Output("skus-edit-carton-select", "options"),
-        Output("skus-edit-cost-select", "options"),
         Input(REFRESH_STORE_ID, "data"),
+        prevent_initial_call="initial_duplicate",
     )
     def refresh_tables(_refresh):
         data = _load_table_data()
@@ -510,14 +629,12 @@ def register_callbacks(app):  # pragma: no cover - Dash wiring
             data["skus"],
             data["packs"],
             data["cartons"],
-            data["costs"],
             _load_brand_options(include_deleted=True),
             _load_product_options(include_deleted=True),
             _load_package_options(include_deleted=True),
             _load_sku_options(include_deleted=True),
             _load_pack_options(include_deleted=True),
             _load_carton_options(include_deleted=True),
-            _load_cost_options(include_deleted=True),
         )
 
     _register_modal_callbacks(app)
@@ -573,12 +690,6 @@ def _register_modal_callbacks(app):
     _modal_toggle(
         app, "skus-open-edit-pack", "skus-edit-pack-cancel", "skus-edit-pack-modal"
     )
-    _modal_toggle(
-        app, "skus-open-add-cost", "skus-add-cost-cancel", "skus-add-cost-modal"
-    )
-    _modal_toggle(
-        app, "skus-open-edit-cost", "skus-edit-cost-cancel", "skus-edit-cost-modal"
-    )
 
     @app.callback(
         Output("skus-add-product-brand", "options"),
@@ -586,16 +697,16 @@ def _register_modal_callbacks(app):
         Output("skus-add-sku-package", "options"),
         Output("skus-add-sku-carton", "options"),
         Output("skus-add-pack-package", "options"),
-        Output("skus-add-cost-sku", "options"),
+        Output("skus-add-carton-package", "options"),
+        Output("skus-add-carton-pack", "options"),
         Output("skus-edit-product-brand", "options"),
         Output("skus-edit-sku-product", "options"),
         Output("skus-edit-sku-package", "options"),
         Output("skus-edit-pack-package", "options"),
         Output("skus-edit-carton-package", "options"),
         Output("skus-edit-carton-pack", "options"),
-        Output("skus-edit-cost-select", "options"),
-        Output("skus-edit-cost-sku", "options"),
         Input(REFRESH_STORE_ID, "data"),
+        prevent_initial_call="initial_duplicate",
     )
     def refresh_modal_options(_refresh):
         options = _load_filter_options()
@@ -605,15 +716,14 @@ def _register_modal_callbacks(app):
             options["packages"],
             options["cartons"],
             options["packages"],
-            options["skus"],
+            options["packages"],
+            options["packs"],
             options["brands"],
             options["products"],
             options["packages"],
             options["packages"],
             options["packages"],
             options["packs"],
-            options["costs"],
-            options["skus"],
         )
 
     @app.callback(
@@ -791,10 +901,11 @@ def _register_modal_callbacks(app):
             product = session.get(Product, product_id)
             if not product:
                 return None, "", None, None, "Selected product could not be found."
+            normalized_category = _normalize_category_value(product.category)
             return (
                 product.brand_id,
                 product.name,
-                product.category,
+                normalized_category,
                 float(product.abv_percent),
                 _format_status(product.deleted_at),
             )
@@ -883,9 +994,37 @@ def _register_modal_callbacks(app):
                         no_update,
                         _format_status(product.deleted_at),
                     )
-                product.brand_id = brand_id
-                product.name = name.strip()
-                product.category = category
+                target_brand_id = brand_id
+                target_name = name.strip()
+                target_category = _normalize_category_value(category)
+                if target_category not in PRODUCT_CATEGORY_DETAILS:
+                    return (
+                        "Invalid category selected.",
+                        "danger",
+                        True,
+                        no_update,
+                        no_update,
+                        _format_status(product.deleted_at),
+                    )
+                conflict = session.execute(
+                    select(Product).where(
+                        Product.brand_id == target_brand_id,
+                        Product.name == target_name,
+                        Product.id != product.id,
+                    )
+                ).scalar_one_or_none()
+                if conflict:
+                    return (
+                        "Another product with this brand and name already exists.",
+                        "danger",
+                        True,
+                        no_update,
+                        no_update,
+                        _format_status(product.deleted_at),
+                    )
+                product.brand_id = target_brand_id
+                product.name = target_name
+                product.category = target_category
                 product.abv_percent = abv_decimal
                 try:
                     session.commit()
@@ -1406,215 +1545,6 @@ def _register_modal_callbacks(app):
         return no_update, no_update, no_update, no_update, no_update, no_update
 
     @app.callback(
-        Output("skus-edit-cost-sku", "value"),
-        Output("skus-edit-cost-type", "value"),
-        Output("skus-edit-cost-effective", "date"),
-        Output("skus-edit-cost-unit", "value"),
-        Output("skus-edit-cost-pack", "value"),
-        Output("skus-edit-cost-carton", "value"),
-        Output("skus-edit-cost-currency", "value"),
-        Output("skus-edit-cost-notes", "value"),
-        Output("skus-edit-cost-status", "children"),
-        Input("skus-edit-cost-select", "value"),
-    )
-    def load_cost_details(cost_id):
-        if not cost_id:
-            return None, "known", None, None, None, None, "AUD", "", ""
-        with session_scope() as session:
-            cost = session.get(ManufacturingCost, cost_id)
-            if not cost:
-                return (
-                    None,
-                    "known",
-                    None,
-                    None,
-                    None,
-                    None,
-                    "AUD",
-                    "",
-                    "Selected cost record could not be found.",
-                )
-            return (
-                cost.sku_id,
-                cost.cost_type,
-                cost.effective_date.isoformat(),
-                float(cost.cost_per_unit) if cost.cost_per_unit is not None else None,
-                float(cost.cost_per_pack) if cost.cost_per_pack is not None else None,
-                float(cost.cost_per_carton)
-                if cost.cost_per_carton is not None
-                else None,
-                cost.cost_currency or "AUD",
-                cost.notes or "",
-                _format_status(cost.deleted_at),
-            )
-
-    @app.callback(
-        Output("skus-toast", "children", allow_duplicate=True),
-        Output("skus-toast", "icon", allow_duplicate=True),
-        Output("skus-toast", "is_open", allow_duplicate=True),
-        Output(REFRESH_STORE_ID, "data", allow_duplicate=True),
-        Output("skus-edit-cost-modal", "is_open", allow_duplicate=True),
-        Output("skus-edit-cost-status", "children", allow_duplicate=True),
-        Input("skus-edit-cost-save", "n_clicks"),
-        Input("skus-edit-cost-archive", "n_clicks"),
-        Input("skus-edit-cost-restore", "n_clicks"),
-        State("skus-edit-cost-select", "value"),
-        State("skus-edit-cost-sku", "value"),
-        State("skus-edit-cost-type", "value"),
-        State("skus-edit-cost-effective", "date"),
-        State("skus-edit-cost-unit", "value"),
-        State("skus-edit-cost-pack", "value"),
-        State("skus-edit-cost-carton", "value"),
-        State("skus-edit-cost-currency", "value"),
-        State("skus-edit-cost-notes", "value"),
-        prevent_initial_call=True,
-    )
-    def handle_cost_updates(
-        save_clicks,
-        archive_clicks,
-        restore_clicks,
-        cost_id,
-        sku_id,
-        cost_type,
-        effective_date,
-        unit_cost,
-        pack_cost,
-        carton_cost,
-        currency,
-        notes,
-    ):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return no_update, no_update, no_update, no_update, no_update, no_update
-        action = ctx.triggered[0]["prop_id"].split(".")[0]
-        if not cost_id:
-            return (
-                "Select a cost record first.",
-                "warning",
-                True,
-                no_update,
-                no_update,
-                no_update,
-            )
-        with session_scope() as session:
-            cost = session.get(ManufacturingCost, cost_id)
-            if not cost:
-                return (
-                    "Cost record not found.",
-                    "danger",
-                    True,
-                    no_update,
-                    no_update,
-                    "Selected cost record could not be found.",
-                )
-            if action == "skus-edit-cost-save":
-                if not (sku_id and cost_type and effective_date):
-                    return (
-                        "SKU, cost type, and effective date are required.",
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                session_sku = session.get(SKU, sku_id)
-                if not session_sku:
-                    return (
-                        "SKU not found.",
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                cost_type_value = str(cost_type).lower()
-                if cost_type_value not in {"known", "estimated"}:
-                    return (
-                        "Invalid cost type.",
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                try:
-                    effective = date.fromisoformat(effective_date)
-                except ValueError:
-                    return (
-                        "Invalid effective date.",
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                try:
-                    unit_dec = _optional_decimal_field(unit_cost)
-                    pack_dec = _optional_decimal_field(pack_cost)
-                    carton_dec = _optional_decimal_field(carton_cost)
-                except ValueError as exc:
-                    return (
-                        str(exc),
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                currency_value = (currency or "AUD").strip().upper()
-                cost.sku_id = sku_id
-                cost.cost_type = cost_type_value
-                cost.effective_date = effective
-                cost.cost_currency = currency_value
-                cost.cost_per_unit = unit_dec
-                cost.cost_per_pack = pack_dec
-                cost.cost_per_carton = carton_dec
-                cost.notes = (notes or "").strip() or None
-                try:
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-                    return (
-                        "Update failed due to a uniqueness constraint.",
-                        "danger",
-                        True,
-                        no_update,
-                        no_update,
-                        _format_status(cost.deleted_at),
-                    )
-                return (
-                    "Cost updated.",
-                    "success",
-                    True,
-                    {"ts": datetime.utcnow().isoformat()},
-                    no_update,
-                    _format_status(cost.deleted_at),
-                )
-            if action == "skus-edit-cost-archive":
-                cost.deleted_at = _utcnow()
-                session.commit()
-                return (
-                    "Cost archived.",
-                    "warning",
-                    True,
-                    {"ts": datetime.utcnow().isoformat()},
-                    no_update,
-                    _format_status(cost.deleted_at),
-                )
-            if action == "skus-edit-cost-restore":
-                cost.deleted_at = None
-                session.commit()
-                return (
-                    "Cost restored.",
-                    "success",
-                    True,
-                    {"ts": datetime.utcnow().isoformat()},
-                    no_update,
-                    _format_status(cost.deleted_at),
-                )
-        return no_update, no_update, no_update, no_update, no_update, no_update
-
-    @app.callback(
         Output("skus-edit-carton-mode", "value"),
         Output("skus-edit-carton-package", "value"),
         Output("skus-edit-carton-pack", "value"),
@@ -1972,21 +1902,108 @@ def _register_modal_callbacks(app):
         Output("skus-toast", "is_open", allow_duplicate=True),
         Output(REFRESH_STORE_ID, "data", allow_duplicate=True),
         Input("skus-add-carton-submit", "n_clicks"),
+        State("skus-add-carton-mode", "value"),
+        State("skus-add-carton-package", "value"),
+        State("skus-add-carton-pack", "value"),
         State("skus-add-carton-units", "value"),
+        State("skus-add-carton-pack-count", "value"),
+        State("skus-add-carton-gtin", "value"),
         State("skus-add-carton-notes", "value"),
         prevent_initial_call=True,
     )
-    def save_carton(n_clicks, units, notes):
+    def save_carton(
+        n_clicks,
+        mode,
+        package_spec_id,
+        pack_spec_id,
+        units,
+        pack_count,
+        gtin,
+        notes,
+    ):
         if not n_clicks:
             return no_update, no_update, no_update, no_update
-        if not units:
-            return ("Units per carton required", "danger", True, no_update)
+        mode_value = (mode or "unit").lower()
         with session_scope() as session:
-            session.add(
-                CartonSpec(
-                    units_per_carton=int(units), notes=(notes or "").strip() or None
+            try:
+                units_value = int(units) if units is not None else None
+            except (TypeError, ValueError):
+                return (
+                    "Units per carton must be an integer.",
+                    "danger",
+                    True,
+                    no_update,
                 )
-            )
+
+            if mode_value == "unit":
+                if not (package_spec_id and units_value is not None):
+                    return (
+                        "Package spec and units per carton are required for unit cartons.",
+                        "danger",
+                        True,
+                        no_update,
+                    )
+                package = session.get(PackageSpec, package_spec_id)
+                if not package or package.deleted_at is not None:
+                    return ("Package spec not found.", "danger", True, no_update)
+                if units_value <= 0:
+                    return (
+                        "Units per carton must be greater than zero.",
+                        "danger",
+                        True,
+                        no_update,
+                    )
+                carton = CartonSpec(
+                    package_spec_id=package_spec_id,
+                    units_per_carton=units_value,
+                    pack_spec_id=None,
+                    pack_count=None,
+                )
+            elif mode_value == "pack":
+                if not pack_spec_id:
+                    return (
+                        "Pack spec is required for pack cartons.",
+                        "danger",
+                        True,
+                        no_update,
+                    )
+                pack = session.get(PackSpec, pack_spec_id)
+                if not pack or pack.deleted_at is not None:
+                    return ("Pack spec not found.", "danger", True, no_update)
+                try:
+                    pack_count_value = (
+                        int(pack_count) if pack_count is not None else None
+                    )
+                except (TypeError, ValueError):
+                    return ("Pack count must be an integer.", "danger", True, no_update)
+                if not pack_count_value or pack_count_value <= 0:
+                    return (
+                        "Pack count must be greater than zero.",
+                        "danger",
+                        True,
+                        no_update,
+                    )
+                if units_value is None:
+                    units_value = pack.units_per_pack * pack_count_value
+                if units_value <= 0:
+                    return (
+                        "Units per carton must be greater than zero.",
+                        "danger",
+                        True,
+                        no_update,
+                    )
+                carton = CartonSpec(
+                    pack_spec_id=pack_spec_id,
+                    pack_count=pack_count_value,
+                    units_per_carton=units_value,
+                    package_spec_id=None,
+                )
+            else:
+                return ("Invalid carton mode.", "danger", True, no_update)
+
+            carton.gtin = (gtin or "").strip() or None
+            carton.notes = (notes or "").strip() or None
+            session.add(carton)
             session.commit()
         return (
             "Carton spec created",
@@ -2051,80 +2068,10 @@ def _register_modal_callbacks(app):
             {"ts": datetime.utcnow().isoformat()},
         )
 
-    @app.callback(
-        Output("skus-toast", "children", allow_duplicate=True),
-        Output("skus-toast", "icon", allow_duplicate=True),
-        Output("skus-toast", "is_open", allow_duplicate=True),
-        Output(REFRESH_STORE_ID, "data", allow_duplicate=True),
-        Input("skus-add-cost-submit", "n_clicks"),
-        State("skus-add-cost-sku", "value"),
-        State("skus-add-cost-type", "value"),
-        State("skus-add-cost-unit", "value"),
-        State("skus-add-cost-pack", "value"),
-        State("skus-add-cost-carton", "value"),
-        State("skus-add-cost-currency", "value"),
-        State("skus-add-cost-effective", "date"),
-        State("skus-add-cost-notes", "value"),
-        prevent_initial_call=True,
-    )
-    def save_cost(
-        n_clicks,
-        sku_id,
-        cost_type,
-        unit_cost,
-        pack_cost,
-        carton_cost,
-        currency,
-        effective_date,
-        notes,
-    ):
-        if not n_clicks:
-            return no_update, no_update, no_update, no_update
-        if not (sku_id and cost_type and effective_date):
-            return (
-                "SKU, cost type, and effective date are required",
-                "danger",
-                True,
-                no_update,
-            )
-        try:
-            effective = date.fromisoformat(effective_date)
-        except ValueError:
-            return ("Invalid effective date", "danger", True, no_update)
-        try:
-            unit_dec = _optional_decimal_field(unit_cost)
-            pack_dec = _optional_decimal_field(pack_cost)
-            carton_dec = _optional_decimal_field(carton_cost)
-        except ValueError as exc:
-            return (str(exc), "danger", True, no_update)
-        currency_value = (currency or "AUD").strip().upper()
-        with session_scope() as session:
-            sku = session.get(SKU, sku_id)
-            if not sku:
-                return ("SKU not found", "danger", True, no_update)
-            upsert_cost(
-                session,
-                sku_id=sku.id,
-                cost_type=cost_type,
-                effective_date=effective,
-                cost_currency=currency_value,
-                cost_per_unit=unit_dec,
-                cost_per_pack=pack_dec,
-                cost_per_carton=carton_dec,
-                notes=(notes or "").strip() or None,
-            )
-            session.commit()
-        return (
-            "Manufacturing cost saved",
-            "success",
-            True,
-            {"ts": datetime.utcnow().isoformat()},
-        )
-
 
 def _modal_toggle(app, open_id, close_id, modal_id):
     @app.callback(
-        Output(modal_id, "is_open"),
+        Output(modal_id, "is_open", allow_duplicate=True),
         Input(open_id, "n_clicks"),
         Input(close_id, "n_clicks"),
         State(modal_id, "is_open"),
@@ -2133,7 +2080,10 @@ def _modal_toggle(app, open_id, close_id, modal_id):
     def toggle(open_clicks, close_clicks, is_open):
         if not (open_clicks or close_clicks):
             return is_open
-        trigger = dash.callback_context.triggered_id
+        ctx = dash.callback_context  # dash>=2.0
+        if not ctx.triggered:
+            return is_open
+        trigger = ctx.triggered[0]["prop_id"].split(".")[0]
         if trigger == open_id:
             return True
         return False
@@ -2284,50 +2234,6 @@ def _load_carton_options(include_deleted: bool = False) -> List[dict]:
     return options
 
 
-def _load_cost_options(include_deleted: bool = False) -> List[dict]:
-    with session_scope() as session:
-        stmt = (
-            select(
-                ManufacturingCost,
-                SKU.gtin,
-                Product.name,
-                Brand.name,
-            )
-            .join(ManufacturingCost.sku)
-            .join(SKU.product)
-            .join(Product.brand)
-            .order_by(
-                Brand.name,
-                Product.name,
-                ManufacturingCost.cost_type,
-                ManufacturingCost.effective_date.desc(),
-            )
-        )
-        if not include_deleted:
-            stmt = stmt.where(
-                ManufacturingCost.deleted_at.is_(None),
-                SKU.deleted_at.is_(None),
-                Product.deleted_at.is_(None),
-                Brand.deleted_at.is_(None),
-            )
-        rows = session.execute(stmt).all()
-    options: List[dict] = []
-    for cost, sku_gtin, product_name, brand_name in rows:
-        label_parts = [
-            brand_name,
-            product_name,
-            cost.cost_type.capitalize(),
-            cost.effective_date.isoformat(),
-        ]
-        label = " - ".join(label_parts)
-        if sku_gtin:
-            label += f" [{sku_gtin}]"
-        if cost.deleted_at:
-            label += " (archived)"
-        options.append({"label": label, "value": cost.id, "sku_id": cost.sku_id})
-    return options
-
-
 def _format_status(deleted_at) -> str:
     if deleted_at:
         try:
@@ -2439,7 +2345,9 @@ def _edit_product_modal(
                         id="skus-edit-product-category",
                         options=[
                             {"label": "Gin Bottle", "value": "gin_bottle"},
-                            {"label": "RTD Can", "value": "rtd_can"},
+                            {"label": "Gin RTD", "value": "gin_rtd"},
+                            {"label": "Vodka Bottle", "value": "vodka_bottle"},
+                            {"label": "Vodka RTD", "value": "vodka_rtd"},
                         ],
                         placeholder="Category",
                         className="mt-3",
@@ -2800,333 +2708,6 @@ def _edit_carton_modal(
     )
 
 
-def _edit_cost_modal(cost_options: List[dict], sku_options: List[dict]) -> dbc.Modal:
-    return dbc.Modal(
-        [
-            dbc.ModalHeader("Edit Manufacturing Cost"),
-            dbc.ModalBody(
-                [
-                    dbc.Select(
-                        id="skus-edit-cost-select",
-                        options=cost_options,
-                        placeholder="Select a cost record",
-                        className="mb-3",
-                    ),
-                    dbc.Select(
-                        id="skus-edit-cost-sku",
-                        options=sku_options,
-                        placeholder="Select SKU",
-                        className="mb-3",
-                    ),
-                    dbc.RadioItems(
-                        id="skus-edit-cost-type",
-                        options=[
-                            {"label": "Known", "value": "known"},
-                            {"label": "Estimated", "value": "estimated"},
-                        ],
-                        value="known",
-                        inline=True,
-                        className="mb-3",
-                    ),
-                    dcc.DatePickerSingle(
-                        id="skus-edit-cost-effective", display_format="YYYY-MM-DD"
-                    ),
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                dbc.Input(
-                                    id="skus-edit-cost-unit",
-                                    type="number",
-                                    step="0.0001",
-                                    placeholder="Cost per unit",
-                                ),
-                                md=4,
-                                className="mt-3",
-                            ),
-                            dbc.Col(
-                                dbc.Input(
-                                    id="skus-edit-cost-pack",
-                                    type="number",
-                                    step="0.0001",
-                                    placeholder="Cost per pack",
-                                ),
-                                md=4,
-                                className="mt-3",
-                            ),
-                            dbc.Col(
-                                dbc.Input(
-                                    id="skus-edit-cost-carton",
-                                    type="number",
-                                    step="0.0001",
-                                    placeholder="Cost per carton",
-                                ),
-                                md=4,
-                                className="mt-3",
-                            ),
-                        ]
-                    ),
-                    dbc.Input(
-                        id="skus-edit-cost-currency",
-                        value="AUD",
-                        placeholder="Currency",
-                        className="mt-3",
-                    ),
-                    dbc.Textarea(
-                        id="skus-edit-cost-notes", placeholder="Notes", className="mt-3"
-                    ),
-                    html.Div(
-                        id="skus-edit-cost-status", className="text-muted small mt-2"
-                    ),
-                ]
-            ),
-            dbc.ModalFooter(
-                [
-                    dbc.Button(
-                        "Cancel",
-                        id="skus-edit-cost-cancel",
-                        color="secondary",
-                        className="me-2",
-                    ),
-                    dbc.Button(
-                        "Archive",
-                        id="skus-edit-cost-archive",
-                        color="danger",
-                        outline=True,
-                        className="me-2",
-                    ),
-                    dbc.Button(
-                        "Restore",
-                        id="skus-edit-cost-restore",
-                        color="warning",
-                        outline=True,
-                        className="me-2",
-                    ),
-                    dbc.Button("Save", id="skus-edit-cost-save", color="primary"),
-                ]
-            ),
-        ],
-        id="skus-edit-cost-modal",
-        size="lg",
-        backdrop="static",
-    )
-
-
-def _product_modal() -> dbc.Modal:
-    options = _load_filter_options()
-    body = [
-        dbc.Select(
-            id="skus-add-product-brand",
-            options=options["brands"],
-            placeholder="Select brand",
-        ),
-        dbc.Input(
-            id="skus-add-product-name", placeholder="Product name", className="mt-3"
-        ),
-        dbc.Select(
-            id="skus-add-product-category",
-            options=[
-                {"label": "Gin Bottle", "value": "gin_bottle"},
-                {"label": "RTD Can", "value": "rtd_can"},
-            ],
-            placeholder="Category",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-product-abv",
-            type="number",
-            step=0.1,
-            placeholder="ABV %",
-            className="mt-3",
-        ),
-    ]
-    return modal_form(
-        "skus-add-product-modal",
-        "Add Product",
-        body,
-        submit_id="skus-add-product-submit",
-        close_id="skus-add-product-cancel",
-        size="lg",
-    )
-
-
-def _package_modal() -> dbc.Modal:
-    body = [
-        dbc.Select(
-            id="skus-add-package-type",
-            options=[
-                {"label": "Bottle", "value": "bottle"},
-                {"label": "Can", "value": "can"},
-            ],
-            placeholder="Package type",
-        ),
-        dbc.Input(
-            id="skus-add-package-volume",
-            type="number",
-            placeholder="Container mL",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-package-form",
-            placeholder="Can form factor (if can)",
-            className="mt-3",
-        ),
-    ]
-    return modal_form(
-        "skus-add-package-modal",
-        "Add Package Spec",
-        body,
-        submit_id="skus-add-package-submit",
-        close_id="skus-add-package-cancel",
-        size="md",
-    )
-
-
-def _sku_modal() -> dbc.Modal:
-    options = _load_filter_options()
-    body = [
-        dbc.Select(
-            id="skus-add-sku-product",
-            options=options["products"],
-            placeholder="Select product",
-        ),
-        dbc.Select(
-            id="skus-add-sku-package",
-            options=options["packages"],
-            placeholder="Select package",
-            className="mt-3",
-        ),
-        dbc.Input(id="skus-add-sku-gtin", placeholder="GTIN", className="mt-3"),
-        dbc.Checkbox(
-            id="skus-add-sku-active", label="Active", value=True, className="mt-3"
-        ),
-        dbc.Select(
-            id="skus-add-sku-carton",
-            options=options["cartons"],
-            placeholder="Link carton spec",
-            className="mt-3",
-        ),
-    ]
-    return modal_form(
-        "skus-add-sku-modal",
-        "Add SKU",
-        body,
-        submit_id="skus-add-sku-submit",
-        close_id="skus-add-sku-cancel",
-        size="lg",
-    )
-
-
-def _carton_modal() -> dbc.Modal:
-    body = [
-        dbc.Input(
-            id="skus-add-carton-units", type="number", placeholder="Units per carton"
-        ),
-        dbc.Textarea(id="skus-add-carton-notes", placeholder="Notes", className="mt-3"),
-    ]
-    return modal_form(
-        "skus-add-carton-modal",
-        "Add Carton Spec",
-        body,
-        submit_id="skus-add-carton-submit",
-        close_id="skus-add-carton-cancel",
-        size="md",
-    )
-
-
-def _pack_modal() -> dbc.Modal:
-    options = _load_filter_options()
-    body = [
-        dbc.Select(
-            id="skus-add-pack-package",
-            options=options["packages"],
-            placeholder="Select package spec",
-        ),
-        dbc.Input(
-            id="skus-add-pack-units",
-            type="number",
-            min=2,
-            step=1,
-            placeholder="Units per pack",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-pack-gtin",
-            placeholder="Pack GTIN (optional)",
-            className="mt-3",
-        ),
-        dbc.Textarea(id="skus-add-pack-notes", placeholder="Notes", className="mt-3"),
-    ]
-    return modal_form(
-        "skus-add-pack-modal",
-        "Add Pack Spec",
-        body,
-        submit_id="skus-add-pack-submit",
-        close_id="skus-add-pack-cancel",
-        size="md",
-    )
-
-
-def _cost_modal() -> dbc.Modal:
-    options = _load_filter_options()
-    body = [
-        dbc.Select(
-            id="skus-add-cost-sku", options=options["skus"], placeholder="Select SKU"
-        ),
-        dbc.RadioItems(
-            id="skus-add-cost-type",
-            options=[
-                {"label": "Known", "value": "known"},
-                {"label": "Estimated", "value": "estimated"},
-            ],
-            value="known",
-            inline=True,
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-cost-unit",
-            type="number",
-            step=0.0001,
-            placeholder="Cost per unit",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-cost-pack",
-            type="number",
-            step=0.0001,
-            placeholder="Cost per pack",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-cost-carton",
-            type="number",
-            step=0.0001,
-            placeholder="Cost per carton",
-            className="mt-3",
-        ),
-        dbc.Input(
-            id="skus-add-cost-currency",
-            value="AUD",
-            placeholder="Currency",
-            className="mt-3",
-        ),
-        dcc.DatePickerSingle(
-            id="skus-add-cost-effective",
-            display_format="YYYY-MM-DD",
-            className="mt-3",
-            date=date.today(),
-        ),
-        dbc.Textarea(id="skus-add-cost-notes", placeholder="Notes", className="mt-3"),
-    ]
-    return modal_form(
-        "skus-add-cost-modal",
-        "Add Manufacturing Cost",
-        body,
-        submit_id="skus-add-cost-submit",
-        close_id="skus-add-cost-cancel",
-        size="md",
-    )
-
-
 def _load_table_data() -> Dict[str, List[dict]]:
     with session_scope() as session:
         brand_counts = dict(
@@ -3136,6 +2717,8 @@ def _load_table_data() -> Dict[str, List[dict]]:
                 .group_by(Product.brand_id)
             ).all()
         )
+        package_labels: Dict[str, str] = {}
+        pack_labels: Dict[str, str] = {}
         brands_data = []
         for brand in session.execute(
             select(Brand).where(Brand.deleted_at.is_(None)).order_by(Brand.name)
@@ -3157,11 +2740,13 @@ def _load_table_data() -> Dict[str, List[dict]]:
             .order_by(Brand.name, Product.name)
         ).all()
         for product, brand_name in products:
+            category_value = _normalize_category_value(product.category)
+            category_label = _format_category_label(category_value)
             products_data.append(
                 {
                     "name": product.name,
                     "brand": brand_name,
-                    "category": product.category,
+                    "category": category_label,
                     "abv_percent": float(product.abv_percent or 0),
                 }
             )
@@ -3172,6 +2757,10 @@ def _load_table_data() -> Dict[str, List[dict]]:
             .where(PackageSpec.deleted_at.is_(None))
             .order_by(PackageSpec.type, PackageSpec.container_ml)
         ).scalars():
+            package_label = f"{package.type.title()} {package.container_ml}mL"
+            if package.can_form_factor:
+                package_label += f" ({package.can_form_factor})"
+            package_labels[package.id] = package_label
             packages_data.append(
                 {
                     "type": package.type,
@@ -3225,6 +2814,8 @@ def _load_table_data() -> Dict[str, List[dict]]:
             package_label = f"{pkg_type} {container_ml}mL"
             if form_factor:
                 package_label += f" ({form_factor})"
+            pack_label = f"{package_label} - {pack_spec.units_per_pack} pack"
+            pack_labels[pack_spec.id] = pack_label
             packs_data.append(
                 {
                     "package": package_label,
@@ -3281,52 +2872,25 @@ def _load_table_data() -> Dict[str, List[dict]]:
         for carton in session.execute(
             select(CartonSpec)
             .where(CartonSpec.deleted_at.is_(None))
-            .order_by(CartonSpec.units_per_carton)
+            .order_by(CartonSpec.units_per_carton, CartonSpec.created_at)
         ).scalars():
+            is_pack = carton.pack_spec_id is not None
+            mode_label = "Pack" if is_pack else "Unit"
+            package_label = ""
+            pack_label = ""
+            if carton.package_spec_id:
+                package_label = package_labels.get(carton.package_spec_id, "")
+            if carton.pack_spec_id:
+                pack_label = pack_labels.get(carton.pack_spec_id, "")
             cartons_data.append(
                 {
+                    "mode": mode_label,
+                    "package_label": package_label,
+                    "pack_label": pack_label,
+                    "pack_count": carton.pack_count or "",
                     "units_per_carton": carton.units_per_carton,
+                    "gtin": carton.gtin or "",
                     "notes": carton.notes or "",
-                }
-            )
-
-        costs_data = []
-        cost_rows = session.execute(
-            select(
-                ManufacturingCost,
-                SKU.gtin,
-                Product.name,
-                Brand.name,
-            )
-            .join(ManufacturingCost.sku)
-            .join(SKU.product)
-            .join(Product.brand)
-            .where(
-                ManufacturingCost.deleted_at.is_(None),
-                SKU.deleted_at.is_(None),
-                Product.deleted_at.is_(None),
-                Brand.deleted_at.is_(None),
-            )
-            .order_by(
-                Brand.name,
-                Product.name,
-                ManufacturingCost.effective_date.desc(),
-                ManufacturingCost.cost_type.desc(),
-            )
-        ).all()
-        for cost, sku_gtin, product_name, brand_name in cost_rows:
-            sku_label = f"{brand_name} - {product_name}"
-            if sku_gtin:
-                sku_label += f" ({sku_gtin})"
-            costs_data.append(
-                {
-                    "sku": sku_label,
-                    "cost_type": cost.cost_type.title(),
-                    "effective_date": cost.effective_date.isoformat(),
-                    "unit_cost": _format_money(cost.cost_per_unit),
-                    "pack_cost": _format_money(cost.cost_per_pack),
-                    "carton_cost": _format_money(cost.cost_per_carton),
-                    "currency": cost.cost_currency,
                 }
             )
 
@@ -3337,7 +2901,6 @@ def _load_table_data() -> Dict[str, List[dict]]:
         "skus": skus_data,
         "cartons": cartons_data,
         "packs": packs_data,
-        "costs": costs_data,
     }
 
 
@@ -3459,7 +3022,6 @@ def _load_filter_options() -> Dict[str, List[dict]]:
         "basis": _build_basis_options([value for value in bases if value]),
         "companies": companies,
         "skus": sku_options,
-        "costs": _load_cost_options(),
     }
 
 

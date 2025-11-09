@@ -158,16 +158,21 @@ def upgrade() -> None:
                 ondelete="CASCADE",
             ),
             sa.PrimaryKeyConstraint("id", name="pk_manufacturing_costs"),
-            sa.UniqueConstraint(
-                "sku_id",
-                "cost_type",
-                "effective_date",
-                name="uq_manufacturing_costs_sku_type_effective",
-            ),
             sa.CheckConstraint(
                 "cost_type IN ('estimated','known')", name="ck_manufacturing_costs_type"
             ),
         )
+    else:
+        uniques = {
+            uc["name"] for uc in insp.get_unique_constraints("manufacturing_costs")
+        }
+        if "uq_manufacturing_costs_sku_type_effective" in uniques:
+            with op.batch_alter_table(
+                "manufacturing_costs", recreate="always"
+            ) as batch:
+                batch.drop_constraint(
+                    "uq_manufacturing_costs_sku_type_effective", type_="unique"
+                )
 
     if _has_table(insp, "price_observations"):
         cols = {col["name"] for col in insp.get_columns("price_observations")}

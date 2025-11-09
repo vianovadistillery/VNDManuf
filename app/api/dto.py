@@ -618,6 +618,24 @@ class WorkOrderCreate(BaseModel):
     notes: Optional[str] = None
 
 
+class WorkOrderUpdateRequest(BaseModel):
+    """Update work order request."""
+
+    planned_qty: Decimal = Field(..., gt=0)
+    uom: Optional[str] = None
+
+
+class WorkOrderInputCreate(BaseModel):
+    """Add work order input line request."""
+
+    component_product_id: str
+    planned_qty: Optional[Decimal] = None
+    uom: Optional[str] = None
+    line_type: str = "material"
+    sequence: Optional[int] = None
+    note: Optional[str] = None
+
+
 class WorkOrderInputResponse(BaseModel):
     """Work order input line response."""
 
@@ -659,6 +677,7 @@ class WorkOrderResponse(BaseModel):
     id: str
     code: str
     product_id: str
+    product_name: Optional[str] = None
     assembly_id: Optional[str]  # Primary recipe definition (Assembly)
     formula_id: Optional[str] = None  # Legacy, kept for backward compatibility
     planned_qty: Optional[Decimal]
@@ -700,7 +719,7 @@ class WorkOrderIssueRequest(BaseModel):
     """Issue material request."""
 
     component_product_id: str
-    qty: Decimal = Field(..., gt=0)
+    qty: Decimal = Field(..., ne=0)
     source_batch_id: Optional[str] = None
     uom: Optional[str] = None
 
@@ -772,8 +791,17 @@ class WorkOrderOverheadRequest(BaseModel):
 class WorkOrderCompleteRequest(BaseModel):
     """Complete work order request."""
 
-    qty_produced: Decimal = Field(..., gt=0)
+    qty_produced: Decimal = Field(..., ne=0)
     batch_attrs: Optional[dict] = None  # mfg_date, exp_date, meta
+
+
+class WorkOrderCostMaterialLine(BaseModel):
+    component_product_id: str
+    component_label: str
+    actual_qty: Decimal
+    uom: Optional[str]
+    unit_cost: Decimal
+    cost: Decimal
 
 
 class WorkOrderCostResponse(BaseModel):
@@ -784,6 +812,20 @@ class WorkOrderCostResponse(BaseModel):
     total_cost: Decimal
     qty_produced: Optional[Decimal]
     unit_cost: Optional[Decimal]
+    material_lines: List[WorkOrderCostMaterialLine] = []
+
+
+class WorkOrderInventoryMovement(BaseModel):
+    id: str
+    product_id: Optional[str]
+    product_name: Optional[str]
+    qty: Decimal
+    unit: Optional[str]
+    unit_cost: Decimal
+    direction: str
+    move_type: str
+    timestamp: datetime
+    note: Optional[str]
 
 
 class GenealogyResponse(BaseModel):
@@ -793,9 +835,16 @@ class GenealogyResponse(BaseModel):
     batch_code: str
     input_batch_ids: List[str]
     genealogy: Optional[dict] = None
+    movements: List[WorkOrderInventoryMovement] = []
 
 
 class WorkOrderVoidRequest(BaseModel):
     """Void work order request."""
 
     reason: str = Field(..., min_length=1)
+
+
+class WorkOrderReopenRequest(BaseModel):
+    """Reopen work order request."""
+
+    reason: Optional[str] = None
