@@ -26,7 +26,7 @@ from sqlalchemy.orm import relationship
 from app.settings import settings
 
 from .base import Base
-from .mixins import AuditMixin
+from .mixins import AuditMixin, TimestampMixin
 
 
 class ContactType(str, enum.Enum):
@@ -895,6 +895,23 @@ class Contact(Base, AuditMixin):
     email = Column(String(200))
     phone = Column(String(50))
     address = Column(Text)
+    # Billing address
+    billing_address_line1 = Column(String(200))
+    billing_address_line2 = Column(String(200))
+    billing_suburb = Column(String(100))
+    billing_state = Column(String(50))
+    billing_postcode = Column(String(20))
+    billing_country = Column(String(100))
+    # Delivery address
+    delivery_address_line1 = Column(String(200))
+    delivery_address_line2 = Column(String(200))
+    delivery_suburb = Column(String(100))
+    delivery_state = Column(String(50))
+    delivery_postcode = Column(String(20))
+    delivery_country = Column(String(100))
+    abn = Column(String(20))
+    notes = Column(Text)
+    alm_account_number = Column(String(50))
 
     # Contact type flags (can be multiple)
     is_customer = Column(Boolean, default=False, nullable=False, index=True)
@@ -1016,9 +1033,24 @@ class Customer(Base, AuditMixin):
         default=CustomerType.OTHER.value,
     )
     contact_person = Column(String(100))
+    contact_name = Column(String(100))  # Primary contact name
     email = Column(String(200))
     phone = Column(String(50))
-    address = Column(Text)
+    address = Column(Text)  # Legacy address field
+    # Billing address fields
+    billing_address_line1 = Column(String(200))
+    billing_address_line2 = Column(String(200))
+    billing_suburb = Column(String(100))
+    billing_state = Column(String(50))
+    billing_postcode = Column(String(20))
+    billing_country = Column(String(100), default="Australia")
+    # Delivery address fields
+    delivery_address_line1 = Column(String(200))
+    delivery_address_line2 = Column(String(200))
+    delivery_suburb = Column(String(100))
+    delivery_state = Column(String(50))
+    delivery_postcode = Column(String(20))
+    delivery_country = Column(String(100), default="Australia")
     tax_rate = Column(Numeric(5, 2), default=10.0)  # Default GST rate
     xero_contact_id = Column(String(100))  # Xero Contact UUID
     last_sync = Column(DateTime)  # Last successful sync to Xero
@@ -1031,6 +1063,7 @@ class Customer(Base, AuditMixin):
     # Relationships
     sales_orders = relationship("SalesOrder", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
+    delivery_dockets = relationship("DeliveryDocket", back_populates="customer")
     customer_prices = relationship("CustomerPrice", back_populates="customer")
     customer_sites = relationship(
         "CustomerSite", back_populates="customer", cascade="all, delete-orphan"
@@ -1088,6 +1121,7 @@ class SalesOrder(Base, AuditMixin):
         cascade="all, delete-orphan",
     )
     invoices = relationship("Invoice", back_populates="sales_order")
+    delivery_dockets = relationship("DeliveryDocket", back_populates="sales_order")
     order_tags = relationship(
         "SalesOrderTag",
         back_populates="order",
@@ -1287,6 +1321,10 @@ class Invoice(Base, AuditMixin):
     # Relationships
     customer = relationship("Customer", back_populates="invoices")
     sales_order = relationship("SalesOrder", back_populates="invoices")
+    delivery_docket_id = Column(
+        String(36), ForeignKey("delivery_dockets.id"), nullable=True
+    )
+    delivery_docket = relationship("DeliveryDocket", back_populates="invoices")
     lines = relationship("InvoiceLine", back_populates="invoice")
 
     __table_args__ = (Index("ix_invoice_code", "invoice_number"),)
@@ -1310,6 +1348,53 @@ class InvoiceLine(Base, AuditMixin):
     # Relationships
     invoice = relationship("Invoice", back_populates="lines")
     product = relationship("Product")
+
+
+# Delivery Docket Models
+class DeliveryDocket(Base, AuditMixin):
+    __tablename__ = "delivery_dockets"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    sales_order_id = Column(String(36), ForeignKey("sales_orders.id"), nullable=True)
+    docket_number = Column(String(50), unique=True, nullable=False, index=True)
+    docket_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    delivery_date = Column(DateTime, nullable=True)
+    status = Column(String(20), default="DRAFT")  # DRAFT, PENDING, DELIVERED, CANCELLED
+    notes = Column(Text, nullable=True)
+    # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
+    # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
+
+    # Relationships
+    customer = relationship("Customer", back_populates="delivery_dockets")
+    sales_order = relationship("SalesOrder", back_populates="delivery_dockets")
+    lines = relationship(
+        "DeliveryDocketLine",
+        back_populates="docket",
+        cascade="all, delete-orphan",
+    )
+    invoices = relationship("Invoice", back_populates="delivery_docket")
+
+    __table_args__ = (Index("ix_delivery_docket_number", "docket_number"),)
+
+
+class DeliveryDocketLine(Base, AuditMixin):
+    __tablename__ = "delivery_docket_lines"
+
+    id = uuid_column()
+    docket_id = Column(String(36), ForeignKey("delivery_dockets.id"), nullable=False)
+    product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
+    quantity = Column(Numeric(12, 3), nullable=False)
+    uom = Column(String(20), nullable=False, default="unit")
+    sequence = Column(Integer, nullable=False)
+    # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
+    # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
+
+    # Relationships
+    docket = relationship("DeliveryDocket", back_populates="lines")
+    product = relationship("Product")
+
+    __table_args__ = (Index("ix_delivery_docket_lines_docket", "docket_id"),)
 
 
 # Pricing Models
@@ -1644,6 +1729,65 @@ class ExciseRate(Base, AuditMixin):
     __table_args__ = (
         UniqueConstraint("date_active_from", name="uq_excise_rate_date"),
         Index("ix_excise_rate_active", "is_active", "date_active_from"),
+    )
+
+
+# Generated document (mail-merge PDF/DOCX) tracking
+class GeneratedDocumentStatus(str, enum.Enum):
+    """Status of a document generation job."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class GeneratedDocument(Base, TimestampMixin):
+    """Tracks generated mail-merge documents (PDF/DOCX) and job status."""
+
+    __tablename__ = "generated_documents"
+
+    id = uuid_column()
+    doc_type = Column(
+        String(50), nullable=False, index=True
+    )  # e.g. delivery_docket, quote
+    doc_number = Column(String(50), nullable=True, index=True)  # Human-readable ref
+    status = Column(
+        String(20),
+        nullable=False,
+        default=GeneratedDocumentStatus.PENDING.value,
+        index=True,
+    )
+    template_name = Column(String(200), nullable=False)
+    pdf_path = Column(String(500), nullable=True)  # Relative or absolute path to PDF
+    docx_path = Column(String(500), nullable=True)  # Optional intermediate DOCX
+    error_message = Column(Text, nullable=True)
+    # Related entities (nullable: support ad-hoc generation)
+    contact_id = Column(
+        String(36), ForeignKey("contacts.id"), nullable=True, index=True
+    )
+    customer_id = Column(
+        String(36), ForeignKey("customers.id"), nullable=True, index=True
+    )
+    sales_order_id = Column(
+        String(36), ForeignKey("sales_orders.id"), nullable=True, index=True
+    )
+    delivery_docket_id = Column(
+        String(36), ForeignKey("delivery_dockets.id"), nullable=True, index=True
+    )
+    # Job id when using queue (e.g. RQ job id)
+    job_id = Column(String(100), nullable=True, index=True)
+    # Note: created_at, updated_at from TimestampMixin
+
+    contact = relationship("Contact", foreign_keys=[contact_id])
+    customer = relationship("Customer", foreign_keys=[customer_id])
+    sales_order = relationship("SalesOrder", foreign_keys=[sales_order_id])
+    delivery_docket = relationship("DeliveryDocket", foreign_keys=[delivery_docket_id])
+
+    __table_args__ = (
+        Index("ix_generated_documents_status", "status"),
+        Index("ix_generated_documents_created_at", "created_at"),
     )
 
 

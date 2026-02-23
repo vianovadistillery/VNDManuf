@@ -9,6 +9,7 @@ def register_settings_callbacks(app):
 
     @app.callback(
         [
+            Output("runtime-config-tab-content", "style"),
             Output("units-tab-content", "style"),
             Output("excise-rates-tab-content", "style"),
             Output("purchase-formats-tab-content", "style"),
@@ -19,44 +20,17 @@ def register_settings_callbacks(app):
     )
     def toggle_settings_tabs(active_tab):
         """Show/hide tab content based on active tab."""
-        if active_tab == "units":
-            return (
-                {"display": "block"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-            )
-        elif active_tab == "excise-rates":
-            return (
-                {"display": "none"},
-                {"display": "block"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-            )
-        elif active_tab == "purchase-formats":
-            return (
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "block"},
-                {"display": "none"},
-                {"display": "none"},
-            )
-        elif active_tab == "qc-tests":
-            return (
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "block"},
-                {"display": "none"},
-            )
-        elif active_tab == "work-areas":
-            return (
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "none"},
-                {"display": "block"},
-            )
-        raise PreventUpdate
+        tab_order = [
+            "runtime-config",
+            "units",
+            "excise-rates",
+            "purchase-formats",
+            "qc-tests",
+            "work-areas",
+        ]
+        if active_tab not in tab_order:
+            raise PreventUpdate
+        return tuple(
+            {"display": "block"} if active_tab == tab else {"display": "none"}
+            for tab in tab_order
+        )

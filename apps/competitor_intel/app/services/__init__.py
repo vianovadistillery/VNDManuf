@@ -12,6 +12,13 @@ from .dedupe import (
     find_duplicate_groups,
 )
 from .ingest_csv import ImportReport, ObservationImporter, RowError, SKUImporter
+from .location_inventory import (
+    CostSummary,
+    InventoryItem,
+    ObservationSummary,
+    ensure_location_sku,
+    fetch_location_inventory,
+)
 from .normalize import NormalizedPrices, normalize_gst_prices, normalize_price
 from .reports import (
     ObservationFilters,
@@ -45,6 +52,11 @@ __all__ = [
     "list_costs",
     "create_purchase_price",
     "soft_delete_cost",
+    "CostSummary",
+    "InventoryItem",
+    "ObservationSummary",
+    "ensure_location_sku",
+    "fetch_location_inventory",
     "ObservationFilters",
     "fetch_observations",
     "get_duplicate_overview",

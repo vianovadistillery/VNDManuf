@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -764,6 +765,158 @@ class WorkOrderQcUpdateRequest(BaseModel):
     status: Optional[str] = None
     tester: Optional[str] = None
     note: Optional[str] = None
+
+
+class DistillationRunStatus(str, Enum):
+    """Lifecycle states for distillation runs."""
+
+    OPEN = "open"
+    RUNNING = "running"
+    PAUSED = "paused"
+    CLOSED = "closed"
+
+
+class DistillationEventType(str, Enum):
+    """Supported event types emitted from the still/DAQ."""
+
+    RUN_OPEN = "run_open"
+    FEED_CHARGE = "feed_charge"
+    BOTANICAL_SWAP = "botanical_swap"
+    PARAMETER_SNAPSHOT = "parameter_snapshot"
+    PRODUCT_DRAW = "product_draw"
+    RUN_CLOSE = "run_close"
+    NOTE = "note"
+
+
+class DistillationRunCreate(BaseModel):
+    """Create a new distillation run."""
+
+    still_code: Optional[str] = None
+    product_id: Optional[str] = None
+    code: Optional[str] = None
+    external_run_code: Optional[str] = None
+    notes: Optional[str] = None
+    initial_botanical_product_id: Optional[str] = None
+    started_at: Optional[datetime] = None
+
+
+class DistillationRunUpdate(BaseModel):
+    """Update/close a distillation run."""
+
+    status: Optional[DistillationRunStatus] = None
+    close_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    still_code: Optional[str] = None
+    product_id: Optional[str] = None
+    open_at: Optional[datetime] = None
+    external_run_code: Optional[str] = None
+    code: Optional[str] = None
+
+
+class DistillationInventoryPayload(BaseModel):
+    """Inventory movement metadata supplied with an event."""
+
+    product_id: str
+    qty_kg: Decimal
+    uom: str = "KG"
+    batch_id: Optional[str] = None
+    location_id: Optional[str] = None
+    unit_cost: Optional[Decimal] = None
+    direction: Optional[str] = None  # input | output
+    note: Optional[str] = None
+
+
+class DistillationEventCreate(BaseModel):
+    """Event payload captured from DAQ or operators."""
+
+    event_type: DistillationEventType
+    timestamp: Optional[datetime] = None
+    period_id: Optional[str] = None
+    period_ref: Optional[str] = None
+    botanical_product_id: Optional[str] = None
+    metrics: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+    external_id: Optional[str] = None
+    source: Optional[str] = None
+    inventory: Optional[DistillationInventoryPayload] = None
+
+
+class DistillationPeriodResponse(BaseModel):
+    """Aggregated period data for a run."""
+
+    id: str
+    run_id: str
+    botanical_product_id: Optional[str]
+    started_at: datetime
+    ended_at: Optional[datetime]
+    duration_seconds: Optional[int]
+    avg_feed_rate_lph: Optional[Decimal]
+    avg_product_rate_lph: Optional[Decimal]
+    feed_mass_kg: Optional[Decimal]
+    product_mass_kg: Optional[Decimal]
+    record_source: str
+    note: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class DistillationMaterialResponse(BaseModel):
+    """Material movement captured during a run."""
+
+    id: str
+    run_id: str
+    period_id: Optional[str]
+    product_id: str
+    direction: str
+    inventory_movement_id: Optional[str]
+    qty_kg: Decimal
+    uom: str
+    unit_cost: Optional[Decimal]
+    note: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class DistillationEventResponse(BaseModel):
+    """Event response DTO."""
+
+    id: str
+    run_id: str
+    period_id: Optional[str]
+    event_type: DistillationEventType
+    occurred_at: datetime
+    source: str
+    payload: Optional[Dict[str, Any]] = None
+    external_id: Optional[str] = None
+    note: Optional[str] = None
+    material: Optional[DistillationMaterialResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DistillationRunResponse(BaseModel):
+    """Distillation run response."""
+
+    id: str
+    code: str
+    status: DistillationRunStatus
+    still_code: Optional[str]
+    product_id: Optional[str]
+    external_run_code: Optional[str]
+    open_at: Optional[datetime]
+    close_at: Optional[datetime]
+    actual_cost: Optional[Decimal]
+    notes: Optional[str]
+    created_at: datetime
+    periods: List[DistillationPeriodResponse] = []
+    events: List[DistillationEventResponse] = []
+    materials: List[DistillationMaterialResponse] = []
+
+    class Config:
+        from_attributes = True
 
 
 class QcTestTypeResponse(BaseModel):

@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from ...models import SKU, Brand, Company, Location, PriceObservation, Product
 from ...models.product import PRODUCT_FORMATS, PRODUCT_SPIRITS, categories_for
-from ...services import ObservationFilters, fetch_observations
+from ...services import ObservationFilters, ensure_location_sku, fetch_observations
 from ...services.db import session_scope
 from ...services.dedupe import apply_hash_to_observation
 from ...services.normalize import normalize_price
@@ -142,6 +142,7 @@ def layout() -> dbc.Container:
                                         {"id": "brand", "name": "Brand"},
                                         {"id": "product", "name": "Product"},
                                         {"id": "company", "name": "Company"},
+                                        {"id": "location_label", "name": "Location"},
                                         {"id": "channel", "name": "Channel"},
                                         {
                                             "id": "price_inc_gst_norm",
@@ -831,6 +832,13 @@ def _create_observation(payload: Dict) -> bool:
             session.rollback()
             return False
         session.add(observation)
+        if location is not None:
+            ensure_location_sku(
+                session,
+                location_id=location.id,
+                sku_id=sku.id,
+                observation_dt=observation.observation_dt,
+            )
         session.commit()
         return True
 

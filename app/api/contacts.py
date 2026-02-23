@@ -24,6 +24,21 @@ class ContactCreate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    billing_address_line1: Optional[str] = None
+    billing_address_line2: Optional[str] = None
+    billing_suburb: Optional[str] = None
+    billing_state: Optional[str] = None
+    billing_postcode: Optional[str] = None
+    billing_country: Optional[str] = None
+    delivery_address_line1: Optional[str] = None
+    delivery_address_line2: Optional[str] = None
+    delivery_suburb: Optional[str] = None
+    delivery_state: Optional[str] = None
+    delivery_postcode: Optional[str] = None
+    delivery_country: Optional[str] = None
+    abn: Optional[str] = None
+    notes: Optional[str] = None
+    alm_account_number: Optional[str] = None
     is_customer: bool = False
     is_supplier: bool = False
     is_other: bool = False
@@ -35,12 +50,27 @@ class ContactCreate(BaseModel):
 class ContactUpdate(BaseModel):
     """Update contact request."""
 
-    code: Optional[str] = None  # Can update code if needed
+    code: Optional[str] = None
     name: Optional[str] = None
     contact_person: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    billing_address_line1: Optional[str] = None
+    billing_address_line2: Optional[str] = None
+    billing_suburb: Optional[str] = None
+    billing_state: Optional[str] = None
+    billing_postcode: Optional[str] = None
+    billing_country: Optional[str] = None
+    delivery_address_line1: Optional[str] = None
+    delivery_address_line2: Optional[str] = None
+    delivery_suburb: Optional[str] = None
+    delivery_state: Optional[str] = None
+    delivery_postcode: Optional[str] = None
+    delivery_country: Optional[str] = None
+    abn: Optional[str] = None
+    notes: Optional[str] = None
+    alm_account_number: Optional[str] = None
     is_customer: Optional[bool] = None
     is_supplier: Optional[bool] = None
     is_other: Optional[bool] = None
@@ -59,6 +89,21 @@ class ContactResponse(BaseModel):
     email: Optional[str]
     phone: Optional[str]
     address: Optional[str]
+    billing_address_line1: Optional[str]
+    billing_address_line2: Optional[str]
+    billing_suburb: Optional[str]
+    billing_state: Optional[str]
+    billing_postcode: Optional[str]
+    billing_country: Optional[str]
+    delivery_address_line1: Optional[str]
+    delivery_address_line2: Optional[str]
+    delivery_suburb: Optional[str]
+    delivery_state: Optional[str]
+    delivery_postcode: Optional[str]
+    delivery_country: Optional[str]
+    abn: Optional[str]
+    notes: Optional[str]
+    alm_account_number: Optional[str]
     is_customer: bool
     is_supplier: bool
     is_other: bool
@@ -102,6 +147,21 @@ def contact_to_response(c: Contact) -> ContactResponse:
         email=c.email,
         phone=c.phone,
         address=c.address,
+        billing_address_line1=getattr(c, "billing_address_line1", None),
+        billing_address_line2=getattr(c, "billing_address_line2", None),
+        billing_suburb=getattr(c, "billing_suburb", None),
+        billing_state=getattr(c, "billing_state", None),
+        billing_postcode=getattr(c, "billing_postcode", None),
+        billing_country=getattr(c, "billing_country", None),
+        delivery_address_line1=getattr(c, "delivery_address_line1", None),
+        delivery_address_line2=getattr(c, "delivery_address_line2", None),
+        delivery_suburb=getattr(c, "delivery_suburb", None),
+        delivery_state=getattr(c, "delivery_state", None),
+        delivery_postcode=getattr(c, "delivery_postcode", None),
+        delivery_country=getattr(c, "delivery_country", None),
+        abn=getattr(c, "abn", None),
+        notes=getattr(c, "notes", None),
+        alm_account_number=getattr(c, "alm_account_number", None),
         is_customer=c.is_customer,
         is_supplier=c.is_supplier,
         is_other=c.is_other,
@@ -196,6 +256,21 @@ async def create_contact(contact_data: ContactCreate, db: Session = Depends(get_
         email=contact_data.email,
         phone=contact_data.phone,
         address=contact_data.address,
+        billing_address_line1=contact_data.billing_address_line1,
+        billing_address_line2=contact_data.billing_address_line2,
+        billing_suburb=contact_data.billing_suburb,
+        billing_state=contact_data.billing_state,
+        billing_postcode=contact_data.billing_postcode,
+        billing_country=contact_data.billing_country,
+        delivery_address_line1=contact_data.delivery_address_line1,
+        delivery_address_line2=contact_data.delivery_address_line2,
+        delivery_suburb=contact_data.delivery_suburb,
+        delivery_state=contact_data.delivery_state,
+        delivery_postcode=contact_data.delivery_postcode,
+        delivery_country=contact_data.delivery_country,
+        abn=contact_data.abn,
+        notes=contact_data.notes,
+        alm_account_number=contact_data.alm_account_number,
         is_customer=contact_data.is_customer,
         is_supplier=contact_data.is_supplier,
         is_other=contact_data.is_other,
@@ -244,6 +319,36 @@ async def update_contact(
         contact.phone = contact_data.phone
     if contact_data.address is not None:
         contact.address = contact_data.address
+    if contact_data.billing_address_line1 is not None:
+        contact.billing_address_line1 = contact_data.billing_address_line1
+    if contact_data.billing_address_line2 is not None:
+        contact.billing_address_line2 = contact_data.billing_address_line2
+    if contact_data.billing_suburb is not None:
+        contact.billing_suburb = contact_data.billing_suburb
+    if contact_data.billing_state is not None:
+        contact.billing_state = contact_data.billing_state
+    if contact_data.billing_postcode is not None:
+        contact.billing_postcode = contact_data.billing_postcode
+    if contact_data.billing_country is not None:
+        contact.billing_country = contact_data.billing_country
+    if contact_data.delivery_address_line1 is not None:
+        contact.delivery_address_line1 = contact_data.delivery_address_line1
+    if contact_data.delivery_address_line2 is not None:
+        contact.delivery_address_line2 = contact_data.delivery_address_line2
+    if contact_data.delivery_suburb is not None:
+        contact.delivery_suburb = contact_data.delivery_suburb
+    if contact_data.delivery_state is not None:
+        contact.delivery_state = contact_data.delivery_state
+    if contact_data.delivery_postcode is not None:
+        contact.delivery_postcode = contact_data.delivery_postcode
+    if contact_data.delivery_country is not None:
+        contact.delivery_country = contact_data.delivery_country
+    if contact_data.abn is not None:
+        contact.abn = contact_data.abn
+    if contact_data.notes is not None:
+        contact.notes = contact_data.notes
+    if contact_data.alm_account_number is not None:
+        contact.alm_account_number = contact_data.alm_account_number
     if contact_data.is_customer is not None:
         contact.is_customer = contact_data.is_customer
     if contact_data.is_supplier is not None:

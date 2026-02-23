@@ -4,6 +4,7 @@ from .brand import Brand
 from .carton_spec import CartonSpec
 from .company import Company
 from .location import Location
+from .location_sku import LocationSKU
 from .pack_spec import PackSpec
 from .package_spec import PackageSpec
 from .price_observation import PriceObservation
@@ -26,6 +27,7 @@ __all__ = [
     "PurchasePrice",
     "Company",
     "Location",
+    "LocationSKU",
     "PriceObservation",
     "Attachment",
 ]

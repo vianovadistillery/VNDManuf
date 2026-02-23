@@ -126,6 +126,21 @@ def register_contacts_callbacks(app, make_api_request):
             Output("contacts-form-email", "value", allow_duplicate=True),
             Output("contacts-form-phone", "value", allow_duplicate=True),
             Output("contacts-form-address", "value", allow_duplicate=True),
+            Output("contacts-form-billing-line1", "value", allow_duplicate=True),
+            Output("contacts-form-billing-line2", "value", allow_duplicate=True),
+            Output("contacts-form-billing-suburb", "value", allow_duplicate=True),
+            Output("contacts-form-billing-state", "value", allow_duplicate=True),
+            Output("contacts-form-billing-postcode", "value", allow_duplicate=True),
+            Output("contacts-form-billing-country", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-line1", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-line2", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-suburb", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-state", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-postcode", "value", allow_duplicate=True),
+            Output("contacts-form-delivery-country", "value", allow_duplicate=True),
+            Output("contacts-form-abn", "value", allow_duplicate=True),
+            Output("contacts-form-alm-account", "value", allow_duplicate=True),
+            Output("contacts-form-notes", "value", allow_duplicate=True),
             Output("contacts-form-xero-id", "value", allow_duplicate=True),
             Output("contacts-form-is-customer", "value", allow_duplicate=True),
             Output("contacts-form-is-supplier", "value", allow_duplicate=True),
@@ -145,55 +160,45 @@ def register_contacts_callbacks(app, make_api_request):
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if button_id == "contacts-add-btn":
-            # Add mode - clear form (no code in add mode)
-            return [
-                True,
-                "Add Contact",
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                False,
-                False,
-                False,
-                True,
-            ]
+            empty_extra = [
+                None
+            ] * 15  # billing (6) + delivery (6) + abn + alm_account + notes
+            return (
+                [True, "Add Contact", None, None, None, None, None, None, None]
+                + empty_extra
+                + [None, False, False, False, True]
+            )
 
         elif button_id == "contacts-edit-btn":
             if not selected_rows or not data:
-                return [
-                    False,
-                    "",
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ]
+                return [False, ""] + [None] * 29
 
             contact = data[selected_rows[0]]
-
             return [
-                True,  # is_open
-                "Edit Contact",  # title
-                contact.get("id"),  # hidden ID
-                contact.get("code", ""),  # code
+                True,
+                "Edit Contact",
+                contact.get("id"),
+                contact.get("code", ""),
                 contact.get("name", ""),
                 contact.get("contact_person", ""),
                 contact.get("email", ""),
                 contact.get("phone", ""),
                 contact.get("address", ""),
+                contact.get("billing_address_line1") or "",
+                contact.get("billing_address_line2") or "",
+                contact.get("billing_suburb") or "",
+                contact.get("billing_state") or "",
+                contact.get("billing_postcode") or "",
+                contact.get("billing_country") or "",
+                contact.get("delivery_address_line1") or "",
+                contact.get("delivery_address_line2") or "",
+                contact.get("delivery_suburb") or "",
+                contact.get("delivery_state") or "",
+                contact.get("delivery_postcode") or "",
+                contact.get("delivery_country") or "",
+                contact.get("abn") or "",
+                contact.get("alm_account_number") or "",
+                contact.get("notes") or "",
                 contact.get("xero_contact_id", ""),
                 contact.get("is_customer", False),
                 contact.get("is_supplier", False),
@@ -235,6 +240,21 @@ def register_contacts_callbacks(app, make_api_request):
             State("contacts-form-email", "value"),
             State("contacts-form-phone", "value"),
             State("contacts-form-address", "value"),
+            State("contacts-form-billing-line1", "value"),
+            State("contacts-form-billing-line2", "value"),
+            State("contacts-form-billing-suburb", "value"),
+            State("contacts-form-billing-state", "value"),
+            State("contacts-form-billing-postcode", "value"),
+            State("contacts-form-billing-country", "value"),
+            State("contacts-form-delivery-line1", "value"),
+            State("contacts-form-delivery-line2", "value"),
+            State("contacts-form-delivery-suburb", "value"),
+            State("contacts-form-delivery-state", "value"),
+            State("contacts-form-delivery-postcode", "value"),
+            State("contacts-form-delivery-country", "value"),
+            State("contacts-form-abn", "value"),
+            State("contacts-form-alm-account", "value"),
+            State("contacts-form-notes", "value"),
             State("contacts-form-xero-id", "value"),
             State("contacts-form-is-customer", "value"),
             State("contacts-form-is-supplier", "value"),
@@ -253,6 +273,21 @@ def register_contacts_callbacks(app, make_api_request):
         email,
         phone,
         address,
+        billing_line1,
+        billing_line2,
+        billing_suburb,
+        billing_state,
+        billing_postcode,
+        billing_country,
+        delivery_line1,
+        delivery_line2,
+        delivery_suburb,
+        delivery_state,
+        delivery_postcode,
+        delivery_country,
+        abn,
+        alm_account_number,
+        notes,
         xero_id,
         is_customer,
         is_supplier,
@@ -282,41 +317,43 @@ def register_contacts_callbacks(app, make_api_request):
             # Determine if this is edit mode
             is_edit = title == "Edit Contact" and contact_id is not None
 
-            if is_edit:
-                # Update
-                payload = {
+            def _payload():
+                p = {
                     "name": name,
                     "contact_person": contact or None,
                     "email": email or None,
                     "phone": phone or None,
                     "address": address or None,
+                    "billing_address_line1": billing_line1 or None,
+                    "billing_address_line2": billing_line2 or None,
+                    "billing_suburb": billing_suburb or None,
+                    "billing_state": billing_state or None,
+                    "billing_postcode": billing_postcode or None,
+                    "billing_country": billing_country or None,
+                    "delivery_address_line1": delivery_line1 or None,
+                    "delivery_address_line2": delivery_line2 or None,
+                    "delivery_suburb": delivery_suburb or None,
+                    "delivery_state": delivery_state or None,
+                    "delivery_postcode": delivery_postcode or None,
+                    "delivery_country": delivery_country or None,
+                    "abn": abn or None,
+                    "notes": notes or None,
+                    "alm_account_number": alm_account_number or None,
                     "xero_contact_id": xero_id or None,
                     "is_customer": is_customer if is_customer else False,
                     "is_supplier": is_supplier if is_supplier else False,
                     "is_other": is_other if is_other else False,
                     "is_active": is_active if is_active is not None else True,
                 }
-                # Only include code if it was provided and modified
                 if code:
-                    payload["code"] = code
+                    p["code"] = code
+                return p
+
+            if is_edit:
+                payload = _payload()
                 response = make_api_request("PUT", f"/contacts/{contact_id}", payload)
             else:
-                # Create new - code is auto-generated if not provided
-                payload = {
-                    "name": name,
-                    "contact_person": contact or None,
-                    "email": email or None,
-                    "phone": phone or None,
-                    "address": address or None,
-                    "xero_contact_id": xero_id or None,
-                    "is_customer": is_customer if is_customer else False,
-                    "is_supplier": is_supplier if is_supplier else False,
-                    "is_other": is_other if is_other else False,
-                    "is_active": is_active if is_active is not None else True,
-                }
-                # Include code if provided, otherwise auto-generate
-                if code:
-                    payload["code"] = code
+                payload = _payload()
                 response = make_api_request("POST", "/contacts/", payload)
 
             # Check for error response

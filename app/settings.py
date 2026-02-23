@@ -171,6 +171,49 @@ class ShopifySettings(BaseSettings):
         env_prefix = "SHOPIFY_"
 
 
+class DocumentGeneratorSettings(BaseSettings):
+    """Mail-merge document generation (docxtpl + docx2pdf / LibreOffice)."""
+
+    template_dir: Path = Field(
+        default_factory=lambda: Path(__file__).parent.parent / "templates",
+        description="Directory containing .docx templates",
+    )
+    output_dir: Path = Field(
+        default_factory=lambda: Path(__file__).parent.parent / "generated",
+        description="Directory for generated PDFs (and optional DOCX)",
+    )
+    keep_docx: bool = Field(
+        default=False,
+        description="Keep intermediate DOCX files for debugging",
+    )
+    conversion_backend: str = Field(
+        default="docx2pdf",
+        pattern="^(docx2pdf|libreoffice|auto)$",
+        description="Primary converter: docx2pdf, libreoffice, or auto (try docx2pdf then libreoffice)",
+    )
+    conversion_timeout_seconds: int = Field(default=60, ge=10, le=300)
+    libreoffice_path: Optional[str] = Field(
+        default=None,
+        description="Path to LibreOffice executable (e.g. C:\\Program Files\\LibreOffice\\program\\soffice.exe)",
+    )
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis URL for RQ job queue",
+    )
+    queue_name: str = Field(
+        default="documents", description="RQ queue name for document generation"
+    )
+    table_max_rows: int = Field(
+        default=12,
+        ge=1,
+        le=100,
+        description="Max line-item table rows (filled + empty) to fill page",
+    )
+
+    class Config:
+        env_prefix = "DOCGEN_"
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -189,6 +232,7 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     business: BusinessSettings = Field(default_factory=BusinessSettings)
     shopify: ShopifySettings = Field(default_factory=ShopifySettings)
+    docgen: DocumentGeneratorSettings = Field(default_factory=DocumentGeneratorSettings)
 
     # File paths
     project_root: Path = Field(default_factory=lambda: Path(__file__).parent.parent)

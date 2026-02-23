@@ -80,3 +80,71 @@ class ShopifyClient:
     def backoff(self, attempt: int):
         """Exponential backoff for retries."""
         time.sleep(min(1.0 * (2**attempt), 10.0))
+
+    def get_orders(
+        self,
+        created_at_min: Optional[str] = None,
+        created_at_max: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 250,
+        since_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Fetch orders from Shopify REST API.
+
+        Args:
+            created_at_min: ISO 8601 date string (e.g., "2024-01-01T00:00:00Z")
+            created_at_max: ISO 8601 date string
+            status: Order status filter (open, closed, cancelled, any)
+            limit: Number of orders per page (max 250)
+            since_id: Fetch orders with ID greater than this value (for pagination)
+
+        Returns:
+            Dictionary with 'orders' list and pagination info
+        """
+        url = f"{self.base_url}/orders.json"
+        params: Dict[str, Any] = {"limit": min(limit, 250)}
+
+        if created_at_min:
+            params["created_at_min"] = created_at_min
+        if created_at_max:
+            params["created_at_max"] = created_at_max
+        if status:
+            params["status"] = status
+        if since_id:
+            params["since_id"] = since_id
+
+        response = requests.get(url, headers=self._headers(), params=params)
+
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "ok": True,
+                "orders": data.get("orders", []),
+                "has_next": len(data.get("orders", [])) == limit,
+            }
+        else:
+            return {
+                "ok": False,
+                "error": response.text,
+                "status_code": response.status_code,
+                "orders": [],
+            }
+
+    def get_order_by_id(self, order_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch a single order by ID.
+
+        Args:
+            order_id: Shopify order ID
+
+        Returns:
+            Order dictionary or None if not found
+        """
+        url = f"{self.base_url}/orders/{order_id}.json"
+        response = requests.get(url, headers=self._headers())
+
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("order")
+        return None

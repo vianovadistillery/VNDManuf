@@ -26,6 +26,7 @@ from ..models import (
 from . import normalize
 from .costs import create_purchase_price
 from .dedupe import apply_hash_to_observation
+from .location_inventory import ensure_location_sku
 
 
 @dataclass(slots=True)
@@ -562,6 +563,13 @@ class ObservationImporter:
             return True
 
         self.session.add(observation)
+        if location is not None:
+            ensure_location_sku(
+                self.session,
+                location_id=location.id,
+                sku_id=sku.id,
+                observation_dt=observation.observation_dt,
+            )
         return False
 
     def _resolve_sku(self, row: dict) -> SKU:

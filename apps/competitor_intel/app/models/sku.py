@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, TimestampMixin, UUIDStringMixin
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .location_sku import LocationSKU
     from .package_spec import PackageSpec
     from .price_observation import PriceObservation
     from .product import Product
@@ -39,6 +40,9 @@ class SKU(UUIDStringMixin, TimestampMixin, Base):
     )
     price_observations: Mapped[list["PriceObservation"]] = relationship(
         "PriceObservation", back_populates="sku"
+    )
+    location_links: Mapped[list["LocationSKU"]] = relationship(
+        "LocationSKU", back_populates="sku", cascade="all, delete-orphan"
     )
     pack_assignment: Mapped[Optional["SKUPack"]] = relationship(
         "SKUPack", back_populates="sku", cascade="all, delete-orphan", uselist=False

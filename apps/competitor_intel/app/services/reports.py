@@ -475,6 +475,7 @@ def _row_to_dict(row) -> dict:
         location,
         package_spec,
     ) = row
+    location_label = _format_location_label(location)
     return {
         "id": observation.id,
         "sku_id": sku.id,
@@ -494,7 +495,9 @@ def _row_to_dict(row) -> dict:
             "state": location.state if location else None,
             "suburb": location.suburb if location else None,
             "store_name": location.store_name if location else None,
+            "label": location_label,
         },
+        "location_label": location_label,
         "channel": observation.channel,
         "price_context": observation.price_context,
         "promo_name": observation.promo_name,
@@ -531,3 +534,14 @@ def _row_to_dict(row) -> dict:
         else None,
         "observation_dt": observation.observation_dt.isoformat(),
     }
+
+
+def _format_location_label(location: Location | None) -> str | None:
+    if location is None:
+        return None
+    parts = []
+    if location.store_name:
+        parts.append(location.store_name)
+    parts.append(location.suburb)
+    parts.append(location.state)
+    return " • ".join(filter(None, parts))

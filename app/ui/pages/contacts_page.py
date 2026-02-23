@@ -242,6 +242,148 @@ class ContactsPage:
                                         dbc.Textarea(
                                             id="contacts-form-address", rows=3
                                         ),
+                                        dbc.Accordion(
+                                            [
+                                                dbc.AccordionItem(
+                                                    [
+                                                        dbc.Label("Line 1"),
+                                                        dbc.Input(
+                                                            id="contacts-form-billing-line1",
+                                                            type="text",
+                                                        ),
+                                                        dbc.Label("Line 2"),
+                                                        dbc.Input(
+                                                            id="contacts-form-billing-line2",
+                                                            type="text",
+                                                        ),
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Suburb"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-billing-suburb",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "State"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-billing-state",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Postcode"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-billing-postcode",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                            ]
+                                                        ),
+                                                        dbc.Label("Country"),
+                                                        dbc.Input(
+                                                            id="contacts-form-billing-country",
+                                                            type="text",
+                                                            placeholder="e.g. Australia",
+                                                        ),
+                                                    ],
+                                                    title="Billing address",
+                                                    item_id="contacts-accordion-billing",
+                                                ),
+                                                dbc.AccordionItem(
+                                                    [
+                                                        dbc.Label("Line 1"),
+                                                        dbc.Input(
+                                                            id="contacts-form-delivery-line1",
+                                                            type="text",
+                                                        ),
+                                                        dbc.Label("Line 2"),
+                                                        dbc.Input(
+                                                            id="contacts-form-delivery-line2",
+                                                            type="text",
+                                                        ),
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Suburb"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-delivery-suburb",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "State"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-delivery-state",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Postcode"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-delivery-postcode",
+                                                                            type="text",
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                            ]
+                                                        ),
+                                                        dbc.Label("Country"),
+                                                        dbc.Input(
+                                                            id="contacts-form-delivery-country",
+                                                            type="text",
+                                                            placeholder="e.g. Australia",
+                                                        ),
+                                                    ],
+                                                    title="Delivery address",
+                                                    item_id="contacts-accordion-delivery",
+                                                ),
+                                            ],
+                                            start_collapsed=True,
+                                            className="mb-3",
+                                        ),
+                                        dbc.Label("ABN"),
+                                        dbc.Input(
+                                            id="contacts-form-abn",
+                                            type="text",
+                                            placeholder="e.g. 12 345 678 901",
+                                        ),
+                                        dbc.Label("ALM account number"),
+                                        dbc.Input(
+                                            id="contacts-form-alm-account",
+                                            type="text",
+                                            placeholder="ALM account number",
+                                        ),
+                                        dbc.Label("Notes"),
+                                        dbc.Textarea(
+                                            id="contacts-form-notes",
+                                            rows=2,
+                                            placeholder="Optional notes",
+                                        ),
                                         dbc.Label("XERO ID (UUID)"),
                                         dbc.Input(
                                             id="contacts-form-xero-id",

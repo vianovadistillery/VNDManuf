@@ -1,11 +1,29 @@
-"""Settings page with Units CRUD."""
+"""Settings page with Units CRUD and runtime configuration overview."""
 
 import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
 
+from app.settings import settings
+
+
+def _info_list(items):
+    """Render a simple list of label/value pairs."""
+    return html.Ul(
+        [
+            html.Li(
+                [
+                    html.Strong(f"{label}:"),
+                    html.Span(str(value), className="ms-2 text-monospace"),
+                ]
+            )
+            for label, value in items
+        ],
+        className="list-unstyled mb-0",
+    )
+
 
 class SettingsPage:
-    """Settings management page with Units CRUD."""
+    """Settings management page with Units CRUD and runtime configuration."""
 
     @staticmethod
     def get_layout():
@@ -20,6 +38,10 @@ class SettingsPage:
                                     id="settings-tabs",
                                     active_tab="units",
                                     children=[
+                                        dbc.Tab(
+                                            label="Runtime Config",
+                                            tab_id="runtime-config",
+                                        ),
                                         dbc.Tab(label="Units", tab_id="units"),
                                         dbc.Tab(
                                             label="Excise Rates", tab_id="excise-rates"
@@ -39,6 +61,172 @@ class SettingsPage:
                             ]
                         )
                     ]
+                ),
+                # Runtime configuration tab
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "Environment",
+                                                                className="mb-3",
+                                                            ),
+                                                            _info_list(
+                                                                [
+                                                                    (
+                                                                        "Environment",
+                                                                        settings.environment,
+                                                                    ),
+                                                                    (
+                                                                        "App Name",
+                                                                        settings.app_name,
+                                                                    ),
+                                                                    (
+                                                                        "Version",
+                                                                        settings.app_version,
+                                                                    ),
+                                                                    (
+                                                                        "Project Root",
+                                                                        settings.project_root,
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                        ]
+                                                    ),
+                                                    className="mb-3",
+                                                ),
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "Database",
+                                                                className="mb-3",
+                                                            ),
+                                                            _info_list(
+                                                                [
+                                                                    (
+                                                                        "URL",
+                                                                        settings.database.database_url,
+                                                                    ),
+                                                                    (
+                                                                        "Pool Size",
+                                                                        settings.database.pool_size,
+                                                                    ),
+                                                                    (
+                                                                        "Max Overflow",
+                                                                        settings.database.max_overflow,
+                                                                    ),
+                                                                    (
+                                                                        "Pool Timeout (s)",
+                                                                        settings.database.pool_timeout,
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                        ]
+                                                    ),
+                                                ),
+                                            ],
+                                            lg=6,
+                                            className="mb-3",
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "API Server",
+                                                                className="mb-3",
+                                                            ),
+                                                            _info_list(
+                                                                [
+                                                                    (
+                                                                        "Host",
+                                                                        settings.api.host,
+                                                                    ),
+                                                                    (
+                                                                        "Port",
+                                                                        settings.api.port,
+                                                                    ),
+                                                                    (
+                                                                        "Debug Mode",
+                                                                        "Yes"
+                                                                        if settings.api.debug
+                                                                        else "No",
+                                                                    ),
+                                                                    (
+                                                                        "CORS Origins",
+                                                                        ", ".join(
+                                                                            settings.api.cors_origins
+                                                                        ),
+                                                                    ),
+                                                                    (
+                                                                        "Rate Limit (per min)",
+                                                                        settings.api.rate_limit_per_minute,
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                        ]
+                                                    ),
+                                                    className="mb-3",
+                                                ),
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "UI / Dashboard",
+                                                                className="mb-3",
+                                                            ),
+                                                            _info_list(
+                                                                [
+                                                                    (
+                                                                        "Host",
+                                                                        settings.ui.host,
+                                                                    ),
+                                                                    (
+                                                                        "Port",
+                                                                        settings.ui.port,
+                                                                    ),
+                                                                    (
+                                                                        "Debug Mode",
+                                                                        "Yes"
+                                                                        if settings.ui.debug
+                                                                        else "No",
+                                                                    ),
+                                                                    (
+                                                                        "API Base URL",
+                                                                        settings.ui.api_base_url,
+                                                                    ),
+                                                                    (
+                                                                        "Demo Mode",
+                                                                        "Enabled"
+                                                                        if settings.ui.enable_demo_mode
+                                                                        else "Disabled",
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                        ]
+                                                    ),
+                                                ),
+                                            ],
+                                            lg=6,
+                                            className="mb-3",
+                                        ),
+                                    ],
+                                    className="g-3",
+                                )
+                            ]
+                        )
+                    ],
+                    id="runtime-config-tab-content",
+                    style={"display": "none"},
                 ),
                 # Units Tab
                 dbc.Row(

@@ -25,6 +25,7 @@ from ..models import (
     SKUPack,
 )
 from . import normalize
+from .location_inventory import ensure_location_sku
 
 REQUIRED_BRANDS = 5
 REQUIRED_SKUS = 10
@@ -208,36 +209,90 @@ COMPANY_DEFINITIONS = [
         "name": "Dan Murphy's",
         "type": "retailer",
         "locations": [
-            {"store_name": "Geelong", "state": "VIC", "suburb": "Geelong"},
-            {"store_name": "Bondi", "state": "NSW", "suburb": "Bondi"},
+            {
+                "store_name": "Geelong",
+                "state": "VIC",
+                "suburb": "Geelong",
+                "postcode": "3220",
+                "address": "135 Mercer St",
+                "chain_alignment": "Dan Murphy's",
+                "main_contact": "Alex Morgan",
+                "decision_maker": "Sophie Turner",
+            },
+            {
+                "store_name": "Bondi",
+                "state": "NSW",
+                "suburb": "Bondi",
+                "postcode": "2026",
+                "address": "235 Bondi Rd",
+                "chain_alignment": "Dan Murphy's",
+                "main_contact": "Priya Patel",
+                "decision_maker": "Daniel Wong",
+            },
         ],
     },
     {
         "name": "First Choice Liquor",
         "type": "retailer",
         "locations": [
-            {"store_name": "Richmond", "state": "VIC", "suburb": "Richmond"},
+            {
+                "store_name": "Richmond",
+                "state": "VIC",
+                "suburb": "Richmond",
+                "postcode": "3121",
+                "address": "88 Swan St",
+                "chain_alignment": "First Choice Liquor",
+                "main_contact": "Jordan Lee",
+                "decision_maker": "Harper Smith",
+            },
         ],
     },
     {
         "name": "Vintage Cellars",
         "type": "retailer",
         "locations": [
-            {"store_name": "Indooroopilly", "state": "QLD", "suburb": "Indooroopilly"},
+            {
+                "store_name": "Indooroopilly",
+                "state": "QLD",
+                "suburb": "Indooroopilly",
+                "postcode": "4068",
+                "address": "322 Moggill Rd",
+                "chain_alignment": "Vintage Cellars",
+                "main_contact": "Mia Chen",
+                "decision_maker": "Samuel Grant",
+            },
         ],
     },
     {
         "name": "BWS",
         "type": "retailer",
         "locations": [
-            {"store_name": "Adelaide CBD", "state": "SA", "suburb": "Adelaide"},
+            {
+                "store_name": "Adelaide CBD",
+                "state": "SA",
+                "suburb": "Adelaide",
+                "postcode": "5000",
+                "address": "45 King William St",
+                "chain_alignment": "BWS",
+                "main_contact": "Oliver Davis",
+                "decision_maker": "Ruby Hughes",
+            },
         ],
     },
     {
         "name": "Craft Spirits Co",
         "type": "distributor",
         "locations": [
-            {"store_name": "Warehouse", "state": "VIC", "suburb": "Footscray"},
+            {
+                "store_name": "Warehouse",
+                "state": "VIC",
+                "suburb": "Footscray",
+                "postcode": "3011",
+                "address": "12 Industry Ln",
+                "chain_alignment": "Independent",
+                "main_contact": "Jamie Fox",
+                "decision_maker": "Morgan Reid",
+            },
         ],
     },
 ]
@@ -543,12 +598,32 @@ class SampleDataBuilder:
                     location = Location(
                         company=company,
                         store_name=loc_def.get("store_name"),
+                        address=loc_def.get("address"),
                         state=loc_def["state"],
                         suburb=loc_def["suburb"],
+                        postcode=loc_def.get("postcode"),
+                        chain_alignment=loc_def.get("chain_alignment"),
+                        main_contact=loc_def.get("main_contact"),
+                        decision_maker=loc_def.get("decision_maker"),
                         lat=lat,
                         lon=lon,
                     )
                     self.session.add(location)
+                else:
+                    updated = False
+                    for attr in (
+                        "address",
+                        "postcode",
+                        "chain_alignment",
+                        "main_contact",
+                        "decision_maker",
+                    ):
+                        new_value = loc_def.get(attr)
+                        if new_value and getattr(location, attr) != new_value:
+                            setattr(location, attr, new_value)
+                            updated = True
+                    if updated:
+                        self.session.add(location)
             companies.append(company)
         self.session.flush(companies)
         return companies
@@ -672,6 +747,13 @@ class SampleDataBuilder:
                     source_note="Sample dataset",
                     hash_key=hash_key,
                 )
+                if location is not None:
+                    ensure_location_sku(
+                        self.session,
+                        location_id=location.id,
+                        sku_id=sku.id,
+                        observation_dt=observation_dt,
+                    )
                 if self.rng.random() < 0.1:
                     obs.attachments.append(
                         Attachment(

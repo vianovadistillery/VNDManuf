@@ -50,9 +50,11 @@ repos:
       - id: sqlfluff-lint
         args: [--dialect=postgres]
         files: \.sql$
+        exclude: competitor_schema_dump\.sql
       - id: sqlfluff-fix
         args: [--dialect=postgres]
         files: \.sql$
+        exclude: competitor_schema_dump\.sql
         stages: [manual]   # run manually when you want the fixer
 
 default_install_hook_types: [pre-commit, commit-msg]

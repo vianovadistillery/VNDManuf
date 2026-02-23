@@ -9,6 +9,7 @@ from .base import Base, TimestampMixin, UUIDStringMixin
 
 if TYPE_CHECKING:  # pragma: no cover
     from .company import Company
+    from .location_sku import LocationSKU
     from .price_observation import PriceObservation
 
 
@@ -19,15 +20,22 @@ class Location(UUIDStringMixin, TimestampMixin, Base):
         sa.String(36), sa.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
     store_name: Mapped[str | None] = mapped_column(sa.String(255))
+    address: Mapped[str | None] = mapped_column(sa.String(255))
     state: Mapped[str] = mapped_column(sa.String(64), nullable=False)
     suburb: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     postcode: Mapped[str | None] = mapped_column(sa.String(16))
+    chain_alignment: Mapped[str | None] = mapped_column(sa.String(128))
+    main_contact: Mapped[str | None] = mapped_column(sa.String(255))
+    decision_maker: Mapped[str | None] = mapped_column(sa.String(255))
     lat: Mapped[float | None] = mapped_column(sa.Float)
     lon: Mapped[float | None] = mapped_column(sa.Float)
 
     company: Mapped["Company"] = relationship("Company", back_populates="locations")
     price_observations: Mapped[list["PriceObservation"]] = relationship(
         "PriceObservation", back_populates="location"
+    )
+    location_skus: Mapped[list["LocationSKU"]] = relationship(
+        "LocationSKU", back_populates="location", cascade="all, delete-orphan"
     )
 
     __table_args__ = (

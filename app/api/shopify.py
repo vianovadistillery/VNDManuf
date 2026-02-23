@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from datetime import datetime
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.adapters.db import get_db
 from app.adapters.shopify_hmac import verify_webhook_hmac
+from app.services.shopify_order_import import ShopifyOrderImportService
 from app.services.shopify_sync import ShopifySyncService
 from app.settings import settings
 
@@ -132,4 +136,87 @@ def push_all(db: Session = Depends(get_db)):
     """
     svc = ShopifySyncService(db)
     result = svc.reconcile_all()
+    return result
+
+
+@router.post("/orders/import-historical")
+def import_historical_orders(
+    since_date: Optional[str] = Query(None, description="ISO 8601 date string"),
+    until_date: Optional[str] = Query(None, description="ISO 8601 date string"),
+    db: Session = Depends(get_db),
+):
+    """
+    Import all historical orders from Shopify (one-time operation).
+
+    Args:
+        since_date: Start date (ISO 8601 format, optional)
+        until_date: End date (ISO 8601 format, optional)
+
+    Returns:
+        Summary with import counts
+    """
+    svc = ShopifyOrderImportService(db)
+
+    since_dt = None
+    if since_date:
+        try:
+            since_dt = datetime.fromisoformat(since_date.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            raise HTTPException(
+                status_code=400, detail="Invalid since_date format. Use ISO 8601."
+            )
+
+    until_dt = None
+    if until_date:
+        try:
+            until_dt = datetime.fromisoformat(until_date.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            raise HTTPException(
+                status_code=400, detail="Invalid until_date format. Use ISO 8601."
+            )
+
+    result = svc.import_historical_orders(since_date=since_dt, until_date=until_dt)
+    return result
+
+
+@router.post("/orders/import-since")
+def import_orders_since(
+    last_order_id: Optional[str] = Query(
+        None, description="Last imported Shopify order ID"
+    ),
+    db: Session = Depends(get_db),
+):
+    """
+    Import orders since last import (incremental sync).
+
+    Args:
+        last_order_id: Last imported Shopify order ID (optional)
+
+    Returns:
+        Summary with import counts
+    """
+    svc = ShopifyOrderImportService(db)
+    result = svc.import_orders_since(last_order_id=last_order_id)
+    return result
+
+
+@router.post("/orders/import/{order_id}")
+def import_single_order(order_id: str, db: Session = Depends(get_db)):
+    """
+    Import a single Shopify order by ID.
+
+    Args:
+        order_id: Shopify order ID
+
+    Returns:
+        Created or updated SalesOrder info
+    """
+    svc = ShopifyOrderImportService(db)
+    result = svc.import_order_by_id(order_id)
+
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=500, detail=result.get("error", "Import failed")
+        )
+
     return result
