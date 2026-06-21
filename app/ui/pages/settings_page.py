@@ -1,9 +1,13 @@
 """Settings page with Units CRUD and runtime configuration overview."""
 
+import os
+
 import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
 
 from app.settings import settings
+
+from .condition_types_page import ConditionTypesPage
 
 
 def _info_list(items):
@@ -54,6 +58,10 @@ class SettingsPage:
                                         dbc.Tab(
                                             label="Work Areas",
                                             tab_id="work-areas",
+                                        ),
+                                        dbc.Tab(
+                                            label="Conditions",
+                                            tab_id="conditions",
                                         ),
                                     ],
                                     className="mb-4",
@@ -221,7 +229,47 @@ class SettingsPage:
                                         ),
                                     ],
                                     className="g-3",
-                                )
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "Integrations",
+                                                                className="mb-3",
+                                                            ),
+                                                            dbc.Button(
+                                                                "Open Competitor Intel →",
+                                                                id="open-competitor-intel",
+                                                                color="info",
+                                                                href=os.getenv(
+                                                                    "COMPINTEL_URL",
+                                                                    "http://127.0.0.1:8060",
+                                                                ),
+                                                                external_link=True,
+                                                                target="_blank",
+                                                                title="Open Competitor Intel in a new tab",
+                                                            )
+                                                            if os.getenv(
+                                                                "COMPINTEL_ENABLED",
+                                                                "false",
+                                                            ).lower()
+                                                            == "true"
+                                                            else html.P(
+                                                                "Competitor Intel is disabled. Set COMPINTEL_ENABLED=true and COMPINTEL_URL to enable.",
+                                                                className="text-muted mb-0",
+                                                            ),
+                                                        ]
+                                                    ),
+                                                    className="mb-3",
+                                                ),
+                                            ]
+                                        ),
+                                    ]
+                                ),
                             ]
                         )
                     ],
@@ -1047,6 +1095,17 @@ class SettingsPage:
                 ),
                 # Hidden field for work area ID
                 html.Div(id="work-area-form-hidden", style={"display": "none"}),
+                # Conditions tab (Condition Types & Hazard Codes)
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [ConditionTypesPage.get_layout()],
+                            width=12,
+                        )
+                    ],
+                    id="conditions-tab-content",
+                    style={"display": "none"},
+                ),
             ],
             fluid=True,
         )

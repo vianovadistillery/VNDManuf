@@ -29,6 +29,11 @@ from app.adapters.db.models_assemblies_shopify import (
     AssemblyLine,
     InventoryReservation,
 )
+from app.domain.inventory_uom import (
+    convert_quantity,
+    inventory_uom_for_product,
+    unit_kind,
+)
 from app.domain.rules import (
     fifo_peek_cost,
     round_money,
@@ -1462,8 +1467,20 @@ class WorkOrderService:
         if qty_produced_kg_abs == 0:
             raise ValueError("Quantity produced must not be zero.")
 
+        inv_unit = inventory_uom_for_product(output_product)
+        try:
+            qty_inventory_abs = convert_quantity(
+                abs(qty_produced), output_uom, inv_unit, density
+            )
+        except ValueError:
+            if unit_kind(inv_unit) == "COUNT" or output_uom == inv_unit:
+                qty_inventory_abs = round_quantity(abs(qty_produced))
+            else:
+                qty_inventory_abs = qty_produced_kg_abs
+        qty_inventory_abs = round_quantity(qty_inventory_abs)
+
         qty_produced_signed = (
-            qty_produced_kg_abs if qty_produced >= 0 else -qty_produced_kg_abs
+            qty_inventory_abs if qty_produced >= 0 else -qty_inventory_abs
         )
 
         # Cost roll-up
@@ -1604,6 +1621,28 @@ class WorkOrderService:
 
             self.db.add(move)
             move_id = move.id
+
+            if qty_produced_signed > 0:
+                # Mirror completion into lot-based inventory (SOH source of truth)
+                completion_lot_code = (
+                    work_order.batch_code
+                    or work_order.code
+                    or f"WO-{work_order_id[:8]}"
+                )
+                completion_lot_code = (
+                    f"{completion_lot_code}-{datetime.utcnow().strftime('%H%M%S')}"
+                )
+                output_lot = self.inventory_service.add_lot(
+                    product_id=work_order.product_id,
+                    lot_code=completion_lot_code,
+                    qty_kg=qty_inventory_abs,
+                    unit_cost=unit_cost,
+                )
+                if output_lot.transactions:
+                    receipt_txn = output_lot.transactions[-1]
+                    receipt_txn.reference_type = "work_orders"
+                    receipt_txn.reference_id = work_order_id
+                    receipt_txn.notes = f"Work order {work_order.code} completion"
 
         # Store genealogy in batch meta
         if batch:

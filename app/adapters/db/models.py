@@ -327,7 +327,9 @@ class FormulaLine(Base, AuditMixin):
     product_id = Column(
         String(36), ForeignKey("products.id"), nullable=True
     )  # Unified product reference (nullable per DB)
-    quantity_kg = Column(Numeric(12, 3), nullable=False)  # Canonical storage in kg
+    quantity_kg = Column(
+        Numeric(12, 3), nullable=False
+    )  # Qty in product usage/inventory unit
     sequence = Column(Integer, nullable=False)
     notes = Column(Text)
     unit = Column(String(10))  # Display unit (kg, g, L, mL, etc.)
@@ -371,7 +373,9 @@ class InventoryLot(Base, AuditMixin):
     id = uuid_column()
     product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
     lot_code = Column(String(50), nullable=False)
-    quantity_kg = Column(Numeric(12, 3), nullable=False)  # Canonical storage in kg
+    quantity_kg = Column(
+        Numeric(12, 3), nullable=False
+    )  # Qty in product usage/inventory unit
     unit_cost = Column(Numeric(10, 2))  # Cost per kg (current)
     original_unit_cost = Column(Numeric(10, 2))  # Original cost at receipt
     current_unit_cost = Column(Numeric(10, 2))  # Current adjusted cost
@@ -912,6 +916,13 @@ class Contact(Base, AuditMixin):
     abn = Column(String(20))
     notes = Column(Text)
     alm_account_number = Column(String(50))
+    payment_method = Column(
+        String(50), nullable=True
+    )  # direct, ALM, Paramount, Shopify
+    paramount_number = Column(String(50), nullable=True)
+    default_pricing_level = Column(
+        String(50), nullable=True
+    )  # retail, wholesale, distributor, counter, trade, contract, industrial
 
     # Contact type flags (can be multiple)
     is_customer = Column(Boolean, default=False, nullable=False, index=True)
@@ -1057,16 +1068,30 @@ class Customer(Base, AuditMixin):
     is_active = Column(Boolean, default=True)
     abn = Column(String(20), nullable=True)
     notes = Column(Text, nullable=True)
+    contact_id = Column(
+        String(36), ForeignKey("contacts.id"), nullable=True, index=True
+    )  # Link to Contact when customer is selected from contacts (is_customer)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
     # Relationships
+    contact = relationship("Contact", foreign_keys=[contact_id])
     sales_orders = relationship("SalesOrder", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
     delivery_dockets = relationship("DeliveryDocket", back_populates="customer")
     customer_prices = relationship("CustomerPrice", back_populates="customer")
     customer_sites = relationship(
         "CustomerSite", back_populates="customer", cascade="all, delete-orphan"
+    )
+    import_aliases = relationship(
+        "CustomerImportAlias",
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
+    site_import_aliases = relationship(
+        "CustomerSiteImportAlias",
+        back_populates="customer",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -1106,6 +1131,9 @@ class SalesOrder(Base, AuditMixin):
     entered_by = Column(String(100))
     total_ex_gst = Column(Numeric(12, 2), nullable=False, default=0)
     total_inc_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    order_discount_ex_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    po_number = Column(String(50), nullable=True, index=True)
+    total_alcohol_volume_litres = Column(Numeric(12, 4), nullable=True)
     notes = Column(Text)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
@@ -1195,6 +1223,49 @@ class CustomerSite(Base, AuditMixin):
             name="uq_customer_sites_customer_site_state_suburb",
         ),
         Index("ix_customer_sites_customer", "customer_id"),
+    )
+
+
+class CustomerImportAlias(Base, AuditMixin):
+    """Maps alternate CSV customer names to a single Customer record."""
+
+    __tablename__ = "customer_import_aliases"
+
+    id = uuid_column()
+    alias_key = Column(String(200), nullable=False)
+    alias_label = Column(String(200), nullable=False)
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    notes = Column(Text, nullable=True)
+
+    customer = relationship("Customer", back_populates="import_aliases")
+
+    __table_args__ = (
+        sa.UniqueConstraint("alias_key", name="uq_customer_import_aliases_alias_key"),
+        Index("ix_customer_import_aliases_customer", "customer_id"),
+    )
+
+
+class CustomerSiteImportAlias(Base, AuditMixin):
+    """Maps alternate CSV site names to a delivery site for a customer."""
+
+    __tablename__ = "customer_site_import_aliases"
+
+    id = uuid_column()
+    alias_key = Column(String(200), nullable=False)
+    alias_label = Column(String(200), nullable=False)
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    site_name = Column(String(120), nullable=False)
+    notes = Column(Text, nullable=True)
+
+    customer = relationship("Customer", back_populates="site_import_aliases")
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "customer_id",
+            "alias_key",
+            name="uq_customer_site_import_aliases_customer_alias",
+        ),
+        Index("ix_customer_site_import_aliases_customer", "customer_id"),
     )
 
 
@@ -1311,6 +1382,7 @@ class Invoice(Base, AuditMixin):
     status = Column(
         String(20), default="DRAFT"
     )  # DRAFT, SENT, PAID, OVERDUE, CANCELLED
+    paid = Column(Boolean, nullable=False, default=False)
     subtotal_ex_tax = Column(Numeric(12, 2), nullable=False)
     total_tax = Column(Numeric(12, 2), nullable=False)
     total_inc_tax = Column(Numeric(12, 2), nullable=False)
@@ -1325,6 +1397,10 @@ class Invoice(Base, AuditMixin):
         String(36), ForeignKey("delivery_dockets.id"), nullable=True
     )
     delivery_docket = relationship("DeliveryDocket", back_populates="invoices")
+    # Link to latest generated PDF (mail-merge invoice)
+    generated_document_id = Column(
+        String(36), ForeignKey("generated_documents.id"), nullable=True, index=True
+    )
     lines = relationship("InvoiceLine", back_populates="invoice")
 
     __table_args__ = (Index("ix_invoice_code", "invoice_number"),)
@@ -1362,12 +1438,18 @@ class DeliveryDocket(Base, AuditMixin):
     delivery_date = Column(DateTime, nullable=True)
     status = Column(String(20), default="DRAFT")  # DRAFT, PENDING, DELIVERED, CANCELLED
     notes = Column(Text, nullable=True)
+    # Link to latest generated PDF (mail-merge delivery docket)
+    generated_document_id = Column(
+        String(36), ForeignKey("generated_documents.id"), nullable=True, index=True
+    )
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
-    # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
     # Relationships
     customer = relationship("Customer", back_populates="delivery_dockets")
     sales_order = relationship("SalesOrder", back_populates="delivery_dockets")
+    generated_document = relationship(
+        "GeneratedDocument", foreign_keys=[generated_document_id]
+    )
     lines = relationship(
         "DeliveryDocketLine",
         back_populates="docket",
@@ -1384,7 +1466,11 @@ class DeliveryDocketLine(Base, AuditMixin):
     id = uuid_column()
     docket_id = Column(String(36), ForeignKey("delivery_dockets.id"), nullable=False)
     product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
-    quantity = Column(Numeric(12, 3), nullable=False)
+    quantity = Column(Numeric(12, 3), nullable=False)  # delivered qty (dqty)
+    ordered_quantity = Column(
+        Numeric(12, 3), nullable=True
+    )  # ordered qty (oqty) for docket display
+    unit_price = Column(Numeric(14, 4), nullable=True)
     uom = Column(String(20), nullable=False, default="unit")
     sequence = Column(Integer, nullable=False)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,

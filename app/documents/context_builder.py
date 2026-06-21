@@ -50,6 +50,10 @@ def _format_int(v: Optional[Decimal]) -> str:
     return str(int(round(v, 0)))
 
 
+# 10% Australian GST for invoice inc/tot_inc from ex/tot_ex
+_GST_MULTIPLIER = Decimal("1.1")
+
+
 def _slug(s: str, max_len: int = 40) -> str:
     """Safe filesystem slug: alphanumeric and underscore only."""
     out = []
@@ -167,6 +171,8 @@ def line_items_from_sales_order_lines(
         )
         toqty_val = qty * up
         tdqty_val = dqty_val * up
+        up_inc = up * _GST_MULTIPLIER
+        lt_inc = lt * _GST_MULTIPLIER
         result.append(
             LineItemContext(
                 description=desc,
@@ -187,6 +193,11 @@ def line_items_from_sales_order_lines(
                 dqty_raw=dqty_val,
                 toqty_raw=toqty_val,
                 tdqty_raw=tdqty_val,
+                iqty=_format_int(qty),
+                ex=_format_decimal(up),
+                inc=_format_decimal(up_inc),
+                tot_ex=_format_decimal(lt),
+                tot_inc=_format_decimal(lt_inc),
             )
         )
     return result
@@ -216,6 +227,8 @@ def line_items_from_delivery_docket_lines(
         toqty_val = ordered_qty * up
         tdqty_val = dqty_val * up
         lt = tdqty_val  # line_total = delivered total for display
+        up_inc = up * _GST_MULTIPLIER
+        lt_inc = lt * _GST_MULTIPLIER
         result.append(
             LineItemContext(
                 description=desc,
@@ -236,6 +249,11 @@ def line_items_from_delivery_docket_lines(
                 dqty_raw=dqty_val,
                 toqty_raw=toqty_val,
                 tdqty_raw=tdqty_val,
+                iqty=_format_int(ordered_qty),
+                ex=_format_decimal(up),
+                inc=_format_decimal(up_inc),
+                tot_ex=_format_decimal(lt),
+                tot_inc=_format_decimal(lt_inc),
             )
         )
     return result
@@ -255,6 +273,11 @@ def empty_line_item_context(sequence: int) -> LineItemContext:
         dqty="",
         toqty="",
         tdqty="",
+        iqty="",
+        ex="0.00",
+        inc="0.00",
+        tot_ex="0.00",
+        tot_inc="0.00",
     )
 
 
@@ -275,12 +298,12 @@ def pad_line_items(
 def compute_totals(
     line_items: List[LineItemContext],
 ) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
-    """Subtotal, tax, total; total_ordered (sum toqty_raw), total_delivered (sum tdqty_raw)."""
+    """Subtotal, tax, total; total_ordered (sum of item quantities ordered), total_delivered (sum of item quantities delivered)."""
     subtotal = sum((li.line_total_raw or Decimal("0")) for li in line_items)
     tax = Decimal("0")
     total = subtotal + tax
-    total_ordered = sum((li.toqty_raw or Decimal("0")) for li in line_items)
-    total_delivered = sum((li.tdqty_raw or Decimal("0")) for li in line_items)
+    total_ordered = sum((li.quantity_raw or Decimal("0")) for li in line_items)
+    total_delivered = sum((li.dqty_raw or Decimal("0")) for li in line_items)
     return subtotal, tax, total, total_ordered, total_delivered
 
 
@@ -329,6 +352,8 @@ def build_context_from_delivery_docket(
                 Customer.billing_country,
             ]
         )
+    if hasattr(Customer, "abn"):
+        load_columns.append(Customer.abn)
     customer = (
         session.execute(
             select(Customer)
@@ -370,6 +395,7 @@ def build_context_from_delivery_docket(
             billing_state=getattr(customer, "billing_state", None),
             billing_postcode=getattr(customer, "billing_postcode", None),
             billing_country=getattr(customer, "billing_country", None),
+            abn=getattr(customer, "abn", None),
         )
     else:
         contact = ContactContext(name="", code="")
@@ -415,6 +441,10 @@ def build_context_from_delivery_docket(
         total=_format_decimal(total),
         total_ordered=_format_int(total_ordered),
         total_delivered=_format_int(total_delivered),
+        inv_number=doc_number,
+        tot_ex=_format_decimal(subtotal),
+        tot_gst=_format_decimal(tax),
+        tot=_format_decimal(total),
     )
     return DocumentContext(
         contact=contact, document=document, line_items=line_items, overrides=overrides
@@ -479,6 +509,10 @@ def build_context_from_sales_order(
         total=_format_decimal(total),
         total_ordered=_format_int(total_ordered),
         total_delivered=_format_int(total_delivered),
+        inv_number=doc_number,
+        tot_ex=_format_decimal(subtotal),
+        tot_gst=_format_decimal(tax),
+        tot=_format_decimal(total),
     )
     return DocumentContext(
         contact=contact, document=document, line_items=line_items, overrides=overrides
@@ -523,6 +557,8 @@ def build_context_from_contact_and_lines(
         else:
             unit_price = Decimal(str(unit_price))
         lt = qty * unit_price
+        up_inc = unit_price * _GST_MULTIPLIER
+        lt_inc = lt * _GST_MULTIPLIER
         line_items.append(
             LineItemContext(
                 description=(product.name or product.sku or "")[:200],
@@ -543,6 +579,11 @@ def build_context_from_contact_and_lines(
                 dqty_raw=qty,
                 toqty_raw=lt,
                 tdqty_raw=lt,
+                iqty=_format_int(qty),
+                ex=_format_decimal(unit_price),
+                inc=_format_decimal(up_inc),
+                tot_ex=_format_decimal(lt),
+                tot_inc=_format_decimal(lt_inc),
             )
         )
     from app.settings import settings
@@ -570,6 +611,10 @@ def build_context_from_contact_and_lines(
         total=_format_decimal(total),
         total_ordered=_format_int(total_ordered),
         total_delivered=_format_int(total_delivered),
+        inv_number=doc_number,
+        tot_ex=_format_decimal(subtotal),
+        tot_gst=_format_decimal(tax),
+        tot=_format_decimal(total),
     )
     return DocumentContext(
         contact=contact_ctx,
@@ -582,9 +627,7 @@ def build_context_from_contact_and_lines(
 def safe_slug_for_filename(
     contact: ContactContext, doc_number: str, doc_type: str
 ) -> str:
-    """Deterministic slug for filename: doc_type_customer_doc_number_YYYYMMDD."""
-    from datetime import date
-
-    customer_slug = _slug(contact.name or contact.code or "unknown", 30)
-    num_slug = _slug(doc_number, 20)
-    return f"{doc_type}_{customer_slug}_{num_slug}_{date.today().strftime('%Y%m%d')}"
+    """Filename base: DD#-CUSTCODE or INV#-CUSTCODE (doc number and customer code with '-' separator)."""
+    num_slug = _slug(doc_number or str(doc_type), 60)
+    code_slug = _slug(contact.code or contact.name or "unknown", 30)
+    return f"{num_slug}-{code_slug}"

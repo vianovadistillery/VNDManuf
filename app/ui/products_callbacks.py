@@ -7,6 +7,32 @@ from dash import Input, Output, State, dash_table, html, no_update
 from dash.exceptions import PreventUpdate
 
 
+def _product_inventory_unit(product: dict) -> str:
+    for key in ("usage_unit", "base_unit"):
+        val = product.get(key)
+        if val and str(val).strip():
+            return str(val).strip().upper()
+    return "EA"
+
+
+def _format_stock_qty(qty, unit: str) -> str:
+    u = (unit or "EA").upper()
+    q = float(qty or 0)
+    if u in {"EA", "EACH", "UNIT", "UNITS"} and abs(q - round(q)) < 0.0005:
+        return f"{int(round(q))} {u}"
+    return f"{q:.3f} {u}"
+
+
+def _stock_text_from_api(response: dict, fallback_unit: str = "EA") -> str:
+    if not isinstance(response, dict) or "error" in response:
+        return "-"
+    if response.get("stock_display"):
+        return str(response["stock_display"])
+    unit = response.get("inventory_unit") or fallback_unit
+    qty = response.get("stock_on_hand", response.get("stock_on_hand_kg", 0))
+    return _format_stock_qty(qty, unit)
+
+
 def register_product_callbacks(app, make_api_request):
     """Register all product CRUD callbacks."""
 
@@ -2579,7 +2605,9 @@ def register_product_callbacks(app, make_api_request):
         product_id = product.get("id")
 
         # Fetch inventory summary if product has ID
-        stock_kg = 0.0
+        stock_qty = 0.0
+        stock_unit = _product_inventory_unit(product)
+        stock_display = "0"
         lots_count = 0
         avg_cost = 0.0
         cost_source = "-"
@@ -2590,19 +2618,32 @@ def register_product_callbacks(app, make_api_request):
                     "GET", f"/inventory/product/{product_id}/summary"
                 )
                 if isinstance(inv_summary, dict) and "error" not in inv_summary:
-                    stock_kg = inv_summary.get("stock_on_hand_kg", 0.0) or 0.0
+                    stock_qty = (
+                        inv_summary.get("stock_on_hand")
+                        or inv_summary.get("stock_on_hand_kg")
+                        or 0.0
+                    )
+                    stock_unit = inv_summary.get("inventory_unit") or stock_unit
+                    stock_display = inv_summary.get(
+                        "stock_display"
+                    ) or _format_stock_qty(stock_qty, stock_unit)
                     lots_count = inv_summary.get("active_lots_count", 0) or 0
                     avg_cost = inv_summary.get("avg_cost_per_kg", 0.0) or 0.0
                     cost_source = inv_summary.get("cost_source", "-") or "-"
             except Exception as e:
                 print(f"Error fetching inventory summary: {e}")
-                # Try simple SOH endpoint as fallback
                 try:
                     soh_response = make_api_request(
                         "GET", f"/inventory/product/{product_id}/soh"
                     )
                     if isinstance(soh_response, dict) and "error" not in soh_response:
-                        stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
+                        stock_qty = (
+                            soh_response.get("stock_on_hand")
+                            or soh_response.get("stock_on_hand_kg")
+                            or 0.0
+                        )
+                        stock_unit = soh_response.get("inventory_unit") or stock_unit
+                        stock_display = _stock_text_from_api(soh_response, stock_unit)
                 except (KeyError, ValueError, TypeError):
                     pass
 
@@ -3052,12 +3093,12 @@ def register_product_callbacks(app, make_api_request):
                 else "-"
             ),
             consolidated_table,
-            f"{stock_kg:.3f}",
+            stock_display,
             f"{lots_count}",
-            f"${avg_cost:.2f}/kg" if avg_cost > 0 else "-",
+            f"${avg_cost:.2f}/{stock_unit}" if avg_cost > 0 else "-",
             cost_source,
             (
-                f"{float(product.get('restock_level', 0) or 0):.3f} kg"
+                f"{float(product.get('restock_level', 0) or 0):.3f} {stock_unit}"
                 if product.get("restock_level") is not None
                 and str(product.get("restock_level", "")).strip() != ""
                 else "-"
@@ -4237,6 +4278,9 @@ def register_product_callbacks(app, make_api_request):
             Output("adjust-type", "value", allow_duplicate=True),
             Output("adjust-quantity-label", "children", allow_duplicate=True),
             Output("adjust-usage-metadata", "children", allow_duplicate=True),
+            Output("adjust-reason", "value", allow_duplicate=True),
+            Output("adjust-lot", "options", allow_duplicate=True),
+            Output("adjust-lot", "value", allow_duplicate=True),
         ],
         [Input("adjust-inventory-btn", "n_clicks")],
         [State("products-table", "selected_rows"), State("products-table", "data")],
@@ -4251,7 +4295,7 @@ def register_product_callbacks(app, make_api_request):
         product_id = product.get("id")
         product_name = product.get("name", "Unknown Product")
 
-        # Get current stock
+        inv_unit = _product_inventory_unit(product)
         current_stock = "-"
         if product_id:
             try:
@@ -4259,19 +4303,11 @@ def register_product_callbacks(app, make_api_request):
                     "GET", f"/inventory/product/{product_id}/soh"
                 )
                 if isinstance(soh_response, dict) and "error" not in soh_response:
-                    stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
-                    current_stock = f"{stock_kg:.3f} kg"
+                    inv_unit = soh_response.get("inventory_unit") or inv_unit
+                    current_stock = _stock_text_from_api(soh_response, inv_unit)
             except Exception as e:
                 print(f"Error fetching stock: {e}")
                 current_stock = "Unknown"
-
-        # Determine usage unit and supporting metadata for conversions
-        usage_unit_raw = product.get("usage_unit")
-        usage_unit_display = (
-            str(usage_unit_raw).strip().upper() if usage_unit_raw else "KG"
-        )
-        if not usage_unit_display:
-            usage_unit_display = "KG"
 
         def _safe_float(value):
             if value is None or value == "":
@@ -4284,14 +4320,37 @@ def register_product_callbacks(app, make_api_request):
         density_value = _safe_float(product.get("density_kg_per_l"))
         weight_value = _safe_float(product.get("weight_kg"))
 
-        quantity_label = f"Quantity ({usage_unit_display}) *"
+        quantity_label = f"Target Stock ({inv_unit}) *"
         usage_metadata = json.dumps(
             {
-                "usage_unit": usage_unit_display,
+                "usage_unit": inv_unit,
                 "density_kg_per_l": density_value,
                 "weight_kg": weight_value,
             }
         )
+
+        lot_options = [{"label": "Auto (FIFO / new lot)", "value": ""}]
+        if product_id:
+            try:
+                lots_response = make_api_request(
+                    "GET", f"/inventory/product/{product_id}/lots"
+                )
+                if isinstance(lots_response, list):
+                    for lot in lots_response:
+                        lot_id = lot.get("id")
+                        if not lot_id:
+                            continue
+                        code = lot.get("lot_code", lot_id)
+                        qty = lot.get("quantity_kg", 0)
+                        lot_unit = lot.get("inventory_unit") or inv_unit
+                        lot_options.append(
+                            {
+                                "label": f"{code} ({_format_stock_qty(qty, lot_unit)})",
+                                "value": lot_id,
+                            }
+                        )
+            except Exception as e:
+                print(f"Error fetching lots: {e}")
 
         return (
             True,  # is_open
@@ -4305,6 +4364,9 @@ def register_product_callbacks(app, make_api_request):
             "INCREASE",  # adjustment_type
             quantity_label,  # quantity label
             usage_metadata,  # usage metadata for conversions
+            "MANUAL",  # reason
+            lot_options,  # lot options
+            "",  # lot selection
         )
 
     # Close inventory adjustment modal
@@ -4323,6 +4385,31 @@ def register_product_callbacks(app, make_api_request):
             raise PreventUpdate
         return False
 
+    @app.callback(
+        Output("adjust-quantity-label", "children", allow_duplicate=True),
+        Input("adjust-type", "value"),
+        [
+            State("adjust-inventory-modal", "is_open"),
+            State("adjust-usage-metadata", "children"),
+        ],
+        prevent_initial_call=True,
+    )
+    def update_adjust_quantity_label(adjustment_type, modal_open, usage_metadata):
+        """Label inventory quantity field in the product's inventory unit."""
+        if not modal_open:
+            raise PreventUpdate
+        unit = "EA"
+        if usage_metadata:
+            try:
+                unit = json.loads(usage_metadata).get("usage_unit") or unit
+            except (TypeError, json.JSONDecodeError):
+                pass
+        if adjustment_type == "SET_COUNT":
+            return f"Target Stock ({unit}) *"
+        if adjustment_type == "DECREASE":
+            return f"Quantity to Remove ({unit}) *"
+        return f"Quantity to Add ({unit}) *"
+
     # Apply inventory adjustment
     @app.callback(
         [
@@ -4340,6 +4427,8 @@ def register_product_callbacks(app, make_api_request):
             State("adjust-lot-code", "value"),
             State("adjust-notes", "value"),
             State("adjust-usage-metadata", "children"),
+            State("adjust-reason", "value"),
+            State("adjust-lot", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -4352,6 +4441,8 @@ def register_product_callbacks(app, make_api_request):
         lot_code,
         notes,
         usage_metadata,
+        adjust_reason,
+        lot_id,
     ):
         """Apply inventory adjustment."""
         if not n_clicks:
@@ -4368,111 +4459,46 @@ def register_product_callbacks(app, make_api_request):
         except (TypeError, ValueError):
             return True, "Error", "Quantity must be a number", no_update
 
-        def _safe_float(value):
-            if value in (None, "", "null"):
-                return None
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                return None
+        if quantity_value < 0:
+            return True, "Error", "Quantity cannot be negative", no_update
 
-        usage_unit = None
-        density_val = None
-        weight_val = None
-        if usage_metadata:
-            try:
-                metadata = json.loads(usage_metadata)
-            except (TypeError, json.JSONDecodeError):
-                metadata = {}
-            else:
-                usage_unit = metadata.get("usage_unit")
-                density_val = _safe_float(metadata.get("density_kg_per_l"))
-                weight_val = _safe_float(metadata.get("weight_kg"))
-
-        usage_unit_display = str(usage_unit).strip().upper() if usage_unit else "KG"
-
-        def convert_quantity_to_kg(qty, unit_code, density_value, weight_value):
-            if qty is None:
-                return None, "Quantity is required"
-
-            unit = (unit_code or "").strip().upper()
-            if unit in ("", "KG", "KILOGRAM", "KILOGRAMS"):
-                return qty, None
-
-            mass_to_kg = {
-                "MG": 0.000001,
-                "G": 0.001,
-                "GRAM": 0.001,
-                "GRAMS": 0.001,
-                "KG": 1.0,
-                "KILOGRAM": 1.0,
-                "KILOGRAMS": 1.0,
-                "TON": 1000.0,
-                "TONNE": 1000.0,
-                "TONNES": 1000.0,
-            }
-            if unit in mass_to_kg:
-                return qty * mass_to_kg[unit], None
-
-            volume_to_l = {
-                "ML": 0.001,
-                "MILLILITER": 0.001,
-                "MILLILITRE": 0.001,
-                "L": 1.0,
-                "LT": 1.0,
-                "LTR": 1.0,
-                "LITRE": 1.0,
-                "LITER": 1.0,
-            }
-            if unit in volume_to_l:
-                if density_value and density_value > 0:
-                    liters = qty * volume_to_l[unit]
-                    return liters * density_value, None
-                return (
-                    None,
-                    "Cannot convert quantity without density (kg/L). Please set the product density or enter quantity in kg.",
-                )
-
-            each_units = {"EA", "EACH", "UNIT", "UNITS", "ITEM", "CTN", "CARTON"}
-            if unit in each_units:
-                if weight_value and weight_value > 0:
-                    return qty * weight_value, None
-                return (
-                    None,
-                    "Cannot convert quantity without weight per unit. Please set the product weight or enter quantity in kg.",
-                )
-
-            return (
-                None,
-                f"Unsupported usage unit '{unit}'. Please enter quantity in kg or update unit configuration.",
-            )
-
-        quantity_kg, conversion_error = convert_quantity_to_kg(
-            quantity_value, usage_unit_display, density_val, weight_val
-        )
-
-        if quantity_kg is None:
-            return True, "Error", conversion_error, no_update
-
-        conversion_note = None
-        if usage_unit_display not in ("", "KG", "KILOGRAM", "KILOGRAMS"):
-            conversion_note = (
-                f"{quantity_value:g} {usage_unit_display} -> {quantity_kg:.3f} kg"
-            )
+        quantity_kg = quantity_value
 
         try:
-            adjustment_data = {
-                "product_id": product_id,
-                "adjustment_type": adjustment_type,
-                "quantity_kg": float(quantity_kg),
-                "unit_cost": float(unit_cost) if unit_cost else None,
-                "lot_id": None,  # Let API create new lot or use existing based on lot_code if needed
-                "notes": notes.strip() if notes else None,
-                "reference_type": "MANUAL",
-                "reference_id": None,
-            }
+            reason = (adjust_reason or "MANUAL").upper()
+            is_write_off = reason in {"DAMAGED", "LOST", "SHRINKAGE", "OTHER"}
 
-            response = make_api_request("POST", "/inventory/adjust", adjustment_data)
+            if is_write_off:
+                if adjustment_type != "DECREASE":
+                    return (
+                        True,
+                        "Error",
+                        "Write-off reasons require Decrease adjustment type",
+                        no_update,
+                    )
+                payload = {
+                    "product_id": product_id,
+                    "quantity_kg": float(quantity_kg),
+                    "reason": reason,
+                    "lot_id": lot_id or None,
+                    "notes": notes.strip() if notes else None,
+                }
+                response = make_api_request("POST", "/inventory/write-off", payload)
+            else:
+                adjustment_data = {
+                    "product_id": product_id,
+                    "adjustment_type": adjustment_type,
+                    "quantity_kg": float(quantity_kg),
+                    "unit_cost": float(unit_cost) if unit_cost else None,
+                    "lot_id": lot_id or None,
+                    "lot_code": lot_code.strip() if lot_code else None,
+                    "notes": notes.strip() if notes else None,
+                    "reference_type": "MANUAL",
+                    "reference_id": None,
+                }
+                response = make_api_request(
+                    "POST", "/inventory/adjust", adjustment_data
+                )
 
             if "error" in response:
                 error_msg = response["error"]
@@ -4491,16 +4517,13 @@ def register_product_callbacks(app, make_api_request):
                     "GET", f"/inventory/product/{product_id}/soh"
                 )
                 if isinstance(soh_response, dict) and "error" not in soh_response:
-                    stock_kg = soh_response.get("stock_on_hand_kg", 0.0) or 0.0
-                    new_stock = f"{stock_kg:.3f} kg"
+                    new_stock = _stock_text_from_api(soh_response)
                 else:
                     new_stock = no_update
             except (ValueError, KeyError, TypeError):
                 new_stock = no_update
 
             success_message = "Inventory adjusted successfully."
-            if conversion_note:
-                success_message += f" Converted {conversion_note}."
             if isinstance(new_stock, str):
                 success_message += f" New stock: {new_stock}"
 

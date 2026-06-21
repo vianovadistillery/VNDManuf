@@ -1001,3 +1001,129 @@ class WorkOrderReopenRequest(BaseModel):
     """Reopen work order request."""
 
     reason: Optional[str] = None
+
+
+# Inventory DTOs
+class InventoryLotResponse(BaseModel):
+    id: str
+    product_id: str
+    product_sku: Optional[str] = None
+    product_name: Optional[str] = None
+    lot_code: str
+    quantity_kg: Decimal  # quantity in product inventory unit
+    inventory_unit: Optional[str] = None
+    unit_cost: Optional[Decimal] = None
+    received_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    is_active: bool = True
+
+
+class InventorySummaryResponse(BaseModel):
+    product_id: str
+    product_sku: Optional[str] = None
+    product_name: Optional[str] = None
+    stock_on_hand: float = 0.0
+    inventory_unit: str = "EA"
+    stock_on_hand_kg: float = 0.0
+    stock_display: Optional[str] = None
+    fifo_cost_per_kg: float = 0.0
+    fifo_total_value: float = 0.0
+    avg_cost_per_kg: float = 0.0
+    avg_total_value: float = 0.0
+    cost_source: str = "UNKNOWN"
+    has_estimate: bool = False
+    estimate_reason: Optional[str] = None
+    active_lots_count: int = 0
+
+
+class InventoryAdjustmentRequest(BaseModel):
+    product_id: str
+    adjustment_type: str = Field(..., description="SET_COUNT, INCREASE, or DECREASE")
+    quantity_kg: Decimal = Field(..., ge=0)
+    lot_id: Optional[str] = None
+    lot_code: Optional[str] = None
+    unit_cost: Optional[Decimal] = None
+    notes: Optional[str] = None
+    reference_type: Optional[str] = "MANUAL"
+    reference_id: Optional[str] = None
+    allow_negative: bool = False
+
+
+class InventoryAdjustmentResponse(BaseModel):
+    transaction_id: Optional[str] = None
+    product_id: str
+    lot_id: Optional[str] = None
+    adjustment_type: str
+    quantity_delta_kg: Decimal
+    new_quantity_kg: Decimal
+    inventory_unit: Optional[str] = None
+    unit_cost: Optional[Decimal] = None
+    notes: Optional[str] = None
+    reference_type: Optional[str] = None
+    reference_id: Optional[str] = None
+    created_at: datetime
+
+
+class WriteOffRequest(BaseModel):
+    product_id: str
+    quantity_kg: Decimal = Field(..., gt=0)
+    reason: str = Field(..., description="DAMAGED, LOST, SHRINKAGE, or OTHER")
+    lot_id: Optional[str] = None
+    notes: Optional[str] = None
+    reference_id: Optional[str] = None
+    allow_negative: bool = False
+
+
+class WriteOffResponse(BaseModel):
+    transaction_id: Optional[str] = None
+    product_id: str
+    lot_id: Optional[str] = None
+    write_off_reason: str
+    quantity_delta_kg: Decimal
+    new_quantity_kg: Decimal
+    notes: Optional[str] = None
+    reference_type: Optional[str] = None
+    reference_id: Optional[str] = None
+    created_at: datetime
+
+
+class StocktakeLineRequest(BaseModel):
+    product_id: str
+    physical_count: Decimal = Field(..., ge=0)
+    update_soh: bool = True
+    notes: Optional[str] = None
+
+
+class StocktakeRequest(BaseModel):
+    reference: Optional[str] = None
+    counter: Optional[str] = None
+    stocktake_date: Optional[str] = None
+    apply_adjustments: bool = False
+    counts: List[StocktakeLineRequest]
+
+
+class StocktakeVarianceLine(BaseModel):
+    product_id: str
+    material_id: str
+    material_code: Optional[str] = None
+    material_desc: Optional[str] = None
+    inventory_unit: Optional[str] = None
+    system_soh: float
+    physical_count: float
+    variance: float
+    variance_pct: float
+    system_value: float = 0.0
+    physical_value: float = 0.0
+    adjusted: bool = False
+
+
+class StocktakeResponse(BaseModel):
+    variances: List[StocktakeVarianceLine]
+    total_system_value: float
+    total_physical_value: float
+    total_variance_value: float
+    item_count: int
+    items_adjusted: int
+    reference: Optional[str] = None
+    counter: Optional[str] = None
+    stocktake_date: Optional[str] = None

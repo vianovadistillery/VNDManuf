@@ -111,8 +111,17 @@ class StocktakePage:
                                                     columns=[
                                                         {"name": "Code", "id": "code"},
                                                         {
+                                                            "name": "Product ID",
+                                                            "id": "product_id",
+                                                        },
+                                                        {
                                                             "name": "Material",
                                                             "id": "desc1",
+                                                            "editable": False,
+                                                        },
+                                                        {
+                                                            "name": "Unit",
+                                                            "id": "inventory_unit",
                                                             "editable": False,
                                                         },
                                                         {
@@ -155,6 +164,7 @@ class StocktakePage:
                                                     data=[],
                                                     sort_action="native",
                                                     editable=True,
+                                                    hidden_columns=["product_id"],
                                                     style_data_conditional=[
                                                         {
                                                             "if": {

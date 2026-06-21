@@ -24,14 +24,14 @@ def register_purchase_formats_callbacks(app, make_api_request):
     @app.callback(
         Output("purchase-formats-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("settings-tabs", "active_tab"),
             Input("purchase-formats-refresh", "n_clicks"),
         ],
     )
-    def load_purchase_formats_table(main_tab, settings_tab, refresh_clicks):
-        """Load purchase formats table when settings tab is activated and purchase-formats sub-tab is active."""
-        if main_tab != "settings" or settings_tab != "purchase-formats":
+    def load_purchase_formats_table(effective_tab, settings_tab, refresh_clicks):
+        """Load purchase formats table when Settings tab is activated and purchase-formats sub-tab is active."""
+        if effective_tab != "settings" or settings_tab != "purchase-formats":
             return []
 
         try:

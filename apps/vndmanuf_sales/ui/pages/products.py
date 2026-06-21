@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc
-from dash import dash_table, dcc, html
+from dash import dash_table, html
+
+from apps.vndmanuf_sales.services.analytics import default_period
+from apps.vndmanuf_sales.ui.components import date_range_picker, filter_dropdown
+
+_default_start, _default_end = default_period()
 
 
 def layout():
@@ -15,37 +20,44 @@ def layout():
                     dbc.Row(
                         [
                             dbc.Col(
-                                dcc.Dropdown(
-                                    id="sales-products-channel-filter",
-                                    options=[
-                                        {"label": "Retail", "value": "RETAIL"},
-                                        {"label": "Venue", "value": "VENUE"},
-                                        {"label": "Online", "value": "ONLINE"},
-                                        {"label": "Direct", "value": "DIRECT"},
-                                    ],
-                                    placeholder="Channel",
+                                date_range_picker(
+                                    "sales-products-date-range",
+                                    "Date range",
+                                    start_date=_default_start.isoformat(),
+                                    end_date=_default_end.isoformat(),
                                 ),
                                 md=4,
                             ),
                             dbc.Col(
-                                dcc.Dropdown(
-                                    id="sales-products-pricebook-filter",
-                                    options=[],
-                                    placeholder="Pricebook",
+                                filter_dropdown(
+                                    "sales-products-channel-filter",
+                                    "Channel",
+                                    [],
                                 ),
-                                md=4,
+                                md=2,
                             ),
                             dbc.Col(
-                                dcc.Dropdown(
-                                    id="sales-products-type-filter",
-                                    options=[
+                                filter_dropdown(
+                                    "sales-products-pricebook-filter",
+                                    "Pricebook",
+                                    [],
+                                ),
+                                md=3,
+                            ),
+                            dbc.Col(
+                                filter_dropdown(
+                                    "sales-products-type-filter",
+                                    "Segment",
+                                    [
                                         {"label": "Top movers", "value": "top"},
                                         {"label": "Slow movers", "value": "slow"},
-                                        {"label": "New SKUs", "value": "new"},
+                                        {
+                                            "label": "New SKUs (first sale in period)",
+                                            "value": "new",
+                                        },
                                     ],
-                                    placeholder="Segment",
                                 ),
-                                md=4,
+                                md=3,
                             ),
                         ],
                         className="g-2",
@@ -61,17 +73,38 @@ def layout():
         columns=[
             {"name": "SKU", "id": "sku"},
             {"name": "Name", "id": "name"},
-            {"name": "Units Sold", "id": "units"},
-            {"name": "Revenue (Inc GST)", "id": "revenue"},
-            {"name": "On Hand", "id": "inventory"},
+            {
+                "name": "Units Sold",
+                "id": "units",
+                "type": "numeric",
+                "format": {"specifier": ",.2f"},
+            },
+            {
+                "name": "Revenue (Inc GST)",
+                "id": "revenue",
+                "type": "numeric",
+                "format": {"specifier": "$,.2f"},
+            },
+            {
+                "name": "On Hand",
+                "id": "inventory",
+                "type": "numeric",
+                "format": {"specifier": ",.2f"},
+            },
             {"name": "Channel Mix", "id": "channel_mix"},
         ],
         data=[],
-        page_size=15,
+        page_size=20,
         sort_action="native",
         style_table={"overflowX": "auto"},
         style_cell={"padding": "0.5rem"},
         style_header={"backgroundColor": "#f8f9fa", "fontWeight": "bold"},
+    )
+
+    totals_bar = html.Div(
+        id="sales-products-totals",
+        className="mt-3 p-3 bg-light rounded border fw-semibold",
+        children="Totals: —",
     )
 
     return html.Div(
@@ -79,8 +112,8 @@ def layout():
             filters,
             dbc.Card(
                 [
-                    dbc.CardHeader(html.H6("Products Performance", className="mb-0")),
-                    dbc.CardBody(table),
+                    dbc.CardHeader(html.H6("Products Sold", className="mb-0")),
+                    dbc.CardBody([table, totals_bar]),
                 ],
                 className="shadow-sm",
             ),

@@ -10,6 +10,7 @@ from app.api import (
     documents,
     excise_rates,
     formulas,
+    inventory,
     invoices,
     packing,
     pricing,
@@ -68,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(packing.router, prefix="/api/v1")
     app.include_router(invoices.router, prefix="/api/v1")
     app.include_router(batches.router, prefix="/api/v1")
+    app.include_router(inventory.router, prefix="/api/v1")
     app.include_router(raw_materials.router, prefix="/api/v1")
     app.include_router(formulas.router, prefix="/api/v1")
     app.include_router(reports.router, prefix="/api/v1")

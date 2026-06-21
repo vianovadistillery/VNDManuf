@@ -24,14 +24,14 @@ def register_quality_tests_callbacks(app, make_api_request):
     @app.callback(
         Output("quality-tests-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("quality-tests-refresh", "n_clicks"),
             Input("settings-tabs", "active_tab"),
         ],
     )
-    def load_quality_tests_table(active_tab, refresh_clicks, settings_tab):
-        """Load quality tests table when settings tab is activated and quality-tests sub-tab is active."""
-        if active_tab != "settings" or settings_tab != "quality-tests":
+    def load_quality_tests_table(effective_tab, refresh_clicks, settings_tab):
+        """Load quality tests table when Settings tab is activated and quality-tests sub-tab is active."""
+        if effective_tab != "settings" or settings_tab != "quality-tests":
             return []
 
         try:

@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import List, Optional
 
 import dash_bootstrap_components as dbc
-import plotly.express as px
 from dash import dash_table, dcc, html
 
 
@@ -29,18 +28,21 @@ def kpi_card(
 
 
 def sparkline_graph(graph_id: str):
-    sample_fig = px.area(
-        x=[1, 2, 3, 4, 5, 6, 7],
-        y=[2000, 2200, 2100, 2600, 3100, 3300, 3600],
-        template="plotly_white",
+    return dcc.Graph(
+        id=graph_id,
+        figure={
+            "data": [],
+            "layout": {
+                "height": 160,
+                "margin": {"l": 10, "r": 10, "t": 20, "b": 10},
+                "showlegend": False,
+                "template": "plotly_white",
+                "xaxis": {"title": "Date"},
+                "yaxis": {"title": "Revenue (Inc GST)"},
+            },
+        },
+        config={"displayModeBar": False},
     )
-    sample_fig.update_layout(
-        height=160,
-        margin=dict(l=10, r=10, t=20, b=10),
-        showlegend=False,
-    )
-    sample_fig.update_traces(line_color="#0d6efd", fillcolor="rgba(13,110,253,0.2)")
-    return dcc.Graph(id=graph_id, figure=sample_fig, config={"displayModeBar": False})
 
 
 def top_table(table_id: str, title: str, columns: List[str]):
@@ -63,20 +65,31 @@ def top_table(table_id: str, title: str, columns: List[str]):
 def filter_dropdown(
     dropdown_id: str, label: str, options: List[dict], multi: bool = False
 ):
-    return dbc.FormFloating(
+    return html.Div(
         [
+            dbc.Label(label, className="form-label mb-1"),
             dcc.Dropdown(id=dropdown_id, options=options, multi=multi, clearable=True),
-            html.Label(label),
         ],
         className="mb-2",
     )
 
 
-def date_range_picker(range_id: str, label: str):
-    return dbc.FormFloating(
+def date_range_picker(
+    range_id: str,
+    label: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+):
+    """Date range picker. start_date/end_date are ISO date strings (e.g. '2026-01-01')."""
+    return html.Div(
         [
-            dcc.DatePickerRange(id=range_id, clearable=True),
-            html.Label(label),
+            dbc.Label(label, className="form-label mb-1"),
+            dcc.DatePickerRange(
+                id=range_id,
+                clearable=True,
+                start_date=start_date,
+                end_date=end_date,
+            ),
         ],
         className="mb-2",
     )

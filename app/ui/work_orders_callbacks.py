@@ -363,15 +363,15 @@ def register_work_orders_callbacks(
             Input("wo-product-filter", "value"),
             Input("wo-date-from", "value"),
             Input("wo-date-to", "value"),
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
         ],
         prevent_initial_call=False,
     )
     def load_work_orders_list(
-        status_filter, product_filter, date_from, date_to, active_tab
+        status_filter, product_filter, date_from, date_to, effective_tab
     ):
         """Load work orders list with filters."""
-        if active_tab != "work-orders":
+        if effective_tab != "work-orders":
             return [], []
 
         try:
@@ -549,12 +549,12 @@ def register_work_orders_callbacks(
     # Load products for filter dropdown
     @app.callback(
         Output("wo-product-filter", "options"),
-        [Input("main-tabs", "active_tab")],
+        [Input("effective-tab-store", "data")],
         prevent_initial_call=False,
     )
-    def load_products_for_filter(active_tab):
+    def load_products_for_filter(effective_tab):
         """Load products for filter dropdown."""
-        if active_tab != "work-orders":
+        if effective_tab != "work-orders":
             return no_update
 
         try:

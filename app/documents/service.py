@@ -200,6 +200,10 @@ class DocumentGenerationService:
         pdf_str = str(pdf_path.resolve())
         docx_str = str(docx_path_temp.resolve()) if docx_path_temp else None
         mark_completed(self.session, document_id, pdf_str, docx_str)
+        if delivery_docket_id:
+            docket = self.session.get(DeliveryDocket, delivery_docket_id)
+            if docket:
+                docket.generated_document_id = document_id
         self.session.commit()
         doc_record = self.session.get(GeneratedDocument, document_id)
         return doc_record, pdf_path, docx_path_temp, ""

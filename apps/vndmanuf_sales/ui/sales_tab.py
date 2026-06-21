@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dash import Input, Output, dcc, html
+from dash import Input, Output, dcc, html, no_update
 
 from apps.vndmanuf_sales.ui.pages import (
     analytics,
@@ -16,15 +16,27 @@ from apps.vndmanuf_sales.ui.pages import (
     settings,
 )
 
-SUB_TAB_COMPONENTS = {
-    "sales-overview": overview.layout,
-    "sales-orders": orders.layout,
-    "sales-customers": customers.layout,
-    "sales-products": products.layout,
-    "sales-analytics": analytics.layout,
-    "sales-import-export": import_export.layout,
-    "sales-settings": settings.layout,
-}
+_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+SALES_TEMPLATE = _DATA_DIR / "sales_orders_template.csv"
+DOCKET_TEMPLATE = _DATA_DIR / "delivery_docket_template.csv"
+
+DEFAULT_SALES_SUBTAB = "sales-orders"
+
+# All panels stay mounted (show/hide via style) so callbacks can target their IDs
+# even when another sales sub-tab is active — same pattern as manufacturing-panel.
+SALES_SUBTAB_PANELS = (
+    ("sales-orders", "sales-panel-orders", orders.layout_orders_list),
+    ("sales-overview", "sales-panel-overview", overview.layout),
+    ("sales-customers", "sales-panel-customers", customers.layout),
+    ("sales-products", "sales-panel-products", products.layout),
+    ("sales-analytics", "sales-panel-analytics", analytics.layout),
+    ("sales-import-export", "sales-panel-import-export", import_export.layout),
+    ("sales-settings", "sales-panel-settings", settings.layout),
+)
+
+
+def _subtab_panel_style(active: bool) -> dict:
+    return {"display": "block" if active else "none"}
 
 
 def layout():
@@ -32,10 +44,10 @@ def layout():
         [
             dcc.Tabs(
                 id="sales-subtabs",
-                value="sales-overview",
+                value=DEFAULT_SALES_SUBTAB,
                 children=[
-                    dcc.Tab(label="Overview", value="sales-overview"),
                     dcc.Tab(label="Orders", value="sales-orders"),
+                    dcc.Tab(label="Overview", value="sales-overview"),
                     dcc.Tab(label="Customers & Sites", value="sales-customers"),
                     dcc.Tab(label="Products", value="sales-products"),
                     dcc.Tab(label="Analytics", value="sales-analytics"),
@@ -44,8 +56,20 @@ def layout():
                 ],
                 className="mb-3",
             ),
-            html.Div(id="sales-subtab-content"),
+            html.Div(
+                id="sales-subtab-content",
+                children=[
+                    html.Div(
+                        id=panel_id,
+                        children=layout_factory(),
+                        style=_subtab_panel_style(subtab_value == DEFAULT_SALES_SUBTAB),
+                    )
+                    for subtab_value, panel_id, layout_factory in SALES_SUBTAB_PANELS
+                ],
+            ),
+            dcc.Store(id="sales-import-pending-store"),
             dcc.Store(id="sales-import-summary-store"),
+            dcc.Store(id="sales-analytics-filter-options-store"),
         ],
         className="sales-tab",
     )
@@ -53,32 +77,35 @@ def layout():
 
 def register_callbacks(app):
     @app.callback(
-        Output("sales-subtab-content", "children"),
+        [Output(panel_id, "style") for _, panel_id, _ in SALES_SUBTAB_PANELS],
         Input("sales-subtabs", "value"),
         prevent_initial_call=False,
     )
-    def render_subtab(subtab_value):
-        layout_factory = SUB_TAB_COMPONENTS.get(subtab_value, overview.layout)
-        return layout_factory()
+    def show_subtab(subtab_value):
+        active = subtab_value or DEFAULT_SALES_SUBTAB
+        return [
+            _subtab_panel_style(value == active) for value, _, _ in SALES_SUBTAB_PANELS
+        ]
 
     @app.callback(
-        Output("sales-import-summary-store", "data"),
-        Input("sales-import-upload", "filename"),
+        Output("sales-import-download-sales-template", "data"),
+        Input("sales-import-download-sales-btn", "n_clicks"),
         prevent_initial_call=True,
     )
-    def handle_import(filename):
-        if not filename:
-            return []
-        name = Path(filename).name
-        return [
-            {
-                "order_ref": "—",
-                "customer": "—",
-                "lines": "—",
-                "status": "Queued",
-                "message": f"Queued import for {name}",
-            }
-        ]
+    def download_sales_template(n_clicks):
+        if not n_clicks:
+            return no_update
+        return dcc.send_file(str(SALES_TEMPLATE))
+
+    @app.callback(
+        Output("sales-import-download-docket-template", "data"),
+        Input("sales-import-download-docket-btn", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def download_docket_template(n_clicks):
+        if not n_clicks:
+            return no_update
+        return dcc.send_file(str(DOCKET_TEMPLATE))
 
     @app.callback(
         Output("sales-import-summary-table", "data"),

@@ -16,17 +16,19 @@ def register_formulas_callbacks(app, make_api_request):
             Output("formula-master-table", "columns"),
         ],
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("formula-search-btn", "n_clicks"),
             Input("formula-refresh-btn", "n_clicks"),
         ],
         [State("formula-search", "value")],
         prevent_initial_call=False,
     )
-    def update_formula_table(active_tab, search_clicks, refresh_clicks, search_value):
+    def update_formula_table(
+        effective_tab, search_clicks, refresh_clicks, search_value
+    ):
         """Update formula master table."""
-        # Only update when formulas tab is active
-        if active_tab != "formulas":
+        # Only update when Manufacturing > Assemblies is active
+        if effective_tab != "formulas":
             return no_update, no_update
 
         # Fetch formulas from API

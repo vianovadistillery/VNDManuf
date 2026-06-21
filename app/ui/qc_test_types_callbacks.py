@@ -9,14 +9,14 @@ def register_qc_test_types_callbacks(app, make_api_request):
     @app.callback(
         Output("qc-test-types-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("settings-tabs", "active_tab"),
             Input("qc-test-types-refresh", "n_clicks"),
         ],
     )
-    def load_qc_test_types(main_tab, settings_tab, _refresh_clicks):
-        """Load QC test types when the settings tab is active."""
-        if main_tab != "settings" or settings_tab != "qc-tests":
+    def load_qc_test_types(effective_tab, settings_tab, _refresh_clicks):
+        """Load QC test types when the Settings tab is active."""
+        if effective_tab != "settings" or settings_tab != "qc-tests":
             return []
 
         try:

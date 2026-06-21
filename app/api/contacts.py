@@ -39,6 +39,11 @@ class ContactCreate(BaseModel):
     abn: Optional[str] = None
     notes: Optional[str] = None
     alm_account_number: Optional[str] = None
+    payment_method: Optional[str] = None  # direct, ALM, Paramount, Shopify
+    paramount_number: Optional[str] = None
+    default_pricing_level: Optional[str] = (
+        None  # retail, wholesale, distributor, counter, trade, contract, industrial
+    )
     is_customer: bool = False
     is_supplier: bool = False
     is_other: bool = False
@@ -71,6 +76,9 @@ class ContactUpdate(BaseModel):
     abn: Optional[str] = None
     notes: Optional[str] = None
     alm_account_number: Optional[str] = None
+    payment_method: Optional[str] = None
+    paramount_number: Optional[str] = None
+    default_pricing_level: Optional[str] = None
     is_customer: Optional[bool] = None
     is_supplier: Optional[bool] = None
     is_other: Optional[bool] = None
@@ -104,6 +112,9 @@ class ContactResponse(BaseModel):
     abn: Optional[str]
     notes: Optional[str]
     alm_account_number: Optional[str]
+    payment_method: Optional[str] = None
+    paramount_number: Optional[str] = None
+    default_pricing_level: Optional[str] = None
     is_customer: bool
     is_supplier: bool
     is_other: bool
@@ -162,6 +173,9 @@ def contact_to_response(c: Contact) -> ContactResponse:
         abn=getattr(c, "abn", None),
         notes=getattr(c, "notes", None),
         alm_account_number=getattr(c, "alm_account_number", None),
+        payment_method=getattr(c, "payment_method", None),
+        paramount_number=getattr(c, "paramount_number", None),
+        default_pricing_level=getattr(c, "default_pricing_level", None),
         is_customer=c.is_customer,
         is_supplier=c.is_supplier,
         is_other=c.is_other,
@@ -271,6 +285,9 @@ async def create_contact(contact_data: ContactCreate, db: Session = Depends(get_
         abn=contact_data.abn,
         notes=contact_data.notes,
         alm_account_number=contact_data.alm_account_number,
+        payment_method=contact_data.payment_method,
+        paramount_number=contact_data.paramount_number,
+        default_pricing_level=contact_data.default_pricing_level,
         is_customer=contact_data.is_customer,
         is_supplier=contact_data.is_supplier,
         is_other=contact_data.is_other,
@@ -349,6 +366,12 @@ async def update_contact(
         contact.notes = contact_data.notes
     if contact_data.alm_account_number is not None:
         contact.alm_account_number = contact_data.alm_account_number
+    if contact_data.payment_method is not None:
+        contact.payment_method = contact_data.payment_method
+    if contact_data.paramount_number is not None:
+        contact.paramount_number = contact_data.paramount_number
+    if contact_data.default_pricing_level is not None:
+        contact.default_pricing_level = contact_data.default_pricing_level
     if contact_data.is_customer is not None:
         contact.is_customer = contact_data.is_customer
     if contact_data.is_supplier is not None:

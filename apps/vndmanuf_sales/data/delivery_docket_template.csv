@@ -1,0 +1,3 @@
+docket_number,delivery_date,order_date,customer,attention,site_name,site_suburb,site_state,site_postcode,channel,po_number,product_code,description,ordered_qty,delivered_qty,unit,unit_price_ex_gst,unit_prci_inc_gst,notes
+DD250116,2025-11-18,2025-11-18,Bannockburn Cellarbrations,Michael Smith,Bannockburn Cellarbrations,Bannockburn,VIC,3331,DIRECT,BY PHONE,NSC,Nova Suncrush Carton (16 x 330mL),2,2,EA,,,Deliver to store
+DD250116,2025-11-18,2025-11-18,Bannockburn Cellarbrations,Michael Smith,Bannockburn Cellarbrations,Bannockburn,VIC,3331,DIRECT,BY PHONE,NPC,Nova Paloma Carton (16 x 330mL),2,2,EA,,,

@@ -41,6 +41,7 @@ dist/
 # Environment files
 .env
 .env.local
+Xero.txt
 
 schema_snapshot.json
 

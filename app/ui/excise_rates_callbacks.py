@@ -26,14 +26,14 @@ def register_excise_rates_callbacks(app, make_api_request):
     @app.callback(
         Output("excise-rates-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("settings-tabs", "active_tab"),
             Input("excise-rates-refresh", "n_clicks"),
         ],
     )
-    def load_excise_rates_table(main_tab, settings_tab, refresh_clicks):
-        """Load excise rates table when settings tab is activated and excise-rates sub-tab is active."""
-        if main_tab != "settings" or settings_tab != "excise-rates":
+    def load_excise_rates_table(effective_tab, settings_tab, refresh_clicks):
+        """Load excise rates table when Settings tab is activated and excise-rates sub-tab is active."""
+        if effective_tab != "settings" or settings_tab != "excise-rates":
             return []
 
         try:

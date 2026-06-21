@@ -21,14 +21,14 @@ def register_units_callbacks(app, make_api_request):
     @app.callback(
         Output("units-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("settings-tabs", "active_tab"),
             Input("units-refresh", "n_clicks"),
         ],
     )
-    def load_units_table(main_tab, settings_tab, refresh_clicks):
-        """Load units table when settings tab is activated and units sub-tab is active."""
-        if main_tab != "settings" or settings_tab != "units":
+    def load_units_table(effective_tab, settings_tab, refresh_clicks):
+        """Load units table when Settings tab is activated and units sub-tab is active."""
+        if effective_tab != "settings" or settings_tab != "units":
             return []
 
         try:

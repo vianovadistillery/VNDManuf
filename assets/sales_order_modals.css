@@ -1,0 +1,8 @@
+/* Resizable and wider new order / view order modals (width ~50% larger than default) */
+.sales-order-modal-resizable .modal-dialog {
+    resize: both;
+    overflow: auto;
+    max-width: 98vw !important;
+    width: min(98vw, 1850px) !important;
+    min-width: 1050px;
+}

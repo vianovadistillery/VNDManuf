@@ -29,6 +29,12 @@ Map each visible “merge” field or placeholder to the **data contract**:
 | Shipping | `{{ document.shipping }}` |
 | Payment terms | `{{ document.payment_terms }}` |
 | Subtotal / Tax / Total | `{{ document.subtotal }}`, `{{ document.tax }}`, `{{ document.total }}` |
+| ABN | `{{ contact.abn }}` |
+| Total items ordered / delivered | `{{ document.total_ordered }}`, `{{ document.total_delivered }}` (delivery docket) |
+| **Invoice template** | |
+| Invoice number | `{{ document.inv_number }}` |
+| Totals ex / GST / inc | `{{ document.tot_ex }}`, `{{ document.tot_gst }}`, `{{ document.tot }}` |
+| Line item qty / ex / inc / tot_ex / tot_inc | `{{ item.iqty }}`, `{{ item.ex }}`, `{{ item.inc }}`, `{{ item.tot_ex }}`, `{{ item.tot_inc }}` |
 
 - [ ] List every current merge field or placeholder in the template.
 - [ ] For each, write the exact docxtpl placeholder (e.g. `{{ document.doc_number }}`).

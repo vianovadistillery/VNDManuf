@@ -19,6 +19,7 @@ def main():
     # Single-value placeholders (docxtpl/Jinja2)
     doc.add_paragraph("Customer: {{ contact.name }}")
     doc.add_paragraph("Code: {{ contact.code }}")
+    doc.add_paragraph("ABN: {{ contact.abn }}")
     doc.add_paragraph("Document: {{ document.doc_number }}  Date: {{ document.date }}")
     doc.add_paragraph("Delivery date: {{ document.delivery_date }}")
     doc.add_paragraph()
@@ -41,6 +42,9 @@ def main():
     row1[3].text = "{{ item.unit_price }}"
     row1[4].text = "{{ item.line_total }}{% endfor %}"
     doc.add_paragraph()
+    doc.add_paragraph(
+        "Total items ordered: {{ document.total_ordered }}   Total items delivered: {{ document.total_delivered }}"
+    )
     doc.add_paragraph("Subtotal: {{ document.subtotal }}   Total: {{ document.total }}")
     doc.save(OUTPUT_PATH)
     print(f"Created {OUTPUT_PATH}")

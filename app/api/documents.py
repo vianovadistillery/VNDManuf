@@ -5,7 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -242,9 +242,13 @@ async def get_document_metadata(
 @router.get("/{document_id}/download")
 async def download_document(
     document_id: str,
+    inline: bool = Query(
+        False, description="Display in browser (inline) instead of download"
+    ),
     db: Session = Depends(get_db),
 ):
-    """Stream the generated PDF (or 404 if not found / not completed)."""
+    """Stream the generated PDF (or 404 if not found / not completed).
+    Use ?inline=1 for in-browser display (e.g. in an iframe)."""
     doc = get_document(db, document_id)
     if not doc:
         raise HTTPException(
@@ -262,10 +266,13 @@ async def download_document(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="PDF file not found",
         )
+    filename = Path(pdf_path).name
+    disposition = "inline" if inline else "attachment"
     return FileResponse(
         path=pdf_path,
         media_type="application/pdf",
-        filename=Path(pdf_path).name,
+        filename=filename,
+        headers={"Content-Disposition": f'{disposition}; filename="{filename}"'},
     )
 
 

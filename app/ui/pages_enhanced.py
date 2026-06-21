@@ -1427,8 +1427,61 @@ class ProductsPageEnhanced:
                                                     required=True,
                                                 ),
                                             ],
-                                            width=6,
+                                            width=4,
                                         ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("Reason"),
+                                                dbc.Select(
+                                                    id="adjust-reason",
+                                                    options=[
+                                                        {
+                                                            "label": "Manual adjustment",
+                                                            "value": "MANUAL",
+                                                        },
+                                                        {
+                                                            "label": "Damaged stock",
+                                                            "value": "DAMAGED",
+                                                        },
+                                                        {
+                                                            "label": "Lost stock",
+                                                            "value": "LOST",
+                                                        },
+                                                        {
+                                                            "label": "Shrinkage",
+                                                            "value": "SHRINKAGE",
+                                                        },
+                                                        {
+                                                            "label": "Other write-off",
+                                                            "value": "OTHER",
+                                                        },
+                                                    ],
+                                                    value="MANUAL",
+                                                ),
+                                            ],
+                                            width=4,
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Label("Lot"),
+                                                dbc.Select(
+                                                    id="adjust-lot",
+                                                    options=[
+                                                        {
+                                                            "label": "Auto (FIFO / new lot)",
+                                                            "value": "",
+                                                        }
+                                                    ],
+                                                    value="",
+                                                ),
+                                            ],
+                                            width=4,
+                                        ),
+                                    ],
+                                    className="mb-3",
+                                ),
+                                dbc.Row(
+                                    [
                                         dbc.Col(
                                             [
                                                 dbc.Label(
@@ -1445,11 +1498,6 @@ class ProductsPageEnhanced:
                                             ],
                                             width=6,
                                         ),
-                                    ],
-                                    className="mb-3",
-                                ),
-                                dbc.Row(
-                                    [
                                         dbc.Col(
                                             [
                                                 dbc.Label("Unit Cost"),
@@ -1462,15 +1510,20 @@ class ProductsPageEnhanced:
                                             ],
                                             width=6,
                                         ),
+                                    ],
+                                    className="mb-3",
+                                ),
+                                dbc.Row(
+                                    [
                                         dbc.Col(
                                             [
-                                                dbc.Label("Lot Code"),
+                                                dbc.Label("Lot Code (new lots only)"),
                                                 dbc.Input(
                                                     id="adjust-lot-code",
                                                     placeholder="Auto-generated if empty",
                                                 ),
                                             ],
-                                            width=6,
+                                            width=12,
                                         ),
                                     ],
                                     className="mb-3",

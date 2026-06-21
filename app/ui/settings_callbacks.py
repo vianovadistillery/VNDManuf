@@ -15,6 +15,7 @@ def register_settings_callbacks(app):
             Output("purchase-formats-tab-content", "style"),
             Output("qc-tests-tab-content", "style"),
             Output("work-areas-tab-content", "style"),
+            Output("conditions-tab-content", "style"),
         ],
         Input("settings-tabs", "active_tab"),
     )
@@ -27,6 +28,7 @@ def register_settings_callbacks(app):
             "purchase-formats",
             "qc-tests",
             "work-areas",
+            "conditions",
         ]
         if active_tab not in tab_order:
             raise PreventUpdate

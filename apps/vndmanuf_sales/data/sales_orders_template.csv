@@ -1,0 +1,3 @@
+order_date,channel,customer,site_name,site_suburb,site_state,site_postcode,product_code,qty,unit,unit_price_ex_gst,unit_price_inc_gst,order_ref,po_number,notes
+2025-11-18,DIRECT,Bannockburn Cellarbrations,Bannockburn Cellarbrations,Bannockburn,VIC,3331,NSC,2,EA,,,DD250116,BY PHONE,Imported from template
+2025-11-18,DIRECT,Bannockburn Cellarbrations,Bannockburn Cellarbrations,Bannockburn,VIC,3331,NPC,2,EA,,,DD250116,BY PHONE,

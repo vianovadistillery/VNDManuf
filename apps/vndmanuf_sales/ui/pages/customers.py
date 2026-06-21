@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc
-from dash import dash_table, html
+from dash import dash_table, dcc, html
 
 from apps.vndmanuf_sales.ui.components import kpi_card
 
@@ -51,8 +51,7 @@ def layout():
             {"name": "Site", "id": "site"},
             {"name": "State", "id": "state"},
             {"name": "Suburb", "id": "suburb"},
-            {"name": "Revenue (Inc GST)", "id": "revenue"},
-            {"name": "Orders", "id": "orders"},
+            {"name": "Postcode", "id": "postcode"},
         ],
         data=[],
         page_size=10,
@@ -61,9 +60,101 @@ def layout():
         style_header={"backgroundColor": "#f8f9fa", "fontWeight": "bold"},
     )
 
+    add_site_card = dbc.Card(
+        [
+            dbc.CardHeader(html.H6("Add site", className="mb-0")),
+            dbc.CardBody(
+                [
+                    html.P(
+                        "Sites are delivery addresses per customer. Add a site here, then choose it when creating an order.",
+                        className="text-muted small mb-3",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label("Customer"),
+                                    dcc.Dropdown(
+                                        id="sales-add-site-customer",
+                                        placeholder="Select customer...",
+                                    ),
+                                ],
+                                md=4,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Site name"),
+                                    dbc.Input(
+                                        id="sales-add-site-name",
+                                        placeholder="e.g. Warehouse, Head Office",
+                                    ),
+                                ],
+                                md=4,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("State"),
+                                    dbc.Input(
+                                        id="sales-add-site-state",
+                                        placeholder="e.g. VIC, NSW",
+                                        maxLength=8,
+                                    ),
+                                ],
+                                md=2,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Suburb"),
+                                    dbc.Input(
+                                        id="sales-add-site-suburb",
+                                        placeholder="Suburb",
+                                    ),
+                                ],
+                                md=2,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Postcode"),
+                                    dbc.Input(
+                                        id="sales-add-site-postcode",
+                                        placeholder="Postcode",
+                                        maxLength=10,
+                                    ),
+                                ],
+                                md=2,
+                            ),
+                        ],
+                        className="g-2 mb-2",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Button(
+                                        "Add site",
+                                        id="sales-add-site-submit",
+                                        color="primary",
+                                    ),
+                                    html.Span(
+                                        id="sales-add-site-feedback",
+                                        className="ms-2 small",
+                                    ),
+                                ],
+                                md=12,
+                            ),
+                        ]
+                    ),
+                ]
+            ),
+        ],
+        className="shadow-sm mb-4",
+    )
+
     return html.Div(
         [
+            dcc.Store(id="sales-customers-sites-refresh", data=0),
             metrics,
+            add_site_card,
             dbc.Row(
                 [
                     dbc.Col(

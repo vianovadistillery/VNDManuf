@@ -25,7 +25,15 @@ from dash import (
     html,  # keep whatever you already import
 )
 
+from apps.vndmanuf_sales.ui.analytics_callbacks import (
+    register_sales_analytics_callbacks,
+)
+
 # local imports (after third-party)
+from apps.vndmanuf_sales.ui.customers_callbacks import (
+    register_sales_customers_callbacks,
+)
+from apps.vndmanuf_sales.ui.import_callbacks import register_sales_import_callbacks
 from apps.vndmanuf_sales.ui.orders_callbacks import register_sales_orders_callbacks
 from apps.vndmanuf_sales.ui.sales_tab import (
     layout as sales_tab_layout,
@@ -39,7 +47,6 @@ from .excise_rates_callbacks import register_excise_rates_callbacks  # noqa: E40
 from .formulas_callbacks import register_formulas_callbacks  # noqa: E402
 from .pages.batch_processing_page import BatchProcessingPage  # noqa: E402
 from .pages.batch_reports_page import BatchReportsPage  # noqa: E402
-from .pages.condition_types_page import ConditionTypesPage  # noqa: E402
 from .pages.contacts_page import ContactsPage  # noqa: E402
 
 # Import new page modules from pages/ subdirectory (the directory)
@@ -56,6 +63,7 @@ from .purchase_formats_callbacks import (
 from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa: E402
 from .qc_test_types_callbacks import register_qc_test_types_callbacks  # noqa: E402
 from .settings_callbacks import register_settings_callbacks  # noqa: E402
+from .stocktake_callbacks import register_stocktake_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
 from .work_areas_callbacks import register_work_areas_callbacks  # noqa: E402
 
@@ -79,23 +87,35 @@ reports_page = pages_old.reports_page
 # Xero integration temporarily disabled - will re-enable later
 # from .pages.accounting_integration_page import accounting_integration_page
 
-# Integration link configuration
-COMPINTEL_ENABLED = os.getenv("COMPINTEL_ENABLED", "false").lower() == "true"
-COMPINTEL_URL = os.getenv("COMPINTEL_URL", "http://127.0.0.1:8060")
-
 # Initialize Dash app with Bootstrap theme
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+ASSETS_FOLDER = os.path.join(PROJECT_ROOT, "assets")
+
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     suppress_callback_exceptions=True,
+    assets_folder=ASSETS_FOLDER,
 )
 
 # API base URL
 API_BASE_URL = "http://127.0.0.1:8000/api/v1"
 
-# Header content helper
+# Header: both images use same height for vertical alignment
+HEADER_IMG_HEIGHT = "52px"
+
+# Header content helper: left side = vndmanuf branding image, right side = logo (added in layout)
 header_children = [
-    html.H1("VNDManuf", className="text-center mb-4"),
+    html.Img(
+        src="/assets/vndmanuf.jpg",
+        alt="VNDManuf",
+        style={
+            "height": HEADER_IMG_HEIGHT,
+            "width": "auto",
+            "objectFit": "contain",
+            "display": "block",
+        },
+    ),
     dbc.Alert(
         id="demo-mode-alert",
         children="Connecting to API...",
@@ -105,62 +125,49 @@ header_children = [
         style={"display": "none"},
     ),
 ]
-
-if COMPINTEL_ENABLED:
-    header_children.append(
-        dbc.Button(
-            "Open Competitor Intel →",
-            id="open-competitor-intel",
-            color="info",
-            href=COMPINTEL_URL,
-            external_link=True,
-            target="_blank",
-            className="mb-3",
-            title="Open Competitor Intel in a new tab",
-        )
-    )
-
 header_children.append(html.Hr())
 
 # App layout
 app.layout = dbc.Container(
     [
-        # Header
+        # Header: vndmanuf centered, logo right-aligned; same image height for alignment
         dbc.Row(
             [
                 dbc.Col(
-                    [
-                        *header_children,
-                    ]
-                )
-            ]
+                    [*header_children],
+                    width="auto",
+                    className="flex-grow-1 d-flex flex-column justify-content-center align-items-center",
+                ),
+                dbc.Col(
+                    html.Img(
+                        src="/assets/logo.jpg",
+                        alt="Logo",
+                        style={
+                            "height": HEADER_IMG_HEIGHT,
+                            "width": "auto",
+                            "objectFit": "contain",
+                        },
+                    ),
+                    width="auto",
+                    className="d-flex justify-content-end align-items-center",
+                ),
+            ],
+            className="align-items-center mb-2",
         ),
-        # Navigation tabs
+        # Navigation tabs (level 1: Manufacturing, Contacts, Sales, Reports, Settings)
         dbc.Row(
             [
                 dbc.Col(
                     [
                         dbc.Tabs(
                             id="main-tabs",
-                            active_tab="products",
+                            active_tab="manufacturing",
                             children=[
-                                dbc.Tab(label="Products", tab_id="products"),
-                                dbc.Tab(label="Assemblies", tab_id="formulas"),
-                                dbc.Tab(
-                                    label="Batch Processing", tab_id="batch-processing"
-                                ),
-                                dbc.Tab(label="Work Orders", tab_id="work-orders"),
+                                dbc.Tab(label="Manufacturing", tab_id="manufacturing"),
                                 dbc.Tab(label="Contacts", tab_id="contacts"),
-                                dbc.Tab(label="Inventory", tab_id="inventory"),
-                                dbc.Tab(label="Batch Reports", tab_id="batch-reports"),
-                                dbc.Tab(label="RM Reports", tab_id="rm-reports"),
-                                dbc.Tab(label="Stocktake", tab_id="stocktake"),
-                                dbc.Tab(label="Conditions", tab_id="conditions"),
-                                dbc.Tab(label="Settings", tab_id="settings"),
-                                dbc.Tab(label="Reports", tab_id="reports"),
                                 dbc.Tab(label="Sales", tab_id="sales"),
-                                # Xero integration temporarily disabled - will re-enable later
-                                # dbc.Tab(label="Accounting", tab_id="accounting"),
+                                dbc.Tab(label="Reports", tab_id="reports"),
+                                dbc.Tab(label="Settings", tab_id="settings"),
                             ],
                             className="mb-4",
                         )
@@ -168,6 +175,8 @@ app.layout = dbc.Container(
                 )
             ]
         ),
+        # Effective tab store (manufacturing sub-tab or main tab when not manufacturing)
+        dcc.Store(id="effective-tab-store", data="products"),
         # Tab content
         dbc.Row(
             [
@@ -234,9 +243,11 @@ def make_api_request(
         else:
             return {"error": f"Unsupported method: {method}"}
 
-        # Handle successful responses
+        # Handle successful responses (204 No Content has no body)
         if response.status_code in [200, 201]:
             return response.json()
+        if response.status_code == 204:
+            return {}
         # Handle error responses
         else:
             try:
@@ -459,79 +470,135 @@ def check_api_connectivity(active_tab):
 # Tab content callback
 @app.callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))
 def render_tab_content(active_tab):
-    """Render content based on active tab."""
+    """Render content based on active tab. Manufacturing and Sales panels stay in the
+    DOM (hidden when inactive) so callbacks targeting their component IDs do not fail."""
     print(f"Rendering tab: {active_tab}")  # Debug print
 
-    if active_tab == "products":
-        layout = products_page_enhanced.get_layout()
-        print("Products layout created")  # Debug print
-        return layout
-    elif active_tab == "formulas":
-        layout = FormulasPage.get_layout()
-        print("Formulas layout created")  # Debug print
-        return layout
-    elif active_tab == "batch-processing":
-        layout = BatchProcessingPage.get_layout()
-        print("Batch Processing layout created")  # Debug print
-        return layout
-    elif active_tab == "batches":
-        layout = batches_page.get_layout()
-        print("Batches layout created")  # Debug print
-        return layout
-    elif active_tab == "inventory":
-        layout = inventory_page.get_layout()
-        print("Inventory layout created")  # Debug print
-        return layout
-    elif active_tab == "batch-reports":
-        layout = BatchReportsPage.get_layout()
-        print("Batch Reports layout created")  # Debug print
-        return layout
-    elif active_tab == "rm-reports":
-        layout = RmReportsPage.get_layout()
-        print("RM Reports layout created")  # Debug print
-        return layout
-    elif active_tab == "stocktake":
-        layout = StocktakePage.get_layout()
-        print("Stocktake layout created")  # Debug print
-        return layout
-    elif active_tab == "contacts":
-        layout = ContactsPage.get_layout()
+    is_manufacturing = active_tab == "manufacturing"
+    is_sales = active_tab == "sales"
+
+    manufacturing_panel = html.Div(
+        [
+            dbc.Tabs(
+                id="manufacturing-sub-tabs",
+                active_tab="products",
+                children=[
+                    dbc.Tab(label="Products", tab_id="products"),
+                    dbc.Tab(label="Assemblies", tab_id="formulas"),
+                    dbc.Tab(
+                        label="Batch Processing",
+                        tab_id="batch-processing",
+                    ),
+                    dbc.Tab(label="Work Orders", tab_id="work-orders"),
+                    dbc.Tab(label="Inventory", tab_id="inventory"),
+                    dbc.Tab(label="Batch Reports", tab_id="batch-reports"),
+                    dbc.Tab(label="RM Reports", tab_id="rm-reports"),
+                    dbc.Tab(label="Stocktake", tab_id="stocktake"),
+                ],
+                className="mb-3",
+            ),
+            html.Div(id="manufacturing-content"),
+        ],
+        id="manufacturing-panel",
+        style={"display": "block" if is_manufacturing else "none"},
+    )
+
+    sales_panel = html.Div(
+        sales_tab_layout(),
+        id="sales-panel-root",
+        style={"display": "block" if is_sales else "none"},
+    )
+
+    if active_tab == "contacts":
+        other_layout = ContactsPage.get_layout()
         print("Contacts layout created")  # Debug print
-        return layout
-    elif active_tab == "conditions":
-        layout = ConditionTypesPage.get_layout()
-        print("Conditions layout created")  # Debug print
-        return layout
-    elif active_tab == "work-orders":
-        layout = WorkOrdersPage.get_layout()
-        print("Work Orders layout created")  # Debug print
-        return layout
+    elif active_tab == "reports":
+        other_layout = reports_page.get_layout()
+        print("Reports layout created")  # Debug print
     elif active_tab == "settings":
         from .pages.settings_page import SettingsPage
 
-        layout = SettingsPage.get_layout()
+        other_layout = SettingsPage.get_layout()
         print("Settings layout created")  # Debug print
-        return layout
-    elif active_tab == "reports":
-        layout = reports_page.get_layout()
-        print("Reports layout created")  # Debug print
-        return layout
-    elif active_tab == "sales":
-        layout = sales_tab_layout()
-        print("Sales layout created")  # Debug print
-        return layout
-    # Xero integration temporarily disabled - will re-enable later
-    # elif active_tab == "accounting":
-    #     return accounting_integration_page.layout()
+    elif active_tab in ("manufacturing", "sales"):
+        other_layout = html.Div()
     else:
-        return html.Div("Select a tab to view content")
+        other_layout = html.Div("Select a tab to view content")
+
+    other_panel = html.Div(
+        other_layout,
+        id="other-tab-panel",
+        style={
+            "display": "block"
+            if active_tab not in ("manufacturing", "sales")
+            else "none"
+        },
+    )
+
+    # Render visible panel first so it's the first child of tab-content. This avoids
+    # the hidden manufacturing panel (when on Sales/Orders etc.) from being first in
+    # the DOM and potentially capturing focus or causing the main tab to switch.
+    if is_manufacturing:
+        return [manufacturing_panel, sales_panel, other_panel]
+    if is_sales:
+        return [sales_panel, manufacturing_panel, other_panel]
+    return [other_panel, manufacturing_panel, sales_panel]
+
+
+# Manufacturing sub-tab content
+@app.callback(
+    Output("manufacturing-content", "children"),
+    Input("manufacturing-sub-tabs", "active_tab"),
+)
+def render_manufacturing_content(active_tab):
+    """Render Manufacturing sub-tab content."""
+    if active_tab == "products":
+        return products_page_enhanced.get_layout()
+    if active_tab == "formulas":
+        return FormulasPage.get_layout()
+    if active_tab == "batch-processing":
+        return BatchProcessingPage.get_layout()
+    if active_tab == "work-orders":
+        return WorkOrdersPage.get_layout()
+    if active_tab == "inventory":
+        return inventory_page.get_layout()
+    if active_tab == "batch-reports":
+        return BatchReportsPage.get_layout()
+    if active_tab == "rm-reports":
+        return RmReportsPage.get_layout()
+    if active_tab == "stocktake":
+        return StocktakePage.get_layout()
+    return html.Div("Select a sub-tab")
+
+
+# Sync effective-tab store when main tab changes (runs on every layout; manufacturing-sub-tabs may not exist)
+@app.callback(
+    Output("effective-tab-store", "data"),
+    Input("main-tabs", "active_tab"),
+)
+def sync_effective_tab_from_main(active_tab):
+    """When main tab is manufacturing, default to products; else use main tab."""
+    if active_tab == "manufacturing":
+        return "products"
+    return active_tab or "manufacturing"
+
+
+# Sync effective-tab store when manufacturing sub-tab changes (only runs when Manufacturing is visible)
+@app.callback(
+    Output("effective-tab-store", "data", allow_duplicate=True),
+    Input("manufacturing-sub-tabs", "active_tab"),
+    prevent_initial_call=True,
+)
+def sync_effective_tab_from_manufacturing(active_tab):
+    """Reflect manufacturing sub-tab in effective-tab store."""
+    return active_tab or "products"
 
 
 # Products page callbacks - Initial table data load and filter
 @app.callback(
     Output("products-table", "data"),
     [
-        Input("main-tabs", "active_tab"),
+        Input("effective-tab-store", "data"),
         Input("products-refresh", "n_clicks"),
         Input("filter-purchase", "value"),
         Input("filter-sell", "value"),
@@ -541,7 +608,7 @@ def render_tab_content(active_tab):
     prevent_initial_call=False,
 )
 def load_products_table(
-    active_tab,
+    effective_tab,
     refresh_clicks,
     filter_purchase,
     filter_sell,
@@ -549,12 +616,12 @@ def load_products_table(
     refresh_trigger,
 ):
     """Load products table when products tab is activated, refresh is clicked, or filters change."""
-    # Only load if we're on the products tab
-    if active_tab != "products":
+    # Only load if we're on the products tab (Manufacturing > Products)
+    if effective_tab != "products":
         return []
 
     print(
-        f"[load_products_table] active_tab={active_tab}, filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}"
+        f"[load_products_table] effective_tab={effective_tab}, filters: purchase={filter_purchase}, sell={filter_sell}, assemble={filter_assemble}"
     )
 
     # Initialize products list
@@ -783,12 +850,12 @@ def load_products_table(
 # Batches page callbacks
 @app.callback(
     [Output("batches-table", "data"), Output("batches-table", "columns")],
-    [Input("main-tabs", "active_tab")],
+    [Input("effective-tab-store", "data")],
 )
-def update_batches_table(active_tab):
+def update_batches_table(effective_tab):
     """Update batches table."""
-    # Load data when batches tab is active
-    if active_tab == "batches":
+    # Load data when batches tab is active (legacy)
+    if effective_tab == "batches":
         response = make_api_request("GET", "/batches/")
 
         if "error" in response:
@@ -888,18 +955,17 @@ def show_batch_print_preview(n_clicks, selected_rows, data):
 # Inventory page callbacks
 @app.callback(
     [Output("inventory-table", "data"), Output("inventory-table", "columns")],
-    [Input("main-tabs", "active_tab")],
+    [Input("effective-tab-store", "data")],
 )
-def update_inventory_table(active_tab):
+def update_inventory_table(effective_tab):
     """Update inventory table."""
-    # Load data when inventory tab is active
-    if active_tab == "inventory":
+    # Load data when Manufacturing > Inventory is active
+    if effective_tab == "inventory":
         response = make_api_request("GET", "/inventory/lots/")
 
         if "error" in response:
             return [], []
 
-        # API returns a list directly, not wrapped in a dict
         lots = response if isinstance(response, list) else response.get("lots", [])
 
         if lots:
@@ -957,10 +1023,19 @@ register_qc_test_types_callbacks(app, make_api_request)
 register_work_areas_callbacks(app, make_api_request)
 register_settings_callbacks(app)
 register_sales_tab_callbacks(app)
-register_sales_orders_callbacks(app, make_api_request)
+register_sales_orders_callbacks(
+    app,
+    make_api_request,
+    api_base_url=API_BASE_URL.replace("/api/v1", "").rstrip("/")
+    or "http://127.0.0.1:8000",
+)
+register_sales_customers_callbacks(app, make_api_request)
+register_sales_import_callbacks(app, make_api_request)
+register_sales_analytics_callbacks(app, make_api_request)
 
 
 register_work_orders_callbacks(app, API_BASE_URL, make_api_request)
+register_stocktake_callbacks(app, make_api_request)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth

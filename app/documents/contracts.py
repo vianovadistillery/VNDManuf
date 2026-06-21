@@ -32,6 +32,12 @@ class LineItemContext:
     dqty_raw: Optional[Decimal] = None
     toqty_raw: Optional[Decimal] = None
     tdqty_raw: Optional[Decimal] = None
+    # Invoice template: item.iqty, item.ex, item.inc, item.tot_ex, item.tot_inc
+    iqty: str = ""  # Item quantity (same as quantity)
+    ex: str = "0.00"  # Unit price ex GST
+    inc: str = "0.00"  # Unit price inc GST
+    tot_ex: str = "0.00"  # Line total ex GST
+    tot_inc: str = "0.00"  # Line total inc GST
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +52,11 @@ class LineItemContext:
             "dqty": self.dqty,
             "toqty": self.toqty,
             "tdqty": self.tdqty,
+            "iqty": self.iqty,
+            "ex": self.ex,
+            "inc": self.inc,
+            "tot_ex": self.tot_ex,
+            "tot_inc": self.tot_inc,
             "product_name": self.product_name,
             "quantity_raw": float(self.quantity_raw)
             if self.quantity_raw is not None
@@ -150,8 +161,13 @@ class DocumentHeaderContext:
     subtotal: str = "0.00"
     tax: str = "0.00"
     total: str = "0.00"
-    total_ordered: str = "0.00"  # Sum of line toqty (ordered)
-    total_delivered: str = "0.00"  # Sum of line tdqty (delivered)
+    total_ordered: str = "0.00"  # Sum of item quantities ordered
+    total_delivered: str = "0.00"  # Sum of item quantities delivered
+    # Invoice template: document.inv_number, document.tot_ex, document.tot_gst, document.tot
+    inv_number: Optional[str] = None  # Invoice number (same as doc_number for invoices)
+    tot_ex: Optional[str] = None  # Subtotal ex GST (alias for subtotal)
+    tot_gst: Optional[str] = None  # GST amount (alias for tax)
+    tot: Optional[str] = None  # Total inc GST (alias for total)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -169,6 +185,10 @@ class DocumentHeaderContext:
             "total": self.total,
             "total_ordered": self.total_ordered,
             "total_delivered": self.total_delivered,
+            "inv_number": self.inv_number or self.doc_number,
+            "tot_ex": self.tot_ex if self.tot_ex is not None else self.subtotal,
+            "tot_gst": self.tot_gst if self.tot_gst is not None else self.tax,
+            "tot": self.tot if self.tot is not None else self.total,
         }
 
 

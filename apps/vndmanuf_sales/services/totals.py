@@ -10,7 +10,7 @@ from typing import Iterable, List, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.adapters.db.models import InventoryLot
+from app.adapters.db.models import InventoryLot, Product
 from apps.vndmanuf_sales.models import SalesOrder, SalesOrderLine
 
 Money = Decimal
@@ -97,12 +97,31 @@ class TotalsService:
     def refresh_order_totals(self, order: SalesOrder) -> OrderTotals:
         """
         Recalculate and persist the order totals from its lines.
+        Applies order-level discount and updates total_alcohol_volume_litres.
         """
-        totals = self._summarize_lines(order.lines)
+        totals = self._summarize_lines(
+            order.lines,
+            order_discount_ex_gst=_dec(
+                getattr(order, "order_discount_ex_gst", None) or 0
+            ),
+        )
         order.total_ex_gst = totals.total_ex_gst
         order.total_inc_gst = totals.total_inc_gst
+        order.total_alcohol_volume_litres = self.compute_total_alcohol_volume(order)
         self.db.flush()
         return totals
+
+    def compute_total_alcohol_volume(self, order: SalesOrder) -> Optional[Decimal]:
+        """
+        Sum litres of pure alcohol over order lines: for each line,
+        qty (in litres) * abv_percent/100. If product has no abv, treated as 0.
+        """
+        total = Decimal("0")
+        for line in order.lines:
+            product = self.db.get(Product, line.product_id) if line.product_id else None
+            abv = _dec(getattr(product, "abv_percent", None) or 0)
+            total += _dec(line.qty) * abv / 100
+        return _quantize(total, "0.0001") if total else None
 
     def summarize_order(self, order_id: str) -> OrderTotals:
         order = self.db.get(SalesOrder, order_id)
@@ -186,7 +205,11 @@ class TotalsService:
     # ------------------------------------------------------------------ #
     # Internal helpers
     # ------------------------------------------------------------------ #
-    def _summarize_lines(self, lines: Iterable[SalesOrderLine]) -> OrderTotals:
+    def _summarize_lines(
+        self,
+        lines: Iterable[SalesOrderLine],
+        order_discount_ex_gst: Decimal = Decimal("0"),
+    ) -> OrderTotals:
         total_ex = Decimal("0")
         total_inc = Decimal("0")
         total_discount = Decimal("0")
@@ -194,6 +217,14 @@ class TotalsService:
             total_ex += _dec(line.line_total_ex_gst)
             total_inc += _dec(line.line_total_inc_gst)
             total_discount += _dec(line.discount_ex_gst or Decimal("0"))
+        order_discount_ex_gst = _dec(order_discount_ex_gst)
+        sum_ex_before_discount = total_ex
+        total_ex = max(Decimal("0"), total_ex - order_discount_ex_gst)
+        if sum_ex_before_discount > 0:
+            ratio = total_inc / sum_ex_before_discount
+            total_inc = _quantize(total_ex * ratio)
+        else:
+            total_inc = Decimal("0")
 
         return OrderTotals(
             total_ex_gst=_quantize(total_ex),

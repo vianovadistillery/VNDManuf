@@ -1,7 +1,7 @@
 """Contacts page for Dash UI."""
 
 import dash_bootstrap_components as dbc
-from dash import dash_table, html
+from dash import dash_table, dcc, html
 
 
 class ContactsPage:
@@ -377,6 +377,60 @@ class ContactsPage:
                                             id="contacts-form-alm-account",
                                             type="text",
                                             placeholder="ALM account number",
+                                        ),
+                                        dbc.Label("Payment method"),
+                                        dcc.Dropdown(
+                                            id="contacts-form-payment-method",
+                                            options=[
+                                                {"label": "Direct", "value": "direct"},
+                                                {"label": "ALM", "value": "ALM"},
+                                                {
+                                                    "label": "Paramount",
+                                                    "value": "Paramount",
+                                                },
+                                                {
+                                                    "label": "Shopify",
+                                                    "value": "Shopify",
+                                                },
+                                            ],
+                                            placeholder="Select payment method",
+                                            clearable=True,
+                                        ),
+                                        dbc.Label("Paramount number"),
+                                        dbc.Input(
+                                            id="contacts-form-paramount-number",
+                                            type="text",
+                                            placeholder="Paramount account number",
+                                        ),
+                                        dbc.Label("Default pricing level"),
+                                        dcc.Dropdown(
+                                            id="contacts-form-default-pricing-level",
+                                            options=[
+                                                {"label": "Retail", "value": "retail"},
+                                                {
+                                                    "label": "Wholesale",
+                                                    "value": "wholesale",
+                                                },
+                                                {
+                                                    "label": "Distributor",
+                                                    "value": "distributor",
+                                                },
+                                                {
+                                                    "label": "Counter",
+                                                    "value": "counter",
+                                                },
+                                                {"label": "Trade", "value": "trade"},
+                                                {
+                                                    "label": "Contract",
+                                                    "value": "contract",
+                                                },
+                                                {
+                                                    "label": "Industrial",
+                                                    "value": "industrial",
+                                                },
+                                            ],
+                                            placeholder="e.g. retail, wholesale, trade",
+                                            clearable=True,
                                         ),
                                         dbc.Label("Notes"),
                                         dbc.Textarea(

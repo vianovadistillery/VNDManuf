@@ -24,14 +24,14 @@ def register_work_areas_callbacks(app, make_api_request):
     @app.callback(
         Output("work-areas-table", "data"),
         [
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("settings-tabs", "active_tab"),
             Input("work-areas-refresh", "n_clicks"),
         ],
     )
-    def load_work_areas_table(main_tab, settings_tab, refresh_clicks):
-        """Load work areas table when settings tab is activated and work-areas sub-tab is active."""
-        if main_tab != "settings" or settings_tab != "work-areas":
+    def load_work_areas_table(effective_tab, settings_tab, refresh_clicks):
+        """Load work areas table when Settings tab is activated and work-areas sub-tab is active."""
+        if effective_tab != "settings" or settings_tab != "work-areas":
             return []
 
         try:

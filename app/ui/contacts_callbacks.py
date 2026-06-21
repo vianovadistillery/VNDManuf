@@ -24,10 +24,11 @@ def register_contacts_callbacks(app, make_api_request):
     @app.callback(
         Output("contacts-table", "data"),
         [
+            Input("main-tabs", "active_tab"),
             Input("contacts-search-btn", "n_clicks"),
             Input("contacts-clear-btn", "n_clicks"),
             Input("contacts-refresh-btn", "n_clicks"),
-            Input("main-tabs", "active_tab"),
+            Input("effective-tab-store", "data"),
             Input("contacts-active-filter", "value"),
             Input("contacts-filter-customer", "value"),
             Input("contacts-filter-supplier", "value"),
@@ -37,10 +38,11 @@ def register_contacts_callbacks(app, make_api_request):
         prevent_initial_call=False,
     )
     def load_contacts(
+        main_tab,
         n_clicks_search,
         n_clicks_clear,
         n_clicks_refresh,
-        active_tab,
+        effective_tab,
         active_filter,
         filter_customer,
         filter_supplier,
@@ -48,8 +50,8 @@ def register_contacts_callbacks(app, make_api_request):
         search_text,
     ):
         """Load contacts from API."""
-        # Only load when contacts tab is active
-        if active_tab != "contacts":
+        # Only load when Contacts tab is active (main_tab ensures we run after tab content is rendered)
+        if main_tab != "contacts" and effective_tab != "contacts":
             raise PreventUpdate
 
         try:
@@ -68,6 +70,7 @@ def register_contacts_callbacks(app, make_api_request):
                 if triggered_id in [
                     "contacts-clear-btn.n_clicks",
                     "contacts-refresh-btn.n_clicks",
+                    "effective-tab-store.data",
                     "main-tabs.active_tab",
                 ]:
                     params = {}
@@ -140,6 +143,11 @@ def register_contacts_callbacks(app, make_api_request):
             Output("contacts-form-delivery-country", "value", allow_duplicate=True),
             Output("contacts-form-abn", "value", allow_duplicate=True),
             Output("contacts-form-alm-account", "value", allow_duplicate=True),
+            Output("contacts-form-payment-method", "value", allow_duplicate=True),
+            Output("contacts-form-paramount-number", "value", allow_duplicate=True),
+            Output(
+                "contacts-form-default-pricing-level", "value", allow_duplicate=True
+            ),
             Output("contacts-form-notes", "value", allow_duplicate=True),
             Output("contacts-form-xero-id", "value", allow_duplicate=True),
             Output("contacts-form-is-customer", "value", allow_duplicate=True),
@@ -160,18 +168,24 @@ def register_contacts_callbacks(app, make_api_request):
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if button_id == "contacts-add-btn":
-            empty_extra = [
-                None
-            ] * 15  # billing (6) + delivery (6) + abn + alm_account + notes
+            empty_extra = (
+                [None] * 18
+            )  # billing (6) + delivery (6) + abn + alm + payment_method + paramount + pricing + notes
             return (
                 [True, "Add Contact", None, None, None, None, None, None, None]
                 + empty_extra
-                + [None, False, False, False, True]
+                + [
+                    None,
+                    False,
+                    False,
+                    False,
+                    True,
+                ]  # xero_id, is_customer, is_supplier, is_other, is_active
             )
 
         elif button_id == "contacts-edit-btn":
             if not selected_rows or not data:
-                return [False, ""] + [None] * 29
+                return [False, ""] + [None] * 32
 
             contact = data[selected_rows[0]]
             return [
@@ -198,6 +212,9 @@ def register_contacts_callbacks(app, make_api_request):
                 contact.get("delivery_country") or "",
                 contact.get("abn") or "",
                 contact.get("alm_account_number") or "",
+                contact.get("payment_method"),
+                contact.get("paramount_number"),
+                contact.get("default_pricing_level"),
                 contact.get("notes") or "",
                 contact.get("xero_contact_id", ""),
                 contact.get("is_customer", False),
@@ -254,6 +271,9 @@ def register_contacts_callbacks(app, make_api_request):
             State("contacts-form-delivery-country", "value"),
             State("contacts-form-abn", "value"),
             State("contacts-form-alm-account", "value"),
+            State("contacts-form-payment-method", "value"),
+            State("contacts-form-paramount-number", "value"),
+            State("contacts-form-default-pricing-level", "value"),
             State("contacts-form-notes", "value"),
             State("contacts-form-xero-id", "value"),
             State("contacts-form-is-customer", "value"),
@@ -287,6 +307,9 @@ def register_contacts_callbacks(app, make_api_request):
         delivery_country,
         abn,
         alm_account_number,
+        payment_method,
+        paramount_number,
+        default_pricing_level,
         notes,
         xero_id,
         is_customer,
@@ -339,6 +362,9 @@ def register_contacts_callbacks(app, make_api_request):
                     "abn": abn or None,
                     "notes": notes or None,
                     "alm_account_number": alm_account_number or None,
+                    "payment_method": payment_method or None,
+                    "paramount_number": paramount_number or None,
+                    "default_pricing_level": default_pricing_level or None,
                     "xero_contact_id": xero_id or None,
                     "is_customer": is_customer if is_customer else False,
                     "is_supplier": is_supplier if is_supplier else False,
