@@ -1,0 +1,260 @@
+[
+  {
+    "title": "Welcome to Via Nova",
+    "slug": "welcome-to-via-nova",
+    "category_slug": "welcome",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Introduction to Via Nova Distillery, its mission, products and operating philosophy.",
+    "purpose": "To provide new employees with an understanding of the business, its products and expectations.",
+    "prerequisites": "None.",
+    "safety_notes": "All visitors and staff must follow site safety requirements and wear required PPE when entering production areas.",
+    "steps": [
+      {
+        "title": "Understand the Company",
+        "body": "Via Nova is an Australian distillery focused on producing gin, vodka and ready-to-drink products using innovative distillation technology."
+      },
+      {
+        "title": "Learn the Mission",
+        "body": "Our goal is to create cleaner, more approachable spirits while reducing waste and improving production efficiency."
+      },
+      {
+        "title": "Understand the Product Range",
+        "body": "Become familiar with Via Nova Gin, Via Nova Vodka, New Wave Gin, New Wave Vodka and the RTD portfolio."
+      },
+      {
+        "title": "Learn the Operating Philosophy",
+        "body": "Safety, quality, compliance, innovation and continuous improvement are core operating principles."
+      },
+      {
+        "title": "Become Familiar with Key Systems",
+        "body": "Understand the role of VNDManuf, VND-DAQ, Xero, Shopify and SharePoint within the business."
+      },
+      {
+        "title": "Review Compliance Obligations",
+        "body": "Recognise that the distillery operates under excise, food safety, workplace safety and liquor licensing requirements."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Lack of understanding of company systems",
+        "prevention": "Complete induction and role-specific training."
+      },
+      {
+        "issue": "Failure to follow procedures",
+        "prevention": "Consult Nova U articles and supervisors before undertaking unfamiliar tasks."
+      }
+    ],
+    "troubleshooting": "If unsure of a process, stop and seek assistance from your supervisor.",
+    "tags": ["induction", "company", "welcome", "training"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Site Tour",
+    "slug": "site-tour",
+    "category_slug": "welcome",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Overview of all major operational areas within Via Nova.",
+    "purpose": "To familiarise staff with site layout and operational flow.",
+    "prerequisites": "Completed safety induction.",
+    "safety_notes": "Stay within designated walkways. Follow all signage and PPE requirements.",
+    "steps": [
+      {
+        "title": "Raw Materials Area",
+        "body": "Review spirit receival, botanical storage and packaging material storage locations."
+      },
+      {
+        "title": "Production Area",
+        "body": "Observe distillation equipment, blending vessels and associated utilities."
+      },
+      {
+        "title": "Packaging Area",
+        "body": "Review bottling, canning, labelling and shrink seal operations."
+      },
+      {
+        "title": "Finished Goods Area",
+        "body": "Inspect pallet storage, dispatch preparation and stock control locations."
+      },
+      {
+        "title": "Bond Store",
+        "body": "Understand excise-controlled storage requirements and access controls."
+      },
+      {
+        "title": "Office and Administration",
+        "body": "Review VNDManuf, Xero, SharePoint and Nova U administrative functions."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Entering restricted areas",
+        "prevention": "Only enter authorised areas."
+      },
+      {
+        "issue": "Interaction with moving equipment",
+        "prevention": "Remain clear of operating machinery."
+      }
+    ],
+    "troubleshooting": "Contact a supervisor if access is required to restricted operational areas.",
+    "tags": ["induction", "site", "tour"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Spirit Receiving",
+    "slug": "spirit-receiving",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for receiving bulk spirit into inventory.",
+    "purpose": "To ensure all incoming spirit is accurately recorded and traceable.",
+    "prerequisites": "Approved purchase order and delivery documentation.",
+    "safety_notes": "Spirit is highly flammable. Eliminate ignition sources. Wear PPE.",
+    "steps": [
+      {
+        "title": "Verify Documentation",
+        "body": "Confirm supplier details, batch information and delivery paperwork."
+      },
+      {
+        "title": "Inspect Delivery",
+        "body": "Check seals, packaging integrity and signs of contamination."
+      },
+      {
+        "title": "Record Receipt",
+        "body": "Enter receipt into VNDManuf against the appropriate product code."
+      },
+      {
+        "title": "Transfer Spirit",
+        "body": "Transfer spirit into approved storage vessels using approved procedures."
+      },
+      {
+        "title": "Label Inventory",
+        "body": "Apply batch identification and traceability information."
+      },
+      {
+        "title": "Verify Stock",
+        "body": "Confirm inventory balances match physical quantities."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect batch identification",
+        "prevention": "Verify all documentation before transfer."
+      },
+      {
+        "issue": "Inventory discrepancies",
+        "prevention": "Perform independent quantity checks."
+      },
+      {
+        "issue": "Spirit contamination",
+        "prevention": "Use clean, approved equipment."
+      }
+    ],
+    "troubleshooting": "Quarantine any suspect deliveries and notify management immediately.",
+    "tags": ["spirit", "receiving", "inventory", "excise"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "How to Dilute Gin60 to Gin42",
+    "slug": "dilute-gin60-to-gin42",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Standard process for reducing spirit strength from approximately 60% ABV to bottling strength.",
+    "purpose": "To achieve consistent final product ABV and maintain quality standards.",
+    "prerequisites": "Released batch, calibrated measurement equipment and approved water source.",
+    "safety_notes": "Use food-grade hoses and vessels. Avoid slips caused by spills.",
+    "steps": [
+      {
+        "title": "Verify Batch Release",
+        "body": "Confirm QC approval and batch release status."
+      },
+      {
+        "title": "Measure Initial ABV",
+        "body": "Confirm current ABV using approved testing methods."
+      },
+      {
+        "title": "Calculate Water Addition",
+        "body": "Use approved dilution calculations or VNDManuf formulas."
+      },
+      {
+        "title": "Add Water",
+        "body": "Add calculated water quantity gradually while mixing."
+      },
+      {
+        "title": "Allow Product to Marry",
+        "body": "Allow sufficient mixing and resting time before testing."
+      },
+      {
+        "title": "Verify Final ABV",
+        "body": "Retest and confirm final specification is achieved."
+      },
+      {
+        "title": "Record Results",
+        "body": "Record dilution details in batch records and VNDManuf."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Over-dilution",
+        "prevention": "Verify calculations before adding water."
+      },
+      {
+        "issue": "Incorrect ABV",
+        "prevention": "Use calibrated instruments."
+      },
+      {
+        "issue": "Loss of traceability",
+        "prevention": "Complete all batch records."
+      }
+    ],
+    "troubleshooting": "If final ABV is outside specification, quarantine the batch and notify QA.",
+    "tags": ["gin", "abv", "dilution", "production"],
+    "systems": ["vndmanuf", "vndaq"]
+  },
+  {
+    "title": "Via Nova Gin Product Knowledge",
+    "slug": "via-nova-gin-product-knowledge",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Product knowledge guide for Via Nova Gin.",
+    "purpose": "To provide staff with product understanding for production and sales activities.",
+    "prerequisites": "None.",
+    "safety_notes": "Responsible service and consumption of alcohol principles apply.",
+    "steps": [
+      {
+        "title": "Understand Product Positioning",
+        "body": "Via Nova Gin represents a modern Australian interpretation of gin."
+      },
+      {
+        "title": "Learn Key Flavour Notes",
+        "body": "Expect bright juniper, citrus and balanced spice characteristics."
+      },
+      {
+        "title": "Understand Production Philosophy",
+        "body": "The product reflects Via Nova's approach to cleaner flavour extraction and improved efficiency."
+      },
+      {
+        "title": "Know Key Selling Points",
+        "body": "Focus on flavour clarity, innovation and Australian production."
+      },
+      {
+        "title": "Understand Storage Requirements",
+        "body": "Store upright in a cool, dry location away from direct sunlight."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect product description",
+        "prevention": "Use approved tasting notes."
+      },
+      {
+        "issue": "Improper storage",
+        "prevention": "Follow storage guidelines."
+      }
+    ],
+    "troubleshooting": "Refer to the latest approved product specification if unsure.",
+    "tags": ["gin", "product", "sales", "training"],
+    "systems": []
+  }
+]

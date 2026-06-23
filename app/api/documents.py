@@ -64,6 +64,20 @@ class GenerateRequest(BaseModel):
         None,
         description="Ad-hoc lines when not using quote_id/delivery_docket_id",
     )
+    product_summary_rows: Optional[List[dict]] = Field(
+        None,
+        description="Aggregated product rows for customer purchase report",
+    )
+    product_summary_orders: Optional[List[dict]] = Field(
+        None,
+        description="Order rows for customer purchase report",
+    )
+    product_summary_order_count: Optional[int] = None
+    product_summary_period_start: Optional[date] = None
+    product_summary_period_end: Optional[date] = None
+    product_summary_total_ex_gst: Optional[Decimal] = None
+    product_summary_total_inc_gst: Optional[Decimal] = None
+    product_summary_total_qty: Optional[Decimal] = None
     overrides: Optional[DocumentOverridesSchema] = None
     output_docx: Optional[bool] = Field(
         None, description="Also save DOCX; default from settings"
@@ -209,6 +223,14 @@ async def generate_document(
         line_specs=line_specs if line_specs else None,
         overrides=overrides,
         output_docx=body.output_docx,
+        product_summary_rows=body.product_summary_rows,
+        product_summary_orders=body.product_summary_orders,
+        product_summary_order_count=body.product_summary_order_count,
+        product_summary_period_start=body.product_summary_period_start,
+        product_summary_period_end=body.product_summary_period_end,
+        product_summary_total_ex_gst=body.product_summary_total_ex_gst,
+        product_summary_total_inc_gst=body.product_summary_total_inc_gst,
+        product_summary_total_qty=body.product_summary_total_qty,
     )
     if err and (doc_record is None or doc_record.status == "failed"):
         raise HTTPException(

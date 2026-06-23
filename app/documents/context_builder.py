@@ -14,6 +14,7 @@ from app.documents.contracts import (
     DocumentHeaderContext,
     DocumentOverrides,
     LineItemContext,
+    OrderSummaryItemContext,
     _format_address_block,
 )
 
@@ -41,6 +42,13 @@ def _format_decimal(v: Optional[Decimal], places: int = 2) -> str:
     if v is None:
         return "0.00"
     return f"{v:.{places}f}"
+
+
+def _format_currency(v: Optional[Decimal]) -> str:
+    """Format as AUD dollar amount with 2 decimal places."""
+    if v is None:
+        return "$0.00"
+    return f"${Decimal(v).quantize(Decimal('0.01')):,.2f}"
 
 
 def _format_int(v: Optional[Decimal]) -> str:
@@ -624,6 +632,131 @@ def build_context_from_contact_and_lines(
     )
 
 
+def build_context_from_order_product_summary(
+    session: Session,
+    *,
+    customer_id: Optional[str],
+    rows: List[dict],
+    order_rows: Optional[List[dict]] = None,
+    order_count: int,
+    period_start: Optional[date],
+    period_end: Optional[date],
+    total_ex_gst: Decimal,
+    total_inc_gst: Decimal,
+    total_qty: Decimal,
+    doc_type: str = "customer_purchase_report",
+) -> "DocumentContext":
+    """Build context for a customer purchase summary report (orders + aggregated products)."""
+    from app.adapters.db.models import Customer
+    from app.documents.contracts import DocumentContext
+
+    contact_ctx = ContactContext(name="All customers", code="")
+    if customer_id:
+        customer = session.get(Customer, customer_id)
+        if customer:
+            contact_ctx = contact_from_customer(customer)
+
+    order_items: List[OrderSummaryItemContext] = []
+    for i, row in enumerate(order_rows or [], start=1):
+        order_items.append(
+            OrderSummaryItemContext(
+                order_date=str(row.get("order_date") or ""),
+                order_ref=str(row.get("order_ref") or "—"),
+                po_number=str(row.get("po_number") or "—"),
+                status=str(row.get("status") or ""),
+                total_ex_gst=_format_currency(
+                    Decimal(str(row.get("total_ex_gst") or 0))
+                ),
+                total_inc_gst=_format_currency(
+                    Decimal(str(row.get("total_inc_gst") or 0))
+                ),
+                sequence=i,
+            )
+        )
+
+    line_items: List[LineItemContext] = []
+    for i, row in enumerate(rows, start=1):
+        qty = Decimal(str(row.get("total_qty") or 0))
+        total_ex = Decimal(str(row.get("total_ex_gst") or 0))
+        total_inc = Decimal(str(row.get("total_inc_gst") or 0))
+        unit_ex = (total_ex / qty).quantize(Decimal("0.01")) if qty else Decimal("0")
+        unit_inc = (total_inc / qty).quantize(Decimal("0.01")) if qty else Decimal("0")
+        sku = row.get("sku") or ""
+        name = row.get("name") or sku or "—"
+        line_items.append(
+            LineItemContext(
+                description=name[:200],
+                sku=sku,
+                quantity=_format_int(qty),
+                oqty=_format_int(qty),
+                uom="unit",
+                unit_price=_format_currency(unit_ex),
+                line_total=_format_currency(total_ex),
+                sequence=i,
+                dqty=_format_int(qty),
+                toqty=_format_currency(total_ex),
+                tdqty=_format_currency(total_ex),
+                product_name=name,
+                quantity_raw=qty,
+                unit_price_raw=unit_ex,
+                line_total_raw=total_ex,
+                dqty_raw=qty,
+                toqty_raw=total_ex,
+                tdqty_raw=total_ex,
+                iqty=_format_int(qty),
+                ex=_format_currency(unit_ex),
+                inc=_format_currency(unit_inc),
+                tot_ex=_format_currency(total_ex),
+                tot_inc=_format_currency(total_inc),
+            )
+        )
+
+    subtotal = _quantize_money(total_ex_gst)
+    tax = _quantize_money(total_inc_gst - total_ex_gst)
+    total = _quantize_money(total_inc_gst)
+    # Purchase summary: only actual products — no padded empty rows
+
+    period_slug = ""
+    if period_start and period_end:
+        period_slug = f"{period_start.isoformat()}_{period_end.isoformat()}"
+    elif period_start:
+        period_slug = period_start.isoformat()
+    elif period_end:
+        period_slug = period_end.isoformat()
+    doc_number = f"CPR-{contact_ctx.code or 'ALL'}-{period_slug}".strip("-")
+
+    document = DocumentHeaderContext(
+        doc_type=doc_type,
+        doc_number=doc_number,
+        date=_format_date(date.today()),
+        quote_date=_format_date(period_start),
+        delivery_date=_format_date(period_end),
+        period_start=_format_date(period_start),
+        period_end=_format_date(period_end),
+        order_count=str(order_count),
+        notes=f"{order_count} order(s) in period",
+        subtotal=_format_currency(subtotal),
+        tax=_format_currency(tax),
+        total=_format_currency(total),
+        total_ordered=_format_int(total_qty),
+        total_delivered=_format_int(total_qty),
+        inv_number=doc_number,
+        tot_ex=_format_currency(subtotal),
+        tot_gst=_format_currency(tax),
+        tot=_format_currency(total),
+    )
+    return DocumentContext(
+        contact=contact_ctx,
+        document=document,
+        line_items=line_items,
+        order_items=order_items,
+    )
+
+
+def _quantize_money(value: Decimal) -> Decimal:
+    return value.quantize(Decimal("0.01"))
+
+
 def safe_slug_for_filename(
     contact: ContactContext, doc_number: str, doc_type: str
 ) -> str:
@@ -631,3 +764,78 @@ def safe_slug_for_filename(
     num_slug = _slug(doc_number or str(doc_type), 60)
     code_slug = _slug(contact.code or contact.name or "unknown", 30)
     return f"{num_slug}-{code_slug}"
+
+
+def build_context_from_crm_summary(
+    session: Session,
+    *,
+    customer_id: str,
+    sections: dict[str, bool],
+    period_start: Optional[date],
+    period_end: Optional[date],
+    sales_rows: Optional[List[dict]] = None,
+    sales_orders: Optional[List[dict]] = None,
+    sales_order_count: int = 0,
+    sales_total_ex_gst: Decimal = Decimal("0"),
+    sales_total_inc_gst: Decimal = Decimal("0"),
+    sales_total_qty: Decimal = Decimal("0"),
+    timeline_items: Optional[List[dict]] = None,
+    staff_items: Optional[List[dict]] = None,
+    scheduled_items: Optional[List[dict]] = None,
+    profile_extra: Optional[dict] = None,
+    suggestions: Optional[dict] = None,
+) -> DocumentContext:
+    """Build docxtpl context for CRM customer summary PDF."""
+    from app.adapters.db.models import Customer
+
+    base_ctx: Optional[DocumentContext] = None
+    if sections.get("sales") and sales_rows is not None:
+        base_ctx = build_context_from_order_product_summary(
+            session,
+            customer_id=customer_id,
+            rows=sales_rows,
+            order_rows=sales_orders,
+            order_count=sales_order_count,
+            period_start=period_start,
+            period_end=period_end,
+            total_ex_gst=sales_total_ex_gst,
+            total_inc_gst=sales_total_inc_gst,
+            total_qty=sales_total_qty,
+            doc_type="crm_summary",
+        )
+        base_ctx.document.doc_type = "crm_summary"
+        base_ctx.document.doc_number = f"CRM-{base_ctx.contact.code or customer_id[:8]}"
+
+    if base_ctx is None:
+        contact_ctx = ContactContext(name="Customer", code="")
+        customer = session.get(Customer, customer_id)
+        if customer:
+            contact_ctx = contact_from_customer(customer)
+        base_ctx = DocumentContext(
+            contact=contact_ctx,
+            document=DocumentHeaderContext(
+                doc_type="crm_summary",
+                doc_number=f"CRM-{contact_ctx.code or customer_id[:8]}",
+                date=_format_date(date.today()),
+                period_start=_format_date(period_start),
+                period_end=_format_date(period_end),
+                notes="CRM customer summary",
+            ),
+        )
+
+    profile = dict(profile_extra or {})
+    if suggestions:
+        profile.update(
+            {
+                "suggestion_message": suggestions.get("message", ""),
+                "suggested_at": suggestions.get("suggested_at", ""),
+                "suggested_type": suggestions.get("suggested_type", ""),
+            }
+        )
+
+    base_ctx.timeline_items = timeline_items or []
+    base_ctx.staff_items = staff_items or []
+    base_ctx.scheduled_items = scheduled_items or []
+    base_ctx.profile_extra = profile
+    base_ctx.sections = sections
+    return base_ctx

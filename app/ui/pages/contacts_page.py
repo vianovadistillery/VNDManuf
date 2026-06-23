@@ -1,7 +1,93 @@
 """Contacts page for Dash UI."""
 
+from __future__ import annotations
+
 import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
+
+
+def _address_block(prefix: str, title: str) -> dbc.Card:
+    return dbc.Card(
+        [
+            dbc.CardHeader(html.H6(title, className="mb-0")),
+            dbc.CardBody(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label("Line 1"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-line1",
+                                        type="text",
+                                    ),
+                                ],
+                                md=6,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Line 2"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-line2",
+                                        type="text",
+                                    ),
+                                ],
+                                md=6,
+                            ),
+                        ],
+                        className="g-2 mb-2",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label("Suburb"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-suburb",
+                                        type="text",
+                                    ),
+                                ],
+                                md=4,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("State"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-state",
+                                        type="text",
+                                    ),
+                                ],
+                                md=3,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Postcode"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-postcode",
+                                        type="text",
+                                    ),
+                                ],
+                                md=3,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Country"),
+                                    dbc.Input(
+                                        id=f"contacts-form-{prefix}-country",
+                                        type="text",
+                                        placeholder="Australia",
+                                    ),
+                                ],
+                                md=2,
+                            ),
+                        ],
+                        className="g-2",
+                    ),
+                ]
+            ),
+        ],
+        className="mb-3 shadow-sm",
+    )
 
 
 class ContactsPage:
@@ -9,466 +95,503 @@ class ContactsPage:
 
     @staticmethod
     def get_layout():
-        return dbc.Container(
+        return html.Div(
             [
-                # Header
-                dbc.Row([dbc.Col([html.H2("Contacts", className="mb-4")])]),
-                # Filters
-                dbc.Row(
+                html.H4("Contacts", className="mb-3"),
+                dbc.Card(
                     [
-                        dbc.Col(
-                            [
-                                dbc.InputGroup(
-                                    [
-                                        dbc.InputGroupText("Search:"),
-                                        dbc.Input(
-                                            id="contacts-search-filter",
-                                            placeholder="Search by name...",
-                                            style={"width": "300px"},
+                        dbc.CardHeader(html.H6("Search & filters", className="mb-0")),
+                        dbc.CardBody(
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dbc.InputGroup(
+                                            [
+                                                dbc.Input(
+                                                    id="contacts-search-filter",
+                                                    placeholder="Search by name…",
+                                                ),
+                                                dbc.Button(
+                                                    "Search",
+                                                    id="contacts-search-btn",
+                                                    color="primary",
+                                                ),
+                                                dbc.Button(
+                                                    "Clear",
+                                                    id="contacts-clear-btn",
+                                                    color="secondary",
+                                                    outline=True,
+                                                ),
+                                            ],
+                                            size="sm",
                                         ),
-                                        dbc.Button(
-                                            "Search",
-                                            id="contacts-search-btn",
-                                            color="primary",
-                                            className="ms-2",
-                                        ),
-                                        dbc.Button(
-                                            "Clear",
-                                            id="contacts-clear-btn",
-                                            color="secondary",
-                                            className="ms-2",
-                                        ),
-                                    ],
-                                    size="sm",
-                                )
-                            ]
-                        ),
-                        dbc.Col(
-                            [
-                                html.Div(
-                                    [
-                                        dbc.Label(
-                                            "Active Only:",
-                                            className="me-2",
-                                            style={
-                                                "display": "inline-block",
-                                                "marginRight": "10px",
-                                            },
-                                        ),
+                                        md=4,
+                                    ),
+                                    dbc.Col(
                                         dbc.Checkbox(
                                             id="contacts-active-filter",
-                                            label="",
+                                            label="Active only",
                                             value=True,
-                                            style={"display": "inline-block"},
                                         ),
-                                    ]
-                                )
-                            ]
+                                        md=2,
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Checkbox(
+                                                id="contacts-filter-customer",
+                                                label="Customer",
+                                                value=True,
+                                                className="me-3 d-inline-block",
+                                            ),
+                                            dbc.Checkbox(
+                                                id="contacts-filter-supplier",
+                                                label="Supplier",
+                                                value=True,
+                                                className="me-3 d-inline-block",
+                                            ),
+                                            dbc.Checkbox(
+                                                id="contacts-filter-other",
+                                                label="Other",
+                                                value=True,
+                                                className="d-inline-block",
+                                            ),
+                                        ],
+                                        md=4,
+                                    ),
+                                    dbc.Col(
+                                        dbc.ButtonGroup(
+                                            [
+                                                dbc.Button(
+                                                    "Add",
+                                                    id="contacts-add-btn",
+                                                    color="primary",
+                                                    size="sm",
+                                                ),
+                                                dbc.Button(
+                                                    "Edit",
+                                                    id="contacts-edit-btn",
+                                                    color="secondary",
+                                                    size="sm",
+                                                    disabled=True,
+                                                ),
+                                                dbc.Button(
+                                                    "Delete",
+                                                    id="contacts-delete-btn",
+                                                    color="danger",
+                                                    size="sm",
+                                                    outline=True,
+                                                    disabled=True,
+                                                ),
+                                                dbc.Button(
+                                                    "Refresh",
+                                                    id="contacts-refresh-btn",
+                                                    color="secondary",
+                                                    size="sm",
+                                                    outline=True,
+                                                ),
+                                            ]
+                                        ),
+                                        md=2,
+                                        className="text-end",
+                                    ),
+                                ],
+                                className="g-2 align-items-center",
+                            )
                         ),
-                        dbc.Col(
-                            [
-                                html.Div(
-                                    [
-                                        dbc.Label(
-                                            "Filter by Type:",
-                                            className="me-2",
-                                            style={
-                                                "display": "inline-block",
-                                                "marginRight": "10px",
-                                            },
-                                        ),
-                                        dbc.Checkbox(
-                                            id="contacts-filter-customer",
-                                            label="Customer",
-                                            value=True,
-                                            className="me-2",
-                                            style={"display": "inline-block"},
-                                        ),
-                                        dbc.Checkbox(
-                                            id="contacts-filter-supplier",
-                                            label="Supplier",
-                                            value=True,
-                                            className="me-2",
-                                            style={"display": "inline-block"},
-                                        ),
-                                        dbc.Checkbox(
-                                            id="contacts-filter-other",
-                                            label="Other",
-                                            value=True,
-                                            style={"display": "inline-block"},
-                                        ),
-                                    ]
-                                )
-                            ]
+                    ],
+                    className="mb-3 shadow-sm",
+                ),
+                dbc.Card(
+                    [
+                        dbc.CardHeader(html.H6("Directory", className="mb-0")),
+                        dbc.CardBody(
+                            dash_table.DataTable(
+                                id="contacts-table",
+                                columns=[
+                                    {"name": "Code", "id": "code"},
+                                    {"name": "Name", "id": "name"},
+                                    {"name": "Contact", "id": "contact_person"},
+                                    {"name": "Email", "id": "email"},
+                                    {"name": "Phone", "id": "phone"},
+                                    {"name": "Suburb", "id": "delivery_suburb"},
+                                    {"name": "State", "id": "delivery_state"},
+                                    {"name": "Coordinates", "id": "coordinates"},
+                                    {
+                                        "name": "Customer",
+                                        "id": "is_customer",
+                                        "type": "text",
+                                    },
+                                    {
+                                        "name": "Supplier",
+                                        "id": "is_supplier",
+                                        "type": "text",
+                                    },
+                                    {
+                                        "name": "Active",
+                                        "id": "is_active",
+                                        "type": "text",
+                                    },
+                                ],
+                                data=[],
+                                sort_action="native",
+                                filter_action="native",
+                                page_action="native",
+                                page_current=0,
+                                page_size=20,
+                                style_table={"overflowX": "auto"},
+                                style_cell={
+                                    "textAlign": "left",
+                                    "padding": "0.5rem",
+                                    "fontSize": "14px",
+                                },
+                                style_header={
+                                    "backgroundColor": "#f8f9fa",
+                                    "fontWeight": "bold",
+                                },
+                                style_data_conditional=[
+                                    {
+                                        "if": {"filter_query": "{is_active} = false"},
+                                        "backgroundColor": "#fff5f5",
+                                    }
+                                ],
+                                row_selectable="single",
+                            )
                         ),
                     ],
-                    className="mb-3",
+                    className="mb-3 shadow-sm",
                 ),
-                # Action Buttons
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                dbc.ButtonGroup(
-                                    [
-                                        dbc.Button(
-                                            "Add Contact",
-                                            id="contacts-add-btn",
-                                            color="success",
-                                        ),
-                                        dbc.Button(
-                                            "Edit",
-                                            id="contacts-edit-btn",
-                                            color="primary",
-                                        ),
-                                        dbc.Button(
-                                            "Delete",
-                                            id="contacts-delete-btn",
-                                            color="danger",
-                                        ),
-                                        dbc.Button(
-                                            "🔄 Refresh",
-                                            id="contacts-refresh-btn",
-                                            color="secondary",
-                                        ),
-                                    ]
-                                )
-                            ]
-                        )
-                    ],
-                    className="mb-3",
-                ),
-                # Data Table
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                dash_table.DataTable(
-                                    id="contacts-table",
-                                    columns=[
-                                        {"name": "Code", "id": "code"},
-                                        {"name": "Name", "id": "name"},
-                                        {"name": "Contact", "id": "contact_person"},
-                                        {"name": "Email", "id": "email"},
-                                        {"name": "Phone", "id": "phone"},
-                                        {
-                                            "name": "Customer",
-                                            "id": "is_customer",
-                                            "type": "text",
-                                        },
-                                        {
-                                            "name": "Supplier",
-                                            "id": "is_supplier",
-                                            "type": "text",
-                                        },
-                                        {
-                                            "name": "Other",
-                                            "id": "is_other",
-                                            "type": "text",
-                                        },
-                                        {
-                                            "name": "Active",
-                                            "id": "is_active",
-                                            "type": "text",
-                                        },
-                                    ],
-                                    data=[],
-                                    sort_action="native",
-                                    filter_action="native",
-                                    page_action="native",
-                                    page_current=0,
-                                    page_size=20,
-                                    style_cell={
-                                        "textAlign": "left",
-                                        "padding": "10px",
-                                        "fontSize": "14px",
-                                    },
-                                    style_header={
-                                        "backgroundColor": "#f8f9fa",
-                                        "fontWeight": "bold",
-                                    },
-                                    style_data_conditional=[
-                                        {
-                                            "if": {
-                                                "filter_query": "{is_active} = false"
-                                            },
-                                            "backgroundColor": "#ffe6e6",
-                                        }
-                                    ],
-                                    row_selectable="single",
-                                )
-                            ]
-                        )
-                    ],
-                    className="mb-3",
-                ),
-                # Add/Edit Modal
                 dbc.Modal(
                     [
                         dbc.ModalHeader(dbc.ModalTitle(id="contacts-modal-title")),
                         dbc.ModalBody(
                             [
-                                dbc.Form(
+                                html.Div(
+                                    id="contacts-form-id-hidden",
+                                    style={"display": "none"},
+                                ),
+                                dbc.Tabs(
                                     [
-                                        html.Div(
-                                            id="contacts-form-id-hidden",
-                                            style={"display": "none"},
-                                        ),
-                                        dbc.Label(
-                                            "Code (leave blank to auto-generate)"
-                                        ),
-                                        dbc.Input(
-                                            id="contacts-form-code",
-                                            type="text",
-                                            placeholder="5 characters, e.g., ABC12",
-                                        ),
-                                        dbc.Label("Name *"),
-                                        dbc.Input(
-                                            id="contacts-form-name",
-                                            type="text",
-                                            required=True,
-                                        ),
-                                        dbc.Label("Contact Person"),
-                                        dbc.Input(
-                                            id="contacts-form-contact", type="text"
-                                        ),
-                                        dbc.Label("Email"),
-                                        dbc.Input(
-                                            id="contacts-form-email", type="email"
-                                        ),
-                                        dbc.Label("Phone"),
-                                        dbc.Input(id="contacts-form-phone", type="tel"),
-                                        dbc.Label("Address"),
-                                        dbc.Textarea(
-                                            id="contacts-form-address", rows=3
-                                        ),
-                                        dbc.Accordion(
-                                            [
-                                                dbc.AccordionItem(
-                                                    [
-                                                        dbc.Label("Line 1"),
-                                                        dbc.Input(
-                                                            id="contacts-form-billing-line1",
-                                                            type="text",
-                                                        ),
-                                                        dbc.Label("Line 2"),
-                                                        dbc.Input(
-                                                            id="contacts-form-billing-line2",
-                                                            type="text",
+                                        dbc.Tab(
+                                            label="Details",
+                                            tab_id="contacts-tab-details",
+                                            children=[
+                                                html.Div(
+                                                    className="pt-3",
+                                                    children=[
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Code (auto if blank)"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-code",
+                                                                            placeholder="e.g. ABC12",
+                                                                        ),
+                                                                    ],
+                                                                    md=3,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Name *"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-name",
+                                                                            required=True,
+                                                                        ),
+                                                                    ],
+                                                                    md=5,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Contact person"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-contact"
+                                                                        ),
+                                                                    ],
+                                                                    md=4,
+                                                                ),
+                                                            ],
+                                                            className="g-2 mb-2",
                                                         ),
                                                         dbc.Row(
                                                             [
                                                                 dbc.Col(
                                                                     [
                                                                         dbc.Label(
-                                                                            "Suburb"
+                                                                            "Email"
                                                                         ),
                                                                         dbc.Input(
-                                                                            id="contacts-form-billing-suburb",
-                                                                            type="text",
+                                                                            id="contacts-form-email",
+                                                                            type="email",
                                                                         ),
-                                                                    ]
+                                                                    ],
+                                                                    md=6,
                                                                 ),
                                                                 dbc.Col(
                                                                     [
                                                                         dbc.Label(
-                                                                            "State"
+                                                                            "Phone"
                                                                         ),
                                                                         dbc.Input(
-                                                                            id="contacts-form-billing-state",
-                                                                            type="text",
+                                                                            id="contacts-form-phone",
+                                                                            type="tel",
                                                                         ),
-                                                                    ]
+                                                                    ],
+                                                                    md=6,
                                                                 ),
-                                                                dbc.Col(
-                                                                    [
-                                                                        dbc.Label(
-                                                                            "Postcode"
-                                                                        ),
-                                                                        dbc.Input(
-                                                                            id="contacts-form-billing-postcode",
-                                                                            type="text",
-                                                                        ),
-                                                                    ]
-                                                                ),
-                                                            ]
+                                                            ],
+                                                            className="g-2 mb-2",
                                                         ),
-                                                        dbc.Label("Country"),
-                                                        dbc.Input(
-                                                            id="contacts-form-billing-country",
-                                                            type="text",
-                                                            placeholder="e.g. Australia",
+                                                        dbc.Label(
+                                                            "Legacy address (free text)"
+                                                        ),
+                                                        dbc.Textarea(
+                                                            id="contacts-form-address",
+                                                            rows=2,
+                                                            className="mb-2",
+                                                        ),
+                                                        dbc.Label("Contact types"),
+                                                        dbc.Checkbox(
+                                                            id="contacts-form-is-customer",
+                                                            label="Customer",
+                                                            className="me-3 d-inline-block",
+                                                        ),
+                                                        dbc.Checkbox(
+                                                            id="contacts-form-is-supplier",
+                                                            label="Supplier",
+                                                            className="me-3 d-inline-block",
+                                                        ),
+                                                        dbc.Checkbox(
+                                                            id="contacts-form-is-other",
+                                                            label="Other",
+                                                            className="d-inline-block",
+                                                        ),
+                                                        dbc.Switch(
+                                                            id="contacts-form-active",
+                                                            label="Active",
+                                                            value=True,
+                                                            className="mt-3",
                                                         ),
                                                     ],
-                                                    title="Billing address",
-                                                    item_id="contacts-accordion-billing",
-                                                ),
-                                                dbc.AccordionItem(
-                                                    [
-                                                        dbc.Label("Line 1"),
-                                                        dbc.Input(
-                                                            id="contacts-form-delivery-line1",
-                                                            type="text",
+                                                )
+                                            ],
+                                        ),
+                                        dbc.Tab(
+                                            label="Addresses",
+                                            tab_id="contacts-tab-addresses",
+                                            children=[
+                                                html.Div(
+                                                    className="pt-3",
+                                                    children=[
+                                                        _address_block(
+                                                            "delivery",
+                                                            "Delivery address",
                                                         ),
-                                                        dbc.Label("Line 2"),
-                                                        dbc.Input(
-                                                            id="contacts-form-delivery-line2",
-                                                            type="text",
+                                                        _address_block(
+                                                            "billing", "Billing address"
+                                                        ),
+                                                    ],
+                                                )
+                                            ],
+                                        ),
+                                        dbc.Tab(
+                                            label="Map location",
+                                            tab_id="contacts-tab-location",
+                                            children=[
+                                                html.Div(
+                                                    className="pt-3",
+                                                    children=[
+                                                        dbc.Alert(
+                                                            "Latitude and longitude are used "
+                                                            "for the sales customer map. You can "
+                                                            "paste coordinates from Google Maps "
+                                                            "(right-click → coordinates).",
+                                                            color="light",
+                                                            className="small py-2",
                                                         ),
                                                         dbc.Row(
                                                             [
                                                                 dbc.Col(
                                                                     [
                                                                         dbc.Label(
-                                                                            "Suburb"
+                                                                            "Latitude"
                                                                         ),
                                                                         dbc.Input(
-                                                                            id="contacts-form-delivery-suburb",
-                                                                            type="text",
+                                                                            id="contacts-form-latitude",
+                                                                            type="number",
+                                                                            step="any",
+                                                                            placeholder="-38.1474",
                                                                         ),
-                                                                    ]
+                                                                    ],
+                                                                    md=6,
                                                                 ),
                                                                 dbc.Col(
                                                                     [
                                                                         dbc.Label(
-                                                                            "State"
+                                                                            "Longitude"
                                                                         ),
                                                                         dbc.Input(
-                                                                            id="contacts-form-delivery-state",
-                                                                            type="text",
+                                                                            id="contacts-form-longitude",
+                                                                            type="number",
+                                                                            step="any",
+                                                                            placeholder="144.3607",
                                                                         ),
-                                                                    ]
+                                                                    ],
+                                                                    md=6,
                                                                 ),
-                                                                dbc.Col(
-                                                                    [
-                                                                        dbc.Label(
-                                                                            "Postcode"
-                                                                        ),
-                                                                        dbc.Input(
-                                                                            id="contacts-form-delivery-postcode",
-                                                                            type="text",
-                                                                        ),
-                                                                    ]
-                                                                ),
-                                                            ]
-                                                        ),
-                                                        dbc.Label("Country"),
-                                                        dbc.Input(
-                                                            id="contacts-form-delivery-country",
-                                                            type="text",
-                                                            placeholder="e.g. Australia",
+                                                            ],
+                                                            className="g-2",
                                                         ),
                                                     ],
-                                                    title="Delivery address",
-                                                    item_id="contacts-accordion-delivery",
-                                                ),
+                                                )
                                             ],
-                                            start_collapsed=True,
-                                            className="mb-3",
                                         ),
-                                        dbc.Label("ABN"),
-                                        dbc.Input(
-                                            id="contacts-form-abn",
-                                            type="text",
-                                            placeholder="e.g. 12 345 678 901",
-                                        ),
-                                        dbc.Label("ALM account number"),
-                                        dbc.Input(
-                                            id="contacts-form-alm-account",
-                                            type="text",
-                                            placeholder="ALM account number",
-                                        ),
-                                        dbc.Label("Payment method"),
-                                        dcc.Dropdown(
-                                            id="contacts-form-payment-method",
-                                            options=[
-                                                {"label": "Direct", "value": "direct"},
-                                                {"label": "ALM", "value": "ALM"},
-                                                {
-                                                    "label": "Paramount",
-                                                    "value": "Paramount",
-                                                },
-                                                {
-                                                    "label": "Shopify",
-                                                    "value": "Shopify",
-                                                },
+                                        dbc.Tab(
+                                            label="Commercial",
+                                            tab_id="contacts-tab-commercial",
+                                            children=[
+                                                html.Div(
+                                                    className="pt-3",
+                                                    children=[
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "ABN"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-abn"
+                                                                        ),
+                                                                    ],
+                                                                    md=4,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "ALM account"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-alm-account"
+                                                                        ),
+                                                                    ],
+                                                                    md=4,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Paramount #"
+                                                                        ),
+                                                                        dbc.Input(
+                                                                            id="contacts-form-paramount-number"
+                                                                        ),
+                                                                    ],
+                                                                    md=4,
+                                                                ),
+                                                            ],
+                                                            className="g-2 mb-2",
+                                                        ),
+                                                        dbc.Row(
+                                                            [
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Payment method"
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="contacts-form-payment-method",
+                                                                            options=[
+                                                                                {
+                                                                                    "label": "Direct",
+                                                                                    "value": "direct",
+                                                                                },
+                                                                                {
+                                                                                    "label": "ALM",
+                                                                                    "value": "ALM",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Paramount",
+                                                                                    "value": "Paramount",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Shopify",
+                                                                                    "value": "Shopify",
+                                                                                },
+                                                                            ],
+                                                                            clearable=True,
+                                                                        ),
+                                                                    ],
+                                                                    md=6,
+                                                                ),
+                                                                dbc.Col(
+                                                                    [
+                                                                        dbc.Label(
+                                                                            "Default pricing level"
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="contacts-form-default-pricing-level",
+                                                                            options=[
+                                                                                {
+                                                                                    "label": "Retail",
+                                                                                    "value": "retail",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Wholesale",
+                                                                                    "value": "wholesale",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Distributor",
+                                                                                    "value": "distributor",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Counter",
+                                                                                    "value": "counter",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Trade",
+                                                                                    "value": "trade",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Contract",
+                                                                                    "value": "contract",
+                                                                                },
+                                                                                {
+                                                                                    "label": "Industrial",
+                                                                                    "value": "industrial",
+                                                                                },
+                                                                            ],
+                                                                            clearable=True,
+                                                                        ),
+                                                                    ],
+                                                                    md=6,
+                                                                ),
+                                                            ],
+                                                            className="g-2 mb-2",
+                                                        ),
+                                                        dbc.Label("Notes"),
+                                                        dbc.Textarea(
+                                                            id="contacts-form-notes",
+                                                            rows=3,
+                                                            className="mb-2",
+                                                        ),
+                                                        dbc.Label("Xero contact ID"),
+                                                        dbc.Input(
+                                                            id="contacts-form-xero-id",
+                                                            placeholder="UUID",
+                                                        ),
+                                                    ],
+                                                )
                                             ],
-                                            placeholder="Select payment method",
-                                            clearable=True,
                                         ),
-                                        dbc.Label("Paramount number"),
-                                        dbc.Input(
-                                            id="contacts-form-paramount-number",
-                                            type="text",
-                                            placeholder="Paramount account number",
-                                        ),
-                                        dbc.Label("Default pricing level"),
-                                        dcc.Dropdown(
-                                            id="contacts-form-default-pricing-level",
-                                            options=[
-                                                {"label": "Retail", "value": "retail"},
-                                                {
-                                                    "label": "Wholesale",
-                                                    "value": "wholesale",
-                                                },
-                                                {
-                                                    "label": "Distributor",
-                                                    "value": "distributor",
-                                                },
-                                                {
-                                                    "label": "Counter",
-                                                    "value": "counter",
-                                                },
-                                                {"label": "Trade", "value": "trade"},
-                                                {
-                                                    "label": "Contract",
-                                                    "value": "contract",
-                                                },
-                                                {
-                                                    "label": "Industrial",
-                                                    "value": "industrial",
-                                                },
-                                            ],
-                                            placeholder="e.g. retail, wholesale, trade",
-                                            clearable=True,
-                                        ),
-                                        dbc.Label("Notes"),
-                                        dbc.Textarea(
-                                            id="contacts-form-notes",
-                                            rows=2,
-                                            placeholder="Optional notes",
-                                        ),
-                                        dbc.Label("XERO ID (UUID)"),
-                                        dbc.Input(
-                                            id="contacts-form-xero-id",
-                                            type="text",
-                                            placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000",
-                                        ),
-                                        html.Hr(),
-                                        dbc.Label("Contact Types:"),
-                                        dbc.Checkbox(
-                                            id="contacts-form-is-customer",
-                                            label="Customer",
-                                            className="me-2",
-                                        ),
-                                        dbc.Checkbox(
-                                            id="contacts-form-is-supplier",
-                                            label="Supplier",
-                                            className="me-2",
-                                        ),
-                                        dbc.Checkbox(
-                                            id="contacts-form-is-other",
-                                            label="Other",
-                                            className="mb-3",
-                                        ),
-                                        dbc.Switch(
-                                            id="contacts-form-active",
-                                            label="Active",
-                                            value=True,
-                                            className="mt-3",
-                                        ),
-                                    ]
-                                )
+                                    ],
+                                    id="contacts-form-tabs",
+                                    active_tab="contacts-tab-details",
+                                ),
                             ]
                         ),
                         dbc.ModalFooter(
@@ -477,23 +600,26 @@ class ContactsPage:
                                     "Cancel",
                                     id="contacts-modal-cancel",
                                     color="secondary",
+                                    outline=True,
                                 ),
                                 dbc.Button(
-                                    "Save", id="contacts-modal-save", color="primary"
+                                    "Save",
+                                    id="contacts-modal-save",
+                                    color="primary",
                                 ),
                             ]
                         ),
                     ],
                     id="contacts-modal",
                     is_open=False,
+                    size="xl",
                 ),
-                # Delete Confirmation Modal
                 dbc.Modal(
                     [
-                        dbc.ModalHeader(dbc.ModalTitle("Confirm Delete")),
+                        dbc.ModalHeader(dbc.ModalTitle("Confirm delete")),
                         dbc.ModalBody(
                             [
-                                html.P("Are you sure you want to delete this contact?"),
+                                html.P("Delete this contact?"),
                                 html.P(
                                     id="contacts-delete-name",
                                     className="fw-bold text-danger",
@@ -506,6 +632,7 @@ class ContactsPage:
                                     "Cancel",
                                     id="contacts-delete-cancel",
                                     color="secondary",
+                                    outline=True,
                                 ),
                                 dbc.Button(
                                     "Delete",
@@ -519,5 +646,5 @@ class ContactsPage:
                     is_open=False,
                 ),
             ],
-            fluid=True,
+            className="contacts-tab p-1",
         )

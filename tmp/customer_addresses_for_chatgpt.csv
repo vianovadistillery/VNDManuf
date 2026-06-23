@@ -1,0 +1,30 @@
+code,name,customer_type,buying_group,contact_person,email,phone,delivery_address_line1,delivery_address_line2,delivery_suburb,delivery_state,delivery_postcode,delivery_country,billing_address_line1,billing_suburb,billing_state,billing_postcode,legacy_address,latitude,longitude,relationship_status,chatgpt_line1,chatgpt_suburb,chatgpt_state,chatgpt_postcode,chatgpt_latitude,chatgpt_longitude,chatgpt_notes
+ANGID,Anglesea IGA plus Liquor,other,IGA Liquor,Jordan Bews,liquor@angleseaiga.com.au,03 52631573,Shops 5-8 87-89 Great Ocean Road,,Anglesea,VIC,3230,Australia,Shops 5-8 87-89 Great Ocean Road,Anglesea,VIC,3230,"Shops 5-8 87-89 Great Ocean Road
+Anglesea VIC 3230
+",,,active,,,,,,,
+BSHED,Black Sheep,other,Independent,Black Sheep,,,,,,,,Australia,,,,,,,,active,,,,,,,
+CASHR,Cash Sales - Retail,other,,Cash Sales - Retail,,,,,,,,Australia,,,,,,,,active,,,,,,,
+BANND,Cellarbrations Bannockburn,other,Cellarbrations,Michael Smith,bannockburn@cellarbrations.com.au,52812122,1/19 High Street,,Bannockburn ,VIC,3331,AUSTRALIA,1/19 High Street,Bannockburn,VIC,3331,"1/19 High Street
+Bannockburn 3331
+",,,active,,,,,,,
+NARHD,Cellarbrations Nardi Highton,other,,Simo Nardi,simo_nardi@hotmail.com,,,,,,,Australia,,,,,,,,active,,,,,,,
+SWANND,Cellarbrations Swan Hill Central Liquor Barn,other,,John Charleson ,john@centralliquor.com.au,0407 875 683   ,297 CAMPBELL STREET,,SWAN HILL,VIC,3585,Australia,297 CAMPBELL STREET,SWAN HILL,VIC,3585,"297 CAMPBELL STREET
+SWAN HILL, VIC 3585",,,active,,,,,,,
+CHASD,Cellarbrations at Chas Cole,other,,Joel,chascole@apco.com.au,,395-399 MOORABOOL STREET,,SOUTH GEELONG,VIC,3220,Australia,395-399 MOORABOOL STREET,SOUTH GEELONG,VIC,3220,"395-399 MOORABOOL STREET
+SOUTH GEELONG, VIC 3220",,,active,,,,,,,
+FOXXD,Cellarbrations at Foxxy's Daylesford,other,,Matt France,mattfrance@foxxysliquor.com,0448599277,55 VINCENT STREET,,DAYLESFORD,VIC,3460,Australia,55 VINCENT STREET,DAYLESFORD,VIC,3460,"55 VINCENT STREET
+DAYLESFORD, VIC 3460",,,active,,,,,,,
+JACKD,Cellarbrations at Jacks,other,,Jack,,,901 STURT ST,,BALLARAT CENTRAL,VIC,3350,Australia,901 STURT ST,BALLARAT CENTRAL,VIC,3350,"901 STURT ST
+BALLARAT CENTRAL,  VIC  3350",,,active,,,,,,,
+CCCTD,Corks Crew Cellars Torquay,other,,Corks Crew Cellars Torquay,,,,,,,,Australia,,,,,,,,active,,,,,,,
+GPACD,Geelong Performing Arts Centre,other,,Geelong Performing Arts Centre,,,,,,,,Australia,,,,,,,,active,,,,,,,
+GWLLD,Geelong West Liquor Legends,other,,Robin Luo,robin@maytimes.com.au,0436-395-773,132 ABERDEEN ST,,Geelong West,VIC,3218,Australia,132 ABERDEEN ST,Geelong West, VIC,3218,"132 ABERDEEN ST
+Geelong West, VIC 3218",,,active,,,,,,,
+GROVD,Grovedale Hotel,other,,Grovedale Hotel,,,,,,,,Australia,,,,,,,,active,,,,,,,
+MURPD,Murphy's,other,,Murphy's,,,,,,,,Australia,,,,,,,,active,,,,,,,
+NCFNC,Newtown & Chilwell Football Netball Club,other,,Newtown & Chilwell Football Netball Club,,,,,,,,Australia,,,,,,,,active,,,,,,,
+PBARD,Piano Bar Geelong,other,,Piano Bar Geelong,,,,,,,,Australia,,,,,,,,active,,,,,,,
+PRESD,Prestige Liquor Subiaco,other,,James,,,,,,,,Australia,,,,,,,,active,,,,,,,
+TEST-CUST-001,Test Customer (Delivery Docket),other,,,,,,,,,,,,,,,,,,active,,,,,,,
+TBOHD,The Bottle-O Highton,other,,Wayne,,,,,,,,Australia,,,,,,,,active,,,,,,,
+VND,Via Nova Distillery,other,,Via Nova Distillery,,,,,,,,Australia,,,,,,,,active,,,,,,,

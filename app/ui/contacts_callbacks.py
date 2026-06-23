@@ -5,6 +5,14 @@ from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
 
 
+def _as_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"yes", "true", "1"}
+    return bool(value)
+
+
 def register_contacts_callbacks(app, make_api_request):
     """Register all contacts CRUD callbacks."""
 
@@ -111,7 +119,25 @@ def register_contacts_callbacks(app, make_api_request):
                 return []
 
             # API returns a list directly
-            return response if isinstance(response, list) else []
+            rows = []
+            for c in response if isinstance(response, list) else []:
+                lat = c.get("latitude")
+                lon = c.get("longitude")
+                coords = (
+                    f"{float(lat):.5f}, {float(lon):.5f}"
+                    if lat is not None and lon is not None
+                    else "—"
+                )
+                rows.append(
+                    {
+                        **c,
+                        "coordinates": coords,
+                        "is_customer": "Yes" if c.get("is_customer") else "No",
+                        "is_supplier": "Yes" if c.get("is_supplier") else "No",
+                        "is_active": "Yes" if c.get("is_active") else "No",
+                    }
+                )
+            return rows
 
         except Exception as e:
             print(f"Exception loading contacts: {e}")
@@ -149,6 +175,8 @@ def register_contacts_callbacks(app, make_api_request):
                 "contacts-form-default-pricing-level", "value", allow_duplicate=True
             ),
             Output("contacts-form-notes", "value", allow_duplicate=True),
+            Output("contacts-form-latitude", "value", allow_duplicate=True),
+            Output("contacts-form-longitude", "value", allow_duplicate=True),
             Output("contacts-form-xero-id", "value", allow_duplicate=True),
             Output("contacts-form-is-customer", "value", allow_duplicate=True),
             Output("contacts-form-is-supplier", "value", allow_duplicate=True),
@@ -168,19 +196,11 @@ def register_contacts_callbacks(app, make_api_request):
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if button_id == "contacts-add-btn":
-            empty_extra = (
-                [None] * 18
-            )  # billing (6) + delivery (6) + abn + alm + payment_method + paramount + pricing + notes
+            empty_extra = [None] * 20
             return (
                 [True, "Add Contact", None, None, None, None, None, None, None]
                 + empty_extra
-                + [
-                    None,
-                    False,
-                    False,
-                    False,
-                    True,
-                ]  # xero_id, is_customer, is_supplier, is_other, is_active
+                + [None, False, False, False, True]
             )
 
         elif button_id == "contacts-edit-btn":
@@ -216,11 +236,13 @@ def register_contacts_callbacks(app, make_api_request):
                 contact.get("paramount_number"),
                 contact.get("default_pricing_level"),
                 contact.get("notes") or "",
+                contact.get("latitude"),
+                contact.get("longitude"),
                 contact.get("xero_contact_id", ""),
-                contact.get("is_customer", False),
-                contact.get("is_supplier", False),
-                contact.get("is_other", False),
-                contact.get("is_active", True),
+                _as_bool(contact.get("is_customer")),
+                _as_bool(contact.get("is_supplier")),
+                _as_bool(contact.get("is_other")),
+                _as_bool(contact.get("is_active", True)),
             ]
 
         raise PreventUpdate
@@ -275,6 +297,8 @@ def register_contacts_callbacks(app, make_api_request):
             State("contacts-form-paramount-number", "value"),
             State("contacts-form-default-pricing-level", "value"),
             State("contacts-form-notes", "value"),
+            State("contacts-form-latitude", "value"),
+            State("contacts-form-longitude", "value"),
             State("contacts-form-xero-id", "value"),
             State("contacts-form-is-customer", "value"),
             State("contacts-form-is-supplier", "value"),
@@ -311,6 +335,8 @@ def register_contacts_callbacks(app, make_api_request):
         paramount_number,
         default_pricing_level,
         notes,
+        latitude,
+        longitude,
         xero_id,
         is_customer,
         is_supplier,
@@ -365,6 +391,10 @@ def register_contacts_callbacks(app, make_api_request):
                     "payment_method": payment_method or None,
                     "paramount_number": paramount_number or None,
                     "default_pricing_level": default_pricing_level or None,
+                    "latitude": float(latitude) if latitude not in (None, "") else None,
+                    "longitude": float(longitude)
+                    if longitude not in (None, "")
+                    else None,
                     "xero_contact_id": xero_id or None,
                     "is_customer": is_customer if is_customer else False,
                     "is_supplier": is_supplier if is_supplier else False,
@@ -397,7 +427,23 @@ def register_contacts_callbacks(app, make_api_request):
                 )
 
             # API returns list directly
-            new_data = reload_response if isinstance(reload_response, list) else []
+            new_data = []
+            for c in reload_response if isinstance(reload_response, list) else []:
+                lat = c.get("latitude")
+                lon = c.get("longitude")
+                new_data.append(
+                    {
+                        **c,
+                        "coordinates": (
+                            f"{float(lat):.5f}, {float(lon):.5f}"
+                            if lat is not None and lon is not None
+                            else "—"
+                        ),
+                        "is_customer": "Yes" if c.get("is_customer") else "No",
+                        "is_supplier": "Yes" if c.get("is_supplier") else "No",
+                        "is_active": "Yes" if c.get("is_active") else "No",
+                    }
+                )
 
             success_msg = (
                 f"Contact {name} {'updated' if is_edit else 'created'} successfully"

@@ -104,6 +104,8 @@ class TotalsService:
             order_discount_ex_gst=_dec(
                 getattr(order, "order_discount_ex_gst", None) or 0
             ),
+            freight_ex_gst=_dec(getattr(order, "freight_ex_gst", None) or 0),
+            freight_inc_gst=_dec(getattr(order, "freight_inc_gst", None) or 0),
         )
         order.total_ex_gst = totals.total_ex_gst
         order.total_inc_gst = totals.total_inc_gst
@@ -209,6 +211,8 @@ class TotalsService:
         self,
         lines: Iterable[SalesOrderLine],
         order_discount_ex_gst: Decimal = Decimal("0"),
+        freight_ex_gst: Decimal = Decimal("0"),
+        freight_inc_gst: Decimal = Decimal("0"),
     ) -> OrderTotals:
         total_ex = Decimal("0")
         total_inc = Decimal("0")
@@ -225,6 +229,15 @@ class TotalsService:
             total_inc = _quantize(total_ex * ratio)
         else:
             total_inc = Decimal("0")
+
+        freight_ex = _dec(freight_ex_gst)
+        freight_inc = _dec(freight_inc_gst)
+        if freight_inc == 0 and freight_ex > 0:
+            freight_inc = _quantize(freight_ex * Decimal("1.1"))
+        elif freight_ex == 0 and freight_inc > 0:
+            freight_ex = _quantize(freight_inc / Decimal("1.1"))
+        total_ex += freight_ex
+        total_inc += freight_inc
 
         return OrderTotals(
             total_ex_gst=_quantize(total_ex),

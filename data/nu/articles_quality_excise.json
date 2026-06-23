@@ -1,0 +1,332 @@
+[
+  {
+    "title": "Corrective and Preventive Actions (CAPA)",
+    "slug": "corrective-and-preventive-actions",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Managing quality issues through corrective and preventive actions.",
+    "purpose": "To eliminate root causes of quality, safety or compliance issues and prevent recurrence.",
+    "prerequisites": "Quality incident, complaint, audit finding or non-conformance identified.",
+    "safety_notes": "Escalate safety-critical issues immediately.",
+    "steps": [
+      {
+        "title": "Identify the Issue",
+        "body": "Document the problem, affected products, dates and observations."
+      },
+      {
+        "title": "Contain the Risk",
+        "body": "Quarantine affected stock and prevent further impact."
+      },
+      {
+        "title": "Investigate Root Cause",
+        "body": "Determine the underlying cause rather than symptoms."
+      },
+      {
+        "title": "Develop Corrective Actions",
+        "body": "Define actions to resolve the immediate issue."
+      },
+      {
+        "title": "Develop Preventive Actions",
+        "body": "Implement improvements to prevent recurrence."
+      },
+      {
+        "title": "Verify Effectiveness",
+        "body": "Confirm actions have successfully resolved the issue."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Treating symptoms instead of causes",
+        "prevention": "Perform structured root cause analysis."
+      },
+      {
+        "issue": "Repeated quality failures",
+        "prevention": "Implement preventive actions."
+      }
+    ],
+    "troubleshooting": "Escalate unresolved CAPAs to management review.",
+    "tags": ["capa", "quality", "improvement"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Bond Management",
+    "slug": "bond-management",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Management of excisable goods held under bond.",
+    "purpose": "To ensure compliance with excise obligations and maintain inventory accuracy.",
+    "prerequisites": "Authorised access to bonded inventory.",
+    "safety_notes": "Observe warehouse and spirit handling procedures.",
+    "steps": [
+      {
+        "title": "Identify Bonded Stock",
+        "body": "Clearly distinguish bonded inventory from duty-paid stock."
+      },
+      {
+        "title": "Record Movements",
+        "body": "Document all transfers into and out of bond."
+      },
+      {
+        "title": "Maintain Security",
+        "body": "Restrict access to authorised personnel."
+      },
+      {
+        "title": "Conduct Stock Reconciliations",
+        "body": "Regularly compare physical and recorded balances."
+      },
+      {
+        "title": "Retain Documentation",
+        "body": "Maintain records for excise audit purposes."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Excise non-compliance",
+        "prevention": "Record all bonded stock movements."
+      },
+      {
+        "issue": "Inventory discrepancies",
+        "prevention": "Perform regular reconciliations."
+      }
+    ],
+    "troubleshooting": "Investigate all unexplained bond stock variances immediately.",
+    "tags": ["bond", "excise", "warehouse"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Excise Compliance",
+    "slug": "excise-compliance",
+    "category_slug": "quality-compliance",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Overview of excise obligations applying to spirit production.",
+    "purpose": "To ensure staff understand the importance of excise compliance.",
+    "prerequisites": "None.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Understand Excisable Goods",
+        "body": "Spirits and spirit-based products are subject to excise requirements."
+      },
+      {
+        "title": "Maintain Accurate Records",
+        "body": "Record production, packaging and inventory movements."
+      },
+      {
+        "title": "Protect Bonded Stock",
+        "body": "Ensure excisable inventory remains traceable."
+      },
+      {
+        "title": "Support Reconciliations",
+        "body": "Assist with stocktakes and inventory reviews."
+      },
+      {
+        "title": "Escalate Concerns",
+        "body": "Report discrepancies immediately."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Regulatory breaches",
+        "prevention": "Follow approved procedures."
+      },
+      {
+        "issue": "Financial penalties",
+        "prevention": "Maintain accurate records."
+      }
+    ],
+    "troubleshooting": "Escalate excise-related concerns to management immediately.",
+    "tags": ["excise", "compliance", "ato"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Excise Reconciliation",
+    "slug": "excise-reconciliation",
+    "category_slug": "inventory-excise",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Reconciliation of production, inventory and excise records.",
+    "purpose": "To ensure excise records accurately reflect stock holdings.",
+    "prerequisites": "Production and inventory records available.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Review Production Records",
+        "body": "Verify all production batches have been recorded."
+      },
+      {
+        "title": "Review Inventory Movements",
+        "body": "Confirm all stock transactions are recorded."
+      },
+      {
+        "title": "Perform Physical Verification",
+        "body": "Compare inventory records against physical stock."
+      },
+      {
+        "title": "Investigate Variances",
+        "body": "Identify causes of discrepancies."
+      },
+      {
+        "title": "Document Outcomes",
+        "body": "Maintain records of investigations and adjustments."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Undetected stock losses",
+        "prevention": "Perform routine reconciliations."
+      },
+      {
+        "issue": "Incorrect excise reporting",
+        "prevention": "Verify data sources."
+      }
+    ],
+    "troubleshooting": "Escalate unresolved variances before reporting periods close.",
+    "tags": ["excise", "reconciliation", "inventory"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Preparing the EX46 Excise Return",
+    "slug": "preparing-ex46-excise-return",
+    "category_slug": "inventory-excise",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Preparation of periodic excise reporting information.",
+    "purpose": "To support accurate excise return preparation.",
+    "prerequisites": "Completed inventory and production reconciliations.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Verify Reporting Period",
+        "body": "Confirm the reporting dates being prepared."
+      },
+      {
+        "title": "Review Production Data",
+        "body": "Verify all production records are complete."
+      },
+      {
+        "title": "Review Dispatch Data",
+        "body": "Confirm all excisable removals have been recorded."
+      },
+      {
+        "title": "Review Inventory Balances",
+        "body": "Verify opening and closing stock positions."
+      },
+      {
+        "title": "Prepare Return Data",
+        "body": "Compile required excise reporting information."
+      },
+      {
+        "title": "Management Review",
+        "body": "Obtain approval prior to submission."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect excise calculations",
+        "prevention": "Complete reconciliations before reporting."
+      },
+      {
+        "issue": "Missing transactions",
+        "prevention": "Verify all production and dispatch records."
+      }
+    ],
+    "troubleshooting": "Investigate discrepancies before submission.",
+    "tags": ["ex46", "excise", "ato"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Quality Release Process",
+    "slug": "quality-release-process",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Release of finished goods following quality review.",
+    "purpose": "To ensure only compliant products are supplied to customers.",
+    "prerequisites": "Completed production batch and quality testing.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Review Batch Records",
+        "body": "Verify production documentation is complete."
+      },
+      {
+        "title": "Review Test Results",
+        "body": "Confirm all specifications have been met."
+      },
+      {
+        "title": "Review Deviations",
+        "body": "Assess any recorded production issues."
+      },
+      {
+        "title": "Approve or Reject",
+        "body": "Determine whether the batch is suitable for release."
+      },
+      {
+        "title": "Update Inventory Status",
+        "body": "Release approved stock for sale and distribution."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Release of non-conforming product",
+        "prevention": "Complete all quality checks."
+      }
+    ],
+    "troubleshooting": "Quarantine stock pending investigation if concerns exist.",
+    "tags": ["quality", "release", "batch"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Customer Complaints Handling",
+    "slug": "customer-complaints-handling",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Management of customer complaints relating to products or service.",
+    "purpose": "To ensure complaints are investigated and resolved consistently.",
+    "prerequisites": "Complaint received from customer.",
+    "safety_notes": "Escalate any consumer safety concerns immediately.",
+    "steps": [
+      {
+        "title": "Record Complaint",
+        "body": "Capture all relevant information."
+      },
+      {
+        "title": "Assign Investigation",
+        "body": "Allocate responsibility for review."
+      },
+      {
+        "title": "Review Records",
+        "body": "Examine batch, production and distribution information."
+      },
+      {
+        "title": "Determine Root Cause",
+        "body": "Identify contributing factors."
+      },
+      {
+        "title": "Respond to Customer",
+        "body": "Provide timely and professional feedback."
+      },
+      {
+        "title": "Implement Improvements",
+        "body": "Apply CAPA actions where appropriate."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Unresolved customer issues",
+        "prevention": "Investigate promptly."
+      },
+      {
+        "issue": "Repeated complaints",
+        "prevention": "Implement corrective actions."
+      }
+    ],
+    "troubleshooting": "Escalate serious complaints to management immediately.",
+    "tags": ["complaints", "quality", "customer"],
+    "systems": ["vndmanuf"]
+  }
+]

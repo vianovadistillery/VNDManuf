@@ -1,0 +1,274 @@
+[
+  {
+    "title": "HACCP Fundamentals",
+    "slug": "haccp-fundamentals",
+    "category_slug": "quality-compliance",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Introduction to HACCP principles within Via Nova operations.",
+    "purpose": "To ensure all staff understand food safety risk management.",
+    "prerequisites": "Site induction completed.",
+    "safety_notes": "Food safety is everyone's responsibility.",
+    "steps": [
+      {
+        "title": "Understand HACCP",
+        "body": "Hazard Analysis and Critical Control Points is a systematic method of identifying and controlling food safety hazards."
+      },
+      {
+        "title": "Identify Hazards",
+        "body": "Consider biological, chemical and physical contamination risks."
+      },
+      {
+        "title": "Understand Critical Control Points",
+        "body": "Recognise process steps where controls are essential."
+      },
+      {
+        "title": "Monitor Controls",
+        "body": "Follow procedures and record required observations."
+      },
+      {
+        "title": "Escalate Issues",
+        "body": "Report any food safety concerns immediately."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Contaminated product",
+        "prevention": "Follow approved procedures."
+      },
+      {
+        "issue": "Incomplete monitoring",
+        "prevention": "Complete all required records."
+      }
+    ],
+    "troubleshooting": "Escalate food safety concerns to Quality Assurance immediately.",
+    "tags": ["haccp", "food-safety", "quality"],
+    "systems": []
+  },
+  {
+    "title": "Good Manufacturing Practice (GMP)",
+    "slug": "good-manufacturing-practice",
+    "category_slug": "quality-compliance",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Core GMP requirements for all personnel.",
+    "purpose": "To maintain product quality and food safety.",
+    "prerequisites": "Induction completed.",
+    "safety_notes": "Follow hygiene and PPE requirements at all times.",
+    "steps": [
+      {
+        "title": "Maintain Personal Hygiene",
+        "body": "Wash hands and maintain appropriate cleanliness standards."
+      },
+      {
+        "title": "Wear Appropriate PPE",
+        "body": "Use required PPE in production areas."
+      },
+      {
+        "title": "Maintain Clean Work Areas",
+        "body": "Keep production and storage areas tidy."
+      },
+      {
+        "title": "Prevent Contamination",
+        "body": "Protect products from foreign matter."
+      },
+      {
+        "title": "Follow Procedures",
+        "body": "Use approved SOPs and work instructions."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Foreign matter contamination",
+        "prevention": "Follow GMP requirements."
+      },
+      {
+        "issue": "Cross contamination",
+        "prevention": "Maintain separation of materials."
+      }
+    ],
+    "troubleshooting": "Stop work and notify QA if contamination is suspected.",
+    "tags": ["gmp", "quality", "manufacturing"],
+    "systems": []
+  },
+  {
+    "title": "Batch Traceability",
+    "slug": "batch-traceability",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Maintaining traceability from raw materials to finished products.",
+    "purpose": "To support compliance, recalls and quality investigations.",
+    "prerequisites": "Access to production records.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Record Raw Material Batches",
+        "body": "Capture supplier batch information during receival."
+      },
+      {
+        "title": "Record Production Usage",
+        "body": "Link ingredients to work orders."
+      },
+      {
+        "title": "Record Packaging Materials",
+        "body": "Capture packaging batch details where applicable."
+      },
+      {
+        "title": "Assign Finished Product Batch Codes",
+        "body": "Ensure every production batch receives a unique identifier."
+      },
+      {
+        "title": "Retain Documentation",
+        "body": "Maintain records for audit and recall purposes."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Loss of traceability",
+        "prevention": "Record all batch information."
+      },
+      {
+        "issue": "Incomplete records",
+        "prevention": "Complete documentation in real time."
+      }
+    ],
+    "troubleshooting": "Investigate any missing batch links immediately.",
+    "tags": ["traceability", "batch", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Batch Records",
+    "slug": "batch-records",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Completion and maintenance of production batch records.",
+    "purpose": "To provide an accurate record of production activities.",
+    "prerequisites": "Production order issued.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Record Materials",
+        "body": "Document all ingredients and quantities used."
+      },
+      {
+        "title": "Record Processing Information",
+        "body": "Capture production dates and operator details."
+      },
+      {
+        "title": "Record Quality Results",
+        "body": "Include ABV, yield and inspection results."
+      },
+      {
+        "title": "Document Deviations",
+        "body": "Record any unusual events or corrective actions."
+      },
+      {
+        "title": "Review and Approve",
+        "body": "Ensure records are complete before closure."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Missing production information",
+        "prevention": "Complete records as work is performed."
+      }
+    ],
+    "troubleshooting": "Escalate incomplete records before batch release.",
+    "tags": ["batch", "records", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Sample Retention Program",
+    "slug": "sample-retention-program",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Retention and management of production samples.",
+    "purpose": "To support investigations, complaints and quality reviews.",
+    "prerequisites": "Finished batch available.",
+    "safety_notes": "Store samples securely.",
+    "steps": [
+      {
+        "title": "Collect Sample",
+        "body": "Obtain representative finished product sample."
+      },
+      {
+        "title": "Label Sample",
+        "body": "Include product, batch and date information."
+      },
+      {
+        "title": "Store Sample",
+        "body": "Place in designated retention storage."
+      },
+      {
+        "title": "Maintain Register",
+        "body": "Record retained samples."
+      },
+      {
+        "title": "Dispose When Approved",
+        "body": "Remove expired samples according to procedure."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Misidentified samples",
+        "prevention": "Label immediately after collection."
+      }
+    ],
+    "troubleshooting": "Replace missing retention samples where possible.",
+    "tags": ["samples", "retention", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Product Recall Procedure",
+    "slug": "product-recall-procedure",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for managing product recalls.",
+    "purpose": "To protect consumers and maintain regulatory compliance.",
+    "prerequisites": "Potential recall event identified.",
+    "safety_notes": "Escalate immediately upon identification of significant risk.",
+    "steps": [
+      {
+        "title": "Assess Risk",
+        "body": "Determine severity and scope of the issue."
+      },
+      {
+        "title": "Identify Affected Batches",
+        "body": "Use traceability records to identify impacted products."
+      },
+      {
+        "title": "Notify Management",
+        "body": "Escalate according to recall procedures."
+      },
+      {
+        "title": "Notify Customers",
+        "body": "Communicate with affected customers and distributors."
+      },
+      {
+        "title": "Recover Product",
+        "body": "Arrange return or quarantine of affected stock."
+      },
+      {
+        "title": "Conduct Investigation",
+        "body": "Identify root cause and corrective actions."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Delayed response",
+        "prevention": "Escalate immediately."
+      },
+      {
+        "issue": "Incomplete recovery",
+        "prevention": "Maintain accurate traceability records."
+      }
+    ],
+    "troubleshooting": "Follow the recall communication plan and maintain records of all actions.",
+    "tags": ["recall", "quality", "compliance"],
+    "systems": ["vndmanuf"]
+  }
+]

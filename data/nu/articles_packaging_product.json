@@ -1,0 +1,298 @@
+[
+  {
+    "title": "Canning Operations",
+    "slug": "canning-operations",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for packaging RTD products into cans.",
+    "purpose": "To ensure safe, compliant and consistent canning operations.",
+    "prerequisites": "Released product, approved packaging materials and completed line setup.",
+    "safety_notes": "Keep clear of moving equipment. Wear hearing protection where required.",
+    "steps": [
+      {
+        "title": "Verify Packaging Materials",
+        "body": "Confirm cans, ends, trays and cartons match the production order."
+      },
+      {
+        "title": "Perform Line Clearance",
+        "body": "Remove all materials from previous production runs."
+      },
+      {
+        "title": "Prepare Filler and Seamer",
+        "body": "Inspect equipment and confirm readiness."
+      },
+      {
+        "title": "Conduct Start-Up Checks",
+        "body": "Verify fill volume, seam integrity and coding."
+      },
+      {
+        "title": "Run Production",
+        "body": "Monitor fill levels, seams and product quality throughout the run."
+      },
+      {
+        "title": "Inspect Product",
+        "body": "Perform periodic quality checks according to packaging requirements."
+      },
+      {
+        "title": "Reconcile Materials",
+        "body": "Record can, lid and product usage."
+      },
+      {
+        "title": "Close Production Order",
+        "body": "Complete all production documentation."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Poor seam quality",
+        "prevention": "Perform regular seam inspections."
+      },
+      {
+        "issue": "Incorrect fill volumes",
+        "prevention": "Conduct scheduled weight checks."
+      },
+      {
+        "issue": "Packaging mix-ups",
+        "prevention": "Verify materials before production."
+      }
+    ],
+    "troubleshooting": "Stop production immediately if seam integrity falls outside specification.",
+    "tags": ["canning", "rtd", "packaging"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Label Application",
+    "slug": "label-application",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Applying product labels accurately and consistently.",
+    "purpose": "To ensure products meet presentation and regulatory requirements.",
+    "prerequisites": "Approved label artwork and packaging materials.",
+    "safety_notes": "Keep hands clear of moving machinery.",
+    "steps": [
+      {
+        "title": "Verify Labels",
+        "body": "Confirm correct SKU, vintage and artwork where applicable."
+      },
+      {
+        "title": "Set Up Labeller",
+        "body": "Adjust guides and sensors as required."
+      },
+      {
+        "title": "Run Test Bottles",
+        "body": "Check alignment, adhesion and appearance."
+      },
+      {
+        "title": "Approve First-Off Samples",
+        "body": "Verify compliance with packaging standards."
+      },
+      {
+        "title": "Monitor Production",
+        "body": "Inspect labels throughout the production run."
+      },
+      {
+        "title": "Record Packaging Results",
+        "body": "Document inspections and corrective actions."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect label application",
+        "prevention": "Verify SKU before commencement."
+      },
+      {
+        "issue": "Poor adhesion",
+        "prevention": "Ensure bottles are clean and dry."
+      }
+    ],
+    "troubleshooting": "Stop and adjust equipment if label alignment drifts outside specification.",
+    "tags": ["labels", "packaging", "compliance"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Shrink Seals",
+    "slug": "shrink-seals",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Application of shrink capsules and tamper-evident seals.",
+    "purpose": "To ensure product presentation and tamper evidence.",
+    "prerequisites": "Approved packaging materials.",
+    "safety_notes": "Heat sources may be present. Avoid contact with heated components.",
+    "steps": [
+      {
+        "title": "Verify Materials",
+        "body": "Confirm correct seal type and colour."
+      },
+      {
+        "title": "Apply Seals",
+        "body": "Position seals consistently on closures."
+      },
+      {
+        "title": "Apply Heat",
+        "body": "Shrink seals according to equipment requirements."
+      },
+      {
+        "title": "Inspect Appearance",
+        "body": "Verify uniform shrinkage and presentation."
+      },
+      {
+        "title": "Remove Defects",
+        "body": "Segregate products with damaged seals."
+      },
+      {
+        "title": "Record Completion",
+        "body": "Document packaging completion."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Damaged seals",
+        "prevention": "Use correct temperature settings."
+      },
+      {
+        "issue": "Poor presentation",
+        "prevention": "Perform regular inspections."
+      }
+    ],
+    "troubleshooting": "Adjust heat settings if wrinkles or incomplete shrinkage occur.",
+    "tags": ["shrink", "seal", "packaging"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Finished Goods Storage",
+    "slug": "finished-goods-storage",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Storage requirements for packaged finished goods.",
+    "purpose": "To protect product quality and maintain inventory accuracy.",
+    "prerequisites": "Completed packaging and batch release.",
+    "safety_notes": "Observe forklift exclusion zones and pallet stacking requirements.",
+    "steps": [
+      {
+        "title": "Verify Release Status",
+        "body": "Confirm product has been released by quality control."
+      },
+      {
+        "title": "Apply Identification",
+        "body": "Ensure pallets display batch and product information."
+      },
+      {
+        "title": "Transfer to Storage",
+        "body": "Move pallets to designated finished goods locations."
+      },
+      {
+        "title": "Update Inventory",
+        "body": "Record storage location in VNDManuf."
+      },
+      {
+        "title": "Maintain FIFO",
+        "body": "Rotate stock using first-in-first-out principles."
+      },
+      {
+        "title": "Inspect Regularly",
+        "body": "Monitor for damage or storage issues."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Inventory discrepancies",
+        "prevention": "Record all stock movements."
+      },
+      {
+        "issue": "Product damage",
+        "prevention": "Follow pallet stacking limits."
+      }
+    ],
+    "troubleshooting": "Investigate any stock variances immediately.",
+    "tags": ["finished-goods", "warehouse", "inventory"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Via Nova Vodka Product Knowledge",
+    "slug": "via-nova-vodka-product-knowledge",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Product knowledge guide for Via Nova Vodka.",
+    "purpose": "To equip staff with accurate product information.",
+    "prerequisites": "None.",
+    "safety_notes": "Responsible service of alcohol principles apply.",
+    "steps": [
+      {
+        "title": "Understand Product Style",
+        "body": "Via Nova Vodka is positioned as a clean, approachable modern vodka."
+      },
+      {
+        "title": "Learn Key Characteristics",
+        "body": "Focus on purity, smoothness and versatility."
+      },
+      {
+        "title": "Understand Production Philosophy",
+        "body": "The product reflects Via Nova's commitment to flavour clarity and efficiency."
+      },
+      {
+        "title": "Know Consumer Occasions",
+        "body": "Suitable for mixed drinks, cocktails and simple serves."
+      },
+      {
+        "title": "Understand Storage Requirements",
+        "body": "Store upright and out of direct sunlight."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Inaccurate product descriptions",
+        "prevention": "Use approved product notes."
+      }
+    ],
+    "troubleshooting": "Refer to the latest approved specification sheet.",
+    "tags": ["vodka", "product", "sales"],
+    "systems": []
+  },
+  {
+    "title": "New Wave Gin Product Knowledge",
+    "slug": "new-wave-gin-product-knowledge",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Overview of New Wave Gin and its market positioning.",
+    "purpose": "To provide staff with a clear understanding of the New Wave brand.",
+    "prerequisites": "None.",
+    "safety_notes": "Responsible service of alcohol principles apply.",
+    "steps": [
+      {
+        "title": "Understand the Brand",
+        "body": "New Wave Gin is designed to make gin more approachable to a broader audience."
+      },
+      {
+        "title": "Learn Key Flavour Attributes",
+        "body": "Bright citrus, balanced juniper and approachable spice."
+      },
+      {
+        "title": "Know the Target Consumer",
+        "body": "Consumers seeking modern, easy-drinking gin styles."
+      },
+      {
+        "title": "Understand Brand Messaging",
+        "body": "Focus on innovation, flavour and accessibility."
+      },
+      {
+        "title": "Learn Recommended Serves",
+        "body": "Serve with premium tonic and fresh citrus garnish."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Inconsistent brand messaging",
+        "prevention": "Use approved sales materials."
+      }
+    ],
+    "troubleshooting": "Refer to marketing resources for current positioning.",
+    "tags": ["new-wave", "gin", "brand"],
+    "systems": []
+  }
+]

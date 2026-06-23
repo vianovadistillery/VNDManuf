@@ -1,0 +1,302 @@
+[
+  {
+    "title": "Feedstock Preparation",
+    "slug": "feedstock-preparation",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Preparation of spirit and ingredients prior to blending or packaging.",
+    "purpose": "To ensure all feedstock materials meet quality and production requirements.",
+    "prerequisites": "Approved production order and released ingredients.",
+    "safety_notes": "Observe alcohol handling procedures and safe manual handling practices.",
+    "steps": [
+      {
+        "title": "Review Production Schedule",
+        "body": "Confirm product, quantity and required completion date."
+      },
+      {
+        "title": "Verify Ingredient Availability",
+        "body": "Confirm sufficient stock exists for the planned batch."
+      },
+      {
+        "title": "Inspect Ingredients",
+        "body": "Check appearance, integrity and batch identification."
+      },
+      {
+        "title": "Prepare Spirit",
+        "body": "Confirm spirit strength and quantity meet production requirements."
+      },
+      {
+        "title": "Stage Ingredients",
+        "body": "Move approved materials to the designated production area."
+      },
+      {
+        "title": "Record Material Usage",
+        "body": "Issue materials to the work order in VNDManuf."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect ingredient selection",
+        "prevention": "Verify all materials against the production order."
+      },
+      {
+        "issue": "Inventory inaccuracies",
+        "prevention": "Record all stock movements immediately."
+      }
+    ],
+    "troubleshooting": "Escalate shortages or discrepancies before commencing production.",
+    "tags": ["feedstock", "production", "inventory"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Proofing Spirit",
+    "slug": "proofing-spirit",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for measuring and adjusting alcohol strength.",
+    "purpose": "To ensure spirit meets target ABV specifications.",
+    "prerequisites": "Calibrated testing equipment and approved batch.",
+    "safety_notes": "Alcohol is flammable. Keep away from ignition sources.",
+    "steps": [
+      {
+        "title": "Collect Representative Sample",
+        "body": "Take a sample from a well-mixed vessel."
+      },
+      {
+        "title": "Measure Temperature",
+        "body": "Record sample temperature for correction calculations."
+      },
+      {
+        "title": "Measure ABV",
+        "body": "Use approved instruments and procedures."
+      },
+      {
+        "title": "Compare to Specification",
+        "body": "Determine whether adjustment is required."
+      },
+      {
+        "title": "Adjust Strength",
+        "body": "Add approved water or spirit as required."
+      },
+      {
+        "title": "Re-Test",
+        "body": "Confirm final specification is achieved."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect readings",
+        "prevention": "Use calibrated instruments."
+      },
+      {
+        "issue": "Over-correction",
+        "prevention": "Calculate additions before adjusting."
+      }
+    ],
+    "troubleshooting": "If repeat readings vary significantly, verify instrument calibration.",
+    "tags": ["abv", "proofing", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Sampling Procedures",
+    "slug": "sampling-procedures",
+    "category_slug": "quality-compliance",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Collection of representative samples for quality control.",
+    "purpose": "To ensure accurate quality assessment and traceability.",
+    "prerequisites": "Clean sampling equipment.",
+    "safety_notes": "Use PPE and avoid contamination of product.",
+    "steps": [
+      {
+        "title": "Prepare Sampling Equipment",
+        "body": "Ensure all containers and tools are clean."
+      },
+      {
+        "title": "Identify Batch",
+        "body": "Confirm batch number and product details."
+      },
+      {
+        "title": "Collect Sample",
+        "body": "Obtain a representative sample from the batch."
+      },
+      {
+        "title": "Label Sample",
+        "body": "Record batch, date and operator details."
+      },
+      {
+        "title": "Perform Testing",
+        "body": "Conduct required quality assessments."
+      },
+      {
+        "title": "Store Retention Sample",
+        "body": "Retain samples according to quality procedures."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Sample contamination",
+        "prevention": "Use clean equipment."
+      },
+      {
+        "issue": "Incorrect identification",
+        "prevention": "Label immediately after collection."
+      }
+    ],
+    "troubleshooting": "Discard and recollect any questionable samples.",
+    "tags": ["sampling", "qc", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Cleaning Procedures",
+    "slug": "cleaning-procedures",
+    "category_slug": "cleaning-sanitising",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "General cleaning requirements for production equipment and work areas.",
+    "purpose": "To maintain hygiene, quality and operational reliability.",
+    "prerequisites": "Approved cleaning chemicals and PPE.",
+    "safety_notes": "Follow SDS requirements and chemical handling procedures.",
+    "steps": [
+      {
+        "title": "Isolate Equipment",
+        "body": "Ensure equipment is safe to clean."
+      },
+      {
+        "title": "Remove Product Residues",
+        "body": "Drain and remove residual materials."
+      },
+      {
+        "title": "Apply Cleaning Solution",
+        "body": "Use approved concentrations."
+      },
+      {
+        "title": "Rinse Thoroughly",
+        "body": "Remove all cleaning residues."
+      },
+      {
+        "title": "Inspect Equipment",
+        "body": "Verify cleanliness before release."
+      },
+      {
+        "title": "Record Completion",
+        "body": "Complete cleaning records."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Residual contamination",
+        "prevention": "Perform visual inspection."
+      },
+      {
+        "issue": "Chemical exposure",
+        "prevention": "Use PPE and follow SDS instructions."
+      }
+    ],
+    "troubleshooting": "Repeat cleaning if residues remain visible.",
+    "tags": ["cleaning", "sanitation", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "CIP Procedures",
+    "slug": "cip-procedures",
+    "category_slug": "cleaning-sanitising",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Clean-in-place procedure for process equipment.",
+    "purpose": "To ensure effective cleaning without equipment disassembly.",
+    "prerequisites": "Approved CIP chemicals and equipment availability.",
+    "safety_notes": "Chemical handling hazards exist. Wear appropriate PPE.",
+    "steps": [
+      {
+        "title": "Prepare System",
+        "body": "Confirm all connections are secure."
+      },
+      {
+        "title": "Pre-Rinse",
+        "body": "Flush product residues from the system."
+      },
+      {
+        "title": "Circulate Cleaning Solution",
+        "body": "Run approved chemical solution for the specified period."
+      },
+      {
+        "title": "Intermediate Rinse",
+        "body": "Remove cleaning solution."
+      },
+      {
+        "title": "Final Rinse",
+        "body": "Rinse until chemical residues are eliminated."
+      },
+      {
+        "title": "Verify Cleanliness",
+        "body": "Inspect and release equipment."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Insufficient cleaning",
+        "prevention": "Follow validated cycle times."
+      },
+      {
+        "issue": "Chemical residues",
+        "prevention": "Complete final rinse verification."
+      }
+    ],
+    "troubleshooting": "Repeat CIP cycle if verification requirements are not met.",
+    "tags": ["cip", "cleaning", "sanitation"],
+    "systems": ["vndmanuf", "vndaq"]
+  },
+  {
+    "title": "Packaging Line Setup",
+    "slug": "packaging-line-setup",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Preparation of packaging equipment before production.",
+    "purpose": "To ensure efficient packaging operations and minimise defects.",
+    "prerequisites": "Approved production schedule.",
+    "safety_notes": "Beware of moving equipment and pinch points.",
+    "steps": [
+      {
+        "title": "Review Production Requirements",
+        "body": "Confirm product and packaging specifications."
+      },
+      {
+        "title": "Perform Line Clearance",
+        "body": "Remove all previous materials."
+      },
+      {
+        "title": "Verify Components",
+        "body": "Check bottles, cans, labels and cartons."
+      },
+      {
+        "title": "Set Up Equipment",
+        "body": "Prepare packaging machinery."
+      },
+      {
+        "title": "Conduct Start-Up Checks",
+        "body": "Verify quality parameters."
+      },
+      {
+        "title": "Release Line",
+        "body": "Approve commencement of production."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Wrong packaging materials",
+        "prevention": "Verify before production."
+      },
+      {
+        "issue": "Product mix-up",
+        "prevention": "Complete documented line clearance."
+      }
+    ],
+    "troubleshooting": "Do not start production until all checks are completed.",
+    "tags": ["packaging", "line", "setup"],
+    "systems": ["vndmanuf"]
+  }
+]

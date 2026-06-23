@@ -1,0 +1,290 @@
+[
+  {
+    "title": "Supplier Creation",
+    "slug": "supplier-creation",
+    "category_slug": "daily-tasks",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Create and maintain supplier records in VNDManuf and Xero.",
+    "purpose": "To ensure accurate purchasing, payment processing and traceability.",
+    "prerequisites": "Approved supplier details available.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Collect Supplier Information",
+        "body": "Obtain legal entity name, ABN, contact details and banking information."
+      },
+      {
+        "title": "Verify Supplier Approval",
+        "body": "Confirm supplier has been approved for use."
+      },
+      {
+        "title": "Create Supplier Record",
+        "body": "Enter supplier details into VNDManuf."
+      },
+      {
+        "title": "Assign Supplier Category",
+        "body": "Allocate supplier type such as botanicals, packaging, logistics or services."
+      },
+      {
+        "title": "Verify Payment Details",
+        "body": "Review banking information before approval."
+      },
+      {
+        "title": "Activate Supplier",
+        "body": "Save and approve the supplier for purchasing."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect banking details",
+        "prevention": "Verify details independently before payment."
+      },
+      {
+        "issue": "Duplicate supplier records",
+        "prevention": "Search existing suppliers before creation."
+      }
+    ],
+    "troubleshooting": "Correct supplier information immediately if discrepancies are identified.",
+    "tags": ["supplier", "purchasing", "finance"],
+    "systems": ["vndmanuf", "xero"]
+  },
+  {
+    "title": "Purchase Orders",
+    "slug": "purchase-orders",
+    "category_slug": "daily-tasks",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Creation and management of purchase orders.",
+    "purpose": "To ensure controlled procurement and inventory management.",
+    "prerequisites": "Approved purchasing authority.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Identify Requirement",
+        "body": "Confirm purchasing need and stock requirements."
+      },
+      {
+        "title": "Select Supplier",
+        "body": "Choose an approved supplier."
+      },
+      {
+        "title": "Create Purchase Order",
+        "body": "Enter products, quantities and pricing."
+      },
+      {
+        "title": "Review and Approve",
+        "body": "Verify all information before submission."
+      },
+      {
+        "title": "Issue Purchase Order",
+        "body": "Send to supplier using approved communication channels."
+      },
+      {
+        "title": "Receive Goods",
+        "body": "Match delivered goods against the purchase order."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Ordering incorrect quantities",
+        "prevention": "Review stock levels before ordering."
+      },
+      {
+        "issue": "Unauthorised purchases",
+        "prevention": "Follow approval workflows."
+      }
+    ],
+    "troubleshooting": "Amend purchase orders promptly if supplier confirmation differs.",
+    "tags": ["purchase-order", "inventory", "procurement"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Bills Processing",
+    "slug": "bills-processing",
+    "category_slug": "daily-tasks",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Recording supplier invoices and bills.",
+    "purpose": "To ensure timely and accurate payment processing.",
+    "prerequisites": "Supplier invoice received.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Review Invoice",
+        "body": "Verify supplier details and invoice accuracy."
+      },
+      {
+        "title": "Match to Purchase Order",
+        "body": "Confirm goods or services were received."
+      },
+      {
+        "title": "Enter Bill",
+        "body": "Record invoice in Xero."
+      },
+      {
+        "title": "Assign Accounts",
+        "body": "Allocate costs to the correct accounts."
+      },
+      {
+        "title": "Approve Bill",
+        "body": "Follow internal approval procedures."
+      },
+      {
+        "title": "Schedule Payment",
+        "body": "Pay according to agreed trading terms."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Duplicate payments",
+        "prevention": "Check invoice history before processing."
+      },
+      {
+        "issue": "Incorrect coding",
+        "prevention": "Review account allocations."
+      }
+    ],
+    "troubleshooting": "Escalate disputed invoices before payment.",
+    "tags": ["bills", "accounts-payable", "finance"],
+    "systems": ["xero"]
+  },
+  {
+    "title": "CRM Activity Logging",
+    "slug": "crm-activity-logging",
+    "category_slug": "retailer-setup",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Recording customer interactions within CRM.",
+    "purpose": "To maintain visibility of customer engagement and sales opportunities.",
+    "prerequisites": "Customer record exists.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Open Customer Record",
+        "body": "Navigate to the customer within CRM."
+      },
+      {
+        "title": "Record Activity Type",
+        "body": "Select call, visit, email, tasting or meeting."
+      },
+      {
+        "title": "Document Discussion",
+        "body": "Record key outcomes and observations."
+      },
+      {
+        "title": "Assign Follow-Up Actions",
+        "body": "Create tasks and responsibilities."
+      },
+      {
+        "title": "Schedule Next Contact",
+        "body": "Set reminders for future engagement."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Loss of customer knowledge",
+        "prevention": "Log all meaningful interactions."
+      }
+    ],
+    "troubleshooting": "Update records immediately after customer contact.",
+    "tags": ["crm", "sales", "customers"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Delivery Dockets",
+    "slug": "delivery-dockets",
+    "category_slug": "retailer-setup",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Creating and managing delivery dockets.",
+    "purpose": "To ensure accurate delivery documentation and traceability.",
+    "prerequisites": "Approved sales order.",
+    "safety_notes": "Observe safe loading and unloading procedures.",
+    "steps": [
+      {
+        "title": "Verify Sales Order",
+        "body": "Confirm products and quantities."
+      },
+      {
+        "title": "Generate Delivery Docket",
+        "body": "Create delivery documentation from the order."
+      },
+      {
+        "title": "Pick Products",
+        "body": "Select stock using FIFO principles."
+      },
+      {
+        "title": "Verify Shipment",
+        "body": "Check quantities before dispatch."
+      },
+      {
+        "title": "Obtain Signature",
+        "body": "Capture proof of delivery where required."
+      },
+      {
+        "title": "Close Delivery",
+        "body": "Update order status following completion."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect deliveries",
+        "prevention": "Verify products before dispatch."
+      },
+      {
+        "issue": "Missing proof of delivery",
+        "prevention": "Obtain signatures where required."
+      }
+    ],
+    "troubleshooting": "Investigate customer delivery disputes immediately.",
+    "tags": ["delivery", "dispatch", "warehouse"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Trade Pricing Management",
+    "slug": "trade-pricing-management",
+    "category_slug": "price-lists-policies",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Management of wholesale pricing structures.",
+    "purpose": "To ensure pricing consistency across all customers.",
+    "prerequisites": "Approved pricing schedules.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Review Approved Price Lists",
+        "body": "Use only management-approved pricing."
+      },
+      {
+        "title": "Assign Customer Groups",
+        "body": "Apply appropriate wholesale categories."
+      },
+      {
+        "title": "Verify Margin Requirements",
+        "body": "Ensure pricing supports business objectives."
+      },
+      {
+        "title": "Communicate Changes",
+        "body": "Notify affected customers of pricing updates."
+      },
+      {
+        "title": "Monitor Compliance",
+        "body": "Review transactions for pricing accuracy."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Unauthorised discounting",
+        "prevention": "Use approved price lists only."
+      },
+      {
+        "issue": "Margin erosion",
+        "prevention": "Review pricing regularly."
+      }
+    ],
+    "troubleshooting": "Escalate pricing exceptions for approval.",
+    "tags": ["pricing", "sales", "wholesale"],
+    "systems": ["vndmanuf"]
+  }
+]

@@ -6,3 +6,9 @@
     width: min(98vw, 1850px) !important;
     min-width: 1050px;
 }
+
+/* Dash dropdown menus must render above Bootstrap modal backdrop */
+.sales-order-modal-resizable .Select-menu-outer,
+.sales-order-modal-resizable .dash-dropdown .Select-menu-outer {
+    z-index: 1065 !important;
+}

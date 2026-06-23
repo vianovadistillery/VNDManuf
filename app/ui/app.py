@@ -21,20 +21,29 @@ from dash import (
     Input,
     Output,
     State,
+    callback_context,
     dcc,
-    html,  # keep whatever you already import
+    html,
+    no_update,
 )
+from dash.exceptions import PreventUpdate
 
 from apps.vndmanuf_sales.ui.analytics_callbacks import (
     register_sales_analytics_callbacks,
 )
 
 # local imports (after third-party)
+from apps.vndmanuf_sales.ui.crm_callbacks import register_crm_callbacks
+from apps.vndmanuf_sales.ui.crm_settings_callbacks import (
+    register_crm_settings_callbacks,
+)
 from apps.vndmanuf_sales.ui.customers_callbacks import (
     register_sales_customers_callbacks,
 )
 from apps.vndmanuf_sales.ui.import_callbacks import register_sales_import_callbacks
+from apps.vndmanuf_sales.ui.map_callbacks import register_sales_map_callbacks
 from apps.vndmanuf_sales.ui.orders_callbacks import register_sales_orders_callbacks
+from apps.vndmanuf_sales.ui.pages import crm as crm_page
 from apps.vndmanuf_sales.ui.sales_tab import (
     layout as sales_tab_layout,
 )
@@ -51,6 +60,7 @@ from .pages.contacts_page import ContactsPage  # noqa: E402
 
 # Import new page modules from pages/ subdirectory (the directory)
 from .pages.formulas_page import FormulasPage  # noqa: E402
+from .pages.home_page import HOME_NAV_ITEMS, HomePage  # noqa: E402
 from .pages.rm_reports_page import RmReportsPage  # noqa: E402
 from .pages.stocktake_page import StocktakePage  # noqa: E402
 from .pages.work_orders_page import WorkOrdersPage  # noqa: E402
@@ -64,6 +74,7 @@ from .purchase_usage_callbacks import register_purchase_usage_callbacks  # noqa:
 from .qc_test_types_callbacks import register_qc_test_types_callbacks  # noqa: E402
 from .settings_callbacks import register_settings_callbacks  # noqa: E402
 from .stocktake_callbacks import register_stocktake_callbacks  # noqa: E402
+from .training_callbacks import register_training_callbacks  # noqa: E402
 from .units_callbacks import register_units_callbacks  # noqa: E402
 from .work_areas_callbacks import register_work_areas_callbacks  # noqa: E402
 
@@ -154,29 +165,33 @@ app.layout = dbc.Container(
             ],
             className="align-items-center mb-2",
         ),
-        # Navigation tabs (level 1: Manufacturing, Contacts, Sales, Reports, Settings)
+        # Navigation tabs (level 1: Home, Manufacturing, Contacts, Sales, …)
         dbc.Row(
             [
                 dbc.Col(
                     [
                         dbc.Tabs(
                             id="main-tabs",
-                            active_tab="manufacturing",
+                            active_tab="home",
                             children=[
+                                dbc.Tab(label="Home", tab_id="home"),
                                 dbc.Tab(label="Manufacturing", tab_id="manufacturing"),
                                 dbc.Tab(label="Contacts", tab_id="contacts"),
                                 dbc.Tab(label="Sales", tab_id="sales"),
+                                dbc.Tab(label="CRM", tab_id="crm"),
                                 dbc.Tab(label="Reports", tab_id="reports"),
                                 dbc.Tab(label="Settings", tab_id="settings"),
+                                dbc.Tab(label="Nova University", tab_id="training"),
                             ],
                             className="mb-4",
                         )
-                    ]
+                    ],
+                    width=12,
                 )
             ]
         ),
         # Effective tab store (manufacturing sub-tab or main tab when not manufacturing)
-        dcc.Store(id="effective-tab-store", data="products"),
+        dcc.Store(id="effective-tab-store", data="home"),
         # Tab content
         dbc.Row(
             [
@@ -238,6 +253,8 @@ def make_api_request(
             response = requests.post(url, json=data)
         elif method.upper() == "PUT":
             response = requests.put(url, json=data)
+        elif method.upper() == "PATCH":
+            response = requests.patch(url, json=data)
         elif method.upper() == "DELETE":
             response = requests.delete(url)
         else:
@@ -476,6 +493,8 @@ def render_tab_content(active_tab):
 
     is_manufacturing = active_tab == "manufacturing"
     is_sales = active_tab == "sales"
+    is_crm = active_tab == "crm"
+    is_training = active_tab == "training"
 
     manufacturing_panel = html.Div(
         [
@@ -495,7 +514,7 @@ def render_tab_content(active_tab):
                     dbc.Tab(label="RM Reports", tab_id="rm-reports"),
                     dbc.Tab(label="Stocktake", tab_id="stocktake"),
                 ],
-                className="mb-3",
+                className="vnd-sub-tabs mb-3",
             ),
             html.Div(id="manufacturing-content"),
         ],
@@ -509,7 +528,23 @@ def render_tab_content(active_tab):
         style={"display": "block" if is_sales else "none"},
     )
 
-    if active_tab == "contacts":
+    crm_panel = html.Div(
+        crm_page.layout(),
+        id="crm-panel-root",
+        style={"display": "block" if is_crm else "none"},
+    )
+
+    from .pages.training_page import TrainingPage
+
+    training_panel = html.Div(
+        TrainingPage.get_layout(),
+        id="training-panel-root",
+        style={"display": "block" if is_training else "none"},
+    )
+
+    if active_tab == "home":
+        other_layout = HomePage.get_layout()
+    elif active_tab == "contacts":
         other_layout = ContactsPage.get_layout()
         print("Contacts layout created")  # Debug print
     elif active_tab == "reports":
@@ -520,7 +555,7 @@ def render_tab_content(active_tab):
 
         other_layout = SettingsPage.get_layout()
         print("Settings layout created")  # Debug print
-    elif active_tab in ("manufacturing", "sales"):
+    elif active_tab in ("manufacturing", "sales", "crm", "training"):
         other_layout = html.Div()
     else:
         other_layout = html.Div("Select a tab to view content")
@@ -530,7 +565,7 @@ def render_tab_content(active_tab):
         id="other-tab-panel",
         style={
             "display": "block"
-            if active_tab not in ("manufacturing", "sales")
+            if active_tab not in ("manufacturing", "sales", "crm", "training")
             else "none"
         },
     )
@@ -538,11 +573,60 @@ def render_tab_content(active_tab):
     # Render visible panel first so it's the first child of tab-content. This avoids
     # the hidden manufacturing panel (when on Sales/Orders etc.) from being first in
     # the DOM and potentially capturing focus or causing the main tab to switch.
+    if active_tab == "home":
+        return [
+            other_panel,
+            manufacturing_panel,
+            sales_panel,
+            crm_panel,
+            training_panel,
+        ]
     if is_manufacturing:
-        return [manufacturing_panel, sales_panel, other_panel]
+        return [
+            manufacturing_panel,
+            sales_panel,
+            crm_panel,
+            training_panel,
+            other_panel,
+        ]
     if is_sales:
-        return [sales_panel, manufacturing_panel, other_panel]
-    return [other_panel, manufacturing_panel, sales_panel]
+        return [
+            sales_panel,
+            manufacturing_panel,
+            crm_panel,
+            training_panel,
+            other_panel,
+        ]
+    if is_crm:
+        return [
+            crm_panel,
+            manufacturing_panel,
+            sales_panel,
+            training_panel,
+            other_panel,
+        ]
+    if is_training:
+        return [
+            training_panel,
+            manufacturing_panel,
+            sales_panel,
+            crm_panel,
+            other_panel,
+        ]
+    return [other_panel, manufacturing_panel, sales_panel, crm_panel, training_panel]
+
+
+@app.callback(
+    Output("main-tabs", "active_tab", allow_duplicate=True),
+    [Input(f"home-nav-{tab_id}", "n_clicks") for tab_id, _, _ in HOME_NAV_ITEMS],
+    prevent_initial_call=True,
+)
+def navigate_from_home(*_clicks):
+    """Switch main tab when a home-screen navigation card is clicked."""
+    triggered = callback_context.triggered_id
+    if triggered and str(triggered).startswith("home-nav-"):
+        return str(triggered).replace("home-nav-", "", 1)
+    return no_update
 
 
 # Manufacturing sub-tab content
@@ -580,17 +664,20 @@ def sync_effective_tab_from_main(active_tab):
     """When main tab is manufacturing, default to products; else use main tab."""
     if active_tab == "manufacturing":
         return "products"
-    return active_tab or "manufacturing"
+    return active_tab or "home"
 
 
 # Sync effective-tab store when manufacturing sub-tab changes (only runs when Manufacturing is visible)
 @app.callback(
     Output("effective-tab-store", "data", allow_duplicate=True),
     Input("manufacturing-sub-tabs", "active_tab"),
+    State("main-tabs", "active_tab"),
     prevent_initial_call=True,
 )
-def sync_effective_tab_from_manufacturing(active_tab):
-    """Reflect manufacturing sub-tab in effective-tab store."""
+def sync_effective_tab_from_manufacturing(active_tab, main_tab):
+    """Reflect manufacturing sub-tab in effective-tab store (only while Manufacturing is active)."""
+    if main_tab != "manufacturing":
+        raise PreventUpdate
     return active_tab or "products"
 
 
@@ -1030,12 +1117,21 @@ register_sales_orders_callbacks(
     or "http://127.0.0.1:8000",
 )
 register_sales_customers_callbacks(app, make_api_request)
+register_crm_callbacks(
+    app,
+    make_api_request,
+    api_base_url=API_BASE_URL.replace("/api/v1", "").rstrip("/")
+    or "http://127.0.0.1:8000",
+)
+register_crm_settings_callbacks(app, make_api_request)
 register_sales_import_callbacks(app, make_api_request)
 register_sales_analytics_callbacks(app, make_api_request)
+register_sales_map_callbacks(app, make_api_request)
 
 
 register_work_orders_callbacks(app, API_BASE_URL, make_api_request)
 register_stocktake_callbacks(app, make_api_request)
+register_training_callbacks(app, make_api_request)
 
 # Xero integration temporarily disabled - will re-enable later
 # # Add Flask routes for Xero OAuth

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seed the Sales Channels table with default channels: ALM, Direct, Shopify."""
+"""Seed the Sales Channels table with default channels: ALM, Paramount, Coles, Direct, Shopify."""
 
 import sys
 from pathlib import Path
@@ -14,6 +14,12 @@ from app.adapters.db.models import SalesChannel
 
 DEFAULT_CHANNELS = [
     {"code": "ALM", "name": "ALM", "description": "ALM sales channel"},
+    {
+        "code": "PARAMOUNT",
+        "name": "Paramount",
+        "description": "Paramount sales channel",
+    },
+    {"code": "COLES", "name": "Coles", "description": "Coles sales channel"},
     {"code": "DIRECT", "name": "Direct", "description": "Direct sales"},
     {"code": "SHOPIFY", "name": "Shopify", "description": "Online sales via Shopify"},
 ]

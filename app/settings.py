@@ -171,6 +171,31 @@ class ShopifySettings(BaseSettings):
         env_prefix = "SHOPIFY_"
 
 
+class OpenAISettings(BaseSettings):
+    """OpenAI configuration for Nova University LLM search."""
+
+    api_key: Optional[str] = Field(default=None, description="OpenAI API key (sk-...)")
+    model: str = Field(
+        default="gpt-4o-mini",
+        description="Chat model for training Q&A",
+    )
+    enabled: bool = Field(
+        default=True,
+        description="Enable LLM ask endpoint when API key is set",
+    )
+    max_context_articles: int = Field(default=8, ge=1, le=20)
+    max_tokens: int = Field(default=1200, ge=256, le=4096)
+    temperature: float = Field(default=0.25, ge=0.0, le=1.0)
+    request_timeout_seconds: int = Field(default=60, ge=10, le=180)
+
+    class Config:
+        env_prefix = "OPENAI_"
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(self.api_key and self.api_key.strip())
+
+
 class DocumentGeneratorSettings(BaseSettings):
     """Mail-merge document generation (docxtpl + docx2pdf / LibreOffice)."""
 
@@ -232,6 +257,7 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     business: BusinessSettings = Field(default_factory=BusinessSettings)
     shopify: ShopifySettings = Field(default_factory=ShopifySettings)
+    openai: OpenAISettings = Field(default_factory=OpenAISettings)
     docgen: DocumentGeneratorSettings = Field(default_factory=DocumentGeneratorSettings)
 
     # File paths

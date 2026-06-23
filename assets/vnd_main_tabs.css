@@ -1,0 +1,311 @@
+/* VND Manuf — main navigation folder tabs & home screen */
+
+/* ── Level 1: main tabs (folder style, full width) ── */
+#main-tabs.nav-tabs,
+#main-tabs > .nav-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    border-bottom: 2px solid #b8c4ce;
+    gap: 3px;
+    margin-bottom: 0;
+}
+
+#main-tabs .nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+#main-tabs .nav-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 0.7rem 0.6rem 0.65rem;
+    color: #3d4f5f;
+    background: linear-gradient(180deg, #eef1f5 0%, #dde3ea 100%);
+    border: 1px solid #b8c4ce;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#main-tabs .nav-link:hover {
+    background: linear-gradient(180deg, #f5f7fa 0%, #e8edf2 100%);
+    color: #1e2d3a;
+}
+
+#main-tabs .nav-link.active {
+    background: #ffffff;
+    color: #c2185b;
+    font-weight: 700;
+    border-color: #b8c4ce;
+    border-bottom: 2px solid #ffffff;
+    margin-bottom: -2px;
+    padding-bottom: calc(0.65rem + 2px);
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+    z-index: 2;
+    position: relative;
+}
+
+/* ── Level 2: sub-tabs (slightly smaller, understated) ── */
+.vnd-sub-tabs.nav-tabs,
+.vnd-sub-tabs > .nav-tabs,
+#manufacturing-sub-tabs.nav-tabs,
+#manufacturing-sub-tabs > .nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #dee2e6;
+    gap: 2px;
+}
+
+.vnd-sub-tabs .nav-link,
+#manufacturing-sub-tabs .nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.45rem 0.85rem;
+    color: #495057;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+}
+
+.vnd-sub-tabs .nav-link.active,
+#manufacturing-sub-tabs .nav-link.active {
+    color: #0d6efd;
+    background: #f8f9fa;
+    border-color: #dee2e6 #dee2e6 #f8f9fa;
+    font-weight: 600;
+}
+
+/* Sales sub-tabs use dcc.Tabs — style via class on wrapper */
+.sales-tab .tab {
+    font-size: 0.9rem !important;
+    padding: 0.45rem 0.85rem !important;
+}
+
+.sales-tab .tab--selected {
+    font-weight: 600 !important;
+    border-top: 2px solid #0d6efd !important;
+}
+
+/* ── Home page — three equal vertical sections ── */
+.vnd-home-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    /* viewport minus header, tabs, and container padding */
+    height: calc(100vh - 168px);
+    min-height: 520px;
+    overflow: hidden;
+}
+
+.vnd-home-section {
+    flex: 1 1 33.333%;
+    min-height: 0;
+    width: 100%;
+}
+
+/* Top third — hero */
+.vnd-home-hero-section {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px 10px 0 0;
+}
+
+.vnd-home-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 40%;
+    display: block;
+}
+
+.vnd-home-hero-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.25) 60%,
+        rgba(0, 0, 0, 0.45) 100%
+    );
+    pointer-events: none;
+}
+
+.vnd-home-eyebrow {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.vnd-home-title {
+    color: #f06292;
+    font-size: clamp(1.25rem, 3.5vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    margin: 0;
+}
+
+/* Middle third — nav buttons */
+.vnd-home-nav-section {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem 0;
+    background: #f4f6f8;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+}
+
+.vnd-home-nav-heading {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 0 0 0.5rem;
+    padding: 0 0.75rem;
+}
+
+.vnd-home-nav-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0 0.75rem;
+}
+
+/* Last button spans remaining cells on row 2 when 7 items */
+.vnd-home-nav-grid .vnd-home-nav-btn:nth-child(5) {
+    grid-column: 1;
+}
+.vnd-home-nav-grid .vnd-home-nav-btn:nth-child(6) {
+    grid-column: 2;
+}
+.vnd-home-nav-grid .vnd-home-nav-btn:nth-child(7) {
+    grid-column: 3 / span 2;
+}
+
+.vnd-home-nav-btn {
+    width: 100%;
+    height: 100%;
+    text-align: left !important;
+    padding: 0.5rem 0.75rem !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.vnd-home-nav-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(194, 24, 91, 0.12);
+    border-color: #f06292 !important;
+}
+
+.vnd-home-nav-label {
+    font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.1rem;
+    line-height: 1.2;
+}
+
+.vnd-home-nav-desc {
+    font-size: clamp(0.65rem, 1.1vw, 0.78rem);
+    color: #6c757d;
+    line-height: 1.25;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* Bottom third — welcome message */
+.vnd-home-welcome-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.85rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    overflow-y: auto;
+}
+
+.vnd-home-welcome-title {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.4rem;
+}
+
+.vnd-home-blurb {
+    font-size: clamp(0.82rem, 1.4vw, 0.98rem);
+    line-height: 1.55;
+    margin-bottom: 0.35rem;
+}
+
+.vnd-home-blurb-muted {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .vnd-home-page {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .vnd-home-section {
+        flex: none;
+        min-height: 200px;
+    }
+
+    .vnd-home-hero-section {
+        min-height: 220px;
+    }
+
+    .vnd-home-nav-section {
+        min-height: 280px;
+    }
+
+    .vnd-home-nav-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto;
+    }
+
+    .vnd-home-nav-grid .vnd-home-nav-btn:nth-child(n) {
+        grid-column: auto;
+    }
+
+    .vnd-home-welcome-section {
+        min-height: 200px;
+    }
+}

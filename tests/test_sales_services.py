@@ -19,7 +19,14 @@ from app.adapters.db.models import (
     SalesOrderLine,
 )
 from apps.vndmanuf_sales.models import SalesOrderSource, SalesOrderStatus
-from apps.vndmanuf_sales.services.analytics import SalesAnalyticsService
+from apps.vndmanuf_sales.services.analytics import (
+    SalesAnalyticsService,
+    current_financial_year_period,
+    current_month_period,
+    last_month_period,
+    last_quarter_period,
+    previous_financial_year_period,
+)
 from apps.vndmanuf_sales.services.customer_mapping import (
     CustomerMappingService,
     names_refer_to_same_entity,
@@ -103,6 +110,29 @@ def create_pricebook_with_item(session: Session, product: Product) -> Pricebook:
     session.add(item)
     session.commit()
     return pricebook
+
+
+def test_period_presets_use_australian_financial_year():
+    as_of = date(2026, 6, 23)
+    fy_start, fy_end = current_financial_year_period(as_of)
+    assert fy_start == date(2025, 7, 1)
+    assert fy_end == as_of
+
+    prev_start, prev_end = previous_financial_year_period(as_of)
+    assert prev_start == date(2024, 7, 1)
+    assert prev_end == date(2025, 6, 30)
+
+    lm_start, lm_end = last_month_period(as_of)
+    assert lm_start == date(2026, 5, 1)
+    assert lm_end == date(2026, 5, 31)
+
+    cm_start, cm_end = current_month_period(as_of)
+    assert cm_start == date(2026, 6, 1)
+    assert cm_end == as_of
+
+    lq_start, lq_end = last_quarter_period(as_of)
+    assert lq_start == date(2026, 1, 1)
+    assert lq_end == date(2026, 3, 31)
 
 
 def test_pricing_resolves_from_pricebook(db_session: Session):
@@ -269,10 +299,9 @@ def test_analytics_overview_and_products(db_session: Session):
 
 
 def test_customer_import_alias_maps_csv_name(db_session: Session):
+    canonical = create_customer(db_session, "Bannockburn Cellarbrations")
     product = create_product(db_session)
     create_channel(db_session, "RETAIL")
-    canonical = create_customer(db_session, "Bannockburn Cellarbrations")
-
     CustomerMappingService(db_session).add_alias(
         "Cellarbrations at Bannockburn",
         str(canonical.id),

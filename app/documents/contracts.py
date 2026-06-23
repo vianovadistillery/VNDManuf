@@ -168,6 +168,10 @@ class DocumentHeaderContext:
     tot_ex: Optional[str] = None  # Subtotal ex GST (alias for subtotal)
     tot_gst: Optional[str] = None  # GST amount (alias for tax)
     tot: Optional[str] = None  # Total inc GST (alias for total)
+    # Customer purchase summary report
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    order_count: Optional[str] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -176,6 +180,9 @@ class DocumentHeaderContext:
             "date": self.date,
             "quote_date": self.quote_date or "",
             "delivery_date": self.delivery_date or "",
+            "period_start": self.period_start or "",
+            "period_end": self.period_end or "",
+            "order_count": self.order_count or "",
             "notes": self.notes or "",
             "shipping": self.shipping or "",
             "payment_terms": self.payment_terms or "",
@@ -205,19 +212,66 @@ class DocumentOverrides:
 
 
 @dataclass
+class OrderSummaryItemContext:
+    """One row in the orders summary table on customer purchase reports."""
+
+    order_date: str
+    order_ref: str
+    po_number: str
+    status: str
+    total_ex_gst: str
+    total_inc_gst: str
+    sequence: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "order_date": self.order_date,
+            "order_ref": self.order_ref,
+            "po_number": self.po_number,
+            "status": self.status,
+            "total_ex_gst": self.total_ex_gst,
+            "total_inc_gst": self.total_inc_gst,
+            "sequence": self.sequence,
+        }
+
+
+@dataclass
 class DocumentContext:
-    """Full context passed to docxtpl. Template uses: {{ contact.name }}, {{ document.doc_number }}, {% for item in line_items %}...{% endfor %}."""
+    """Full context passed to docxtpl."""
 
     contact: ContactContext
     document: DocumentHeaderContext
     line_items: List[LineItemContext] = field(default_factory=list)
+    order_items: List[OrderSummaryItemContext] = field(default_factory=list)
     overrides: Optional[DocumentOverrides] = None
+    timeline_items: List[dict[str, Any]] = field(default_factory=list)
+    staff_items: List[dict[str, Any]] = field(default_factory=list)
+    scheduled_items: List[dict[str, Any]] = field(default_factory=list)
+    profile_extra: dict[str, Any] = field(default_factory=dict)
+    sections: dict[str, bool] = field(default_factory=dict)
+    # CRM summary: one table row per section, newline-separated values per column
+    orders_block: dict[str, Any] = field(default_factory=dict)
+    sku_block: dict[str, Any] = field(default_factory=dict)
+    timeline_block: dict[str, Any] = field(default_factory=dict)
+    staff_block: dict[str, Any] = field(default_factory=dict)
+    scheduled_block: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "contact": self.contact.to_dict(),
             "document": self.document.to_dict(),
             "line_items": [li.to_dict() for li in self.line_items],
+            "order_items": [oi.to_dict() for oi in self.order_items],
+            "timeline_items": self.timeline_items,
+            "staff_items": self.staff_items,
+            "scheduled_items": self.scheduled_items,
+            "profile": self.profile_extra,
+            "sections": self.sections,
+            "orders_block": self.orders_block,
+            "sku_block": self.sku_block,
+            "timeline_block": self.timeline_block,
+            "staff_block": self.staff_block,
+            "scheduled_block": self.scheduled_block,
         }
 
 

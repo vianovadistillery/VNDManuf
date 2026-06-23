@@ -23,11 +23,102 @@ from apps.vndmanuf_sales.services.totals import _dec, _quantize
 
 Money = Decimal
 
+# Australian financial year: 1 July – 30 June
+_FY_START_MONTH = 7
+
+
+def _fy_start_for(d: date) -> date:
+    if d.month >= _FY_START_MONTH:
+        return date(d.year, _FY_START_MONTH, 1)
+    return date(d.year - 1, _FY_START_MONTH, 1)
+
+
+def _fy_quarter_period(fy_start: date, quarter: int) -> tuple[date, date]:
+    if quarter == 1:
+        return date(fy_start.year, 7, 1), date(fy_start.year, 9, 30)
+    if quarter == 2:
+        return date(fy_start.year, 10, 1), date(fy_start.year, 12, 31)
+    if quarter == 3:
+        return date(fy_start.year + 1, 1, 1), date(fy_start.year + 1, 3, 31)
+    return date(fy_start.year + 1, 4, 1), date(fy_start.year + 1, 6, 30)
+
+
+def _current_fy_quarter(d: date) -> int:
+    month = d.month
+    if month in (7, 8, 9):
+        return 1
+    if month in (10, 11, 12):
+        return 2
+    if month in (1, 2, 3):
+        return 3
+    return 4
+
+
+def last_month_period(as_of: Optional[date] = None) -> tuple[date, date]:
+    as_of = as_of or date.today()
+    first_of_month = date(as_of.year, as_of.month, 1)
+    end = first_of_month - timedelta(days=1)
+    start = date(end.year, end.month, 1)
+    return start, end
+
+
+def current_month_period(as_of: Optional[date] = None) -> tuple[date, date]:
+    as_of = as_of or date.today()
+    return date(as_of.year, as_of.month, 1), as_of
+
+
+def last_quarter_period(as_of: Optional[date] = None) -> tuple[date, date]:
+    as_of = as_of or date.today()
+    fy_start = _fy_start_for(as_of)
+    quarter = _current_fy_quarter(as_of)
+    if quarter == 1:
+        prev_fy_start = date(fy_start.year - 1, _FY_START_MONTH, 1)
+        return _fy_quarter_period(prev_fy_start, 4)
+    return _fy_quarter_period(fy_start, quarter - 1)
+
+
+def current_financial_year_period(as_of: Optional[date] = None) -> tuple[date, date]:
+    as_of = as_of or date.today()
+    return _fy_start_for(as_of), as_of
+
+
+def previous_financial_year_period(as_of: Optional[date] = None) -> tuple[date, date]:
+    as_of = as_of or date.today()
+    curr_start = _fy_start_for(as_of)
+    prev_start = date(curr_start.year - 1, _FY_START_MONTH, 1)
+    prev_end = date(curr_start.year, 6, 30)
+    return prev_start, prev_end
+
+
+PERIOD_PRESET_IDS = (
+    "current_month",
+    "last_month",
+    "last_quarter",
+    "current_fy",
+    "previous_fy",
+    "custom",
+)
+
+PERIOD_PRESET_RESOLVERS = {
+    "current_month": current_month_period,
+    "last_month": last_month_period,
+    "last_quarter": last_quarter_period,
+    "current_fy": current_financial_year_period,
+    "previous_fy": previous_financial_year_period,
+}
+
+
+def resolve_period_preset(
+    preset_id: str, as_of: Optional[date] = None
+) -> tuple[date, date]:
+    resolver = PERIOD_PRESET_RESOLVERS.get(preset_id)
+    if not resolver:
+        raise ValueError(f"Unknown period preset: {preset_id}")
+    return resolver(as_of)
+
 
 def default_period() -> tuple[date, date]:
-    end = date.today()
-    start = end - timedelta(days=90)
-    return start, end
+    return current_financial_year_period()
 
 
 def _as_datetime_start(d: date) -> datetime:
@@ -427,4 +518,82 @@ class SalesAnalyticsService:
         return {
             "channels": [{"label": c.name, "value": c.id} for c in channels],
             "pricebooks": [{"label": p.name, "value": p.id} for p in pricebooks],
+        }
+
+    def get_customer_order_stats(self) -> Dict[str, dict]:
+        """Per-customer order aggregates for the customers dashboard."""
+        filters = [
+            SalesOrder.deleted_at.is_(None),
+            SalesOrder.archived_at.is_(None),
+            SalesOrder.status != SalesOrderStatus.CANCELLED.value,
+        ]
+        rows = self.db.execute(
+            select(
+                SalesOrder.customer_id,
+                func.count(SalesOrder.id).label("order_count"),
+                func.sum(SalesOrder.total_inc_gst).label("revenue_inc_gst"),
+                func.max(SalesOrder.order_date).label("last_order_date"),
+            )
+            .where(*filters)
+            .group_by(SalesOrder.customer_id)
+        ).all()
+        return {
+            row.customer_id: {
+                "customer_id": row.customer_id,
+                "order_count": int(row.order_count),
+                "revenue_inc_gst": _quantize(_dec(row.revenue_inc_gst)),
+                "last_order_date": row.last_order_date,
+            }
+            for row in rows
+        }
+
+    def get_customer_dashboard_summary(
+        self,
+        *,
+        active_customer_count: int,
+        order_stats: Dict[str, dict],
+    ) -> dict:
+        """Compute top-line customer KPIs from active customers and order aggregates."""
+        today = date.today()
+        month_start = _as_datetime_start(today.replace(day=1))
+
+        first_order_rows = self.db.execute(
+            select(
+                SalesOrder.customer_id,
+                func.min(SalesOrder.order_date).label("first_order"),
+            )
+            .where(
+                SalesOrder.deleted_at.is_(None),
+                SalesOrder.status != SalesOrderStatus.CANCELLED.value,
+            )
+            .group_by(SalesOrder.customer_id)
+        ).all()
+        new_this_month = sum(
+            1
+            for row in first_order_rows
+            if row.first_order and row.first_order >= month_start
+        )
+
+        revenues = [stats["revenue_inc_gst"] for stats in order_stats.values()]
+        avg_lifetime = (
+            _quantize(sum(revenues, Decimal("0")) / len(revenues))
+            if revenues
+            else Decimal("0")
+        )
+
+        last_order_dates = [
+            stats["last_order_date"]
+            for stats in order_stats.values()
+            if stats.get("last_order_date")
+        ]
+        days_since_last_order: Optional[int] = None
+        if last_order_dates:
+            most_recent = max(last_order_dates)
+            days_since_last_order = (today - most_recent.date()).days
+
+        return {
+            "active_customers": active_customer_count,
+            "new_this_month": new_this_month,
+            "avg_lifetime_value": float(avg_lifetime),
+            "days_since_last_order": days_since_last_order,
         }

@@ -5,6 +5,7 @@ import os
 import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
 
+from app.services.openai_config import public_openai_config
 from app.settings import settings
 
 from .condition_types_page import ConditionTypesPage
@@ -266,7 +267,76 @@ class SettingsPage:
                                                     ),
                                                     className="mb-3",
                                                 ),
-                                            ]
+                                            ],
+                                            lg=6,
+                                            className="mb-3",
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.H4(
+                                                                "Nova University (OpenAI)",
+                                                                className="mb-3",
+                                                            ),
+                                                            _info_list(
+                                                                [
+                                                                    (
+                                                                        "API Key",
+                                                                        "Configured"
+                                                                        if public_openai_config().get(
+                                                                            "configured"
+                                                                        )
+                                                                        else "Not set",
+                                                                    ),
+                                                                    (
+                                                                        "Model",
+                                                                        public_openai_config().get(
+                                                                            "model",
+                                                                            "gpt-4o-mini",
+                                                                        ),
+                                                                    ),
+                                                                    (
+                                                                        "LLM Ask",
+                                                                        "Enabled"
+                                                                        if public_openai_config().get(
+                                                                            "enabled",
+                                                                            True,
+                                                                        )
+                                                                        else "Disabled",
+                                                                    ),
+                                                                    (
+                                                                        "Config file",
+                                                                        "config/openai.json",
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.P(
+                                                                [
+                                                                    "Set your key in ",
+                                                                    html.Strong(
+                                                                        "Nova University → AI Settings"
+                                                                    ),
+                                                                    ", or copy ",
+                                                                    html.Code(
+                                                                        "config/openai.json.example"
+                                                                    ),
+                                                                    " to ",
+                                                                    html.Code(
+                                                                        "config/openai.json"
+                                                                    ),
+                                                                    ". Same embedded pattern as VND-DAQ.",
+                                                                ],
+                                                                className="text-muted small mt-3 mb-0",
+                                                            ),
+                                                        ]
+                                                    ),
+                                                    className="mb-3",
+                                                ),
+                                            ],
+                                            lg=6,
+                                            className="mb-3",
                                         ),
                                     ]
                                 ),

@@ -1,16 +1,14 @@
-[2026-06-21T21:34:16] exit=1
+[2026-06-23T23:30:31] exit=1
 
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 D:\VND\VNDManuf\db\alembic\env.py:66: SAWarning: Cannot correctly sort tables; there are unresolvable cycles between tables "delivery_dockets, generated_documents", which is usually caused by mutually dependent foreign key constraints.  Foreign key constraints involving these tables will not be considered; this warning may raise an error in a future release.
   context.run_migrations()
-INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_parameters'
-INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_periods'
 INFO  [alembic.autogenerate.compare] Detected removed table '_alembic_tmp_assembly_lines'
+INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_periods'
+INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_parameters'
 INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_materials'
 INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_events'
-INFO  [alembic.autogenerate.compare] Detected removed index 'ix_distillation_runs_status' on 'distillation_runs'
-INFO  [alembic.autogenerate.compare] Detected removed table 'distillation_runs'
 Traceback (most recent call last):
   File "<frozen runpy>", line 198, in _run_module_as_main
   File "<frozen runpy>", line 88, in _run_code

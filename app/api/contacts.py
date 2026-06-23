@@ -36,6 +36,8 @@ class ContactCreate(BaseModel):
     delivery_state: Optional[str] = None
     delivery_postcode: Optional[str] = None
     delivery_country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     abn: Optional[str] = None
     notes: Optional[str] = None
     alm_account_number: Optional[str] = None
@@ -73,6 +75,8 @@ class ContactUpdate(BaseModel):
     delivery_state: Optional[str] = None
     delivery_postcode: Optional[str] = None
     delivery_country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     abn: Optional[str] = None
     notes: Optional[str] = None
     alm_account_number: Optional[str] = None
@@ -109,6 +113,8 @@ class ContactResponse(BaseModel):
     delivery_state: Optional[str]
     delivery_postcode: Optional[str]
     delivery_country: Optional[str]
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     abn: Optional[str]
     notes: Optional[str]
     alm_account_number: Optional[str]
@@ -170,6 +176,12 @@ def contact_to_response(c: Contact) -> ContactResponse:
         delivery_state=getattr(c, "delivery_state", None),
         delivery_postcode=getattr(c, "delivery_postcode", None),
         delivery_country=getattr(c, "delivery_country", None),
+        latitude=float(c.latitude)
+        if getattr(c, "latitude", None) is not None
+        else None,
+        longitude=float(c.longitude)
+        if getattr(c, "longitude", None) is not None
+        else None,
         abn=getattr(c, "abn", None),
         notes=getattr(c, "notes", None),
         alm_account_number=getattr(c, "alm_account_number", None),
@@ -282,6 +294,8 @@ async def create_contact(contact_data: ContactCreate, db: Session = Depends(get_
         delivery_state=contact_data.delivery_state,
         delivery_postcode=contact_data.delivery_postcode,
         delivery_country=contact_data.delivery_country,
+        latitude=contact_data.latitude,
+        longitude=contact_data.longitude,
         abn=contact_data.abn,
         notes=contact_data.notes,
         alm_account_number=contact_data.alm_account_number,
@@ -360,6 +374,10 @@ async def update_contact(
         contact.delivery_postcode = contact_data.delivery_postcode
     if contact_data.delivery_country is not None:
         contact.delivery_country = contact_data.delivery_country
+    if contact_data.latitude is not None:
+        contact.latitude = contact_data.latitude
+    if contact_data.longitude is not None:
+        contact.longitude = contact_data.longitude
     if contact_data.abn is not None:
         contact.abn = contact_data.abn
     if contact_data.notes is not None:

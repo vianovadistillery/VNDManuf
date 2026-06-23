@@ -1,0 +1,294 @@
+[
+  {
+    "title": "Customer Creation in VNDManuf",
+    "slug": "customer-creation-vndmanuf",
+    "category_slug": "retailer-setup",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Create and maintain customer records in VNDManuf.",
+    "purpose": "To ensure accurate customer data, pricing and sales processing.",
+    "prerequisites": "Customer details and trading information available.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Open Contacts",
+        "body": "Navigate to Contacts and select New Customer."
+      },
+      {
+        "title": "Enter Trading Details",
+        "body": "Record legal name, trading name, ABN and contact details."
+      },
+      {
+        "title": "Assign Customer Type",
+        "body": "Select retailer, distributor, venue or direct customer."
+      },
+      {
+        "title": "Assign Pricing",
+        "body": "Apply the appropriate price list and trading terms."
+      },
+      {
+        "title": "Verify Delivery Address",
+        "body": "Confirm delivery and billing details."
+      },
+      {
+        "title": "Save and Review",
+        "body": "Review all details before activating the account."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect pricing",
+        "prevention": "Apply approved customer pricing groups."
+      },
+      {
+        "issue": "Delivery errors",
+        "prevention": "Verify addresses before saving."
+      }
+    ],
+    "troubleshooting": "Correct customer records immediately if errors are identified.",
+    "tags": ["customer", "crm", "sales"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Daily Bank Reconciliation",
+    "slug": "daily-bank-reconciliation",
+    "category_slug": "bank-reconciliation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Daily reconciliation of bank transactions in Xero.",
+    "purpose": "To maintain accurate financial records.",
+    "prerequisites": "Bank feeds operating correctly.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Open Bank Accounts",
+        "body": "Review all unreconciled transactions."
+      },
+      {
+        "title": "Match Receipts",
+        "body": "Match customer payments against invoices."
+      },
+      {
+        "title": "Match Supplier Payments",
+        "body": "Allocate payments against supplier bills."
+      },
+      {
+        "title": "Review Exceptions",
+        "body": "Investigate unmatched transactions."
+      },
+      {
+        "title": "Code Transactions",
+        "body": "Allocate expenses to appropriate accounts."
+      },
+      {
+        "title": "Complete Reconciliation",
+        "body": "Ensure no unexplained variances remain."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect account coding",
+        "prevention": "Review account allocations carefully."
+      },
+      {
+        "issue": "Duplicate transactions",
+        "prevention": "Check transaction history before posting."
+      }
+    ],
+    "troubleshooting": "Escalate unresolved variances to finance management.",
+    "tags": ["xero", "banking", "finance"],
+    "systems": ["xero"]
+  },
+  {
+    "title": "Creating and Sending Invoices",
+    "slug": "creating-and-sending-invoices",
+    "category_slug": "daily-tasks",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Create and distribute customer invoices.",
+    "purpose": "To ensure timely and accurate customer billing.",
+    "prerequisites": "Completed order and delivery information.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Verify Order Completion",
+        "body": "Confirm product has been dispatched or delivered."
+      },
+      {
+        "title": "Generate Invoice",
+        "body": "Create invoice from the sales order."
+      },
+      {
+        "title": "Review Details",
+        "body": "Confirm pricing, quantities and customer information."
+      },
+      {
+        "title": "Sync to Xero",
+        "body": "Verify successful integration."
+      },
+      {
+        "title": "Send Invoice",
+        "body": "Issue invoice via approved communication channels."
+      },
+      {
+        "title": "File Documentation",
+        "body": "Retain supporting documentation."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect pricing",
+        "prevention": "Review invoice before release."
+      },
+      {
+        "issue": "Duplicate invoices",
+        "prevention": "Confirm invoice status before issuing."
+      }
+    ],
+    "troubleshooting": "Cancel and reissue incorrect invoices immediately.",
+    "tags": ["invoice", "sales", "finance"],
+    "systems": ["vndmanuf", "xero"]
+  },
+  {
+    "title": "Excise Record Keeping",
+    "slug": "excise-record-keeping",
+    "category_slug": "inventory-excise",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Management of excise records and bonded inventory.",
+    "purpose": "To ensure compliance with Australian excise requirements.",
+    "prerequisites": "Access to production and inventory records.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Record Production",
+        "body": "Maintain accurate production batch records."
+      },
+      {
+        "title": "Record Movements",
+        "body": "Document all transfers of excisable product."
+      },
+      {
+        "title": "Maintain Bond Records",
+        "body": "Track stock held under bond."
+      },
+      {
+        "title": "Record Packaged Goods",
+        "body": "Record finished product quantities."
+      },
+      {
+        "title": "Reconcile Inventory",
+        "body": "Regularly compare physical stock to records."
+      },
+      {
+        "title": "Retain Documentation",
+        "body": "Maintain records for audit requirements."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Excise discrepancies",
+        "prevention": "Perform regular reconciliations."
+      },
+      {
+        "issue": "Incomplete records",
+        "prevention": "Record transactions immediately."
+      }
+    ],
+    "troubleshooting": "Investigate all stock variances and document outcomes.",
+    "tags": ["excise", "bond", "ato"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "New Customer Setup",
+    "slug": "new-customer-setup",
+    "category_slug": "retailer-setup",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Onboarding a new wholesale customer.",
+    "purpose": "To ensure customers are correctly established before trading.",
+    "prerequisites": "Approved trading account application.",
+    "safety_notes": "N/A",
+    "steps": [
+      {
+        "title": "Collect Customer Information",
+        "body": "Gather trading name, ABN, contacts and addresses."
+      },
+      {
+        "title": "Verify Customer Type",
+        "body": "Identify retailer, venue or distributor."
+      },
+      {
+        "title": "Create Customer Record",
+        "body": "Enter details into VNDManuf."
+      },
+      {
+        "title": "Assign Terms",
+        "body": "Apply approved payment terms."
+      },
+      {
+        "title": "Assign Pricing",
+        "body": "Apply relevant price list."
+      },
+      {
+        "title": "Activate Customer",
+        "body": "Verify account setup before accepting orders."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect trading terms",
+        "prevention": "Use approved account structures."
+      },
+      {
+        "issue": "Incorrect pricing",
+        "prevention": "Verify price list assignment."
+      }
+    ],
+    "troubleshooting": "Correct setup errors before processing sales.",
+    "tags": ["customer", "sales", "crm"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Retail Customer Visits",
+    "slug": "retail-customer-visits",
+    "category_slug": "retailer-setup",
+    "content_type": "guide",
+    "status": "published",
+    "summary": "Conducting productive customer visits.",
+    "purpose": "To build relationships and increase product distribution.",
+    "prerequisites": "Scheduled customer meeting.",
+    "safety_notes": "Follow site safety rules when visiting customer premises.",
+    "steps": [
+      {
+        "title": "Prepare Visit Plan",
+        "body": "Review customer history and objectives."
+      },
+      {
+        "title": "Assess Current Range",
+        "body": "Review current product placement."
+      },
+      {
+        "title": "Discuss Opportunities",
+        "body": "Identify ranging, promotional and distribution opportunities."
+      },
+      {
+        "title": "Record Outcomes",
+        "body": "Capture notes in CRM."
+      },
+      {
+        "title": "Schedule Follow-Up",
+        "body": "Assign actions and future visits."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Lost sales opportunities",
+        "prevention": "Prepare before every visit."
+      }
+    ],
+    "troubleshooting": "Escalate significant customer concerns promptly.",
+    "tags": ["sales", "crm", "retail"],
+    "systems": ["vndmanuf"]
+  }
+]

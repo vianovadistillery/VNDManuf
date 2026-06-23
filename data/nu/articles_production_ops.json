@@ -1,0 +1,288 @@
+[
+  {
+    "title": "Botanical Handling",
+    "slug": "botanical-handling",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for receiving, storing and handling botanicals used in spirit production.",
+    "purpose": "To maintain product quality, traceability and food safety compliance.",
+    "prerequisites": "Approved supplier and receival documentation.",
+    "safety_notes": "Use safe manual handling techniques. Some botanicals may generate dust or allergens.",
+    "steps": [
+      {
+        "title": "Verify Delivery",
+        "body": "Check packaging condition, supplier documentation and batch details."
+      },
+      {
+        "title": "Inspect Quality",
+        "body": "Confirm appearance, aroma and condition meet specifications."
+      },
+      {
+        "title": "Record Inventory",
+        "body": "Enter receipt into VNDManuf and assign traceability information."
+      },
+      {
+        "title": "Store Correctly",
+        "body": "Store in sealed containers away from moisture, sunlight and contamination sources."
+      },
+      {
+        "title": "Issue to Production",
+        "body": "Pick botanicals according to approved production formulas."
+      },
+      {
+        "title": "Record Consumption",
+        "body": "Record quantities used against the relevant work order."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Cross contamination",
+        "prevention": "Keep containers sealed and segregated."
+      },
+      {
+        "issue": "Incorrect botanical selection",
+        "prevention": "Verify against approved formula."
+      },
+      {
+        "issue": "Loss of traceability",
+        "prevention": "Record batch numbers during issue."
+      }
+    ],
+    "troubleshooting": "Quarantine any botanical material showing signs of mould, infestation or contamination.",
+    "tags": ["botanicals", "inventory", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Gin Production",
+    "slug": "gin-production",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Standard process for producing gin batches.",
+    "purpose": "To ensure consistent gin production and product quality.",
+    "prerequisites": "Approved formula, released spirit and available production equipment.",
+    "safety_notes": "Alcohol vapour is flammable. Follow all distillery safety procedures.",
+    "steps": [
+      {
+        "title": "Review Production Order",
+        "body": "Confirm batch size, formula version and production requirements."
+      },
+      {
+        "title": "Prepare Ingredients",
+        "body": "Gather approved spirit, botanicals and processing aids."
+      },
+      {
+        "title": "Verify Equipment Readiness",
+        "body": "Ensure equipment is clean and available for use."
+      },
+      {
+        "title": "Load Batch",
+        "body": "Transfer spirit and botanicals in accordance with the approved process."
+      },
+      {
+        "title": "Monitor Production",
+        "body": "Monitor quality parameters and process conditions."
+      },
+      {
+        "title": "Collect Product",
+        "body": "Transfer finished gin to approved storage vessels."
+      },
+      {
+        "title": "Perform Quality Checks",
+        "body": "Verify appearance, aroma, flavour and ABV."
+      },
+      {
+        "title": "Close Work Order",
+        "body": "Record production results and inventory movements."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect ingredient additions",
+        "prevention": "Verify all ingredients before charging."
+      },
+      {
+        "issue": "Out-of-specification flavour",
+        "prevention": "Follow approved formulas and procedures."
+      },
+      {
+        "issue": "Incomplete documentation",
+        "prevention": "Complete batch records immediately."
+      }
+    ],
+    "troubleshooting": "Escalate any abnormal aroma, flavour or yield results to production management.",
+    "tags": ["gin", "production", "batch"],
+    "systems": ["vndmanuf", "vndaq"]
+  },
+  {
+    "title": "Vodka Production",
+    "slug": "vodka-production",
+    "category_slug": "distillation",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for producing vodka products.",
+    "purpose": "To ensure consistent vodka quality and batch traceability.",
+    "prerequisites": "Approved production order.",
+    "safety_notes": "Observe all alcohol handling and confined process area requirements.",
+    "steps": [
+      {
+        "title": "Verify Production Schedule",
+        "body": "Confirm product specification and required quantity."
+      },
+      {
+        "title": "Prepare Spirit",
+        "body": "Verify source spirit quality and availability."
+      },
+      {
+        "title": "Prepare Equipment",
+        "body": "Confirm cleaning and readiness status."
+      },
+      {
+        "title": "Process Batch",
+        "body": "Operate production equipment according to approved procedures."
+      },
+      {
+        "title": "Conduct QC Testing",
+        "body": "Verify appearance, aroma and ABV requirements."
+      },
+      {
+        "title": "Transfer Product",
+        "body": "Move finished product into approved storage."
+      },
+      {
+        "title": "Record Batch Data",
+        "body": "Complete production records and inventory transactions."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect ABV",
+        "prevention": "Verify measurements throughout processing."
+      },
+      {
+        "issue": "Cross contamination",
+        "prevention": "Ensure effective cleaning between products."
+      }
+    ],
+    "troubleshooting": "Hold product pending QA review if specifications are not achieved.",
+    "tags": ["vodka", "production"],
+    "systems": ["vndmanuf", "vndaq"]
+  },
+  {
+    "title": "Batch Blending",
+    "slug": "batch-blending",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for blending ingredients into finished products.",
+    "purpose": "To ensure consistent flavour, quality and traceability.",
+    "prerequisites": "Approved recipe and released ingredients.",
+    "safety_notes": "Observe safe manual handling and chemical handling requirements.",
+    "steps": [
+      {
+        "title": "Review Formula",
+        "body": "Confirm recipe version and target batch size."
+      },
+      {
+        "title": "Gather Ingredients",
+        "body": "Collect all required components."
+      },
+      {
+        "title": "Verify Quantities",
+        "body": "Confirm ingredient weights and volumes."
+      },
+      {
+        "title": "Add Ingredients",
+        "body": "Add materials according to the approved sequence."
+      },
+      {
+        "title": "Mix Batch",
+        "body": "Blend until homogeneity is achieved."
+      },
+      {
+        "title": "Collect Sample",
+        "body": "Perform quality checks before release."
+      },
+      {
+        "title": "Record Results",
+        "body": "Document ingredient usage and yield."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect ingredient quantity",
+        "prevention": "Double-check calculations and weights."
+      },
+      {
+        "issue": "Poor mixing",
+        "prevention": "Follow approved agitation procedures."
+      }
+    ],
+    "troubleshooting": "If flavour variation is detected, investigate ingredient additions and mixing records.",
+    "tags": ["blending", "production", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Bottling Operations",
+    "slug": "bottling-operations",
+    "category_slug": "packaging-bottling",
+    "content_type": "sop",
+    "status": "published",
+    "summary": "Procedure for packaging product into bottles.",
+    "purpose": "To ensure safe and consistent packaging operations.",
+    "prerequisites": "Released product and approved packaging materials.",
+    "safety_notes": "Watch for glass breakage hazards and moving machinery.",
+    "steps": [
+      {
+        "title": "Prepare Packaging Materials",
+        "body": "Verify bottles, closures and labels."
+      },
+      {
+        "title": "Perform Line Clearance",
+        "body": "Remove all materials from previous production runs."
+      },
+      {
+        "title": "Set Up Equipment",
+        "body": "Prepare filler and associated equipment."
+      },
+      {
+        "title": "Verify Fill Volumes",
+        "body": "Conduct start-up checks and record results."
+      },
+      {
+        "title": "Run Production",
+        "body": "Monitor fill levels, closures and presentation."
+      },
+      {
+        "title": "Conduct Quality Inspections",
+        "body": "Inspect product appearance and packaging integrity."
+      },
+      {
+        "title": "Reconcile Materials",
+        "body": "Record packaging usage and waste."
+      },
+      {
+        "title": "Close Batch",
+        "body": "Complete production documentation."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect fill volume",
+        "prevention": "Perform regular verification checks."
+      },
+      {
+        "issue": "Wrong label application",
+        "prevention": "Conduct line clearance and first-off checks."
+      },
+      {
+        "issue": "Glass breakage",
+        "prevention": "Handle bottles carefully and remove damaged items immediately."
+      }
+    ],
+    "troubleshooting": "Stop production and investigate if repeated defects are detected.",
+    "tags": ["bottling", "packaging", "production"],
+    "systems": ["vndmanuf"]
+  }
+]

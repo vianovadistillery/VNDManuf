@@ -17,18 +17,20 @@ from fastapi import (
     UploadFile,
     status,
 )
-from pydantic import BaseModel, Field, validator
-from sqlalchemy import Select, select
+from pydantic import BaseModel, Field, model_validator, validator
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.adapters.db import get_db
 from app.adapters.db.models import (
     Contact,
+    CustomerPrice,
     DeliveryDocket,
     DeliveryDocketLine,
     GeneratedDocument,
     Invoice,
     InvoiceLine,
+    Product,
 )
 from apps.vndmanuf_sales.models import (
     Customer,
@@ -43,9 +45,28 @@ from apps.vndmanuf_sales.models import (
     SalesOrderStatus,
     SalesTag,
 )
-from apps.vndmanuf_sales.services.analytics import SalesAnalyticsService, default_period
+from apps.vndmanuf_sales.services.analytics import (
+    SalesAnalyticsService,
+    _as_datetime_end,
+    _as_datetime_start,
+    default_period,
+)
+from apps.vndmanuf_sales.services.customer_location_enrichment import (
+    CustomerLocationEnrichmentService,
+)
+from apps.vndmanuf_sales.services.customer_map import CustomerMapService
 from apps.vndmanuf_sales.services.customer_mapping import CustomerMappingService
+from apps.vndmanuf_sales.services.customer_pricing import (
+    PRICING_LEVELS,
+    count_active_special_prices_for_customers,
+    get_customer_pricing_level,
+    is_special_price_active,
+    list_tier_prices_for_customer,
+    list_tier_prices_for_level,
+    resolve_customer_product_price,
+)
 from apps.vndmanuf_sales.services.import_sales_csv import SalesCSVImporter
+from apps.vndmanuf_sales.services.pricing import PriceComputationError, PricingService
 from apps.vndmanuf_sales.services.totals import TotalsService
 
 router = APIRouter(prefix="/sales", tags=["sales"])
@@ -248,6 +269,11 @@ class SalesOrderCreate(BaseModel):
     entered_by: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
     order_discount_ex_gst: Optional[Decimal] = None
+    freight_ex_gst: Optional[Decimal] = None
+    freight_gst: Optional[Decimal] = None
+    freight_inc_gst: Optional[Decimal] = None
+    commission_amount: Optional[Decimal] = None
+    distributor: Optional[str] = Field(None, max_length=50)
     lines: List[SalesOrderLineInput]
 
 
@@ -263,6 +289,16 @@ class SalesOrderUpdate(BaseModel):
     entered_by: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
     order_discount_ex_gst: Optional[Decimal] = None
+    freight_ex_gst: Optional[Decimal] = None
+    freight_gst: Optional[Decimal] = None
+    freight_inc_gst: Optional[Decimal] = None
+    commission_amount: Optional[Decimal] = None
+    distributor: Optional[str] = Field(None, max_length=50)
+    payment_date: Optional[datetime] = None
+    payment_reference: Optional[str] = Field(None, max_length=100)
+    invoice_date: Optional[datetime] = None
+    delivery_date: Optional[datetime] = None
+    paid: Optional[bool] = None
     lines: Optional[List[SalesOrderLineInput]] = None
 
 
@@ -298,6 +334,14 @@ class SalesOrderResponse(AuditResponse):
     entered_by: Optional[str]
     notes: Optional[str]
     order_discount_ex_gst: Optional[Decimal] = None
+    freight_ex_gst: Optional[Decimal] = None
+    freight_gst: Optional[Decimal] = None
+    freight_inc_gst: Optional[Decimal] = None
+    commission_amount: Optional[Decimal] = None
+    distributor: Optional[str] = None
+    payment_date: Optional[datetime] = None
+    payment_reference: Optional[str] = None
+    invoice_date: Optional[datetime] = None
     total_ex_gst: Decimal
     total_inc_gst: Decimal
     total_alcohol_volume_litres: Optional[Decimal] = None
@@ -328,6 +372,35 @@ class SalesOrderListResponse(SalesOrderResponse):
     invoice_number: Optional[str] = None
     invoice_id: Optional[str] = None
     paid: Optional[bool] = None
+
+
+class OrderSummaryRow(BaseModel):
+    order_id: str
+    order_date: str
+    order_ref: str
+    po_number: str
+    status: str
+    total_ex_gst: float
+    total_inc_gst: float
+
+
+class OrderProductSummaryRow(BaseModel):
+    product_id: str
+    sku: str
+    name: str
+    total_qty: float
+    order_count: int
+    total_ex_gst: float
+    total_inc_gst: float
+
+
+class OrderProductSummaryResponse(BaseModel):
+    orders: List[OrderSummaryRow]
+    rows: List[OrderProductSummaryRow]
+    order_count: int
+    total_qty: float
+    total_ex_gst: float
+    total_inc_gst: float
 
 
 # --------------------------------------------------------------------------- #
@@ -774,9 +847,27 @@ class CustomerListResponse(BaseModel):
     payment_method: Optional[str] = None
     paramount_number: Optional[str] = None
     default_pricing_level: Optional[str] = None
+    active_special_prices: int = 0
+    created_at: Optional[datetime] = None
+    order_count: int = 0
+    revenue_inc_gst: float = 0.0
+    last_order_date: Optional[str] = None
+    days_since_last_order: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+
+class CustomerDashboardSummary(BaseModel):
+    active_customers: int
+    new_this_month: int
+    avg_lifetime_value: float
+    days_since_last_order: Optional[int] = None
+
+
+class CustomerDashboardResponse(BaseModel):
+    summary: CustomerDashboardSummary
+    customers: List[CustomerListResponse]
 
 
 def _get_or_create_customer_for_contact(db: Session, contact: Contact) -> Customer:
@@ -860,7 +951,7 @@ def list_customers(
             CustomerListResponse(
                 id=str(customer.id),
                 code=customer.code,
-                name=customer.name,
+                name=contact.name or customer.name,
                 customer_type=customer.customer_type,
                 email=customer.email,
                 phone=customer.phone,
@@ -871,6 +962,467 @@ def list_customers(
         )
     db.commit()
     return result
+
+
+@router.get("/customers/dashboard", response_model=CustomerDashboardResponse)
+def customer_dashboard(db: Session = Depends(get_db)):
+    """Customers tab: KPI summary plus per-customer order stats."""
+    contacts = (
+        db.execute(
+            select(Contact)
+            .where(Contact.is_customer.is_(True), Contact.deleted_at.is_(None))
+            .order_by(Contact.name)
+        )
+        .scalars()
+        .all()
+    )
+
+    order_stats = SalesAnalyticsService(db).get_customer_order_stats()
+    customers: List[CustomerListResponse] = []
+    customer_ids: List[str] = []
+
+    for contact in contacts:
+        customer = _get_or_create_customer_for_contact(db, contact)
+        customer_ids.append(str(customer.id))
+        stats = order_stats.get(str(customer.id), {})
+        last_order_dt = stats.get("last_order_date")
+        days_since: Optional[int] = None
+        if last_order_dt:
+            days_since = (date.today() - last_order_dt.date()).days
+        created_at = customer.created_at
+        customers.append(
+            CustomerListResponse(
+                id=str(customer.id),
+                code=customer.code,
+                name=contact.name or customer.name,
+                customer_type=customer.customer_type,
+                email=customer.email,
+                phone=customer.phone,
+                payment_method=getattr(contact, "payment_method", None),
+                paramount_number=getattr(contact, "paramount_number", None),
+                default_pricing_level=getattr(contact, "default_pricing_level", None),
+                created_at=created_at,
+                order_count=int(stats.get("order_count", 0)),
+                revenue_inc_gst=float(stats.get("revenue_inc_gst", 0)),
+                last_order_date=last_order_dt.date().isoformat()
+                if last_order_dt
+                else None,
+                days_since_last_order=days_since,
+            )
+        )
+
+    active_special_counts = count_active_special_prices_for_customers(
+        db, customer_ids, datetime.utcnow()
+    )
+    customers = [
+        c.model_copy(
+            update={
+                "active_special_prices": active_special_counts.get(c.id, 0),
+            }
+        )
+        for c in customers
+    ]
+
+    summary_data = SalesAnalyticsService(db).get_customer_dashboard_summary(
+        active_customer_count=len(customers),
+        order_stats=order_stats,
+    )
+    db.commit()
+    return CustomerDashboardResponse(
+        summary=CustomerDashboardSummary(**summary_data),
+        customers=customers,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Customer pricing (default tier + special product prices)
+# --------------------------------------------------------------------------- #
+class CustomerPricingLevelUpdate(BaseModel):
+    default_pricing_level: Optional[str] = Field(None, max_length=50)
+
+
+class CustomerSpecialPriceCreate(BaseModel):
+    product_id: str
+    unit_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    unit_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    effective_date: datetime
+    expiry_date: Optional[datetime] = None
+    notes: Optional[str] = Field(None, max_length=2000)
+
+    @model_validator(mode="after")
+    def require_unit_price(self):
+        if self.unit_price_ex_gst is None and self.unit_price_inc_gst is None:
+            raise ValueError("Provide unit_price_ex_gst or unit_price_inc_gst")
+        return self
+
+
+class CustomerSpecialPriceResponse(BaseModel):
+    id: str
+    customer_id: str
+    customer_name: Optional[str] = None
+    product_id: str
+    product_sku: Optional[str] = None
+    product_name: Optional[str] = None
+    unit_price_ex_gst: Decimal
+    effective_date: datetime
+    expiry_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    is_active: bool = False
+
+
+class CustomerPricingResponse(BaseModel):
+    customer_id: str
+    customer_name: str
+    default_pricing_level: Optional[str] = None
+    pricing_levels: List[str] = Field(default_factory=lambda: list(PRICING_LEVELS))
+    special_prices: List[CustomerSpecialPriceResponse]
+
+
+class PriceResolveResponse(BaseModel):
+    unit_price_ex_gst: float
+    unit_price_inc_gst: float
+    pricing_level: str
+    source: str
+    special_price_id: Optional[str] = None
+
+
+class TierPriceCatalogRow(BaseModel):
+    product_id: str
+    product: str
+    sku: Optional[str] = None
+    unit_price_ex_gst: Optional[float] = None
+    unit_price_inc_gst: Optional[float] = None
+    has_active_special: bool = False
+    special_price_ex_gst: Optional[float] = None
+    special_price_inc_gst: Optional[float] = None
+
+
+class CustomerSpecialPriceUpdate(BaseModel):
+    unit_price_ex_gst: Optional[Decimal] = Field(None, ge=0)
+    unit_price_inc_gst: Optional[Decimal] = Field(None, ge=0)
+    effective_date: Optional[datetime] = None
+    expiry_date: Optional[datetime] = None
+    notes: Optional[str] = Field(None, max_length=2000)
+
+
+def _customer_display_name(
+    customer: Customer, contact: Optional[Contact] = None
+) -> str:
+    """Prefer contact name; avoid showing raw UUIDs as the customer label."""
+    import re
+
+    uuid_re = re.compile(
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        re.IGNORECASE,
+    )
+
+    def _ok(value: Optional[str]) -> bool:
+        if not value or not str(value).strip():
+            return False
+        return not uuid_re.match(str(value).strip())
+
+    for candidate in (
+        getattr(contact, "name", None) if contact else None,
+        customer.name,
+        customer.code,
+    ):
+        if _ok(candidate):
+            return str(candidate).strip()
+    return customer.code or "Customer"
+
+
+def _get_sales_customer(db: Session, customer_id: str) -> Customer:
+    customer = db.get(Customer, customer_id)
+    if not customer or customer.deleted_at:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
+        )
+    return customer
+
+
+def _special_price_to_response(
+    db: Session, cp: CustomerPrice, as_of: Optional[datetime] = None
+) -> CustomerSpecialPriceResponse:
+    as_of = as_of or datetime.utcnow()
+    customer = db.get(Customer, cp.customer_id)
+    product = db.get(Product, cp.product_id)
+    customer_name = customer.name if customer else None
+    if customer and customer.contact_id:
+        contact = db.get(Contact, customer.contact_id)
+        if contact and contact.name:
+            customer_name = contact.name
+    return CustomerSpecialPriceResponse(
+        id=str(cp.id),
+        customer_id=str(cp.customer_id),
+        customer_name=customer_name,
+        product_id=str(cp.product_id),
+        product_sku=getattr(product, "sku", None) if product else None,
+        product_name=getattr(product, "name", None) if product else None,
+        unit_price_ex_gst=cp.unit_price_ex_tax,
+        effective_date=cp.effective_date,
+        expiry_date=cp.expiry_date,
+        notes=getattr(cp, "notes", None),
+        is_active=is_special_price_active(cp, as_of),
+    )
+
+
+@router.get("/customers/{customer_id}/pricing", response_model=CustomerPricingResponse)
+def get_customer_pricing(customer_id: str, db: Session = Depends(get_db)):
+    customer = _get_sales_customer(db, customer_id)
+    contact = None
+    if customer.contact_id:
+        contact = db.get(Contact, customer.contact_id)
+    name = _customer_display_name(customer, contact)
+    level = get_customer_pricing_level(db, customer_id)
+    rows = (
+        db.execute(
+            select(CustomerPrice)
+            .where(
+                CustomerPrice.customer_id == customer_id,
+                CustomerPrice.deleted_at.is_(None),
+            )
+            .order_by(
+                CustomerPrice.product_id,
+                CustomerPrice.effective_date.desc(),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return CustomerPricingResponse(
+        customer_id=str(customer.id),
+        customer_name=name,
+        default_pricing_level=level,
+        special_prices=[_special_price_to_response(db, r) for r in rows],
+    )
+
+
+@router.put(
+    "/customers/{customer_id}/pricing-level", response_model=CustomerPricingResponse
+)
+def update_customer_pricing_level(
+    customer_id: str, data: CustomerPricingLevelUpdate, db: Session = Depends(get_db)
+):
+    customer = _get_sales_customer(db, customer_id)
+    if not customer.contact_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Customer has no linked contact; set pricing level on the contact first",
+        )
+    contact = db.get(Contact, customer.contact_id)
+    if not contact:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Linked contact not found"
+        )
+    level = (data.default_pricing_level or "").strip().lower() or None
+    if level and level not in PRICING_LEVELS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid pricing level. Use one of: {', '.join(PRICING_LEVELS)}",
+        )
+    contact.default_pricing_level = level
+    db.commit()
+    return get_customer_pricing(customer_id, db)
+
+
+@router.post(
+    "/customers/{customer_id}/special-prices",
+    response_model=CustomerSpecialPriceResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_customer_special_price(
+    customer_id: str, data: CustomerSpecialPriceCreate, db: Session = Depends(get_db)
+):
+    _get_sales_customer(db, customer_id)
+    product = db.get(Product, data.product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
+        )
+    if data.expiry_date and data.expiry_date < data.effective_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be on or after start date",
+        )
+    pricing_svc = PricingService(db)
+    gst_rate = (
+        pricing_svc._get_customer_tax_rate(customer_id)  # noqa: SLF001
+        or pricing_svc.default_gst_rate
+    )
+    try:
+        unit_ex, _ = pricing_svc._pair_prices(  # noqa: SLF001
+            data.unit_price_ex_gst,
+            data.unit_price_inc_gst,
+            gst_rate,
+        )
+    except PriceComputationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    cp = CustomerPrice(
+        customer_id=customer_id,
+        product_id=data.product_id,
+        unit_price_ex_tax=unit_ex,
+        effective_date=data.effective_date,
+        expiry_date=data.expiry_date,
+        notes=(data.notes or "").strip() or None,
+    )
+    db.add(cp)
+    db.commit()
+    db.refresh(cp)
+    return _special_price_to_response(db, cp)
+
+
+def _get_customer_special_price(
+    db: Session, customer_id: str, price_id: str
+) -> CustomerPrice:
+    cp = db.get(CustomerPrice, price_id)
+    if not cp or cp.deleted_at or str(cp.customer_id) != str(customer_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer special price not found",
+        )
+    return cp
+
+
+@router.put(
+    "/customers/{customer_id}/special-prices/{price_id}",
+    response_model=CustomerSpecialPriceResponse,
+)
+def update_customer_special_price(
+    customer_id: str,
+    price_id: str,
+    data: CustomerSpecialPriceUpdate,
+    db: Session = Depends(get_db),
+):
+    _get_sales_customer(db, customer_id)
+    cp = _get_customer_special_price(db, customer_id, price_id)
+    pricing_svc = PricingService(db)
+    gst_rate = (
+        pricing_svc._get_customer_tax_rate(customer_id)  # noqa: SLF001
+        or pricing_svc.default_gst_rate
+    )
+
+    if data.unit_price_ex_gst is not None or data.unit_price_inc_gst is not None:
+        try:
+            unit_ex, _ = pricing_svc._pair_prices(  # noqa: SLF001
+                data.unit_price_ex_gst,
+                data.unit_price_inc_gst,
+                gst_rate,
+            )
+        except PriceComputationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            ) from exc
+        cp.unit_price_ex_tax = unit_ex
+
+    if data.effective_date is not None:
+        cp.effective_date = data.effective_date
+    updates = data.model_dump(exclude_unset=True)
+    if "expiry_date" in updates:
+        cp.expiry_date = data.expiry_date
+    if data.notes is not None:
+        cp.notes = (data.notes or "").strip() or None
+
+    effective = cp.effective_date
+    expiry = cp.expiry_date
+    if expiry and effective and expiry < effective:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be on or after start date",
+        )
+
+    db.commit()
+    db.refresh(cp)
+    return _special_price_to_response(db, cp)
+
+
+@router.delete(
+    "/customers/{customer_id}/special-prices/{price_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_customer_special_price(
+    customer_id: str, price_id: str, db: Session = Depends(get_db)
+):
+    _get_sales_customer(db, customer_id)
+    cp = _get_customer_special_price(db, customer_id, price_id)
+    _soft_delete(cp)
+    db.commit()
+
+
+@router.get("/special-prices", response_model=List[CustomerSpecialPriceResponse])
+def list_all_special_prices(
+    customer_id: Optional[str] = None,
+    product_id: Optional[str] = None,
+    active_only: bool = Query(False, description="Only offers active as of as_of date"),
+    as_of: Optional[date] = Query(
+        None, description="Active-as-of date (default today)"
+    ),
+    db: Session = Depends(get_db),
+):
+    """Global view of customer special pricing offers (full history unless active_only)."""
+    as_of_dt = _as_datetime_start(as_of) if as_of else datetime.utcnow()
+    stmt = select(CustomerPrice).where(CustomerPrice.deleted_at.is_(None))
+    if customer_id:
+        stmt = stmt.where(CustomerPrice.customer_id == customer_id)
+    if product_id:
+        stmt = stmt.where(CustomerPrice.product_id == product_id)
+    rows = (
+        db.execute(
+            stmt.order_by(
+                CustomerPrice.customer_id,
+                CustomerPrice.product_id,
+                CustomerPrice.effective_date.desc(),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    out = [_special_price_to_response(db, r, as_of_dt) for r in rows]
+    if active_only:
+        out = [r for r in out if r.is_active]
+    return out
+
+
+@router.get("/pricing/resolve", response_model=PriceResolveResponse)
+def resolve_order_line_price(
+    customer_id: str = Query(...),
+    product_id: str = Query(...),
+    as_of: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Resolve unit price for an order line: tier default, special price override."""
+    _get_sales_customer(db, customer_id)
+    try:
+        result = resolve_customer_product_price(
+            db, customer_id, product_id, as_of or datetime.utcnow().date()
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    return PriceResolveResponse(**result)
+
+
+@router.get("/pricing/tier-catalog", response_model=List[TierPriceCatalogRow])
+def get_tier_price_catalog(
+    pricing_level: str = Query(..., min_length=1),
+    customer_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Product list prices for a pricing tier (sellable products only)."""
+    level = pricing_level.strip().lower()
+    if level not in PRICING_LEVELS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid pricing level. Use one of: {', '.join(PRICING_LEVELS)}",
+        )
+    if customer_id:
+        _get_sales_customer(db, customer_id)
+        rows = list_tier_prices_for_customer(db, level, customer_id)
+    else:
+        rows = list_tier_prices_for_level(db, level)
+    return [TierPriceCatalogRow(**row) for row in rows]
 
 
 # --------------------------------------------------------------------------- #
@@ -1211,6 +1763,63 @@ def _build_order_list_response(order: SalesOrder) -> SalesOrderListResponse:
     )
 
 
+def _get_filtered_orders(
+    db: Session,
+    *,
+    customer_id: Optional[str] = None,
+    channel_id: Optional[str] = None,
+    status_filter: Optional[SalesOrderStatus] = None,
+    has_delivery: Optional[bool] = None,
+    has_invoice: Optional[bool] = None,
+    paid: Optional[bool] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    include_deleted: bool = False,
+    include_archived: bool = False,
+) -> List[SalesOrder]:
+    """Shared order filters for list and product-summary endpoints."""
+    stmt = select(SalesOrder)
+    if customer_id:
+        stmt = stmt.where(SalesOrder.customer_id == customer_id)
+    if channel_id:
+        stmt = stmt.where(SalesOrder.channel_id == channel_id)
+    if status_filter:
+        stmt = stmt.where(SalesOrder.status == status_filter.value)
+    if start_date:
+        stmt = stmt.where(SalesOrder.order_date >= _as_datetime_start(start_date))
+    if end_date:
+        stmt = stmt.where(SalesOrder.order_date <= _as_datetime_end(end_date))
+    stmt = _apply_filters(stmt, include_deleted, include_archived, SalesOrder)
+    orders = (
+        db.execute(stmt.order_by(SalesOrder.order_date.desc())).scalars().unique().all()
+    )
+    if has_delivery is not None or has_invoice is not None or paid is not None:
+        filtered = []
+        for order in orders:
+            dockets = [
+                d
+                for d in (order.delivery_dockets or [])
+                if getattr(d, "deleted_at", None) is None
+            ]
+            invoices = [
+                i
+                for i in (order.invoices or [])
+                if getattr(i, "deleted_at", None) is None
+            ]
+            if has_delivery is not None and (len(dockets) > 0) != has_delivery:
+                continue
+            if has_invoice is not None and (len(invoices) > 0) != has_invoice:
+                continue
+            if paid is not None:
+                first_invoice = invoices[0] if invoices else None
+                is_paid = bool(first_invoice and getattr(first_invoice, "paid", False))
+                if is_paid != paid:
+                    continue
+            filtered.append(order)
+        orders = filtered
+    return orders
+
+
 def _apply_order_lines(
     order: SalesOrder, line_inputs: List[SalesOrderLineInput], db: Session
 ):
@@ -1253,32 +1862,26 @@ def list_orders(
         None, description="Filter by has delivery docket"
     ),
     has_invoice: Optional[bool] = Query(None, description="Filter by has invoice"),
+    paid: Optional[bool] = Query(None, description="Filter by invoice paid status"),
+    start_date: Optional[date] = Query(None, description="Order date from (inclusive)"),
+    end_date: Optional[date] = Query(None, description="Order date to (inclusive)"),
     include_deleted: bool = Query(False),
     include_archived: bool = Query(False),
     db: Session = Depends(get_db),
 ):
-    stmt = select(SalesOrder)
-    if customer_id:
-        stmt = stmt.where(SalesOrder.customer_id == customer_id)
-    if channel_id:
-        stmt = stmt.where(SalesOrder.channel_id == channel_id)
-    if status_filter:
-        stmt = stmt.where(SalesOrder.status == status_filter.value)
-    stmt = _apply_filters(stmt, include_deleted, include_archived, SalesOrder)
-    orders = (
-        db.execute(stmt.order_by(SalesOrder.order_date.desc())).scalars().unique().all()
+    orders = _get_filtered_orders(
+        db,
+        customer_id=customer_id,
+        channel_id=channel_id,
+        status_filter=status_filter,
+        has_delivery=has_delivery,
+        has_invoice=has_invoice,
+        paid=paid,
+        start_date=start_date,
+        end_date=end_date,
+        include_deleted=include_deleted,
+        include_archived=include_archived,
     )
-    if has_delivery is not None or has_invoice is not None:
-        filtered = []
-        for order in orders:
-            dockets = list(order.delivery_dockets) if order.delivery_dockets else []
-            invoices = list(order.invoices) if order.invoices else []
-            if has_delivery is not None and (len(dockets) > 0) != has_delivery:
-                continue
-            if has_invoice is not None and (len(invoices) > 0) != has_invoice:
-                continue
-            filtered.append(order)
-        orders = filtered
     result = []
     for order in orders:
         d = _build_order_list_response(order).model_dump()
@@ -1320,6 +1923,104 @@ def list_orders(
     return result
 
 
+@router.get("/orders/product-summary", response_model=OrderProductSummaryResponse)
+def order_product_summary(
+    customer_id: Optional[str] = None,
+    channel_id: Optional[str] = None,
+    status_filter: Optional[SalesOrderStatus] = None,
+    has_delivery: Optional[bool] = Query(
+        None, description="Filter by has delivery docket"
+    ),
+    has_invoice: Optional[bool] = Query(None, description="Filter by has invoice"),
+    paid: Optional[bool] = Query(None, description="Filter by invoice paid status"),
+    start_date: Optional[date] = Query(None, description="Order date from (inclusive)"),
+    end_date: Optional[date] = Query(None, description="Order date to (inclusive)"),
+    include_deleted: bool = Query(False),
+    include_archived: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """Aggregate products purchased across orders matching the same filters as GET /orders."""
+    orders = _get_filtered_orders(
+        db,
+        customer_id=customer_id,
+        channel_id=channel_id,
+        status_filter=status_filter,
+        has_delivery=has_delivery,
+        has_invoice=has_invoice,
+        paid=paid,
+        start_date=start_date,
+        end_date=end_date,
+        include_deleted=include_deleted,
+        include_archived=include_archived,
+    )
+    order_ids = [o.id for o in orders]
+    order_rows = [
+        OrderSummaryRow(
+            order_id=str(order.id),
+            order_date=(
+                order.order_date.date().isoformat()
+                if order.order_date and hasattr(order.order_date, "date")
+                else (str(order.order_date)[:10] if order.order_date else "")
+            ),
+            order_ref=order.order_ref or "—",
+            po_number=order.po_number or "—",
+            status=(order.status or "").title(),
+            total_ex_gst=float(order.total_ex_gst or 0),
+            total_inc_gst=float(order.total_inc_gst or 0),
+        )
+        for order in orders
+    ]
+    if not order_ids:
+        return OrderProductSummaryResponse(
+            orders=[],
+            rows=[],
+            order_count=0,
+            total_qty=0.0,
+            total_ex_gst=0.0,
+            total_inc_gst=0.0,
+        )
+
+    summary_rows = db.execute(
+        select(
+            SalesOrderLine.product_id,
+            Product.sku,
+            Product.name,
+            func.sum(SalesOrderLine.qty).label("total_qty"),
+            func.count(func.distinct(SalesOrderLine.order_id)).label("order_count"),
+            func.sum(SalesOrderLine.line_total_ex_gst).label("total_ex"),
+            func.sum(SalesOrderLine.line_total_inc_gst).label("total_inc"),
+        )
+        .join(Product, Product.id == SalesOrderLine.product_id)
+        .where(
+            SalesOrderLine.order_id.in_(order_ids),
+            SalesOrderLine.deleted_at.is_(None),
+        )
+        .group_by(SalesOrderLine.product_id, Product.sku, Product.name)
+        .order_by(func.sum(SalesOrderLine.line_total_inc_gst).desc())
+    ).all()
+
+    rows = [
+        OrderProductSummaryRow(
+            product_id=str(row.product_id),
+            sku=row.sku or "—",
+            name=row.name or "—",
+            total_qty=float(row.total_qty or 0),
+            order_count=int(row.order_count or 0),
+            total_ex_gst=float(row.total_ex or 0),
+            total_inc_gst=float(row.total_inc or 0),
+        )
+        for row in summary_rows
+    ]
+    return OrderProductSummaryResponse(
+        orders=order_rows,
+        rows=rows,
+        order_count=len(orders),
+        total_qty=sum(r.total_qty for r in rows),
+        total_ex_gst=sum(r.total_ex_gst for r in rows),
+        total_inc_gst=sum(r.total_inc_gst for r in rows),
+    )
+
+
 @router.get("/orders/{order_id}", response_model=SalesOrderResponse)
 def get_order(order_id: str, db: Session = Depends(get_db)):
     order = _order_query(db, order_id)
@@ -1344,6 +2045,12 @@ def get_order(order_id: str, db: Session = Depends(get_db)):
     d["invoice_id"] = str(first_invoice.id) if first_invoice else None
     d["invoice_number"] = first_invoice.invoice_number if first_invoice else None
     d["paid"] = getattr(first_invoice, "paid", None) if first_invoice else None
+    if first_invoice and first_invoice.invoice_date:
+        d["invoice_date"] = first_invoice.invoice_date
+    elif getattr(order, "invoice_date", None):
+        d["invoice_date"] = order.invoice_date
+    else:
+        d["invoice_date"] = None
     # Linked generated documents (for Open vs Create in UI); only include when file exists
     if first_docket and getattr(first_docket, "generated_document_id", None):
         gd = db.get(GeneratedDocument, first_docket.generated_document_id)
@@ -1389,6 +2096,11 @@ def create_order(data: SalesOrderCreate, db: Session = Depends(get_db)):
         order_ref=data.order_ref,
         po_number=data.po_number,
         order_discount_ex_gst=data.order_discount_ex_gst or Decimal("0"),
+        freight_ex_gst=data.freight_ex_gst or Decimal("0"),
+        freight_gst=data.freight_gst or Decimal("0"),
+        freight_inc_gst=data.freight_inc_gst or Decimal("0"),
+        commission_amount=data.commission_amount,
+        distributor=data.distributor,
         order_date=data.order_date,
         status=data.status.value if data.status else SalesOrderStatus.CONFIRMED.value,
         source=data.source.value if data.source else SalesOrderSource.MANUAL.value,
@@ -1406,37 +2118,68 @@ def create_order(data: SalesOrderCreate, db: Session = Depends(get_db)):
 @router.put("/orders/{order_id}", response_model=SalesOrderResponse)
 def update_order(order_id: str, data: SalesOrderUpdate, db: Session = Depends(get_db)):
     order = _order_query(db, order_id)
-    # Once converted to delivery, order is fixed (no line edits)
-    if (
-        data.lines is not None
-        and order.delivery_dockets
-        and any(d.deleted_at is None for d in order.delivery_dockets)
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Order has been converted to delivery and can no longer be edited",
-        )
-    if data.channel_id is not None:
+    fields_set = data.model_fields_set
+    if "channel_id" in fields_set:
         order.channel_id = data.channel_id
     if data.customer_site_id is not None:
         order.customer_site_id = data.customer_site_id
     if data.pricebook_id is not None:
         order.pricebook_id = data.pricebook_id
-    if data.order_ref is not None:
+    if "order_ref" in fields_set:
         order.order_ref = data.order_ref
-    if data.po_number is not None:
+    if "po_number" in fields_set:
         order.po_number = data.po_number
-    if data.order_discount_ex_gst is not None:
+    if "order_discount_ex_gst" in fields_set and data.order_discount_ex_gst is not None:
         order.order_discount_ex_gst = data.order_discount_ex_gst
-    if data.order_date is not None:
+    if data.freight_ex_gst is not None:
+        order.freight_ex_gst = data.freight_ex_gst
+    if data.freight_gst is not None:
+        order.freight_gst = data.freight_gst
+    if data.freight_inc_gst is not None:
+        order.freight_inc_gst = data.freight_inc_gst
+    if "commission_amount" in fields_set:
+        order.commission_amount = data.commission_amount
+    if "distributor" in fields_set:
+        order.distributor = data.distributor or None
+    if "payment_date" in fields_set:
+        order.payment_date = data.payment_date
+    if "payment_reference" in fields_set:
+        order.payment_reference = data.payment_reference or None
+    if "invoice_date" in fields_set:
+        order.invoice_date = data.invoice_date
+        invoices = [
+            i for i in (order.invoices or []) if getattr(i, "deleted_at", None) is None
+        ]
+        if invoices:
+            invoices[0].invoice_date = data.invoice_date
+    if "delivery_date" in fields_set:
+        dockets = [
+            d
+            for d in (order.delivery_dockets or [])
+            if getattr(d, "deleted_at", None) is None
+        ]
+        if dockets:
+            dockets[0].delivery_date = data.delivery_date
+    if "paid" in fields_set:
+        invoices = [
+            i for i in (order.invoices or []) if getattr(i, "deleted_at", None) is None
+        ]
+        if invoices:
+            inv = invoices[0]
+            inv.paid = bool(data.paid)
+            if data.paid:
+                inv.status = "PAID"
+            elif inv.status == "PAID":
+                inv.status = "SENT"
+    if "order_date" in fields_set and data.order_date is not None:
         order.order_date = data.order_date
-    if data.status is not None:
+    if "status" in fields_set and data.status is not None:
         order.status = data.status.value
     if data.source is not None:
         order.source = data.source.value
-    if data.entered_by is not None:
+    if "entered_by" in fields_set:
         order.entered_by = data.entered_by
-    if data.notes is not None:
+    if "notes" in fields_set:
         order.notes = data.notes
     if data.lines is not None:
         _apply_order_lines(order, data.lines, db)
@@ -1692,6 +2435,36 @@ def convert_order_to_delivery(
 
 class ConvertToInvoiceRequest(BaseModel):
     delivery_docket_id: Optional[str] = None
+    invoice_number: Optional[str] = Field(None, max_length=50)
+    invoice_date: Optional[datetime] = None
+
+
+def _invoice_number_from_docket(docket_number: Optional[str]) -> Optional[str]:
+    """ALM rule: DD260050 → A260050."""
+    if not docket_number:
+        return None
+    dn = docket_number.strip().upper()
+    if dn.startswith("DD"):
+        return "A" + dn[2:]
+    return None
+
+
+def _suggest_invoice_number_for_order(order: SalesOrder, db: Session) -> Optional[str]:
+    channel_code = None
+    if order.channel_id:
+        ch = db.get(SalesChannel, order.channel_id)
+        if ch:
+            channel_code = (ch.code or "").upper()
+    if channel_code != "ALM":
+        return None
+    dockets = [
+        d
+        for d in (order.delivery_dockets or [])
+        if getattr(d, "deleted_at", None) is None
+    ]
+    if not dockets:
+        return None
+    return _invoice_number_from_docket(dockets[0].docket_number)
 
 
 @router.post("/orders/{order_id}/convert-to-invoice")
@@ -1707,16 +2480,42 @@ def convert_order_to_invoice(
             status_code=status.HTTP_409_CONFLICT,
             detail="Order already has an invoice",
         )
-    invoice_number = _next_invoice_number(db)
+    dockets = [
+        d
+        for d in (order.delivery_dockets or [])
+        if getattr(d, "deleted_at", None) is None
+    ]
+    delivery_docket_id = (body.delivery_docket_id if body else None) or (
+        str(dockets[0].id) if dockets else None
+    )
+    if body and body.invoice_number:
+        invoice_number = body.invoice_number.strip()
+        if not invoice_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invoice number cannot be empty",
+            )
+        existing = db.execute(
+            select(Invoice.id).where(Invoice.invoice_number == invoice_number)
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Invoice number '{invoice_number}' already exists",
+            )
+    else:
+        suggested = _suggest_invoice_number_for_order(order, db)
+        invoice_number = suggested or _next_invoice_number(db)
+    invoice_date = (body.invoice_date if body else None) or datetime.utcnow()
     subtotal_ex = order.total_ex_gst
     total_inc = order.total_inc_gst
     total_tax = total_inc - subtotal_ex
     inv = Invoice(
         customer_id=order.customer_id,
         sales_order_id=order.id,
-        delivery_docket_id=body.delivery_docket_id if body else None,
+        delivery_docket_id=delivery_docket_id,
         invoice_number=invoice_number,
-        invoice_date=datetime.utcnow(),
+        invoice_date=invoice_date,
         status="SENT",
         paid=False,
         subtotal_ex_tax=subtotal_ex,
@@ -1726,6 +2525,7 @@ def convert_order_to_invoice(
     )
     db.add(inv)
     db.flush()
+    order.invoice_date = invoice_date
     for seq, line in enumerate(order.lines, 1):
         db.add(
             InvoiceLine(
@@ -1951,6 +2751,148 @@ def analytics_products(
         total_units=float(summary.total_units),
         total_revenue_inc_gst=float(summary.total_revenue_inc_gst),
         total_revenue_ex_gst=float(summary.total_revenue_ex_gst),
+    )
+
+
+class CustomerMapPointResponse(BaseModel):
+    customer_id: str
+    name: str
+    code: str
+    lat: float
+    lon: float
+    buying_group_id: Optional[str] = None
+    buying_group_name: str
+    buying_group_color: str
+    relationship_status: str
+    price_level: str
+    sales_rep_name: str
+    period_revenue: float
+    volume_band: str
+    location_source: str
+    location_label: str
+    address_display: Optional[str] = None
+    suburb: Optional[str] = None
+    state: Optional[str] = None
+
+
+class CustomerMapLegendItem(BaseModel):
+    buying_group_id: Optional[str] = None
+    name: str
+    color: str
+
+
+class CustomerMapResponse(BaseModel):
+    points: List[CustomerMapPointResponse] = Field(default_factory=list)
+    legend: List[CustomerMapLegendItem] = Field(default_factory=list)
+    total_customers: int = 0
+    mapped_customers: int = 0
+    unmapped_customers: int = 0
+
+
+class CustomerMapFilterOptionsResponse(BaseModel):
+    sales_reps: List[dict] = Field(default_factory=list)
+    buying_groups: List[dict] = Field(default_factory=list)
+    price_levels: List[dict] = Field(default_factory=list)
+    pricebooks: List[dict] = Field(default_factory=list)
+    volume_bands: List[dict] = Field(default_factory=list)
+    relationship_statuses: List[dict] = Field(default_factory=list)
+
+
+@router.get(
+    "/analytics/customer-map/filter-options",
+    response_model=CustomerMapFilterOptionsResponse,
+)
+def customer_map_filter_options(db: Session = Depends(get_db)):
+    return CustomerMapFilterOptionsResponse(**CustomerMapService(db).filter_options())
+
+
+@router.get("/analytics/customer-map", response_model=CustomerMapResponse)
+def customer_map(
+    start_date: date = Query(..., description="Period start (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="Period end (YYYY-MM-DD)"),
+    sales_rep_id: Optional[str] = Query(None),
+    buying_group_id: Optional[str] = Query(None),
+    price_level: Optional[str] = Query(None),
+    pricebook_id: Optional[str] = Query(None),
+    volume_band: Optional[str] = Query(None),
+    relationship_status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="start_date must be on or before end_date",
+        )
+    summary = CustomerMapService(db).get_map(
+        start_date=start_date,
+        end_date=end_date,
+        sales_rep_id=sales_rep_id or None,
+        buying_group_id=buying_group_id or None,
+        price_level=price_level or None,
+        pricebook_id=pricebook_id or None,
+        volume_band=volume_band or None,
+        relationship_status=relationship_status or None,
+    )
+    return CustomerMapResponse(
+        points=[CustomerMapPointResponse(**p) for p in summary.points],
+        legend=[CustomerMapLegendItem(**item) for item in summary.legend],
+        total_customers=summary.total_customers,
+        mapped_customers=summary.mapped_customers,
+        unmapped_customers=summary.unmapped_customers,
+    )
+
+
+class CustomerLocationEnrichRequest(BaseModel):
+    customer_ids: Optional[List[str]] = None
+    limit: int = Field(default=15, ge=1, le=50)
+    dry_run: bool = False
+    min_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
+    use_llm: bool = False
+
+
+class CustomerLocationEnrichRow(BaseModel):
+    customer_id: str
+    customer_name: str
+    status: str
+    query: Optional[str] = None
+    message: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    display_name: Optional[str] = None
+
+
+class CustomerLocationEnrichResponse(BaseModel):
+    processed: int
+    updated: int
+    skipped: int
+    not_found: int
+    failed: int
+    results: List[CustomerLocationEnrichRow] = Field(default_factory=list)
+
+
+@router.post(
+    "/customers/enrich-locations",
+    response_model=CustomerLocationEnrichResponse,
+)
+def enrich_customer_locations(
+    body: CustomerLocationEnrichRequest,
+    db: Session = Depends(get_db),
+):
+    """Look up missing addresses/coordinates (OpenStreetMap; optional ChatGPT)."""
+    summary = CustomerLocationEnrichmentService(db).enrich(
+        customer_ids=body.customer_ids,
+        limit=body.limit,
+        dry_run=body.dry_run,
+        min_confidence=body.min_confidence,
+        use_llm=body.use_llm,
+    )
+    return CustomerLocationEnrichResponse(
+        processed=summary.processed,
+        updated=summary.updated,
+        skipped=summary.skipped,
+        not_found=summary.not_found,
+        failed=summary.failed,
+        results=[CustomerLocationEnrichRow(**row.__dict__) for row in summary.results],
     )
 
 

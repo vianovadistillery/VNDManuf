@@ -5,10 +5,14 @@ from __future__ import annotations
 import dash_bootstrap_components as dbc
 from dash import dash_table, html
 
-from apps.vndmanuf_sales.services.analytics import default_period
 from apps.vndmanuf_sales.ui.components import date_range_picker, filter_dropdown
+from apps.vndmanuf_sales.ui.period_filters import (
+    default_period_iso,
+    period_applying_store,
+    period_preset_dropdown,
+)
 
-_default_start, _default_end = default_period()
+_default_start, _default_end = default_period_iso()
 
 
 def layout():
@@ -17,16 +21,21 @@ def layout():
             dbc.CardHeader(html.H6("Filters", className="mb-0")),
             dbc.CardBody(
                 [
+                    period_applying_store("sales-products-applying-preset"),
                     dbc.Row(
                         [
+                            dbc.Col(
+                                period_preset_dropdown("sales-products-period-preset"),
+                                md=2,
+                            ),
                             dbc.Col(
                                 date_range_picker(
                                     "sales-products-date-range",
                                     "Date range",
-                                    start_date=_default_start.isoformat(),
-                                    end_date=_default_end.isoformat(),
+                                    start_date=_default_start,
+                                    end_date=_default_end,
                                 ),
-                                md=4,
+                                md=3,
                             ),
                             dbc.Col(
                                 filter_dropdown(
@@ -42,7 +51,7 @@ def layout():
                                     "Pricebook",
                                     [],
                                 ),
-                                md=3,
+                                md=2,
                             ),
                             dbc.Col(
                                 filter_dropdown(
@@ -61,7 +70,7 @@ def layout():
                             ),
                         ],
                         className="g-2",
-                    )
+                    ),
                 ]
             ),
         ],

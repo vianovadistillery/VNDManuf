@@ -1,0 +1,304 @@
+[
+  {
+    "title": "New Wave Vodka Product Knowledge",
+    "slug": "new-wave-vodka-product-knowledge",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Overview of New Wave Vodka, its flavour profile and market positioning.",
+    "purpose": "To equip staff with product knowledge for production, sales and customer interactions.",
+    "prerequisites": "None.",
+    "safety_notes": "Responsible service of alcohol principles apply.",
+    "steps": [
+      {
+        "title": "Understand Product Positioning",
+        "body": "New Wave Vodka is positioned as a modern, approachable vodka designed for contemporary consumers."
+      },
+      {
+        "title": "Learn Key Characteristics",
+        "body": "The product emphasises smoothness, purity and versatility."
+      },
+      {
+        "title": "Understand the Brand Philosophy",
+        "body": "The New Wave range focuses on bringing more consumers into the spirits category through approachable flavour and modern branding."
+      },
+      {
+        "title": "Know Recommended Serves",
+        "body": "Suitable for soda serves, cocktails and mixed drinks."
+      },
+      {
+        "title": "Understand Storage Requirements",
+        "body": "Store upright in a cool, dry location away from direct sunlight."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Inaccurate product representation",
+        "prevention": "Use approved product descriptions and tasting notes."
+      }
+    ],
+    "troubleshooting": "Refer to current sales and marketing resources for updated positioning.",
+    "tags": ["new-wave", "vodka", "product-knowledge"],
+    "systems": []
+  },
+  {
+    "title": "RTD Portfolio Overview",
+    "slug": "rtd-portfolio-overview",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Introduction to Via Nova ready-to-drink products.",
+    "purpose": "To provide staff with an understanding of the RTD product range.",
+    "prerequisites": "None.",
+    "safety_notes": "Responsible service of alcohol principles apply.",
+    "steps": [
+      {
+        "title": "Understand the Category",
+        "body": "RTDs combine spirits with mixers in a convenient ready-to-consume format."
+      },
+      {
+        "title": "Learn the Product Range",
+        "body": "Become familiar with all current RTD products and flavours."
+      },
+      {
+        "title": "Understand Target Consumers",
+        "body": "RTDs appeal to consumers seeking convenience and consistent quality."
+      },
+      {
+        "title": "Understand Packaging Formats",
+        "body": "Products may be supplied in cans and multi-pack configurations."
+      },
+      {
+        "title": "Know Storage Requirements",
+        "body": "Store in cool, dry conditions away from direct sunlight."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Incorrect product recommendations",
+        "prevention": "Understand the flavour profile of each SKU."
+      }
+    ],
+    "troubleshooting": "Review current product specifications and sales materials.",
+    "tags": ["rtd", "portfolio", "sales", "products"],
+    "systems": []
+  },
+  {
+    "title": "Botanical Selection Principles",
+    "slug": "botanical-selection-principles",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Guidance on the selection and use of botanicals in spirit production.",
+    "purpose": "To provide staff with an understanding of botanical contribution to flavour.",
+    "prerequisites": "None.",
+    "safety_notes": "Follow approved handling procedures for all botanicals.",
+    "steps": [
+      {
+        "title": "Understand Botanical Function",
+        "body": "Botanicals contribute aroma, flavour and complexity to spirits."
+      },
+      {
+        "title": "Recognise Core Gin Botanicals",
+        "body": "Juniper typically provides the foundational gin character."
+      },
+      {
+        "title": "Understand Supporting Botanicals",
+        "body": "Citrus, spice, floral and root botanicals contribute balance and complexity."
+      },
+      {
+        "title": "Evaluate Quality",
+        "body": "Botanicals should be fresh, aromatic and sourced from approved suppliers."
+      },
+      {
+        "title": "Maintain Consistency",
+        "body": "Use approved recipes and supplier specifications."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Botanical variability",
+        "prevention": "Source from approved suppliers and inspect deliveries."
+      },
+      {
+        "issue": "Recipe deviations",
+        "prevention": "Follow approved formulations."
+      }
+    ],
+    "troubleshooting": "Escalate unusual aroma or quality concerns before production.",
+    "tags": ["botanicals", "gin", "flavour"],
+    "systems": []
+  },
+  {
+    "title": "Via Nova Distillation Philosophy",
+    "slug": "via-nova-distillation-philosophy",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Overview of Via Nova's approach to spirit production.",
+    "purpose": "To communicate the principles underpinning Via Nova products.",
+    "prerequisites": "None.",
+    "safety_notes": "This article is informational only.",
+    "steps": [
+      {
+        "title": "Prioritise Flavour",
+        "body": "Production decisions should support flavour quality and consistency."
+      },
+      {
+        "title": "Pursue Efficiency",
+        "body": "Processes are designed to reduce waste and improve operational efficiency."
+      },
+      {
+        "title": "Support Innovation",
+        "body": "Via Nova continually evaluates new methods and technologies."
+      },
+      {
+        "title": "Maintain Compliance",
+        "body": "Innovation must always operate within regulatory requirements."
+      },
+      {
+        "title": "Focus on Consistency",
+        "body": "Every batch should meet approved quality standards."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Inconsistent production outcomes",
+        "prevention": "Follow approved procedures and specifications."
+      }
+    ],
+    "troubleshooting": "Refer operational issues to production management.",
+    "tags": ["philosophy", "innovation", "quality"],
+    "systems": []
+  },
+  {
+    "title": "Product Storage Requirements",
+    "slug": "product-storage-requirements",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Storage requirements for finished spirit products.",
+    "purpose": "To protect product quality throughout its life cycle.",
+    "prerequisites": "None.",
+    "safety_notes": "Observe warehouse and manual handling procedures.",
+    "steps": [
+      {
+        "title": "Store Upright",
+        "body": "Keep bottles and cans upright wherever practical."
+      },
+      {
+        "title": "Avoid Direct Sunlight",
+        "body": "Protect products from prolonged UV exposure."
+      },
+      {
+        "title": "Maintain Stable Conditions",
+        "body": "Avoid extreme temperature fluctuations."
+      },
+      {
+        "title": "Protect Packaging",
+        "body": "Prevent damage to labels, cartons and closures."
+      },
+      {
+        "title": "Follow FIFO",
+        "body": "Rotate stock using first-in-first-out principles."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Packaging deterioration",
+        "prevention": "Store in appropriate environmental conditions."
+      },
+      {
+        "issue": "Inventory ageing",
+        "prevention": "Apply stock rotation practices."
+      }
+    ],
+    "troubleshooting": "Investigate any evidence of product or packaging degradation.",
+    "tags": ["storage", "warehouse", "quality"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Shelf Life and Product Stability",
+    "slug": "shelf-life-and-product-stability",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "published",
+    "summary": "Understanding product stability and shelf-life considerations.",
+    "purpose": "To ensure products are stored and distributed appropriately.",
+    "prerequisites": "None.",
+    "safety_notes": "This article is informational only.",
+    "steps": [
+      {
+        "title": "Understand Shelf Life",
+        "body": "Shelf life refers to the period a product remains within specification."
+      },
+      {
+        "title": "Monitor Packaging Integrity",
+        "body": "Closures, labels and containers must remain fit for purpose."
+      },
+      {
+        "title": "Protect Product Quality",
+        "body": "Store products under recommended conditions."
+      },
+      {
+        "title": "Maintain Traceability",
+        "body": "Retain batch identification throughout distribution."
+      },
+      {
+        "title": "Investigate Complaints",
+        "body": "Review retained samples where quality concerns arise."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Product deterioration",
+        "prevention": "Store according to specifications."
+      },
+      {
+        "issue": "Loss of traceability",
+        "prevention": "Maintain batch records."
+      }
+    ],
+    "troubleshooting": "Escalate stability concerns to Quality Assurance.",
+    "tags": ["shelf-life", "quality", "stability"],
+    "systems": ["vndmanuf"]
+  },
+  {
+    "title": "Patented Distillation Process Overview",
+    "slug": "patented-distillation-process-overview",
+    "category_slug": "product-knowledge",
+    "content_type": "reference",
+    "status": "draft",
+    "summary": "High-level overview of Via Nova's proprietary production technology.",
+    "purpose": "To provide staff with an approved description of proprietary technology.",
+    "prerequisites": "Management approval.",
+    "safety_notes": "Confidential information must not be disclosed externally.",
+    "steps": [
+      {
+        "title": "Understand Confidentiality",
+        "body": "The process contains intellectual property owned by Via Nova."
+      },
+      {
+        "title": "Understand the Objective",
+        "body": "The technology aims to improve flavour extraction and production efficiency."
+      },
+      {
+        "title": "Understand Operational Benefits",
+        "body": "The process supports quality, consistency and reduced waste."
+      },
+      {
+        "title": "Use Approved Language Only",
+        "body": "Do not describe proprietary details beyond approved materials."
+      }
+    ],
+    "risks": [
+      {
+        "issue": "Disclosure of confidential information",
+        "prevention": "Use approved communication materials only."
+      }
+    ],
+    "troubleshooting": "Refer external enquiries to management.",
+    "tags": ["ip", "patent", "confidential"],
+    "systems": []
+  }
+]

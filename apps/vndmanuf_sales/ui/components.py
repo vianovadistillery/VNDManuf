@@ -63,12 +63,22 @@ def top_table(table_id: str, title: str, columns: List[str]):
 
 
 def filter_dropdown(
-    dropdown_id: str, label: str, options: List[dict], multi: bool = False
+    dropdown_id: str,
+    label: str,
+    options: List[dict],
+    multi: bool = False,
+    value: Optional[str] = None,
 ):
     return html.Div(
         [
             dbc.Label(label, className="form-label mb-1"),
-            dcc.Dropdown(id=dropdown_id, options=options, multi=multi, clearable=True),
+            dcc.Dropdown(
+                id=dropdown_id,
+                options=options,
+                value=value,
+                multi=multi,
+                clearable=True,
+            ),
         ],
         className="mb-2",
     )

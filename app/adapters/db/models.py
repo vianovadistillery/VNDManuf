@@ -913,6 +913,8 @@ class Contact(Base, AuditMixin):
     delivery_state = Column(String(50))
     delivery_postcode = Column(String(20))
     delivery_country = Column(String(100))
+    latitude = Column(Numeric(10, 6), nullable=True)
+    longitude = Column(Numeric(10, 6), nullable=True)
     abn = Column(String(20))
     notes = Column(Text)
     alm_account_number = Column(String(50))
@@ -1071,11 +1073,37 @@ class Customer(Base, AuditMixin):
     contact_id = Column(
         String(36), ForeignKey("contacts.id"), nullable=True, index=True
     )  # Link to Contact when customer is selected from contacts (is_customer)
+    buying_group_id = Column(
+        String(36), ForeignKey("buying_groups.id"), nullable=True, index=True
+    )
+    relationship_status = Column(
+        String(20), nullable=False, default="active"
+    )  # active, prospective, lapsed
+    latitude = Column(Numeric(10, 6), nullable=True)
+    longitude = Column(Numeric(10, 6), nullable=True)
+    visit_frequency_target_days = Column(Integer, nullable=True)
+    preferred_contact_method = Column(String(20), nullable=True)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
     # Relationships
     contact = relationship("Contact", foreign_keys=[contact_id])
+    buying_group = relationship("BuyingGroup", back_populates="customers")
+    rep_assignments = relationship(
+        "CustomerRepAssignment",
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
+    crm_activities = relationship(
+        "CrmActivity",
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
+    crm_staff = relationship(
+        "CrmCustomerStaff",
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
     sales_orders = relationship("SalesOrder", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
     delivery_dockets = relationship("DeliveryDocket", back_populates="customer")
@@ -1100,6 +1128,10 @@ class Customer(Base, AuditMixin):
         sa.CheckConstraint(
             "customer_type IN ('bottle_shop','bar','restaurant','venue','retailer','distributor','direct_customer','other')",
             name="ck_customers_type",
+        ),
+        sa.CheckConstraint(
+            "relationship_status IN ('active','prospective','lapsed')",
+            name="ck_customers_relationship_status",
         ),
     )
 
@@ -1134,6 +1166,14 @@ class SalesOrder(Base, AuditMixin):
     order_discount_ex_gst = Column(Numeric(12, 2), nullable=False, default=0)
     po_number = Column(String(50), nullable=True, index=True)
     total_alcohol_volume_litres = Column(Numeric(12, 4), nullable=True)
+    freight_ex_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    freight_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    freight_inc_gst = Column(Numeric(12, 2), nullable=False, default=0)
+    commission_amount = Column(Numeric(12, 2), nullable=True)
+    distributor = Column(String(50), nullable=True)
+    payment_date = Column(DateTime, nullable=True)
+    payment_reference = Column(String(100), nullable=True)
+    invoice_date = Column(DateTime, nullable=True)
     notes = Column(Text)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
@@ -1571,6 +1611,7 @@ class CustomerPrice(Base, AuditMixin):
     unit_price_ex_tax = Column(Numeric(10, 2), nullable=False)
     effective_date = Column(DateTime, nullable=False)
     expiry_date = Column(DateTime)
+    notes = Column(Text)
     # Note: created_at, updated_at, deleted_at, deleted_by, version, versioned_at,
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
@@ -1891,3 +1932,259 @@ class PurchaseFormat(Base, AuditMixin):
     # versioned_by, previous_version_id, archived_at, archived_by are provided by AuditMixin
 
     __table_args__ = (Index("ix_purchase_format_code", "code"),)
+
+
+# --------------------------------------------------------------------------- #
+# CRM Models
+# --------------------------------------------------------------------------- #
+class SalesRep(Base, AuditMixin):
+    """Sales representative for CRM assignment and activity logging."""
+
+    __tablename__ = "sales_reps"
+
+    id = uuid_column()
+    code = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(200), nullable=True)
+    phone = Column(String(50), nullable=True)
+    user_id = Column(String(36), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    rep_assignments = relationship("CustomerRepAssignment", back_populates="sales_rep")
+    crm_activities = relationship("CrmActivity", back_populates="sales_rep")
+
+    __table_args__ = (Index("ix_sales_reps_name", "name"),)
+
+
+class BuyingGroup(Base, AuditMixin):
+    """Retail buying / marketing group (Cellarbrations, BWS, etc.)."""
+
+    __tablename__ = "buying_groups"
+
+    id = uuid_column()
+    code = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    map_color = Column(String(7), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    customers = relationship("Customer", back_populates="buying_group")
+
+    __table_args__ = (Index("ix_buying_groups_name", "name"),)
+
+
+class CustomerRepAssignment(Base, AuditMixin):
+    """Links customers to sales reps (primary / secondary)."""
+
+    __tablename__ = "customer_rep_assignments"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    sales_rep_id = Column(String(36), ForeignKey("sales_reps.id"), nullable=False)
+    role = Column(String(20), nullable=False, default="primary")
+    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    customer = relationship("Customer", back_populates="rep_assignments")
+    sales_rep = relationship("SalesRep", back_populates="rep_assignments")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "customer_id",
+            "sales_rep_id",
+            name="uq_customer_rep_assignments_customer_rep",
+        ),
+        Index("ix_customer_rep_assignments_customer", "customer_id"),
+        Index("ix_customer_rep_assignments_rep", "sales_rep_id"),
+        sa.CheckConstraint(
+            "role IN ('primary','secondary','support')",
+            name="ck_customer_rep_assignments_role",
+        ),
+    )
+
+
+class CrmActivity(Base, AuditMixin):
+    """Customer interaction logged on the CRM timeline."""
+
+    __tablename__ = "crm_activities"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    contact_id = Column(String(36), ForeignKey("contacts.id"), nullable=True)
+    customer_site_id = Column(
+        String(36), ForeignKey("customer_sites.id"), nullable=True
+    )
+    sales_rep_id = Column(String(36), ForeignKey("sales_reps.id"), nullable=True)
+    activity_type = Column(String(20), nullable=False, default="note")
+    subject = Column(String(200), nullable=True)
+    body = Column(Text, nullable=True)
+    activity_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    note_category = Column(String(30), nullable=True)
+    is_pinned = Column(Boolean, default=False, nullable=False)
+    linked_sales_order_id = Column(
+        String(36), ForeignKey("sales_orders.id"), nullable=True
+    )
+
+    customer = relationship("Customer", back_populates="crm_activities")
+    sales_rep = relationship("SalesRep", back_populates="crm_activities")
+
+    __table_args__ = (
+        Index("ix_crm_activities_customer", "customer_id"),
+        Index("ix_crm_activities_activity_at", "activity_at"),
+        sa.CheckConstraint(
+            "activity_type IN ('visit','phone','email','note','photo','file','reminder_done')",
+            name="ck_crm_activities_type",
+        ),
+    )
+
+
+class CrmCustomerStaff(Base, AuditMixin):
+    """Staff member at a customer site."""
+
+    __tablename__ = "crm_customer_staff"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    customer_site_id = Column(
+        String(36), ForeignKey("customer_sites.id"), nullable=True
+    )
+    name = Column(String(100), nullable=False)
+    role = Column(String(50), nullable=True)
+    phone = Column(String(50), nullable=True)
+    email = Column(String(200), nullable=True)
+    notes = Column(Text, nullable=True)
+    is_primary = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    customer = relationship("Customer", back_populates="crm_staff")
+
+    __table_args__ = (
+        Index("ix_crm_customer_staff_customer", "customer_id"),
+        Index("ix_crm_customer_staff_site", "customer_site_id"),
+    )
+
+
+class CrmAttachment(Base, AuditMixin):
+    """File or photo attached to a customer CRM record."""
+
+    __tablename__ = "crm_attachments"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    activity_id = Column(String(36), ForeignKey("crm_activities.id"), nullable=True)
+    uploaded_by_rep_id = Column(String(36), ForeignKey("sales_reps.id"), nullable=True)
+    storage_backend = Column(String(20), nullable=False, default="local")
+    storage_key = Column(String(500), nullable=False)
+    external_url = Column(String(500), nullable=True)
+    file_name = Column(String(255), nullable=False)
+    mime_type = Column(String(100), nullable=True)
+    file_size = Column(Integer, nullable=True)
+    caption = Column(Text, nullable=True)
+    taken_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (Index("ix_crm_attachments_customer", "customer_id"),)
+
+
+class CrmScheduledActivity(Base, AuditMixin):
+    """Scheduled visit, call, or reminder for a customer."""
+
+    __tablename__ = "crm_scheduled_activities"
+
+    id = uuid_column()
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
+    customer_site_id = Column(
+        String(36), ForeignKey("customer_sites.id"), nullable=True
+    )
+    sales_rep_id = Column(String(36), ForeignKey("sales_reps.id"), nullable=False)
+    activity_type = Column(String(20), nullable=False, default="visit")
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    scheduled_at = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, nullable=True)
+    status = Column(String(20), nullable=False, default="scheduled")
+    completed_activity_id = Column(
+        String(36), ForeignKey("crm_activities.id"), nullable=True
+    )
+    reminder_minutes_before = Column(Integer, nullable=True, default=60)
+
+    __table_args__ = (
+        Index("ix_crm_scheduled_customer", "customer_id"),
+        Index("ix_crm_scheduled_rep", "sales_rep_id"),
+        Index("ix_crm_scheduled_at", "scheduled_at"),
+        sa.CheckConstraint(
+            "activity_type IN ('visit','phone','email','task')",
+            name="ck_crm_scheduled_type",
+        ),
+        sa.CheckConstraint(
+            "status IN ('scheduled','completed','cancelled','overdue')",
+            name="ck_crm_scheduled_status",
+        ),
+    )
+
+
+class TrainingCategory(Base, AuditMixin):
+    """NU training category (hierarchical taxonomy)."""
+
+    __tablename__ = "training_categories"
+
+    id = uuid_column()
+    slug = Column(String(100), unique=True, nullable=False, index=True)
+    code = Column(String(20), nullable=True)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    parent_id = Column(String(36), ForeignKey("training_categories.id"), nullable=True)
+    sort_order = Column(Integer, nullable=False, default=0)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    parent = relationship("TrainingCategory", remote_side=[id], backref="children")
+
+    __table_args__ = (
+        Index("ix_training_categories_parent", "parent_id"),
+        Index("ix_training_categories_sort", "sort_order"),
+    )
+
+
+class TrainingArticle(Base, AuditMixin):
+    """NU training article / SOP — structured for search and LLM corpus export."""
+
+    __tablename__ = "training_articles"
+
+    id = uuid_column()
+    slug = Column(String(150), unique=True, nullable=False, index=True)
+    title = Column(String(300), nullable=False)
+    category_id = Column(
+        String(36), ForeignKey("training_categories.id"), nullable=True
+    )
+    content_type = Column(String(30), nullable=False, default="sop")
+    status = Column(String(20), nullable=False, default="draft", index=True)
+    summary = Column(Text, nullable=True)
+    purpose = Column(Text, nullable=True)
+    prerequisites = Column(Text, nullable=True)
+    safety_notes = Column(Text, nullable=True)
+    steps_json = Column(Text, nullable=True)
+    risks_json = Column(Text, nullable=True)
+    troubleshooting = Column(Text, nullable=True)
+    related_links_json = Column(Text, nullable=True)
+    body_markdown = Column(Text, nullable=True)
+    tags = Column(String(500), nullable=True)
+    systems = Column(String(200), nullable=True)
+    loom_url = Column(String(500), nullable=True)
+    sharepoint_url = Column(String(500), nullable=True)
+    video_embed_url = Column(String(500), nullable=True)
+    rich_content_html = Column(Text, nullable=True)
+    search_blob = Column(Text, nullable=True)
+    sort_order = Column(Integer, nullable=False, default=0)
+
+    category = relationship("TrainingCategory", backref="articles")
+
+    __table_args__ = (
+        Index("ix_training_articles_category", "category_id"),
+        Index("ix_training_articles_content_type", "content_type"),
+        sa.CheckConstraint(
+            "content_type IN ('sop','guide','checklist','reference')",
+            name="ck_training_articles_content_type",
+        ),
+        sa.CheckConstraint(
+            "status IN ('draft','published','archived')",
+            name="ck_training_articles_status",
+        ),
+    )

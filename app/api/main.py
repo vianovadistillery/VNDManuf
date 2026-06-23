@@ -6,7 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     assemblies,
     batches,
+    buying_groups,
     contacts,
+    crm,
     documents,
     excise_rates,
     formulas,
@@ -19,8 +21,10 @@ from app.api import (
     raw_materials,
     reports,
     sales,
+    sales_reps,
     shopify,
     suppliers,
+    training,
     units,
     work_areas,
     work_orders,
@@ -83,7 +87,11 @@ def create_app() -> FastAPI:
     app.include_router(work_areas.router, prefix="/api/v1")
     app.include_router(work_orders.router, prefix="/api/v1")
     app.include_router(sales.router, prefix="/api/v1")
+    app.include_router(sales_reps.router, prefix="/api/v1")
+    app.include_router(buying_groups.router, prefix="/api/v1")
+    app.include_router(crm.router, prefix="/api/v1")
     app.include_router(documents.router, prefix="/api/v1")
+    app.include_router(training.router, prefix="/api/v1")
 
     # Health check endpoint
     @app.get("/health")

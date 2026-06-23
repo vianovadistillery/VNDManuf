@@ -43,6 +43,9 @@ dist/
 .env.local
 Xero.txt
 
+# Embedded secrets (copy from openai.json.example)
+config/openai.json
+
 schema_snapshot.json
 
 *.db.bak
@@ -50,3 +53,6 @@ schema_snapshot.json
 *.db
 
 *.sqlite
+
+# Generated runtime artifacts (PDFs, uploaded training media)
+generated/

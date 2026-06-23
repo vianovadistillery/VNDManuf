@@ -1,0 +1,9 @@
+{
+  "api_key": "sk-your-openai-key-here",
+  "model": "gpt-4o-mini",
+  "enabled": true,
+  "max_context_articles": 8,
+  "max_tokens": 1200,
+  "temperature": 0.25,
+  "request_timeout_seconds": 60
+}

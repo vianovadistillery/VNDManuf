@@ -20,13 +20,13 @@ _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 SALES_TEMPLATE = _DATA_DIR / "sales_orders_template.csv"
 DOCKET_TEMPLATE = _DATA_DIR / "delivery_docket_template.csv"
 
-DEFAULT_SALES_SUBTAB = "sales-orders"
+DEFAULT_SALES_SUBTAB = "sales-overview"
 
 # All panels stay mounted (show/hide via style) so callbacks can target their IDs
 # even when another sales sub-tab is active — same pattern as manufacturing-panel.
 SALES_SUBTAB_PANELS = (
-    ("sales-orders", "sales-panel-orders", orders.layout_orders_list),
     ("sales-overview", "sales-panel-overview", overview.layout),
+    ("sales-orders", "sales-panel-orders", orders.layout_orders_list),
     ("sales-customers", "sales-panel-customers", customers.layout),
     ("sales-products", "sales-panel-products", products.layout),
     ("sales-analytics", "sales-panel-analytics", analytics.layout),
@@ -46,10 +46,10 @@ def layout():
                 id="sales-subtabs",
                 value=DEFAULT_SALES_SUBTAB,
                 children=[
-                    dcc.Tab(label="Orders", value="sales-orders"),
                     dcc.Tab(label="Overview", value="sales-overview"),
-                    dcc.Tab(label="Customers & Sites", value="sales-customers"),
-                    dcc.Tab(label="Products", value="sales-products"),
+                    dcc.Tab(label="Order History", value="sales-orders"),
+                    dcc.Tab(label="Customer Pricing", value="sales-customers"),
+                    dcc.Tab(label="Product Sale Info", value="sales-products"),
                     dcc.Tab(label="Analytics", value="sales-analytics"),
                     dcc.Tab(label="Import / Export", value="sales-import-export"),
                     dcc.Tab(label="Settings", value="sales-settings"),

@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from dash import Input, Output, html, no_update
 from dash.exceptions import PreventUpdate
 
+from apps.vndmanuf_sales.ui.period_filters import register_period_preset_callbacks
+
 
 def _parse_date_range(
     start_date: Optional[str], end_date: Optional[str]
@@ -47,10 +49,12 @@ def _money(value: float) -> str:
 def register_sales_analytics_callbacks(app, make_api_request):
     """Register Overview and Products analytics callbacks."""
 
+    register_period_preset_callbacks(app, prefix="sales-overview")
+    register_period_preset_callbacks(app, prefix="sales-products")
+
     @app.callback(
         [
             Output("sales-overview-channel-filter", "options"),
-            Output("sales-overview-pricebook-filter", "options"),
             Output("sales-analytics-filter-options-store", "data"),
         ],
         Input("sales-subtabs", "value"),
@@ -58,15 +62,14 @@ def register_sales_analytics_callbacks(app, make_api_request):
     )
     def load_overview_filter_options(subtab_value):
         if subtab_value != "sales-overview":
-            return no_update, no_update, no_update
+            return no_update, no_update
 
         response = make_api_request("GET", "/sales/analytics/filter-options")
         if isinstance(response, dict) and response.get("error"):
-            return [], [], None
+            return [], None
 
         channels = _with_all_option(response.get("channels", []))
-        pricebooks = _with_all_option(response.get("pricebooks", []))
-        return channels, pricebooks, response
+        return channels, response
 
     @app.callback(
         [
@@ -104,7 +107,6 @@ def register_sales_analytics_callbacks(app, make_api_request):
             Input("sales-overview-date-range", "start_date"),
             Input("sales-overview-date-range", "end_date"),
             Input("sales-overview-channel-filter", "value"),
-            Input("sales-overview-pricebook-filter", "value"),
         ],
         prevent_initial_call=False,
     )
@@ -113,12 +115,11 @@ def register_sales_analytics_callbacks(app, make_api_request):
         start_date,
         end_date,
         channel_id,
-        pricebook_id,
     ):
         if subtab_value != "sales-overview":
             raise PreventUpdate
 
-        params = _analytics_params(start_date, end_date, channel_id, pricebook_id)
+        params = _analytics_params(start_date, end_date, channel_id, None)
         if not params:
             empty_mix = html.Ul(className="mb-0")
             return ("—", "—", "—", "—", no_update, empty_mix, [], [])

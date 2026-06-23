@@ -1,0 +1,108 @@
+.crm-calendar-wrap {
+    overflow-x: auto;
+}
+
+.crm-cal-month-col {
+    min-width: 0;
+}
+
+.crm-cal-month-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.crm-cal-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.crm-cal-compact {
+    min-width: 0;
+    font-size: 0.7rem;
+}
+
+.crm-cal-weekday {
+    text-align: center;
+    font-size: 0.65rem;
+    background: #f8f9fa;
+    padding: 2px !important;
+}
+
+.crm-cal-day {
+    vertical-align: top;
+    min-height: 52px;
+    height: auto;
+    width: 14.28%;
+    padding: 2px !important;
+}
+
+.crm-cal-compact .crm-cal-day {
+    min-height: 56px;
+}
+
+.crm-cal-day-clickable {
+    cursor: pointer;
+}
+
+.crm-cal-day-clickable:hover {
+    background: #f0f4ff;
+}
+
+.crm-cal-empty {
+    background: #fafafa;
+    cursor: default;
+}
+
+.crm-cal-today {
+    background: #fff8e1;
+    outline: 1px solid #ffc107;
+}
+
+.crm-cal-today:hover {
+    background: #fff3cd;
+}
+
+.crm-cal-day-num {
+    font-weight: 700;
+    font-size: 2.1rem;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+
+.crm-cal-compact .crm-cal-day-num {
+    font-size: 1.65rem;
+}
+
+.crm-cal-events {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.crm-cal-event-summary {
+    font-size: 0.58rem;
+    line-height: 1.15;
+    padding: 0 2px 0 4px;
+    border-left: 2px solid #6c757d;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 0 2px 2px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.crm-cal-more {
+    font-size: 0.55rem;
+    padding-left: 2px;
+}
+
+.crm-cal-legend-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+.crm-activity-actions {
+    margin-top: 4px;
+}
